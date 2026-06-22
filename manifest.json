@@ -1,0 +1,8 @@
+{
+  "name": "정보통신설비 현장점검",
+  "short_name": "현장점검",
+  "start_url": "./정보통신설비_현장점검.html",
+  "display": "standalone",
+  "background_color": "#F5F6F8",
+  "theme_color": "#155EEF"
+}

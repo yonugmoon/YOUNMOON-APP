@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
 <title>정보통신설비 현장점검</title>
+<link rel="manifest" href="/YOUNMOON-APP/manifest.json">
+<meta name="theme-color" content="#1A2540">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KT현장점검">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/yonugmoon/YOUNMOON-APP/main/icon-192.png">
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <style>
@@ -3884,6 +3890,13 @@ ${bad.length>0?`
   }
   init();
 })();
+</script>
+  <script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/YOUNMOON-APP/service-worker.js')
+    .then(()=> console.log('SW 등록 완료'))
+    .catch(e=> console.log('SW 오류:', e));
+}
 </script>
 </body>
 </html>

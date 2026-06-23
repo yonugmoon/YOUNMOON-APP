@@ -4,12 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
 <title>정보통신설비 현장점검</title>
-<link rel="manifest" href="/YOUNMOON-APP/manifest.json">
-<meta name="theme-color" content="#1A2540">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="KT현장점검">
-<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/yonugmoon/YOUNMOON-APP/main/icon-192.png">
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <style>
@@ -110,6 +104,24 @@
   .cat-chev{color:var(--muted);font-size:20px;transition:transform .18s ease;line-height:1;}
   .bulk-good-btn{background:#fff;border:1.5px solid var(--border);color:var(--muted);border-radius:7px;padding:4px 9px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s;}
   .bulk-good-btn.active{background:var(--good-weak);border-color:var(--good);color:var(--good);}
+  /* 건물구조 */
+  .struct-bld-card{border:1.5px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+  .struct-bld-header{background:var(--ink);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:8px;}
+  .struct-bld-name{font-size:14px;font-weight:800;flex:1;}
+  .struct-bld-meta{font-size:11.5px;opacity:.7;}
+  .floor-map{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .floor-map table{border-collapse:collapse;min-width:100%;font-size:11.5px;}
+  .floor-map th{background:#f0f2f6;padding:5px 8px;text-align:center;font-weight:700;font-size:11px;color:var(--muted);border:1px solid var(--border);white-space:nowrap;}
+  .floor-map td{padding:4px 6px;border:1px solid var(--border);text-align:center;min-width:44px;}
+  .floor-map .floor-label{font-weight:700;font-size:12px;color:var(--muted);background:#fafafa;}
+  .room-cell{border-radius:5px;padding:3px 5px;font-size:10.5px;font-weight:700;cursor:pointer;display:inline-block;min-width:36px;text-align:center;}
+  .rc-done{background:var(--good-weak);color:var(--good);}
+  .rc-inprog{background:#fff8ee;color:var(--warn);}
+  .rc-wait{background:#f0f2f6;color:var(--muted);}
+  .rc-none{color:#ddd;font-size:10px;}
+  .struct-legend{display:flex;gap:10px;flex-wrap:wrap;padding:8px 14px;background:#fafafa;border-top:1px solid var(--border);}
+  .legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);}
+  .legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
   .cat-del-row{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--border);}
   .cat-del-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;}
   .cat-del-btn:active{background:var(--bad-weak);color:var(--bad);border-color:var(--bad);}
@@ -2276,6 +2288,7 @@
     if(typeof insp.buildingName === "undefined") insp.buildingName = "";
     if(typeof insp.lastDetailLocation === "undefined") insp.lastDetailLocation = "";
     if(!insp.inspType) insp.inspType = "성능";
+    if(!insp.siteStructure) insp.siteStructure = { buildings: [] };
     return insp;
   }
 
@@ -2290,8 +2303,303 @@
     renderDetail();
   }
 
+  /* ============================================================
+     🏢 현장 건물 구조 관리
+     - 건물 등록 (건물명, 층수, 지하층, 실 구성)
+     - 층별 현황 floor map 시각화
+     - 실별 점검 상태 추적
+  ============================================================ */
+  const ROOM_TYPES = ['방재실','통신실','전기실','TPS실','MDF실','EPS실','UPS실','감시반','기계실','서버실'];
+  const ROOM_COLORS = {
+    '방재실':'#D7263D','통신실':'#155EEF','전기실':'#E67E00',
+    'TPS실':'#1A8754','MDF실':'#7B2D8B','EPS실':'#0A6E6E',
+    'UPS실':'#C06000','감시반':'#444','기계실':'#666','서버실':'#0A5080'
+  };
+
+  function openSiteStructureModal(){
+    if(!current) return;
+    if(!current.siteStructure) current.siteStructure = {buildings:[]};
+    renderSiteStructureSheet();
+  }
+
+  function renderSiteStructureSheet(){
+    const existing = document.getElementById('site-struct-overlay');
+    if(existing) existing.remove();
+
+    const ov = document.createElement('div');
+    ov.id = 'site-struct-overlay';
+    ov.className = 'overlay';
+    ov.style.cssText = 'overflow-y:auto;align-items:flex-start;padding:0;';
+
+    const blds = current.siteStructure.buildings;
+    const totalRooms = blds.reduce((s,b)=>s+b.rooms.length,0);
+    const doneRooms  = blds.reduce((s,b)=>s+b.rooms.filter(r=>r.status==='완료').length,0);
+    const progRooms  = blds.reduce((s,b)=>s+b.rooms.filter(r=>r.status==='진행중').length,0);
+
+    // 층별 floor-map 빌더
+    function buildFloorMap(bld){
+      // 이 건물에 있는 실 유형 종류 수집
+      const types = [...new Set(bld.rooms.map(r=>r.type))];
+      if(!types.length) return '<div style="padding:10px 14px;font-size:12px;color:var(--muted);">등록된 실이 없습니다</div>';
+
+      // 층 목록 (지하 포함, 내림차순)
+      const allFloors = [];
+      for(let f=bld.floors; f>=1; f--) allFloors.push(f);
+      for(let b=1; b<=bld.basement; b++) allFloors.push(-b);
+
+      let html = '<div class="floor-map"><table><tr><th>층</th>';
+      types.forEach(t=> html+=`<th style="color:${ROOM_COLORS[t]||'#333'};">${t}</th>`);
+      html += '</tr>';
+
+      allFloors.forEach(f=>{
+        const floorLabel = f>0?`${f}층`:`B${Math.abs(f)}층`;
+        html += `<tr><td class="floor-label">${floorLabel}</td>`;
+        types.forEach(t=>{
+          const room = bld.rooms.find(r=>r.floor===f && r.type===t);
+          if(!room){
+            html += `<td><span class="rc-none">─</span></td>`;
+          } else {
+            const cls = room.status==='완료'?'rc-done':room.status==='진행중'?'rc-inprog':'rc-wait';
+            const icon = room.status==='완료'?'✅':room.status==='진행중'?'🔄':'⏳';
+            html += `<td><span class="room-cell ${cls}" onclick="cycleRoomStatus('${bld.id}','${room.id}')" title="${floorLabel} ${t}">${icon}</span></td>`;
+          }
+        });
+        html += '</tr>';
+      });
+      html += '</table></div>';
+      return html;
+    }
+
+    let bldHtml = '';
+    if(!blds.length){
+      bldHtml = `<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">
+        📭 등록된 건물이 없습니다<br>아래 버튼으로 건물을 추가해주세요
+      </div>`;
+    } else {
+      blds.forEach(bld=>{
+        const done  = bld.rooms.filter(r=>r.status==='완료').length;
+        const total = bld.rooms.length;
+        const pct   = total?Math.round(done/total*100):0;
+        bldHtml += `
+        <div class="struct-bld-card">
+          <div class="struct-bld-header">
+            <span class="struct-bld-name">🏢 ${escapeHtml(bld.name)}</span>
+            <span class="struct-bld-meta">지상 ${bld.floors}층${bld.basement?` / 지하 ${bld.basement}층`:''}  총 ${total}개소</span>
+            <button onclick="deleteBuilding_s('${bld.id}')" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">삭제</button>
+          </div>
+          <div style="padding:8px 14px;display:flex;align-items:center;gap:8px;background:#f9fafb;border-bottom:1px solid var(--border);">
+            <div style="flex:1;background:#eee;border-radius:6px;height:7px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${pct===100?'var(--good)':'var(--accent)'};border-radius:6px;transition:width .3s;"></div>
+            </div>
+            <span style="font-size:12px;font-weight:800;color:${pct===100?'var(--good)':'var(--accent)'};">${pct}%</span>
+            <span style="font-size:11px;color:var(--muted);">${done}/${total}개소 완료</span>
+          </div>
+          ${buildFloorMap(bld)}
+          <div class="struct-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:var(--good-weak);border:1px solid var(--good);"></span>완료</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#fff8ee;border:1px solid var(--warn);"></span>진행중</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#f0f2f6;"></span>미점검</span>
+            <span class="legend-item"><span style="color:#ddd;font-size:12px;">─</span> 해당없음</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--muted);">셀 터치 시 상태 변경</span>
+          </div>
+        </div>`;
+      });
+    }
+
+    ov.innerHTML = `
+      <div style="background:#1A2540;color:#fff;padding:14px;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;">
+        <button onclick="document.getElementById('site-struct-overlay').remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;">← 닫기</button>
+        <div>
+          <div style="font-size:15px;font-weight:800;">🏢 현장 건물 구조</div>
+          <div style="font-size:11.5px;opacity:.7;">${current.siteName} · 건물 ${blds.length}개 · 총 ${totalRooms}개소</div>
+        </div>
+      </div>
+
+      <!-- 전체 요약 -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px;">
+        <div style="background:#fff;border-radius:10px;padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+          <div style="font-size:22px;font-weight:900;color:var(--good);">${doneRooms}</div>
+          <div style="font-size:11px;color:var(--muted);">점검 완료</div>
+        </div>
+        <div style="background:#fff;border-radius:10px;padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+          <div style="font-size:22px;font-weight:900;color:var(--warn);">${progRooms}</div>
+          <div style="font-size:11px;color:var(--muted);">진행중</div>
+        </div>
+        <div style="background:#fff;border-radius:10px;padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+          <div style="font-size:22px;font-weight:900;color:var(--accent);">${totalRooms-doneRooms-progRooms}</div>
+          <div style="font-size:11px;color:var(--muted);">미점검</div>
+        </div>
+      </div>
+
+      <!-- 건물 목록 -->
+      <div style="padding:0 12px 12px;">${bldHtml}</div>
+
+      <!-- 건물 추가 버튼 -->
+      <div style="padding:0 12px 30px;">
+        <button onclick="openAddBuildingSheet()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;">+ 건물 추가</button>
+      </div>
+    `;
+
+    document.body.appendChild(ov);
+  }
+
+  // 실 상태 순환 변경 (미점검→진행중→완료→미점검)
+  function cycleRoomStatus(bldId, roomId){
+    const bld = current.siteStructure.buildings.find(b=>b.id===bldId);
+    if(!bld) return;
+    const room = bld.rooms.find(r=>r.id===roomId);
+    if(!room) return;
+    const cycle = ['미점검','진행중','완료'];
+    const cur = cycle.indexOf(room.status||'미점검');
+    room.status = cycle[(cur+1)%cycle.length];
+    scheduleSave();
+    renderSiteStructureSheet();
+  }
+
+  // 건물 삭제
+  function deleteBuilding_s(bldId){
+    current.siteStructure.buildings = current.siteStructure.buildings.filter(b=>b.id!==bldId);
+    scheduleSave();
+    renderSiteStructureSheet();
+    showToast('건물이 삭제됐습니다');
+  }
+
+  // 건물 추가 시트
+  function openAddBuildingSheet(){
+    const addOv = document.createElement('div');
+    addOv.id = 'add-bld-sheet';
+    addOv.className = 'overlay center';
+    addOv.innerHTML = `
+      <div class="sheet" style="max-height:88vh;overflow-y:auto;">
+        <div class="sheet-title">🏢 건물 추가</div>
+
+        <div class="field-label">건물명 *</div>
+        <input class="text-input" id="bld-name" placeholder="예: A동, 본관, 방재센터">
+
+        <div class="field-label">지상 층수</div>
+        <input class="text-input" id="bld-floors" type="number" value="10" min="1" max="60">
+
+        <div class="field-label">지하 층수</div>
+        <input class="text-input" id="bld-basement" type="number" value="0" min="0" max="20">
+
+        <div class="field-label" style="margin-top:14px;">📍 층별 실 등록</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">층수와 실 종류를 선택하면 자동으로 등록됩니다</div>
+
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <select id="room-floor-sel" class="text-input" style="flex:1;">
+            <option value="">층 선택</option>
+          </select>
+          <select id="room-type-sel" class="text-input" style="flex:1;">
+            <option value="">실 종류 선택</option>
+            ${ROOM_TYPES.map(t=>`<option>${t}</option>`).join('')}
+          </select>
+          <button onclick="addRoomEntry()" class="primary-btn" style="padding:0 12px;white-space:nowrap;min-width:44px;">+</button>
+        </div>
+
+        <!-- 빠른 일괄 추가 -->
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">빠른 추가 (전층 공통 실)</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+          ${ROOM_TYPES.map(t=>`<button onclick="addAllFloors('${t}')" style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;color:${ROOM_COLORS[t]||'var(--ink)'};">${t} 전층</button>`).join('')}
+        </div>
+
+        <div id="room-entry-list" style="background:var(--bg);border-radius:10px;padding:8px;min-height:40px;margin-bottom:12px;max-height:200px;overflow-y:auto;"></div>
+
+        <div style="display:flex;gap:8px;">
+          <button class="ghost-btn" onclick="document.getElementById('add-bld-sheet').remove()" style="flex:1;">취소</button>
+          <button class="primary-btn" onclick="saveBuildingEntry()" style="flex:2;">저장</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(addOv);
+
+    // 층 목록 업데이트
+    updateFloorOptions();
+    document.getElementById('bld-floors').addEventListener('input', updateFloorOptions);
+    document.getElementById('bld-basement').addEventListener('input', updateFloorOptions);
+
+    window._newBldRooms = [];
+    renderRoomEntryList();
+  }
+
+  function updateFloorOptions(){
+    const floors = +document.getElementById('bld-floors').value || 10;
+    const basement = +document.getElementById('bld-basement').value || 0;
+    const sel = document.getElementById('room-floor-sel');
+    if(!sel) return;
+    let opts = '<option value="">층 선택</option>';
+    for(let f=floors; f>=1; f--) opts += `<option value="${f}">${f}층</option>`;
+    for(let b=1; b<=basement; b++) opts += `<option value="-${b}">B${b}층</option>`;
+    sel.innerHTML = opts;
+  }
+
+  function addRoomEntry(){
+    const f = document.getElementById('room-floor-sel').value;
+    const t = document.getElementById('room-type-sel').value;
+    if(!f||!t){ showToast('층과 실 종류를 선택해주세요'); return; }
+    if(window._newBldRooms.find(r=>r.floor===+f&&r.type===t)){ showToast('이미 추가됐습니다'); return; }
+    window._newBldRooms.push({id:uid(), floor:+f, type:t, status:'미점검'});
+    window._newBldRooms.sort((a,b)=>b.floor-a.floor||a.type.localeCompare(b.type));
+    renderRoomEntryList();
+  }
+
+  function addAllFloors(type){
+    const floors = +document.getElementById('bld-floors').value || 10;
+    const basement = +document.getElementById('bld-basement').value || 0;
+    let added = 0;
+    for(let f=1; f<=floors; f++){
+      if(!window._newBldRooms.find(r=>r.floor===f&&r.type===type)){
+        window._newBldRooms.push({id:uid(), floor:f, type, status:'미점검'});
+        added++;
+      }
+    }
+    for(let b=1; b<=basement; b++){
+      if(!window._newBldRooms.find(r=>r.floor===-b&&r.type===type)){
+        window._newBldRooms.push({id:uid(), floor:-b, type, status:'미점검'});
+        added++;
+      }
+    }
+    window._newBldRooms.sort((a,b)=>b.floor-a.floor||a.type.localeCompare(b.type));
+    renderRoomEntryList();
+    showToast(`${type} ${added}개층 추가됐습니다`);
+  }
+
+  function removeRoomEntry(id){
+    window._newBldRooms = window._newBldRooms.filter(r=>r.id!==id);
+    renderRoomEntryList();
+  }
+
+  function renderRoomEntryList(){
+    const el = document.getElementById('room-entry-list');
+    if(!el) return;
+    if(!window._newBldRooms.length){
+      el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px;">아직 추가된 실이 없습니다</div>';
+      return;
+    }
+    el.innerHTML = window._newBldRooms.map(r=>`
+      <div style="display:flex;align-items:center;gap:6px;padding:4px 6px;background:#fff;border-radius:7px;margin-bottom:4px;">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);min-width:36px;">${r.floor>0?r.floor+'층':'B'+Math.abs(r.floor)+'층'}</span>
+        <span style="font-size:12px;font-weight:700;color:${ROOM_COLORS[r.type]||'var(--ink)'};">${r.type}</span>
+        <button onclick="removeRoomEntry('${r.id}')" style="margin-left:auto;background:none;border:none;color:var(--bad);font-size:14px;cursor:pointer;">×</button>
+      </div>`).join('');
+  }
+
+  function saveBuildingEntry(){
+    const name = (document.getElementById('bld-name').value||'').trim();
+    if(!name){ showToast('건물명을 입력해주세요'); return; }
+    const floors = +document.getElementById('bld-floors').value || 1;
+    const basement = +document.getElementById('bld-basement').value || 0;
+    current.siteStructure.buildings.push({
+      id: uid(), name, floors, basement,
+      rooms: [...(window._newBldRooms||[])]
+    });
+    scheduleSave();
+    document.getElementById('add-bld-sheet').remove();
+    renderSiteStructureSheet();
+    showToast(`${name} 건물이 추가됐습니다 (${(window._newBldRooms||[]).length}개소)`);
+    window._newBldRooms = [];
+  }
+
   function renderDetail(){
-    view = "detail";
     const p = computeProgress(current);
     const filledBars = Math.min(5, Math.ceil(p.pct/20));
 
@@ -2339,16 +2647,18 @@
     bottom.className = "bottombar";
     bottom.innerHTML = `
       <div class="save-status"><span class="save-dot"></span><span class="save-status-text">저장됨</span></div>
-      <div style="display:flex;gap:8px;">
-        <button class="outline-btn" id="sync-btn" style="font-size:12px;padding:8px 10px;background:${fbSyncActive?'#1a8754':'none'};border-color:${fbSyncActive?'#1a8754':'rgba(0,0,0,.15)'};color:${fbSyncActive?'#fff':'inherit'};">🔥 실시간</button>
-        <button class="outline-btn" id="share-btn" style="font-size:12px;padding:8px 10px;">📤 공유</button>
-        <button class="outline-btn" id="export-btn">내보내기</button>
+      <div style="display:flex;gap:6px;">
+        <button class="outline-btn" id="struct-btn" style="font-size:12px;padding:8px 9px;">🏢 구조</button>
+        <button class="outline-btn" id="sync-btn" style="font-size:12px;padding:8px 9px;background:${fbSyncActive?'#1a8754':'none'};border-color:${fbSyncActive?'#1a8754':'rgba(0,0,0,.15)'};color:${fbSyncActive?'#fff':'inherit'};">🔥 실시간</button>
+        <button class="outline-btn" id="share-btn" style="font-size:12px;padding:8px 9px;">📤 공유</button>
+        <button class="outline-btn" id="export-btn" style="font-size:12px;padding:8px 9px;">내보내기</button>
       </div>
     `;
     app.appendChild(bottom);
     document.getElementById("export-btn").onclick = openExportSheet;
     document.getElementById("share-btn").onclick = openShareSheet;
     document.getElementById("sync-btn").onclick = openSyncSheet;
+    document.getElementById("struct-btn").onclick = openSiteStructureModal;
     updateSyncBadge();
   }
 
@@ -2359,10 +2669,11 @@
     const badgeClass = cp.total===0 ? "" : (cp.done===0 ? "" : (cp.done===cp.total ? "done" : "partial"));
     const photoCount = cat.locations.reduce((s,l)=> s+(l.photos||[]).length, 0);
 
-    // 전체 양호 여부 확인
+    // 전체 양호 여부 확인 (아이템이 없는 위치가 있으면 allGood 아님)
     const allItems = [];
     cat.locations.forEach(loc=> loc.items.forEach(it=> allItems.push(it)));
-    const allGood = allItems.length > 0 && allItems.every(it=> it.result === "양호");
+    const hasEmptyLoc = cat.locations.some(loc=> loc.items.length === 0);
+    const allGood = !hasEmptyLoc && allItems.length > 0 && allItems.every(it=> it.result === "양호");
 
     const head = document.createElement("div");
     head.className = "cat-head";
@@ -2895,8 +3206,8 @@
 
       pendingPhotoTarget = { cat, loc, pstrip, board };
       ov.remove();
-      if(useCamera){ photoFileInput.setAttribute("capture","environment"); }
-      else { photoFileInput.removeAttribute("capture"); }
+      if(useCamera){ photoFileInput.setAttribute("capture","environment"); photoFileInput.removeAttribute("multiple"); }
+      else { photoFileInput.removeAttribute("capture"); photoFileInput.setAttribute("multiple","multiple"); }
       photoFileInput.click();
     };
   }
@@ -2909,97 +3220,84 @@
   }
 
   photoFileInput.addEventListener("change", async (ev)=>{
-    const file = ev.target.files[0];
+    const files = Array.from(ev.target.files || []);
     photoFileInput.value = "";
-    if(!file || !pendingPhotoTarget) return;
+    if(!files.length || !pendingPhotoTarget) return;
     const {cat, loc, pstrip, board} = pendingPhotoTarget;
 
     const addBtns = pstrip.querySelectorAll(".photo-add");
-    addBtns.forEach(b=>{ b.innerHTML = "처리중"; b.disabled = true; });
+    addBtns.forEach(b=>{ b.innerHTML = "처리중…"; b.disabled = true; });
 
-    let dataUrl = null;
-    let boardApplied = true;
-    try{
-      dataUrl = await composePhotoWithBoard(file, board, 900);
-    }catch(e){
-      boardApplied = false;
-      try{ dataUrl = await compressImage(file, 900, 0.6); }
-      catch(e2){
-        try{ dataUrl = await readAsDataURL(file); }
-        catch(e3){ dataUrl = null; }
+    let savedCount = 0;
+    let failCount  = 0;
+
+    for(const file of files){
+      let dataUrl = null;
+      let boardApplied = true;
+      try{
+        dataUrl = await composePhotoWithBoard(file, board, 900);
+      }catch(e){
+        boardApplied = false;
+        try{ dataUrl = await compressImage(file, 900, 0.6); }
+        catch(e2){
+          try{ dataUrl = await readAsDataURL(file); }
+          catch(e3){ dataUrl = null; }
+        }
       }
+
+      if(!dataUrl){ failCount++; continue; }
+
+      // ── 모바일에서만 갤러리 자동 저장 ──
+      autoSaveToGallery(dataUrl, cat.name);
+
+      const key = "photo:"+current.id+":cat:"+cat.id+":loc:"+loc.id+":"+uid();
+      const saved = await sSet(key, dataUrl);
+      if(!saved){ failCount++; continue; }
+
+      const verify = await sGet(key);
+      if(!verify){ await sDelete(key); failCount++; continue; }
+
+      if(!loc.photos) loc.photos = [];
+      loc.photos.push(key);
+      savedCount++;
     }
 
-    if(!dataUrl){
-      showToast("사진을 처리하지 못했습니다. 다시 시도해주세요.");
-      renderCatPhotoStrip(cat, loc, pstrip);
-      return;
-    }
-
-    // ── 휴대폰 갤러리 자동 저장 ──
-    autoSaveToGallery(dataUrl, cat.name);
-
-    const key = "photo:"+current.id+":cat:"+cat.id+":loc:"+loc.id+":"+uid();
-    const saved = await sSet(key, dataUrl);
-    if(saved === null){
-      showToast("저장 공간 오류로 사진을 저장하지 못했습니다.");
-      renderCatPhotoStrip(cat, loc, pstrip);
-      return;
-    }
-
-    const verify = await sGet(key);
-    if(!verify){
-      showToast("사진 저장 확인에 실패했습니다. 다시 시도해주세요.");
-      await sDelete(key);
-      renderCatPhotoStrip(cat, loc, pstrip);
-      return;
-    }
-
-    if(!loc.photos) loc.photos = [];
-    loc.photos.push(key);
     scheduleSave();
     renderCatPhotoStrip(cat, loc, pstrip);
     refreshCatPhotoCount();
     rerenderTabBar(cat);
-    showToast(boardApplied ? "사진이 추가되었습니다." : "사진은 저장됐지만 정보판은 적용되지 못했습니다.");
+
+    if(savedCount > 0 && failCount === 0){
+      showToast(files.length > 1 ? `사진 ${savedCount}장이 추가됐습니다.` : "사진이 추가됐습니다.");
+    } else if(savedCount > 0){
+      showToast(`${savedCount}장 추가 완료 (${failCount}장 실패)`);
+    } else {
+      showToast("사진을 처리하지 못했습니다. 다시 시도해주세요.");
+    }
   });
 
-  // ── 휴대폰 갤러리 자동 저장 ──
+  // ── 모바일 기기 여부 판별 ──
+  function isMobileDevice(){
+    return /Android|iPhone|iPad|iPod|Mobile|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
+  // ── 갤러리 자동 저장 (모바일 전용) ──
   function autoSaveToGallery(dataUrl, catName){
+    if(!isMobileDevice()) return; // PC/노트북에서는 저장 팝업 방지
     try{
-      // 파일명: 날짜_시간_설비명.jpg
       const now = new Date();
       const pad = n => String(n).padStart(2,'0');
       const fname = `점검사진_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}_${(catName||'설비').slice(0,8)}.jpg`;
-
-      // Blob 변환
       const byteStr = atob(dataUrl.split(',')[1]);
       const arr = new Uint8Array(byteStr.length);
       for(let i=0;i<byteStr.length;i++) arr[i]=byteStr.charCodeAt(i);
       const blob = new Blob([arr], {type:'image/jpeg'});
-
-      // Web Share API (iOS Safari 15+, Android Chrome 지원)
-      // → 실패 시 다운로드 링크 방식으로 폴백
-      const file = new File([blob], fname, {type:'image/jpeg'});
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        // 공유 시트 통해 저장 가능하나, 자동이 아니라 선택이 필요하므로
-        // 조용한 다운로드 방식 우선 사용
-      }
-
-      // Android: 다운로드 → 갤러리에 자동 등록 (Downloads 폴더 → 갤러리 앱에 노출)
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = fname;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
+      a.href = url; a.download = fname; a.style.display = 'none';
+      document.body.appendChild(a); a.click();
       setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 3000);
-
-    }catch(e){
-      // 자동저장 실패해도 앱 기능에는 영향 없음 (조용히 무시)
-      console.warn('갤러리 자동저장 실패:', e.message);
-    }
+    }catch(e){ console.warn('갤러리 자동저장 실패:', e.message); }
   }
 
   function readAsDataURL(file){
@@ -3433,8 +3731,8 @@
         imgSeq++;
         const fname=`image${imgSeq}.jpg`;
         mediaFiles[fname]=bytes;
-        const cx=cxEmu||Math.round(7.2*360000);  // 7.2cm
-        const cy=cyEmu||Math.round(9.3*360000);  // 9.3cm
+        const cx = Math.round(7.2 * 360000);  // 7.2cm 고정
+        const cy = Math.round(9.3 * 360000);  // 9.3cm 고정
         const rid=`rImg${imgSeq}`;
         mediaFiles[`__r${imgSeq}`]={rid, fname};
         return `<w:r><w:rPr/><w:drawing>`+
@@ -3643,8 +3941,8 @@
         const photos = loc.photos||[];
         const PHOTO_TW = TW;
         const PHOTO_C  = Math.round(PHOTO_TW/2);
-        const PHOTO_CX = Math.round(6.5*360000);
-        const PHOTO_CY = Math.round(8.0*360000);
+        const PHOTO_CX = Math.round(7.2*360000);  // 7.2cm 고정
+        const PHOTO_CY = Math.round(9.3*360000);  // 9.3cm 고정
 
         body +=
           `<w:tbl><w:tblPr><w:tblW w:w="${PHOTO_TW}" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr>`+
@@ -3890,13 +4188,6 @@ ${bad.length>0?`
   }
   init();
 })();
-</script>
-  <script>
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/YOUNMOON-APP/service-worker.js')
-    .then(()=> console.log('SW 등록 완료'))
-    .catch(e=> console.log('SW 오류:', e));
-}
 </script>
 </body>
 </html>

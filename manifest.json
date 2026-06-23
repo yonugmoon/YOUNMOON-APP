@@ -1,6 +1,6 @@
 {
-  "name": "정보통신설비 현장점검",
-  "short_name": "KT현장점검",
+"name": "KTMOS 정보통신 현장점검",
+"short_name": "kt MOS",
   "description": "TTA K-10.0303 기준 정보통신설비 현장점검 앱",
   "start_url": "/YOUNMOON-APP/정보통신설비_현장점검.html",
   "scope": "/YOUNMOON-APP/",

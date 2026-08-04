@@ -1,6 +1,6 @@
 const CACHE_NAME = 'kt-inspection-v1';
 const FILES = [
-  '/YOUNMOON-APP/정보통신설비_현장점검.html',
+  '/YOUNMOON-APP/kt_MOS북부_v143 (4).html',
   '/YOUNMOON-APP/manifest.json'
 ];
 

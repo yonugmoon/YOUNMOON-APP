@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b1220">
+<title>RepiQ 현장수집 · 도면-설비 연동 DB 현행화</title>
+<style>
+:root{
+  --bg:#0b1220; --panel:#111a2e; --panel-2:#0e1626; --line:#1e2b45;
+  --ink:#e8edf7; --ink-dim:#9fb0cc; --ink-faint:#64748b;
+  --brand:#3bd6c6; --brand-2:#2a9df4; --warn:#f4b740; --bad:#f4685f; --good:#4ad991;
+  --chip:#16233c; --shadow:0 8px 30px rgba(0,0,0,.35);
+  --r:14px; --r-sm:10px;
+  --mono:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;overscroll-behavior-y:none}
+body{padding-bottom:78px}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:15px}
+.muted{color:var(--ink-dim)}
+.faint{color:var(--ink-faint)}
+.mono{font-family:var(--mono)}
+
+/* ---- Top bar ---- */
+header{position:sticky;top:0;z-index:40;background:linear-gradient(180deg,#0d1526,#0b1220);border-bottom:1px solid var(--line);backdrop-filter:blur(8px)}
+.bar{display:flex;align-items:center;gap:10px;padding:12px 16px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.02em;font-size:18px}
+.logo .dot{width:11px;height:11px;border-radius:3px;background:conic-gradient(from 210deg,var(--brand),var(--brand-2));box-shadow:0 0 14px var(--brand)}
+.logo small{font-weight:600;color:var(--ink-dim);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.bar .site{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-dim);max-width:46vw}
+.bar .site b{color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.key-pill{font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--line);background:var(--chip);white-space:nowrap}
+.key-pill.ok{color:var(--good);border-color:#1c3d33}
+.key-pill.no{color:var(--warn);border-color:#3d341c}
+
+/* ---- Layout ---- */
+main{max-width:820px;margin:0 auto;padding:14px 14px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.card + .card{margin-top:14px}
+.card-h{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line)}
+.card-h .n{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:12px;font-weight:800;background:var(--chip);color:var(--brand);font-family:var(--mono)}
+.card-h h2{font-size:15.5px}
+.card-h .sub{margin-left:auto;font-size:12px;color:var(--ink-dim)}
+.card-b{padding:15px}
+
+/* ---- Buttons ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 15px;border-radius:var(--r-sm);font-weight:600;font-size:14px;background:var(--chip);border:1px solid var(--line);color:var(--ink);transition:.12s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:linear-gradient(180deg,var(--brand),#22b3a5);color:#04201d;border-color:transparent;box-shadow:0 4px 14px rgba(59,214,198,.28)}
+.btn.blue{background:linear-gradient(180deg,var(--brand-2),#1e83d6);color:#031627;border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.sm{padding:8px 11px;font-size:13px;border-radius:9px}
+.btn.wide{width:100%}
+.btn.danger{color:var(--bad);border-color:#3d2020}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn .sp{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.row{display:flex;gap:9px;flex-wrap:wrap}
+.row.tight{gap:7px}
+
+/* ---- Fields ---- */
+label.fld{display:block;margin-bottom:11px}
+label.fld > span{display:block;font-size:12px;color:var(--ink-dim);margin-bottom:5px;font-weight:600}
+.inp,select.inp,textarea.inp{width:100%;padding:11px 12px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--panel-2);color:var(--ink);outline:none}
+.inp:focus{border-color:var(--brand-2)}
+textarea.inp{resize:vertical;min-height:60px;line-height:1.45}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+
+/* ---- Chips / categories ---- */
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{padding:8px 11px;border-radius:20px;border:1px solid var(--line);background:var(--panel-2);font-size:12.5px;color:var(--ink-dim);display:flex;align-items:center;gap:6px;transition:.1s}
+.chip.on{background:var(--chip);border-color:var(--brand);color:var(--ink)}
+.chip.on .k{color:var(--brand)}
+.chip .k{font-family:var(--mono);font-size:10.5px;opacity:.8}
+.chip .c{background:var(--brand);color:#04201d;border-radius:11px;font-size:10.5px;font-weight:800;padding:1px 6px;min-width:16px;text-align:center}
+
+/* ---- Photo tiles ---- */
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:9px;margin-top:12px}
+.shot{position:relative;aspect-ratio:1;border-radius:var(--r-sm);overflow:hidden;background:var(--panel-2);border:1px solid var(--line)}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.shot .tag{position:absolute;left:0;bottom:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.82),transparent);padding:14px 6px 5px;font-size:10px;font-weight:600;line-height:1.2}
+.shot .tag .t{color:#fff;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shot .tag .s{color:var(--brand);font-family:var(--mono);font-size:9px}
+.shot .del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:7px;background:rgba(6,10,20,.75);color:#fff;font-size:13px;display:grid;place-items:center;line-height:1}
+.shot .st{position:absolute;top:4px;left:4px;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.4)}
+.shot.plan{border-style:dashed;border-color:var(--brand-2)}
+.shot.add{border-style:dashed;display:grid;place-items:center;color:var(--ink-dim);font-size:12px;text-align:center;gap:4px;cursor:pointer}
+.shot.add .plus{font-size:24px;line-height:1;color:var(--brand)}
+.st.q0{background:var(--ink-faint)} .st.q1{background:var(--warn)} .st.q2{background:var(--good)} .st.qx{background:var(--bad)}
+
+/* ---- AI result ---- */
+.link-row{display:flex;gap:10px;padding:11px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel-2);margin-bottom:9px;align-items:flex-start}
+.link-row .lp{width:52px;height:52px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--chip)}
+.link-row .meta{flex:1;min-width:0}
+.link-row .meta .nm{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.link-row .meta .kv{font-size:12px;color:var(--ink-dim);margin-top:3px;font-family:var(--mono)}
+.badge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.02em}
+.badge.match{background:#12332b;color:var(--good)}
+.badge.new{background:#123047;color:var(--brand-2)}
+.badge.miss{background:#3a2320;color:var(--bad)}
+.badge.chk{background:#3a331a;color:var(--warn)}
+.conf{height:4px;border-radius:3px;background:var(--line);margin-top:7px;overflow:hidden}
+.conf i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand-2))}
+
+/* ---- Empty / hint ---- */
+.empty{padding:26px 16px;text-align:center;color:var(--ink-dim);font-size:13.5px}
+.empty .ic{font-size:30px;margin-bottom:8px;opacity:.5}
+.hint{font-size:12px;color:var(--ink-faint);margin-top:8px;line-height:1.5}
+.divider{height:1px;background:var(--line);margin:14px 0}
+
+/* ---- Stat strip ---- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line)}
+.stats .s{background:var(--panel-2);padding:11px 6px;text-align:center}
+.stats .s b{display:block;font-size:20px;font-weight:800;font-family:var(--mono)}
+.stats .s span{font-size:10.5px;color:var(--ink-dim)}
+.stats .s.g b{color:var(--good)} .stats .s.b b{color:var(--brand-2)} .stats .s.w b{color:var(--warn)} .stats .s.r b{color:var(--bad)}
+
+/* ---- Bottom nav ---- */
+nav{position:fixed;bottom:0;left:0;right:0;z-index:45;background:rgba(11,18,32,.92);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:10px;color:var(--ink-faint);font-size:10.5px;font-weight:600}
+nav button .ni{font-size:19px;line-height:1}
+nav button.on{color:var(--brand)}
+nav button.on .ni{filter:drop-shadow(0 0 8px var(--brand))}
+nav button .bdg{position:absolute;transform:translate(14px,-4px);background:var(--bad);color:#fff;font-size:9px;font-weight:800;border-radius:10px;padding:0 5px;min-width:15px;text-align:center}
+
+/* ---- Sheet / modal ---- */
+.scrim{position:fixed;inset:0;background:rgba(4,8,16,.6);z-index:60;opacity:0;pointer-events:none;transition:.2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--panel);border-radius:20px 20px 0 0;border-top:1px solid var(--line);transform:translateY(100%);transition:.26s cubic-bezier(.3,.9,.3,1);max-height:88vh;display:flex;flex-direction:column}
+.sheet.on{transform:none}
+.sheet .grip{width:38px;height:4px;border-radius:3px;background:var(--line);margin:9px auto 3px}
+.sheet .sh-h{display:flex;align-items:center;padding:8px 16px 12px;border-bottom:1px solid var(--line)}
+.sheet .sh-h h3{font-size:16px}
+.sheet .sh-h .x{margin-left:auto;width:30px;height:30px;border-radius:9px;background:var(--chip);display:grid;place-items:center;font-size:16px}
+.sheet .sh-b{padding:15px 16px;overflow-y:auto}
+.pages{display:none}
+.pages.on{display:block;animation:fade .2s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}}
+
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a2740;border:1px solid var(--line);color:var(--ink);padding:11px 18px;border-radius:24px;font-size:13.5px;font-weight:600;z-index:80;box-shadow:var(--shadow);opacity:0;transition:.24s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.good{border-color:#1c3d33;color:var(--good)}
+.toast.bad{border-color:#3d2020;color:var(--bad)}
+
+.seg{display:flex;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:3px;gap:3px}
+.seg button{flex:1;padding:8px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink-dim)}
+.seg button.on{background:var(--chip);color:var(--ink)}
+
+.note{font-size:12px;padding:10px 12px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);line-height:1.55}
+.note b{color:var(--ink)}
+kbd{font-family:var(--mono);font-size:11px;background:var(--chip);padding:1px 6px;border-radius:5px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="logo"><span class="dot"></span>RepiQ<small>현장수집</small></div>
+    <div class="site">
+      <b id="siteLabel">사업장 미선택</b>
+      <span class="key-pill no" id="keyPill" onclick="ui.openSheet('settings')">API 키 없음</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ===== 1. 수집 (Collect) ===== -->
+  <section class="pages on" id="page-collect"></section>
+  <!-- ===== 2. 연동 (Link/AI) ===== -->
+  <section class="pages" id="page-link"></section>
+  <!-- ===== 3. 대장 (DB) ===== -->
+  <section class="pages" id="page-db"></section>
+</main>
+
+<nav>
+  <button class="on" data-tab="collect" onclick="ui.tab('collect')"><span class="ni">📷</span>수집</button>
+  <button data-tab="link" onclick="ui.tab('link')"><span class="ni">🔗</span>AI 연동<span class="bdg" id="linkBadge" style="display:none">0</span></button>
+  <button data-tab="db" onclick="ui.tab('db')"><span class="ni">🗂️</span>대장·현행화</button>
+</nav>
+
+<!-- Sheet -->
+<div class="scrim" id="scrim" onclick="ui.closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="grip"></div>
+  <div class="sh-h"><h3 id="sheetTitle">제목</h3><button class="x" onclick="ui.closeSheet()">✕</button></div>
+  <div class="sh-b" id="sheetBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<input type="file" id="filePlan" accept="image/*" capture="environment" hidden>
+<input type="file" id="fileEquip" accept="image/*" capture="environment" hidden multiple>
+<input type="file" id="fileImport" accept="application/json" hidden>
+
+<script>
+/* ============================================================
+   RepiQ 현장수집 · 데이터 모듈
+   - 34종 정보통신설비 장비 분류 (TTA K-10.0303 / 과기정통부 고시 기준)
+   - AI(Gemini Vision) 프롬프트 정의
+   - kb-core 연동을 위한 보정 규칙 스텁
+   ============================================================ */
+
+/* 34종 장비 분류.
+   code : 대장/파일 식별용 짧은 키
+   name : 화면 표기명
+   group: 분류(구내통신/방송공동수신/구내방송/전송/전원/기타)
+   fields: AI가 사진에서 추출을 시도할 핵심 규격 항목
+   planSym: 도면에서 찾을 대표 심볼/약어 힌트                        */
+const EQUIP_CATS = [
+  // ── 구내통신선로설비 ──
+  {code:"MDF",   name:"국선단자함(MDF)",       group:"구내통신", fields:["제조사","모델명","단자수","설치위치"], planSym:["MDF","국선단자함"]},
+  {code:"IDF",   name:"층단자함(IDF/TPS)",     group:"구내통신", fields:["제조사","모델명","단자수","층/구역"], planSym:["IDF","TPS","층단자함"]},
+  {code:"CABLE", name:"구내통신케이블",         group:"구내통신", fields:["종류(UTP/광/동)","규격(Cat6 등)","가닥/코어수","모델명"], planSym:["UTP","F/O","광","동"]},
+  {code:"CONDUIT",name:"배관·배선(전선관/트레이)",group:"구내통신", fields:["종류(EMT/PVC/트레이)","규격(mm)","경로"], planSym:["EMT","트레이","전선관","PB"]},
+  {code:"PULLBOX",name:"풀박스·접속함",         group:"구내통신", fields:["규격(mm)","재질","설치위치"], planSym:["PB","풀박스","접속함"]},
+  {code:"OUTLET",name:"세대·구내 단자(정보인출구)",group:"구내통신", fields:["형식(RJ45/광)","제조사","포트수"], planSym:["TO","인출구","콘센트"]},
+  {code:"WORKSP",name:"세대단자함·세대통신함",   group:"구내통신", fields:["제조사","모델명","규격","설치위치"], planSym:["세대단자함","통신함"]},
+  {code:"ONU",   name:"광선로종단장치(ONU/광함체)",group:"구내통신", fields:["제조사","모델명","포트/코어수"], planSym:["ONU","광함체","FDF"]},
+  {code:"FDF",   name:"광분배함(FDF/광단자함)",  group:"구내통신", fields:["제조사","모델명","코어수","어댑터형식"], planSym:["FDF","광분배","ODF"]},
+  // ── 이동통신 구내선로설비 ──
+  {code:"INBLD", name:"이동통신 구내중계설비",   group:"구내통신", fields:["사업자","장비명","안테나수"], planSym:["중계기","안테나","IBS"]},
+  {code:"ANT",   name:"안테나·급전선",           group:"구내통신", fields:["형식","제조사","설치위치"], planSym:["안테나","ANT","급전선"]},
+  // ── 방송공동수신설비 ──
+  {code:"HEADEND",name:"방송공동수신 헤드엔드",  group:"방송수신", fields:["제조사","모델명","채널수"], planSym:["헤드엔드","증폭기"]},
+  {code:"AMP",   name:"증폭기·분배기·분기기",    group:"방송수신", fields:["형식","제조사","규격(dB)"], planSym:["AMP","분배기","분기기"]},
+  {code:"TAP",   name:"직렬단자(TAP)·세대단자",  group:"방송수신", fields:["형식","제조사","분배수"], planSym:["TAP","직렬단자"]},
+  {code:"SATANT",name:"위성·지상파 안테나",      group:"방송수신", fields:["형식","제조사","규격"], planSym:["위성","안테나","파라볼라"]},
+  {code:"COAX",  name:"동축케이블(방송)",        group:"방송수신", fields:["규격","제조사","경로"], planSym:["동축","COAX","HFBT"]},
+  // ── 구내방송설비 ──
+  {code:"PAAMP", name:"방송용 앰프·매트릭스",    group:"구내방송", fields:["제조사","모델명","출력(W)","존수"], planSym:["앰프","AMP","방송장비"]},
+  {code:"SPK",   name:"스피커(구내방송)",        group:"구내방송", fields:["형식","제조사","출력(W)"], planSym:["SP","스피커","SPK"]},
+  {code:"MIC",   name:"방송 입력·마이크·소스",   group:"구내방송", fields:["형식","제조사","채널"], planSym:["MIC","입력장치"]},
+  // ── 전송·통신망 ──
+  {code:"SW",    name:"L2/L3 스위치·허브",       group:"전송", fields:["제조사","모델명","포트수","PoE여부"], planSym:["SW","스위치","HUB"]},
+  {code:"ROUTER",name:"라우터·게이트웨이",       group:"전송", fields:["제조사","모델명","회선"], planSym:["R","라우터","GW"]},
+  {code:"OLT",   name:"OLT/광가입자망장치",      group:"전송", fields:["제조사","모델명","포트수"], planSym:["OLT","광가입자"]},
+  {code:"RACK",  name:"통신랙·서버랙",           group:"전송", fields:["규격(U)","제조사","설치수량"], planSym:["RACK","랙","캐비닛"]},
+  {code:"PATCH", name:"패치패널·정리함",         group:"전송", fields:["포트수","형식","제조사"], planSym:["PP","패치","패널"]},
+  // ── 전원·보호 ──
+  {code:"UPS",   name:"UPS·무정전전원",          group:"전원", fields:["제조사","모델명","용량(kVA)"], planSym:["UPS","무정전"]},
+  {code:"PDU",   name:"분전반·PDU",              group:"전원", fields:["제조사","회로수","용량(A)"], planSym:["PDU","분전반","MCCB"]},
+  {code:"RECT",  name:"정류기·축전지",           group:"전원", fields:["제조사","모델명","용량"], planSym:["정류기","축전지","BATT"]},
+  {code:"GND",   name:"접지설비",                group:"전원", fields:["접지형식","저항값(Ω)","위치"], planSym:["접지","EARTH","GND"]},
+  {code:"SPD",   name:"서지보호기(SPD)·피뢰",    group:"전원", fields:["형식","제조사","정격"], planSym:["SPD","서지","피뢰"]},
+  // ── 부대·기타 ──
+  {code:"ENVMON",name:"환경감시(온습도/누수)",   group:"기타", fields:["제조사","모델명","감지항목"], planSym:["감지기","센서","환경"]},
+  {code:"CCTV",  name:"영상감시(CCTV)",          group:"기타", fields:["제조사","모델명","화소/수량"], planSym:["CCTV","카메라","CAM"]},
+  {code:"ACCESS",name:"출입통제·방범",           group:"기타", fields:["제조사","모델명","설치위치"], planSym:["출입","리더기","경보"]},
+  {code:"AIRCON",name:"항온항습·냉방",           group:"기타", fields:["제조사","모델명","용량"], planSym:["항온항습","AC","냉방"]},
+  {code:"ETC",   name:"기타 정보통신설비",       group:"기타", fields:["명칭","제조사","규격"], planSym:[]},
+];
+
+const EQUIP_GROUPS = ["구내통신","방송수신","구내방송","전송","전원","기타"];
+const CAT_BY_CODE = Object.fromEntries(EQUIP_CATS.map(c=>[c.code,c]));
+
+/* ============================================================
+   AI 프롬프트 — Gemini Vision (gemini-2.0-flash 계열)
+   두 단계로 사용:
+   (A) 도면 해석 : 층/구역 도면에서 심볼·실명(室名)·설비 위치 추출
+   (B) 설비 판독 : 설비 사진에서 모델명/규격 추출
+   (C) 연동 매칭 : 도면 해석 결과 + 설비 판독 결과를 매칭
+   모든 응답은 JSON only (마크다운/설명 금지)
+   ============================================================ */
+const AI = {
+  // (A) 도면에서 설비 심볼/위치 추출
+  planPrompt(ctx){
+    const cats = EQUIP_CATS.map(c=>`${c.code}:${c.name}(심볼힌트 ${c.planSym.join("/")||"-"})`).join("\n");
+    return `너는 정보통신설비 점검 전문가다. 첨부한 "구내통신/방송/전원 계통도 또는 평면 도면" 사진을 분석한다.
+사업장: ${ctx.site||"미상"} / 도면구분: ${ctx.planName||"미상"}
+
+목표: 도면에 표기된 정보통신설비를 아래 34종 분류에 매핑하여 위치와 함께 추출한다.
+[34종 분류]
+${cats}
+
+규칙:
+- 도면의 실명(예: TPS실, MDF실, 통신실, 전기실), 층/동 정보를 최대한 읽어라.
+- 각 설비의 표기 규격(예: UTP Cat6 24C, 광 12C, EMT 36Φ)이 있으면 그대로 옮겨라.
+- 확실치 않으면 confidence를 낮추고 note에 근거를 적어라.
+- 반드시 JSON만 출력. 마크다운/설명 금지.
+
+출력 형식:
+{
+ "plan_scope": "도면이 포괄하는 범위 (예: 지하1층 통신 계통)",
+ "locations": ["TPS실(3F)","MDF실(B1)", ...],
+ "items": [
+   {"code":"IDF","label":"3층 TPS 단자함","loc":"3F TPS실","spec":"UTP Cat6 24C","qty":1,"confidence":0.0~1.0,"note":""}
+ ]
+}`;
+  },
+
+  // (B) 설비 사진에서 규격 추출
+  equipPrompt(cat, ctx){
+    const flds = cat.fields.join(", ");
+    return `너는 정보통신설비 점검 전문가다. 첨부한 "${cat.name}" 현장 설비 사진을 판독한다.
+사업장: ${ctx.site||"미상"} / 촬영위치 메모: ${ctx.locNote||"없음"}
+
+목표: 사진 속 명판·라벨·형태로부터 아래 항목을 최대한 정확히 추출한다.
+추출항목: ${flds}
+
+규칙:
+- 명판(nameplate)의 제조사/모델명/규격을 글자 그대로 읽어라. 흐릿하면 읽은 그대로 두고 confidence를 낮춰라.
+- 케이블은 피복 인쇄(예: CAT.6 U/UTP 4P 24AWG)를 읽어라.
+- 사진에 여러 설비가 있으면 주(主) 설비 1건만 판독하고 note에 그 외 설비 존재를 적어라.
+- 판독 불가/사진품질 문제는 quality에 표기.
+- 반드시 JSON만 출력.
+
+출력 형식:
+{
+ "code":"${cat.code}",
+ "name":"${cat.name}",
+ "extracted":{ ${cat.fields.map(f=>`"${f}":""`).join(", ")} },
+ "text_found":"명판에서 읽어낸 원문",
+ "quality":"good|blurry|dark|angle|no_label",
+ "confidence":0.0~1.0,
+ "note":""
+}`;
+  },
+
+  // (C) 도면 항목 ↔ 설비 판독 매칭
+  matchPrompt(planItems, equipReads, ctx){
+    return `너는 정보통신설비 DB 현행화 담당자다.
+아래 [도면추출 설비]와 [현장 설비사진 판독]을 대조하여 최신 설비대장을 만든다.
+사업장: ${ctx.site||"미상"}
+
+[도면추출 설비]
+${JSON.stringify(planItems,null,1)}
+
+[현장 설비사진 판독]
+${JSON.stringify(equipReads,null,1)}
+
+규칙:
+- 같은 code + 유사 위치/규격이면 매칭(status="match")하고 도면값을 사진 실측값으로 갱신.
+- 도면엔 있으나 사진 없음 → status="plan_only"(현장 확인 필요).
+- 사진엔 있으나 도면에 없음 → status="field_new"(도면 미반영 신규).
+- 규격이 도면≠사진이면 status="mismatch"로 두고 both 값을 남겨라.
+- 위치(loc)는 도면/사진 중 더 구체적인 값을 채택.
+- 반드시 JSON만 출력.
+
+출력 형식:
+{
+ "roster":[
+  {"code":"IDF","name":"3층 TPS 단자함","loc":"3F TPS실",
+   "spec_final":"UTP Cat6 24C","spec_plan":"","spec_field":"",
+   "status":"match|plan_only|field_new|mismatch",
+   "planRef":"도면항목 label","photoRef":"설비사진 id 또는 text_found",
+   "action":"현행화 조치 요약(예: 규격 갱신, 현장 재확인)","confidence":0.0~1.0}
+ ],
+ "summary":{"match":0,"plan_only":0,"field_new":0,"mismatch":0}
+}`;
+  }
+};
+
+/* kb-core 보정 규칙 훅 (있으면 사용) — 없으면 통과 */
+function kbApply(kind, obj){
+  try{ if(window.kbCore && typeof kbCore.correct==="function") return kbCore.correct(kind,obj); }catch(e){}
+  return obj;
+}
+
+window.REPIQ_DATA = { EQUIP_CATS, EQUIP_GROUPS, CAT_BY_CODE, AI, kbApply };
+
+</script>
+<script>
+/* ============================================================
+   RepiQ 현장수집 · 메인 앱
+   저장: IndexedDB(사진 blob) + localStorage(메타/설정)
+   AI  : Gemini Vision REST (사용자 키, 클라이언트 직접호출)
+   패턴: 단일 상태객체 + 렌더 함수, 프레임워크 없음
+   ============================================================ */
+const { EQUIP_CATS, EQUIP_GROUPS, CAT_BY_CODE, AI, kbApply } = window.REPIQ_DATA;
+
+/* ---------- 유틸 ---------- */
+const $ = s => document.querySelector(s);
+const el = (t,c,h)=>{const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e;};
+const uid = p => (p||"") + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const esc = s => (s==null?"":String(s)).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const now = () => new Date().toISOString();
+const fmt = iso => { if(!iso) return "-"; const d=new Date(iso); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+
+function toast(msg, kind){
+  const t=$("#toast"); t.textContent=msg; t.className="toast on"+(kind?" "+kind:"");
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.className="toast",2200);
+}
+
+/* ---------- IndexedDB (사진 blob 저장) ---------- */
+const DB = {
+  _db:null,
+  open(){ return new Promise((res,rej)=>{
+    if(this._db) return res(this._db);
+    const r=indexedDB.open("repiq_field",1);
+    r.onupgradeneeded=e=>{ const db=e.target.result;
+      if(!db.objectStoreNames.contains("photos")) db.createObjectStore("photos"); };
+    r.onsuccess=e=>{ this._db=e.target.result; res(this._db); };
+    r.onerror=e=>rej(e.target.error);
+  });},
+  async put(id, blob){ const db=await this.open(); return new Promise((res,rej)=>{
+    const tx=db.transaction("photos","readwrite"); tx.objectStore("photos").put(blob,id);
+    tx.oncomplete=()=>res(id); tx.onerror=e=>rej(e.target.error); });},
+  async get(id){ const db=await this.open(); return new Promise((res,rej)=>{
+    const tx=db.transaction("photos","readonly"); const rq=tx.objectStore("photos").get(id);
+    rq.onsuccess=()=>res(rq.result); rq.onerror=e=>rej(e.target.error); });},
+  async del(id){ const db=await this.open(); return new Promise((res)=>{
+    const tx=db.transaction("photos","readwrite"); tx.objectStore("photos").delete(id);
+    tx.oncomplete=()=>res(); });}
+};
+const _urlCache={};
+async function photoURL(id){
+  if(_urlCache[id]) return _urlCache[id];
+  const b=await DB.get(id); if(!b) return "";
+  const u=URL.createObjectURL(b); _urlCache[id]=u; return u;
+}
+
+/* ---------- 이미지 리사이즈(업로드 전 축소) ---------- */
+function resizeImage(file, max=1600, q=0.82){
+  return new Promise((res)=>{
+    const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      let{width:w,height:h}=img;
+      if(Math.max(w,h)>max){ const r=max/Math.max(w,h); w=Math.round(w*r); h=Math.round(h*r); }
+      const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+      cv.getContext("2d").drawImage(img,0,0,w,h);
+      cv.toBlob(b=>{ URL.revokeObjectURL(url); res(b); },"image/jpeg",q);
+    };
+    img.onerror=()=>res(file);
+    img.src=url;
+  });
+}
+function blobToBase64(blob){ return new Promise((res)=>{ const r=new FileReader();
+  r.onload=()=>res(r.result.split(",")[1]); r.readAsDataURL(blob); }); }
+
+/* ---------- 상태 ---------- */
+const LS_KEY="repiq_field_state";
+let S = load();
+function load(){
+  try{ const raw=localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return blankState();
+}
+function blankState(){
+  return {
+    apiKey:"", model:"gemini-2.0-flash",
+    site:"", siteNote:"",
+    plans:[],   // {id, name, photoId, loc, ai:{plan_scope,locations,items[]}, parsedAt}
+    equips:[],  // {id, code, photoId, locNote, ai:{extracted,text_found,quality,confidence}, readAt}
+    roster:[],  // 매칭 결과 {code,name,loc,spec_final,...,status}
+    linkedAt:null,
+    tab:"collect",
+  };
+}
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){ toast("저장공간 부족",("bad")); } }
+
+/* ---------- Gemini 호출 ---------- */
+async function callGemini(prompt, imageBlobs){
+  if(!S.apiKey) throw new Error("API 키가 없습니다. 우측 상단에서 등록하세요.");
+  const parts=[{text:prompt}];
+  for(const b of (imageBlobs||[])){
+    parts.push({inline_data:{mime_type:"image/jpeg", data:await blobToBase64(b)}});
+  }
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${S.model}:generateContent?key=${encodeURIComponent(S.apiKey)}`;
+  const body={contents:[{role:"user",parts}],
+    generationConfig:{temperature:0.1, maxOutputTokens:2048, responseMimeType:"application/json"}};
+  const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok){ const t=await r.text(); throw new Error(`AI 오류 ${r.status}: ${t.slice(0,160)}`); }
+  const j=await r.json();
+  const txt=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
+  return parseJSON(txt);
+}
+function parseJSON(txt){
+  let t=(txt||"").trim().replace(/^```json/i,"").replace(/^```/,"").replace(/```$/,"").trim();
+  try{ return JSON.parse(t); }catch(e){
+    const m=t.match(/\{[\s\S]*\}/); if(m){ try{ return JSON.parse(m[0]); }catch(_){} }
+    throw new Error("AI 응답 파싱 실패");
+  }
+}
+
+/* ============================================================
+   UI 컨트롤러
+   ============================================================ */
+const ui = {
+  tab(name){
+    S.tab=name; save();
+    document.querySelectorAll(".pages").forEach(p=>p.classList.toggle("on", p.id==="page-"+name));
+    document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.tab===name));
+    render();
+    window.scrollTo(0,0);
+  },
+  openSheet(kind, arg){
+    this._sheet=kind; this._arg=arg;
+    const map={settings:"설정 · API 키", site:"사업장 정보", cat:"장비 종류 선택", detail:"항목 상세"};
+    $("#sheetTitle").textContent=map[kind]||"";
+    $("#sheetBody").innerHTML=""; sheets[kind]?.($("#sheetBody"), arg);
+    $("#scrim").classList.add("on"); $("#sheet").classList.add("on");
+  },
+  closeSheet(){ $("#scrim").classList.remove("on"); $("#sheet").classList.remove("on"); },
+};
+window.ui=ui;
+
+/* ---------- 상단 표시 갱신 ---------- */
+function syncHeader(){
+  $("#siteLabel").textContent = S.site ? S.site : "사업장 미선택";
+  const pill=$("#keyPill");
+  if(S.apiKey){ pill.className="key-pill ok"; pill.textContent="AI 연결됨"; }
+  else{ pill.className="key-pill no"; pill.textContent="API 키 없음"; }
+  const pending = S.plans.length && S.equips.length && !S.linkedAt;
+  const badge=$("#linkBadge");
+  const n=S.equips.filter(e=>!e.ai).length + (pending?1:0);
+  if(n>0){ badge.style.display=""; badge.textContent=n; } else badge.style.display="none";
+}
+
+/* ============================================================
+   렌더 — 페이지별
+   ============================================================ */
+function render(){
+  syncHeader();
+  if(S.tab==="collect") renderCollect();
+  if(S.tab==="link") renderLink();
+  if(S.tab==="db") renderDB();
+}
+
+/* ---- 페이지 1: 수집 ---- */
+function renderCollect(){
+  const root=$("#page-collect"); root.innerHTML="";
+
+  // 사업장 카드
+  const c0=el("div","card");
+  c0.innerHTML=`
+    <div class="card-h"><span class="n">사</span><h2>사업장</h2>
+      <button class="sub btn ghost sm" onclick="ui.openSheet('site')">편집 ›</button></div>
+    <div class="card-b">
+      ${S.site ? `<div style="font-weight:600;font-size:16px">${esc(S.site)}</div>
+        <div class="muted" style="font-size:13px;margin-top:3px">${esc(S.siteNote)||"메모 없음"}</div>`
+      : `<div class="empty" style="padding:8px 0"><div class="faint">먼저 사업장을 입력하세요. 수집 데이터가 이 사업장으로 묶입니다.</div>
+         <button class="btn pri sm" style="margin-top:10px" onclick="ui.openSheet('site')">사업장 입력</button></div>`}
+    </div>`;
+  root.appendChild(c0);
+
+  // 도면 카드
+  const c1=el("div","card");
+  c1.innerHTML=`
+    <div class="card-h"><span class="n">1</span><h2>도면 사진</h2>
+      <span class="sub">${S.plans.length}장</span></div>
+    <div class="card-b">
+      <div class="hint">층/구역별 계통도·평면도를 촬영합니다. AI가 도면에서 설비 심볼과 위치(TPS실·MDF실 등)를 읽어냅니다.</div>
+      <div class="shots" id="planShots"></div>
+    </div>`;
+  root.appendChild(c1);
+  renderPlanShots();
+
+  // 설비 카드
+  const c2=el("div","card");
+  const grouped=EQUIP_GROUPS.map(g=>{
+    const cats=EQUIP_CATS.filter(c=>c.group===g);
+    return {g,cats};
+  });
+  c2.innerHTML=`
+    <div class="card-h"><span class="n">2</span><h2>설비 사진 · 34종</h2>
+      <span class="sub">${S.equips.length}장</span></div>
+    <div class="card-b">
+      <div class="hint">해당 사업장에 있는 장비 종류를 눌러 촬영합니다. TPS실 통신케이블 모델명·배관·단자함 등 명판이 보이게 찍으면 AI 판독률이 올라갑니다.</div>
+      <div id="catList"></div>
+      <div class="divider"></div>
+      <div class="shots" id="equipShots"></div>
+    </div>`;
+  root.appendChild(c2);
+  renderCatList();
+  renderEquipShots();
+
+  // 진행 안내
+  const c3=el("div","card");
+  const canLink = S.plans.length && S.equips.length;
+  c3.innerHTML=`<div class="card-b" style="display:flex;gap:10px;align-items:center">
+    <div style="flex:1"><b>다음 단계 · AI 연동</b>
+      <div class="muted" style="font-size:12.5px;margin-top:2px">
+        도면 ${S.plans.length} · 설비 ${S.equips.length} · 미판독 ${S.equips.filter(e=>!e.ai).length}</div></div>
+    <button class="btn ${canLink?'pri':''}" ${canLink?"":"disabled"} onclick="ui.tab('link')">연동 →</button>
+  </div>`;
+  root.appendChild(c3);
+}
+
+async function renderPlanShots(){
+  const box=$("#planShots"); if(!box) return; box.innerHTML="";
+  for(const p of S.plans){
+    const t=el("div","shot plan");
+    const q = p.ai ? (p.ai.items?.length?2:1) : 0;
+    t.innerHTML=`<span class="st q${q}"></span>
+      <div class="tag"><span class="t">${esc(p.name||"도면")}</span>
+      <span class="s">${p.ai?`설비 ${p.ai.items?.length||0}`:"미해석"}</span></div>
+      <button class="del" onclick="event.stopPropagation();delPlan('${p.id}')">✕</button>`;
+    t.onclick=()=>ui.openSheet("detail",{type:"plan",id:p.id});
+    box.appendChild(t);
+    if(p.photoId){ const img=el("img"); img.src=await photoURL(p.photoId); t.insertBefore(img,t.firstChild); }
+  }
+  const add=el("div","shot add","<span class='plus'>+</span><span>도면 촬영</span>");
+  add.onclick=()=>{ if(!S.site){toast("먼저 사업장을 입력하세요","bad");return;} $("#filePlan").click(); };
+  box.appendChild(add);
+}
+
+function renderCatList(){
+  const box=$("#catList"); if(!box) return; box.innerHTML="";
+  const counts={}; S.equips.forEach(e=>counts[e.code]=(counts[e.code]||0)+1);
+  for(const g of EQUIP_GROUPS){
+    const wrap=el("div"); wrap.style.marginBottom="10px";
+    wrap.innerHTML=`<div style="font-size:11px;color:var(--ink-faint);font-weight:700;letter-spacing:.04em;margin:6px 0 7px">${g}</div>`;
+    const chips=el("div","chips");
+    EQUIP_CATS.filter(c=>c.group===g).forEach(c=>{
+      const n=counts[c.code]||0;
+      const chip=el("button","chip"+(n?" on":""));
+      chip.innerHTML=`<span class="k">${c.code}</span>${esc(c.name)}${n?`<span class="c">${n}</span>`:""}`;
+      chip.onclick=()=>{ if(!S.site){toast("먼저 사업장을 입력하세요","bad");return;}
+        ui.openSheet("cat",c.code); };
+      chips.appendChild(chip);
+    });
+    wrap.appendChild(chips); box.appendChild(wrap);
+  }
+}
+
+async function renderEquipShots(){
+  const box=$("#equipShots"); if(!box) return; box.innerHTML="";
+  if(!S.equips.length){ box.innerHTML=`<div class="empty" style="grid-column:1/-1">
+    <div class="ic">📷</div>위 장비 종류를 눌러 설비를 촬영하세요</div>`; return; }
+  for(const e of [...S.equips].reverse()){
+    const cat=CAT_BY_CODE[e.code];
+    const q = !e.ai?0 : e.ai.quality==="no_label"||e.ai.quality==="dark"?1 : (e.ai.confidence>=.6?2:1);
+    const t=el("div","shot");
+    t.innerHTML=`<span class="st q${q}"></span>
+      <div class="tag"><span class="t">${esc(cat?.name||e.code)}</span>
+      <span class="s">${e.ai?(e.ai.extracted?.["모델명"]||e.ai.text_found||"판독됨").slice(0,14):"미판독"}</span></div>
+      <button class="del" onclick="event.stopPropagation();delEquip('${e.id}')">✕</button>`;
+    t.onclick=()=>ui.openSheet("detail",{type:"equip",id:e.id});
+    box.appendChild(t);
+    if(e.photoId){ const img=el("img"); img.src=await photoURL(e.photoId); t.insertBefore(img,t.firstChild); }
+  }
+}
+
+/* ---- 페이지 2: AI 연동 ---- */
+function renderLink(){
+  const root=$("#page-link"); root.innerHTML="";
+  const unreadPlans=S.plans.filter(p=>!p.ai).length;
+  const unreadEquip=S.equips.filter(e=>!e.ai).length;
+
+  const c0=el("div","card");
+  c0.innerHTML=`
+    <div class="card-h"><span class="n">AI</span><h2>도면·설비 판독 및 연동</h2></div>
+    <div class="card-b">
+      <div class="stats" style="margin-bottom:13px">
+        <div class="s b"><b>${S.plans.length}</b><span>도면</span></div>
+        <div class="s"><b>${S.plans.length-unreadPlans}</b><span>해석됨</span></div>
+        <div class="s b"><b>${S.equips.length}</b><span>설비</span></div>
+        <div class="s"><b>${S.equips.length-unreadEquip}</b><span>판독됨</span></div>
+      </div>
+      ${!S.apiKey?`<div class="note" style="margin-bottom:11px">⚠️ <b>API 키가 없습니다.</b> 우측 상단 <kbd>API 키 없음</kbd>을 눌러 Gemini 키를 등록하세요.</div>`:""}
+      <div class="row tight">
+        <button class="btn ${unreadPlans?'blue':''}" ${unreadPlans&&S.apiKey?"":"disabled"} id="btnPlan" onclick="runPlanAI()">
+          ① 도면 해석 ${unreadPlans?`(${unreadPlans})`:"완료"}</button>
+        <button class="btn ${unreadEquip?'blue':''}" ${unreadEquip&&S.apiKey?"":"disabled"} id="btnEquip" onclick="runEquipAI()">
+          ② 설비 판독 ${unreadEquip?`(${unreadEquip})`:"완료"}</button>
+      </div>
+      <button class="btn pri wide" style="margin-top:9px" id="btnLink"
+        ${(!unreadPlans&&!unreadEquip&&S.plans.length&&S.equips.length&&S.apiKey)?"":"disabled"} onclick="runMatch()">
+        ③ 연동 · 최신 대장 생성 ${S.linkedAt?"↻ 재생성":""}</button>
+      <div id="aiProg" class="hint" style="margin-top:10px"></div>
+    </div>`;
+  root.appendChild(c0);
+
+  // 연동 결과 프리뷰
+  if(S.roster.length){
+    const sm=rosterSummary();
+    const c1=el("div","card");
+    c1.innerHTML=`
+      <div class="card-h"><span class="n">✓</span><h2>연동 결과</h2>
+        <span class="sub">${fmt(S.linkedAt)}</span></div>
+      <div class="card-b">
+        <div class="stats" style="margin-bottom:13px">
+          <div class="s g"><b>${sm.match}</b><span>일치</span></div>
+          <div class="s b"><b>${sm.field_new}</b><span>신규</span></div>
+          <div class="s w"><b>${sm.mismatch}</b><span>불일치</span></div>
+          <div class="s r"><b>${sm.plan_only}</b><span>현장확인</span></div>
+        </div>
+        <div id="rosterPrev"></div>
+        <button class="btn wide" style="margin-top:11px" onclick="ui.tab('db')">대장에서 전체 보기 →</button>
+      </div>`;
+    root.appendChild(c1);
+    renderRosterList($("#rosterPrev"), S.roster.slice(0,6));
+  } else {
+    const c1=el("div","card");
+    c1.innerHTML=`<div class="card-b empty"><div class="ic">🔗</div>
+      아직 연동 결과가 없습니다.<br>①②를 완료한 뒤 ③을 실행하세요.</div>`;
+    root.appendChild(c1);
+  }
+}
+
+/* ---- 페이지 3: 대장·현행화 ---- */
+function renderDB(){
+  const root=$("#page-db"); root.innerHTML="";
+  const c0=el("div","card");
+  c0.innerHTML=`
+    <div class="card-h"><span class="n">DB</span><h2>설비대장 · 현행화</h2>
+      <span class="sub">${S.roster.length}건</span></div>
+    <div class="card-b">
+      ${S.roster.length?`
+        <div class="seg" id="filterSeg" style="margin-bottom:12px">
+          <button class="on" data-f="all">전체</button>
+          <button data-f="mismatch">불일치</button>
+          <button data-f="plan_only">현장확인</button>
+          <button data-f="field_new">신규</button>
+        </div>
+        <div id="rosterFull"></div>
+        <div class="divider"></div>
+        <div class="row">
+          <button class="btn blue" onclick="exportCSV()">📊 CSV 내보내기</button>
+          <button class="btn" onclick="exportJSON()">⤓ 백업(JSON)</button>
+          <button class="btn ghost sm" onclick="$('#fileImport').click()">복원</button>
+        </div>
+        <div class="hint">CSV는 설비대장/DB 현행화 반영용입니다. JSON 백업은 사진 메타·AI 판독까지 포함합니다(사진 원본은 기기에 저장).</div>
+      `:`<div class="empty"><div class="ic">🗂️</div>
+        연동을 완료하면 여기에 최신 설비대장이 생성됩니다.<br>
+        <button class="btn sm" style="margin-top:10px" onclick="ui.tab('link')">AI 연동으로 →</button></div>`}
+    </div>`;
+  root.appendChild(c0);
+  if(S.roster.length){
+    renderRosterList($("#rosterFull"), S.roster);
+    $("#filterSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+      $("#filterSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+      const f=b.dataset.f;
+      renderRosterList($("#rosterFull"), f==="all"?S.roster:S.roster.filter(r=>r.status===f));
+    });
+  }
+}
+
+function rosterSummary(){
+  const sm={match:0,plan_only:0,field_new:0,mismatch:0};
+  S.roster.forEach(r=>{ if(sm[r.status]!=null) sm[r.status]++; });
+  return sm;
+}
+const STATUS_META={
+  match:{c:"match",t:"일치"}, field_new:{c:"new",t:"신규"},
+  mismatch:{c:"chk",t:"불일치"}, plan_only:{c:"miss",t:"현장확인"}
+};
+async function renderRosterList(box, list){
+  if(!box) return; box.innerHTML="";
+  if(!list.length){ box.innerHTML=`<div class="empty faint">해당 항목 없음</div>`; return; }
+  for(const r of list){
+    const cat=CAT_BY_CODE[r.code];
+    const sm=STATUS_META[r.status]||{c:"match",t:r.status};
+    const row=el("div","link-row");
+    const photo = findPhotoForRoster(r);
+    row.innerHTML=`
+      <img class="lp" id="lp-${uid()}" alt="">
+      <div class="meta">
+        <div class="nm">${esc(r.name||cat?.name||r.code)} <span class="badge ${sm.c}">${sm.t}</span></div>
+        <div class="kv">${esc(cat?.name||r.code)} · ${esc(r.loc||"위치미상")}</div>
+        <div class="kv" style="color:var(--ink)">${esc(r.spec_final||"-")}</div>
+        ${r.status==="mismatch"?`<div class="kv" style="color:var(--warn)">도면:${esc(r.spec_plan||"-")} ↔ 현장:${esc(r.spec_field||"-")}</div>`:""}
+        ${r.action?`<div class="kv" style="color:var(--brand)">▸ ${esc(r.action)}</div>`:""}
+        <div class="conf"><i style="width:${Math.round((r.confidence||0)*100)}%"></i></div>
+      </div>`;
+    box.appendChild(row);
+    const imgEl=row.querySelector("img.lp");
+    if(photo){ imgEl.src=await photoURL(photo); } else imgEl.style.display="none";
+  }
+}
+function findPhotoForRoster(r){
+  // 사진 참조 우선, 없으면 같은 code 첫 설비사진
+  const byRef = S.equips.find(e=> e.ai && (e.ai.text_found && r.photoRef && e.ai.text_found.includes?.(r.photoRef)));
+  if(byRef) return byRef.photoId;
+  const byCode = S.equips.find(e=>e.code===r.code);
+  return byCode?.photoId;
+}
+
+/* ============================================================
+   시트(모달) 내용
+   ============================================================ */
+const sheets={
+  settings(b){
+    b.innerHTML=`
+      <label class="fld"><span>Gemini API 키</span>
+        <input class="inp" id="setKey" type="password" placeholder="AIza..." value="${esc(S.apiKey)}"></label>
+      <label class="fld"><span>모델</span>
+        <select class="inp" id="setModel">
+          <option value="gemini-2.0-flash">gemini-2.0-flash (권장)</option>
+          <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite (저비용)</option>
+          <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+          <option value="gemini-1.5-pro">gemini-1.5-pro (정밀)</option>
+        </select></label>
+      <div class="note">키는 이 기기 브라우저에만 저장되며 서버로 전송되지 않습니다. 발급: <b>Google AI Studio → API keys</b>.
+        도면·설비 사진은 판독 시 Google Generative Language API로 직접 전송됩니다.</div>
+      <button class="btn pri wide" style="margin-top:13px" id="setSave">저장</button>
+      <button class="btn ghost wide danger" style="margin-top:8px" id="setWipe">모든 데이터 초기화</button>`;
+    b.querySelector("#setModel").value=S.model;
+    b.querySelector("#setSave").onclick=()=>{
+      S.apiKey=b.querySelector("#setKey").value.trim();
+      S.model=b.querySelector("#setModel").value; save(); syncHeader(); ui.closeSheet();
+      toast(S.apiKey?"저장됨":"키 삭제됨", S.apiKey?"good":"");
+    };
+    b.querySelector("#setWipe").onclick=async()=>{
+      if(!confirm("사업장·도면·설비·대장을 모두 삭제합니다. 계속할까요?")) return;
+      for(const p of S.plans) if(p.photoId) await DB.del(p.photoId);
+      for(const e of S.equips) if(e.photoId) await DB.del(e.photoId);
+      const key=S.apiKey, model=S.model; S=blankState(); S.apiKey=key; S.model=model;
+      save(); ui.closeSheet(); ui.tab("collect"); toast("초기화 완료");
+    };
+  },
+  site(b){
+    b.innerHTML=`
+      <label class="fld"><span>사업장명</span>
+        <input class="inp" id="siName" placeholder="예: ○○빌딩 / ○○아파트 관리동" value="${esc(S.site)}"></label>
+      <label class="fld"><span>메모(주소·동수·규모 등)</span>
+        <textarea class="inp" id="siNote" placeholder="예: 지하2 지상15, TPS실 층별, 준공 2011">${esc(S.siteNote)}</textarea></label>
+      <button class="btn pri wide" style="margin-top:6px" id="siSave">저장</button>`;
+    b.querySelector("#siSave").onclick=()=>{
+      S.site=b.querySelector("#siName").value.trim();
+      S.siteNote=b.querySelector("#siNote").value.trim();
+      save(); ui.closeSheet(); render();
+      if(S.site) toast("사업장 저장됨","good");
+    };
+  },
+  cat(b, code){
+    const cat=CAT_BY_CODE[code];
+    b.innerHTML=`
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+        <div style="width:38px;height:38px;border-radius:10px;background:var(--chip);display:grid;place-items:center;font-family:var(--mono);color:var(--brand);font-weight:800">${cat.code}</div>
+        <div><div style="font-weight:700;font-size:16px">${esc(cat.name)}</div>
+        <div class="faint" style="font-size:12px">추출항목: ${cat.fields.join(", ")}</div></div>
+      </div>
+      <label class="fld"><span>촬영 위치 메모(선택)</span>
+        <input class="inp" id="catLoc" placeholder="예: 3F TPS실 / B1 MDF실"></label>
+      <div class="note">명판·라벨·케이블 인쇄가 <b>선명하게</b> 보이도록 촬영하세요. 한 종류에 여러 장 가능합니다.</div>
+      <button class="btn pri wide" style="margin-top:13px" id="catShoot">📷 촬영 / 사진선택</button>`;
+    b.querySelector("#catShoot").onclick=()=>{
+      pendingCat={code, locNote:b.querySelector("#catLoc").value.trim()};
+      ui.closeSheet(); $("#fileEquip").click();
+    };
+  },
+  detail(b, arg){
+    if(arg.type==="plan"){
+      const p=S.plans.find(x=>x.id===arg.id); if(!p) return;
+      b.innerHTML=`
+        <img id="dImg" style="width:100%;border-radius:12px;border:1px solid var(--line);margin-bottom:12px">
+        <label class="fld"><span>도면 이름</span>
+          <input class="inp" id="dName" value="${esc(p.name)}"></label>
+        ${p.ai?`
+          <div class="note" style="margin-bottom:10px"><b>AI 도면 해석</b><br>
+            범위: ${esc(p.ai.plan_scope||"-")}<br>
+            위치: ${(p.ai.locations||[]).map(esc).join(", ")||"-"}<br>
+            추출설비: ${p.ai.items?.length||0}건</div>
+          <div id="pItems"></div>`
+        :`<div class="note">아직 해석되지 않았습니다. [AI 연동] 탭에서 도면 해석을 실행하세요.</div>`}
+        <button class="btn pri wide" style="margin-top:12px" id="dSave">저장</button>
+        <button class="btn danger ghost wide" style="margin-top:7px" onclick="delPlan('${p.id}');ui.closeSheet()">삭제</button>`;
+      if(p.photoId) photoURL(p.photoId).then(u=>b.querySelector("#dImg").src=u);
+      if(p.ai?.items){ const box=b.querySelector("#pItems");
+        p.ai.items.forEach(it=>{ const r=el("div","link-row");
+          r.innerHTML=`<div class="meta"><div class="nm">${esc(CAT_BY_CODE[it.code]?.name||it.code)}</div>
+            <div class="kv">${esc(it.label||"")} · ${esc(it.loc||"")}</div>
+            <div class="kv" style="color:var(--ink)">${esc(it.spec||"-")}</div></div>`;
+          box.appendChild(r); }); }
+      b.querySelector("#dSave").onclick=()=>{ p.name=b.querySelector("#dName").value.trim(); save(); ui.closeSheet(); render(); };
+    } else {
+      const e=S.equips.find(x=>x.id===arg.id); if(!e) return;
+      const cat=CAT_BY_CODE[e.code];
+      b.innerHTML=`
+        <img id="dImg" style="width:100%;border-radius:12px;border:1px solid var(--line);margin-bottom:12px">
+        <div style="font-weight:700;margin-bottom:4px">${esc(cat?.name||e.code)}</div>
+        <div class="faint" style="font-size:12px;margin-bottom:12px">${esc(e.locNote||"위치 메모 없음")} · ${fmt(e.readAt)}</div>
+        ${e.ai?`
+          <div class="note" style="margin-bottom:10px"><b>AI 판독 결과</b> (신뢰도 ${Math.round((e.ai.confidence||0)*100)}%, 품질 ${esc(e.ai.quality||"-")})<br>
+          ${Object.entries(e.ai.extracted||{}).map(([k,v])=>`${esc(k)}: <b>${esc(v||"-")}</b>`).join("<br>")}
+          ${e.ai.text_found?`<br><span class="faint">원문: ${esc(e.ai.text_found)}</span>`:""}</div>
+          <div class="faint" style="font-size:12px;margin-bottom:8px">아래에서 값을 수정하면 kb-core 학습에 반영할 수 있습니다.</div>
+          <div id="editFields"></div>`
+        :`<div class="note">아직 판독되지 않았습니다. [AI 연동] 탭에서 설비 판독을 실행하세요.</div>`}
+        <button class="btn pri wide" style="margin-top:12px" id="dSave2">저장</button>
+        <button class="btn danger ghost wide" style="margin-top:7px" onclick="delEquip('${e.id}');ui.closeSheet()">삭제</button>`;
+      if(e.photoId) photoURL(e.photoId).then(u=>b.querySelector("#dImg").src=u);
+      if(e.ai){ const box=b.querySelector("#editFields");
+        (cat?.fields||[]).forEach(f=>{ const l=el("label","fld");
+          l.innerHTML=`<span>${esc(f)}</span><input class="inp" data-f="${esc(f)}" value="${esc(e.ai.extracted?.[f]||"")}">`;
+          box.appendChild(l); }); }
+      b.querySelector("#dSave2").onclick=()=>{
+        if(e.ai){ b.querySelectorAll("#editFields input").forEach(inp=>{
+          const f=inp.dataset.f, v=inp.value.trim();
+          if(!e.ai.extracted) e.ai.extracted={};
+          if(v!==(e.ai.extracted[f]||"")){ e.ai.extracted[f]=v; e.ai._edited=true; }
+        }); if(e.ai._edited){ S.linkedAt=null; } }
+        save(); ui.closeSheet(); render();
+      };
+    }
+  }
+};
+
+window.render=render;
+
+/* ============================================================
+   AI 실행 파이프라인
+   ============================================================ */
+let pendingCat=null; // cat 시트에서 촬영 대기 정보
+
+function setProg(txt){ const p=$("#aiProg"); if(p) p.innerHTML=txt; }
+
+// ① 도면 해석
+async function runPlanAI(){
+  const targets=S.plans.filter(p=>!p.ai);
+  if(!targets.length){ toast("해석할 도면 없음"); return; }
+  const btn=$("#btnPlan"); if(btn){ btn.disabled=true; btn.innerHTML=`<span class="sp"></span> 해석 중`; }
+  let ok=0,fail=0;
+  for(let i=0;i<targets.length;i++){
+    const p=targets[i]; setProg(`도면 해석 ${i+1}/${targets.length} · ${esc(p.name||"")}`);
+    try{
+      const blob=await DB.get(p.photoId);
+      let res=await callGemini(AI.planPrompt({site:S.site, planName:p.name}), [blob]);
+      res=kbApply("plan", res);
+      p.ai=res; p.parsedAt=now(); ok++; save();
+    }catch(err){ fail++; setProg(`⚠️ ${esc(err.message)}`); }
+  }
+  save(); render();
+  toast(`도면 해석 완료 · 성공 ${ok}${fail?` / 실패 ${fail}`:""}`, fail?"bad":"good");
+}
+
+// ② 설비 판독
+async function runEquipAI(){
+  const targets=S.equips.filter(e=>!e.ai);
+  if(!targets.length){ toast("판독할 설비 없음"); return; }
+  const btn=$("#btnEquip"); if(btn){ btn.disabled=true; btn.innerHTML=`<span class="sp"></span> 판독 중`; }
+  let ok=0,fail=0;
+  for(let i=0;i<targets.length;i++){
+    const e=targets[i]; const cat=CAT_BY_CODE[e.code];
+    setProg(`설비 판독 ${i+1}/${targets.length} · ${esc(cat?.name||e.code)}`);
+    try{
+      const blob=await DB.get(e.photoId);
+      let res=await callGemini(AI.equipPrompt(cat,{site:S.site, locNote:e.locNote}), [blob]);
+      res=kbApply("equip", res);
+      e.ai=res; e.readAt=now(); ok++; save();
+    }catch(err){ fail++; setProg(`⚠️ ${esc(err.message)}`); }
+  }
+  save(); render();
+  toast(`설비 판독 완료 · 성공 ${ok}${fail?` / 실패 ${fail}`:""}`, fail?"bad":"good");
+}
+
+// ③ 연동 매칭 → 최신 대장
+async function runMatch(){
+  const btn=$("#btnLink"); if(btn){ btn.disabled=true; btn.innerHTML=`<span class="sp"></span> 연동 중`; }
+  setProg("도면·설비 대조 중…");
+  // 도면 항목 취합
+  const planItems=[];
+  S.plans.forEach(p=>(p.ai?.items||[]).forEach(it=>planItems.push({...it, planName:p.name})));
+  // 설비 판독 취합
+  const equipReads=S.equips.filter(e=>e.ai).map(e=>({
+    id:e.id, code:e.code, locNote:e.locNote,
+    extracted:e.ai.extracted, text_found:e.ai.text_found, confidence:e.ai.confidence
+  }));
+  try{
+    let res=await callGemini(AI.matchPrompt(planItems, equipReads, {site:S.site}), []);
+    res=kbApply("match", res);
+    S.roster=(res.roster||[]).map(r=>({...r}));
+    S.linkedAt=now(); save(); render();
+    toast(`연동 완료 · 대장 ${S.roster.length}건 생성`,"good");
+    setProg("");
+  }catch(err){
+    // AI 매칭 실패 시 로컬 규칙 기반 폴백
+    setProg("AI 매칭 실패 → 로컬 규칙으로 대장 생성");
+    S.roster=localMatch(planItems, equipReads);
+    S.linkedAt=now(); save(); render();
+    toast(`로컬 연동으로 대장 ${S.roster.length}건 생성`,"bad");
+  }
+}
+
+// AI 없이도 최소 동작: code 기준 병합
+function localMatch(planItems, equipReads){
+  const out=[]; const usedEquip=new Set();
+  planItems.forEach(pi=>{
+    const m=equipReads.find(e=>e.code===pi.code && !usedEquip.has(e.id));
+    if(m){ usedEquip.add(m.id);
+      const fSpec=Object.values(m.extracted||{}).filter(Boolean).join(" ");
+      out.push({code:pi.code, name:pi.label||CAT_BY_CODE[pi.code]?.name, loc:pi.loc||m.locNote||"",
+        spec_final:fSpec||pi.spec||"", spec_plan:pi.spec||"", spec_field:fSpec||"",
+        status: fSpec&&pi.spec&&fSpec!==pi.spec?"mismatch":"match",
+        action:"", confidence:m.confidence||0.5, photoRef:m.text_found||""});
+    } else out.push({code:pi.code, name:pi.label||CAT_BY_CODE[pi.code]?.name, loc:pi.loc||"",
+        spec_final:pi.spec||"", spec_plan:pi.spec||"", status:"plan_only",
+        action:"현장 재확인", confidence:pi.confidence||0.4});
+  });
+  equipReads.forEach(e=>{ if(usedEquip.has(e.id)) return;
+    const fSpec=Object.values(e.extracted||{}).filter(Boolean).join(" ");
+    out.push({code:e.code, name:CAT_BY_CODE[e.code]?.name, loc:e.locNote||"",
+      spec_final:fSpec, spec_field:fSpec, status:"field_new",
+      action:"도면 미반영 신규", confidence:e.confidence||0.5, photoRef:e.text_found||""});
+  });
+  return out;
+}
+
+/* ============================================================
+   삭제 핸들러
+   ============================================================ */
+async function delPlan(id){
+  const p=S.plans.find(x=>x.id===id); if(!p) return;
+  if(p.photoId){ await DB.del(p.photoId); delete _urlCache[p.photoId]; }
+  S.plans=S.plans.filter(x=>x.id!==id); S.linkedAt=null; save(); render();
+}
+async function delEquip(id){
+  const e=S.equips.find(x=>x.id===id); if(!e) return;
+  if(e.photoId){ await DB.del(e.photoId); delete _urlCache[e.photoId]; }
+  S.equips=S.equips.filter(x=>x.id!==id); S.linkedAt=null; save(); render();
+}
+window.delPlan=delPlan; window.delEquip=delEquip;
+
+/* ============================================================
+   파일 입력 핸들러 (도면/설비 촬영, 복원)
+   ============================================================ */
+$("#filePlan").addEventListener("change", async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  toast("도면 저장 중…");
+  const blob=await resizeImage(f, 1900, 0.85);
+  const pid=uid("ph_"); await DB.put(pid, blob);
+  S.plans.push({id:uid("pl_"), name:`도면 ${S.plans.length+1}`, photoId:pid, ai:null, addedAt:now()});
+  S.linkedAt=null; save(); render(); toast("도면 추가됨","good");
+});
+
+$("#fileEquip").addEventListener("change", async e=>{
+  const files=[...e.target.files]; e.target.value=""; if(!files.length||!pendingCat) return;
+  const{code,locNote}=pendingCat; pendingCat=null;
+  toast(`설비 ${files.length}장 저장 중…`);
+  for(const f of files){
+    const blob=await resizeImage(f, 1700, 0.85);
+    const pid=uid("ph_"); await DB.put(pid, blob);
+    S.equips.push({id:uid("eq_"), code, locNote, photoId:pid, ai:null, addedAt:now()});
+  }
+  S.linkedAt=null; save(); render();
+  toast(`${CAT_BY_CODE[code]?.name} ${files.length}장 추가`,"good");
+});
+
+$("#fileImport").addEventListener("change", async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  try{
+    const data=JSON.parse(await f.text());
+    if(!data._repiq) throw new Error("RepiQ 백업 파일이 아닙니다");
+    const key=S.apiKey, model=S.model;
+    S={...blankState(), ...data.state, apiKey:key, model:model};
+    save(); render();
+    toast("복원 완료(사진 원본은 기기별로 별도)","good");
+  }catch(err){ toast("복원 실패: "+err.message,"bad"); }
+});
+
+/* ============================================================
+   내보내기
+   ============================================================ */
+function exportCSV(){
+  const head=["구분","장비코드","장비명","위치","최종규격","도면규격","현장규격","상태","조치","신뢰도"];
+  const rows=S.roster.map(r=>[
+    S.site, r.code, r.name||CAT_BY_CODE[r.code]?.name||"", r.loc||"",
+    r.spec_final||"", r.spec_plan||"", r.spec_field||"",
+    STATUS_META[r.status]?.t||r.status, r.action||"", Math.round((r.confidence||0)*100)+"%"
+  ]);
+  const csv=[head,...rows].map(row=>row.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+  download(blob, `RepiQ_설비대장_${S.site||"현장"}_${dstamp()}.csv`);
+  toast("CSV 내보냄","good");
+}
+function exportJSON(){
+  const state={...S}; delete state.apiKey;
+  const blob=new Blob([JSON.stringify({_repiq:1, version:1, exportedAt:now(), state},null,1)],{type:"application/json"});
+  download(blob, `RepiQ_백업_${S.site||"현장"}_${dstamp()}.json`);
+  toast("백업 저장됨","good");
+}
+function download(blob, name){
+  const u=URL.createObjectURL(blob); const a=document.createElement("a");
+  a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+function dstamp(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`; }
+window.exportCSV=exportCSV; window.exportJSON=exportJSON;
+window.runPlanAI=runPlanAI; window.runEquipAI=runEquipAI; window.runMatch=runMatch;
+
+/* ============================================================
+   부팅
+   ============================================================ */
+(function boot(){
+  if(S.tab && S.tab!=="collect"){ ui.tab(S.tab); } else { ui.tab("collect"); }
+})();
+
+</script>
+</body>
+</html>

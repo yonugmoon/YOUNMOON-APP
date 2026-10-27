@@ -12165,6 +12165,17 @@ ${m.notes || "-"}`;
       if(idx<0) throw new Error("소스에서 앵커 못 찾음");
       blockElems=elems.slice(idx+1);
     } else { blockElems=elems; }
+    // 점검앱 워드 끝의 「생성일시」 줄 · 매크로 안내 페이지는 결과서에 넣지 않음
+    for(var q=0;q<blockElems.length;q++){
+      var tq=elText(blockElems[q]).trim();
+      if(/^생성일시\s*:/.test(tq) || tq.indexOf("이미지 레이아웃 변경 매크로")>=0){ blockElems=blockElems.slice(0,q); break; }
+    }
+    while(blockElems.length && isPara(blockElems[blockElems.length-1]) && !elText(blockElems[blockElems.length-1]).trim() && !/<w:drawing|<w:pict/.test(blockElems[blockElems.length-1])) blockElems.pop();
+    var srcSect=(/<w:sectPr[\s\S]*?<\/w:sectPr>/.exec(doc.slice(doc.lastIndexOf("<w:sectPr")))||[""])[0];
+    var def={sz:"20", font:"맑은 고딕"};
+    var stf=zip.file("word/styles.xml");
+    if(stf){ var sx=await stf.async("string"); var dd=/<w:rPrDefault>([\s\S]*?)<\/w:rPrDefault>/.exec(sx);
+      if(dd){ var szm=/<w:sz w:val="(\d+)"/.exec(dd[1]); if(szm) def.sz=szm[1]; var fm=/<w:rFonts[^>]*w:eastAsia="([^"]+)"/.exec(dd[1])||/<w:rFonts[^>]*w:ascii="([^"]+)"/.exec(dd[1]); if(fm) def.font=fm[1]; } }
     var block=blockElems.join("");
     var used=collectRids(block), ridMedia={};
     var names={}; zip.forEach(function(p){ names[p]=1; });
@@ -12180,8 +12191,60 @@ ${m.notes || "-"}`;
         ridMedia[rid]={data: await zip.file(arc).async("uint8array"), ext:ext};
       }
     }
-    return {block:block, ridMedia:ridMedia};
+    return {block:block, ridMedia:ridMedia, elems:blockElems, srcSect:srcSect, def:def};
   }
+
+  /* ---- 점검앱 쪽 고정 ----
+     점검앱 워드는 「설비 1곳 = 1쪽」으로 행 높이를 맞춰 둠. 결과서(양식)의 기본 서식(줄 간격·글자 크기·
+     문서 격자 맞춤)이 적용되면 쪽이 넘쳐 뒤 페이지가 계속 밀리므로,
+     ① 문단마다 점검앱 기준 줄 간격·글자 크기를 직접 지정하고 격자 맞춤 해제
+     ② 설비별 점검표 제목마다 새 페이지에서 시작 */
+  var PPR_AFTER=/<w:(ind|contextualSpacing|mirrorIndents|suppressOverlap|jc|textDirection|textAlignment|textboxTightWrap|outlineLvl|divId|cnfStyle|rPr|sectPr|pPrChange)\b/;
+  function _insBefore(ppr, re, add){ var m=re.exec(ppr); return m? ppr.slice(0,m.index)+add+ppr.slice(m.index) : ppr+add; }
+  function fixPPr(ppr, def, brk){
+    if(brk && ppr.indexOf("<w:pageBreakBefore")<0){
+      var k=/^(?:<w:pStyle[^>]*\/>)?(?:<w:keepNext[^>]*\/>)?(?:<w:keepLines[^>]*\/>)?/.exec(ppr)[0].length;
+      ppr=ppr.slice(0,k)+'<w:pageBreakBefore/>'+ppr.slice(k);
+    }
+    if(ppr.indexOf("<w:snapToGrid")<0) ppr=_insBefore(ppr, /<w:spacing\b/.test(ppr)?/<w:spacing\b/:PPR_AFTER, '<w:snapToGrid w:val="0"/>');
+    if(/<w:spacing\b/.test(ppr)){
+      ppr=ppr.replace(/<w:spacing\b([^>]*?)(\/?)>/, function(m0,a,sl){
+        if(!/w:before=/.test(a)) a+=' w:before="0"'; if(!/w:after=/.test(a)) a+=' w:after="0"';
+        if(!/w:line=/.test(a)) a+=' w:line="240" w:lineRule="auto"';
+        return '<w:spacing'+a+sl+'>'; });
+    } else ppr=_insBefore(ppr, PPR_AFTER, '<w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>');
+    if(!/<w:rPr>/.test(ppr) && !/<w:sectPr|<w:pPrChange/.test(ppr)) ppr+='<w:rPr><w:sz w:val="'+def.sz+'"/><w:szCs w:val="'+def.sz+'"/></w:rPr>';
+    return ppr;
+  }
+  function fixRuns(x, def){
+    return x.replace(/(<w:r(?:\s[^>]*)?>)(<w:rPr>([\s\S]*?)<\/w:rPr>)?/g, function(m0,open,rpr,inner){
+      inner=inner||"";
+      if(inner.indexOf("<w:rFonts")<0){ var k=/^(?:<w:rStyle[^>]*\/>)?/.exec(inner)[0].length;
+        inner=inner.slice(0,k)+'<w:rFonts w:ascii="'+def.font+'" w:hAnsi="'+def.font+'" w:eastAsia="'+def.font+'" w:cs="'+def.font+'"/>'+inner.slice(k); }
+      if(inner.indexOf("<w:sz ")<0) inner+='<w:sz w:val="'+def.sz+'"/><w:szCs w:val="'+def.sz+'"/>';
+      return open+'<w:rPr>'+inner+'</w:rPr>'; });
+  }
+  function fixParas(x, def, brk){
+    return x.replace(/<w:p(\s[^>]*)?>(?:<w:pPr>([\s\S]*?)<\/w:pPr>)?/g, function(m0,attr,ppr){
+      return '<w:p'+(attr||'')+'><w:pPr>'+fixPPr(ppr||'', def, brk)+'</w:pPr>'; });
+  }
+  var LOC_HEAD=/(유지보수\s*·?\s*관리\s*점검표|성능\s*점검표|성능점검표)\s*$/;
+  function fixBlock(elems, def, opts){
+    var nHead=0, out=[];
+    for(var i=0;i<elems.length;i++){
+      var el=elems[i], brk=false;
+      if(isPara(el) && i+1<elems.length && /^\s*<w:tbl[\s>]/.test(elems[i+1]) && LOC_HEAD.test(elText(el).trim())){
+        nHead++; brk = nHead>1 || !opts.firstSamePage; }
+      // 첫 문단: 제목 아래 붙이기면 나누기 없음
+      el=fixParas(el, def, false);
+      if(brk) el=el.replace(/<w:pPr>/, function(){ return '<w:pPr><w:pageBreakBefore/>'; });
+      out.push(fixRuns(el, def));
+    }
+    return {xml:out.join(""), heads:nHead};
+  }
+  function _pgOf(sp){ var g=function(re){ var m=re.exec(sp||""); return m?+m[1]:0; };
+    return {w:g(/<w:pgSz[^>]*w:w="(\d+)"/), h:g(/<w:pgSz[^>]*w:h="(\d+)"/), t:g(/<w:pgMar[^>]*w:top="(-?\d+)"/), b:g(/<w:pgMar[^>]*w:bottom="(-?\d+)"/),
+      l:g(/<w:pgMar[^>]*w:left="(\d+)"/), r:g(/<w:pgMar[^>]*w:right="(\d+)"/), hd:g(/<w:pgMar[^>]*w:header="(\d+)"/), ft:g(/<w:pgMar[^>]*w:footer="(\d+)"/)}; }
 
   function findInsertIndex(elems, opts){
     // 1) {{APP_MERGE}} 마커
@@ -12215,7 +12278,8 @@ ${m.notes || "-"}`;
 
     var sourceMode = opts.sourceMode || "whole_body";
     var got=await getBlock(szip, sourceMode, opts.sourceAnchor?norm(opts.sourceAnchor):null);
-    var block=got.block, ridMedia=got.ridMedia;
+    var block=got.block, ridMedia=got.ridMedia, fixInfo=null;
+    if(opts.fixPages!==false && got.elems){ fixInfo=fixBlock(got.elems, got.def, opts); block=fixInfo.xml; }
 
     var baseDoc=await tzip.file("word/document.xml").async("string");
     var baseRels=await tzip.file("word/_rels/document.xml.rels").async("string");
@@ -12250,6 +12314,29 @@ ${m.notes || "-"}`;
     var bi=bodyInner(baseDoc);
     var elems=splitTopLevel(bi.inner);
     var pos=findInsertIndex(elems, opts);
+    // 결과서 쪽 크기·여백이 점검앱보다 좁으면 → 점검앱 부분만 점검앱 쪽 설정(구역)으로
+    var sectNote="";
+    if(opts.fixPages!==false && got.srcSect){
+      var gi=-1; for(var g=pos.idx+(pos.replace?0:1); g<elems.length; g++){ if(elems[g].indexOf("<w:sectPr")>=0){ gi=g; break; } }
+      var tSect=gi>=0?(/<w:sectPr[\s\S]*?<\/w:sectPr>/.exec(elems[gi])||[""])[0]:"";
+      var T=_pgOf(tSect), Sx=_pgOf(got.srcSect);
+      var needW=Sx.w-Sx.l-Sx.r, needH=Sx.h-Math.max(Sx.t,0)-Math.max(Sx.b,0);
+      var haveW=T.w-T.l-T.r, haveH=T.h-Math.max(T.t,0)-Math.max(T.b,0);
+      if(tSect && T.w && Sx.w && (haveW<needW-15 || haveH<needH-15)){
+        var hd=T.hd||Sx.hd, ft=T.ft||Sx.ft;
+        var own='<w:sectPr><w:pgSz w:w="'+Sx.w+'" w:h="'+Sx.h+'"/><w:pgMar w:top="'+Sx.t+'" w:right="'+Sx.r+'" w:bottom="'+Sx.b+'" w:left="'+Sx.l+'" w:header="'+hd+'" w:footer="'+ft+'" w:gutter="0"/></w:sectPr>';
+        var prevSect=tSect.replace(/<w:type\b[^>]*\/>/g,"");
+        var tiny='<w:pPr><w:snapToGrid w:val="0"/><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/></w:rPr>';
+        block='<w:p>'+tiny+prevSect+'</w:pPr></w:p>'+block.replace(/<w:pageBreakBefore\/>/, "")+'<w:p>'+tiny+own+'</w:pPr></w:p>';
+        // 뒤 구역: 첫 쪽 머릿글·쪽번호 다시 시작 방지
+        var rest=tSect.replace(/<w:titlePg(?:\s[^>]*)?\/>/g,"").replace(/\s*w:start="\d+"/g,"");
+        // 결과서 쪽에 이미 쪽 나누기가 이어지면 구역 나누기로 한 번 더 넘기지 않음(빈 쪽 방지)
+        var nx=elems[pos.idx+1]||"";
+        if(/w:type="page"/.test(nx)&&!elText(nx).trim() || /<w:pageBreakBefore/.test(nx)){ rest=rest.replace(/<w:type\b[^>]*\/>/g,"").replace(/<w:pgSz/,'<w:type w:val="continuous"/><w:pgSz'); }
+        elems[gi]=elems[gi].replace(tSect, rest);
+        sectNote="결과서 여백이 좁아 점검앱 부분은 점검앱 쪽 설정으로 맞춤";
+      }
+    }
     var newInner;
     if(pos.replace){
       newInner=elems.slice(0,pos.idx).join("")+block+elems.slice(pos.idx+1).join("");
@@ -12274,7 +12361,7 @@ ${m.notes || "-"}`;
 
     var out=await tzip.generateAsync({type: (opts.outType||"uint8array"), compression:"DEFLATE",
       mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
-    return {out:out, imgs:Object.keys(ridMedia).length, insertedAt:pos};
+    return {out:out, imgs:Object.keys(ridMedia).length, insertedAt:pos, heads:fixInfo?fixInfo.heads:0, fixed:!!fixInfo, sectNote:sectNote};
   }
 
   var api={mergeDocx:mergeDocx, getBlock:getBlock, norm:norm, splitTopLevel:splitTopLevel, bodyInner:bodyInner, elText:elText};
@@ -12294,6 +12381,10 @@ ${m.notes || "-"}`;
         '<div class="mt-intro">결과서 자동생성기로 만든 <b>결과서 Word</b>에, 점검앱에서 내보낸 <b>설비별 점검표·현황사진</b>을 자동으로 합쳐 완성본을 만듭니다. 사진(이미지) 관계까지 자동 재매핑됩니다.<br>· 유지보수: <b>「5. …점검표_설비별」</b> 뒤에 삽입 · 성능: <b>「3. …성능점검표(설비별)」</b> 뒤에 삽입<br>· 정확한 위치를 지정하려면 결과서 템플릿의 원하는 자리에 <b>{{APP_MERGE}}</b> 를 넣어두면 그 자리에 삽입됩니다.</div>'+
         '<div class="mt-card"><h3>1단계 · 결과서 파일 (.docx)</h3><p class="mt-desc">결과서 자동생성기에서 생성/다운로드한 결과서 Word를 선택하세요.</p><input type="file" id="mt-target" accept=".docx"><div class="mt-fname" id="mt-tname"></div></div>'+
         '<div class="mt-card"><h3>2단계 · 점검앱 워드 (.docx)</h3><p class="mt-desc">점검앱에서 내보낸 설비별 점검표·현황사진 Word를 선택하세요.</p><input type="file" id="mt-source" accept=".docx"><div class="mt-fname" id="mt-sname"></div></div>'+
+        '<div class="mt-card"><h3>병합 옵션</h3>'+
+          '<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-bottom:8px;cursor:pointer"><input type="checkbox" id="mt-fix" checked style="margin-top:3px"><span><b>점검앱 페이지 고정 (권장)</b><br><span style="color:#64708A;font-size:12px">설비별 점검표가 정해진 1쪽에서 밀리지 않도록 점검앱 서식(줄 간격·글자 크기)을 유지하고, 설비마다 새 페이지에서 시작합니다. 점검앱 워드 끝의 생성일시·매크로 안내 페이지는 넣지 않습니다.</span></span></label>'+
+          '<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="mt-first" style="margin-top:3px"><span>첫 번째 설비 점검표는 제목(5. …점검표_설비별) 바로 아래에 붙이기<br><span style="color:#64708A;font-size:12px">끄면(기본) 첫 설비도 새 페이지에서 시작해 1쪽 구성이 그대로 유지됩니다.</span></span></label>'+
+        '</div>'+
         '<button class="mt-run" id="mt-run">\uD83D\uDD17 자동 병합 실행</button>'+
         '<div class="mt-status" id="mt-status">두 파일을 선택한 뒤 [자동 병합 실행]을 누르세요.</div>'+
       '</div>';
@@ -12321,14 +12412,16 @@ ${m.notes || "-"}`;
     try{
       var bufs=await Promise.all([tf.arrayBuffer(), sf.arrayBuffer()]);
       st.textContent="\u23F3 병합 중\u2026 (본문 삽입 · 이미지 재매핑)";
-      var r=await window.__RepMerge.mergeDocx(new Uint8Array(bufs[0]), new Uint8Array(bufs[1]), window.JSZip, {outType:"blob", tag:"apx"});
+      var r=await window.__RepMerge.mergeDocx(new Uint8Array(bufs[0]), new Uint8Array(bufs[1]), window.JSZip, {outType:"blob", tag:"apx",
+        fixPages:!!(document.getElementById("mt-fix")||{checked:true}).checked, firstSamePage:!!(document.getElementById("mt-first")||{}).checked});
       var base=(tf.name||"결과서").replace(/\.docx$/i,"");
       var outName=base+"_병합완성.docx";
       var url=URL.createObjectURL(r.out);
       var a=document.createElement("a"); a.href=url; a.download=outName; document.body.appendChild(a); a.click();
       setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },1500);
       var where = r.insertedAt && r.insertedAt.replace ? "{{APP_MERGE}} 마커 위치" : "설비별 점검표 제목 뒤";
-      st.className="mt-status ok"; st.innerHTML="\u2705 병합 완료! 사진 <b>"+r.imgs+"</b>장 삽입 ("+where+") \u00B7 <b>"+esc(outName)+"</b> 다운로드됨.<br>워드에서 열어 삽입 위치를 확인하세요.";
+      var fx = r.fixed ? ("<br>\uD83D\uDCC4 페이지 고정: 설비별 점검표 <b>"+r.heads+"</b>개"+(((document.getElementById("mt-first")||{}).checked)?" (첫 점검표는 제목 아래, 나머지는 새 페이지에서 시작)":"를 각각 새 페이지에서 시작")+(r.sectNote?(" \u00B7 "+esc(r.sectNote)):"")) : "";
+      st.className="mt-status ok"; st.innerHTML="\u2705 병합 완료! 사진 <b>"+r.imgs+"</b>장 삽입 ("+where+") \u00B7 <b>"+esc(outName)+"</b> 다운로드됨."+fx+"<br>워드에서 열어 삽입 위치를 확인하세요.";
     }catch(e){
       st.className="mt-status err"; st.textContent="\u274C 병합 실패: "+((e&&e.message)||e);
     } finally { run.disabled=false; }

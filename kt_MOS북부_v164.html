@@ -233,6 +233,7 @@
   .toggle-track::before{content:"";position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
   .toggle-switch input:checked + .toggle-track{background:var(--accent);}
   .toggle-switch input:checked + .toggle-track::before{transform:translateX(18px);}
+  #pb-mark:checked + .toggle-track{background:#E5484D;}
   .cat.open .cat-chev{transform:rotate(180deg);}
   .cat.open .cat-head{background:var(--accent-weak);border-left:4px solid var(--accent);padding-left:10px;}
   .cat-body{display:none;border-top:1px solid var(--border);}
@@ -8796,6 +8797,16 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           <div class="field-label">비고</div>
           <textarea class="note-area" id="pb-note" style="margin-top:0;"></textarea>
         </div>
+        <div id="pb-mark-row" style="display:flex;align-items:center;justify-content:space-between;background:#FDEAEC;border:1px solid #F5B5BD;border-radius:10px;padding:10px 14px;margin-top:12px;">
+          <div>
+            <div style="font-size:13.5px;font-weight:800;color:#C2142E;">⭕ 불량 위치 동그라미 표시</div>
+            <div style="font-size:11.5px;color:#7A2230;margin-top:2px;">${useCamera?"촬영":"사진 선택"} 후 사진에서 불량 부분을 빨간 원으로 표시 · 부적합 사진으로 등록</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="pb-mark">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
         <div class="sheet-btn-row" style="gap:8px;margin-top:12px;">
           <button class="outline-btn" id="pb-cancel" style="flex:1;">취소</button>
           <button class="primary-btn" id="pb-go" style="flex:2;">${useCamera?"📸 촬영":"📷 갤러리 열기"}</button>
@@ -8853,8 +8864,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           const cls = statusVal==="적합"?"good":statusVal==="부적합"?"bad":"na";
           b.classList.add("active", cls);
         }
+        const mk = ov.querySelector("#pb-mark"); if(mk) mk.checked = (statusVal==="부적합");
       };
     });
+    { const mk = ov.querySelector("#pb-mark"); if(mk) mk.checked = (statusVal==="부적합"); }
 
     ov.querySelector("#pb-cancel").onclick = ()=> ov.remove();
     goBtn.onclick = ()=>{
@@ -8870,7 +8883,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         ? { siteName: current.siteName, buildingName: building, location, equipment: cat.name, status: statusVal, note }
         : null; // 보드 없음 → null 전달 → 원본 사진만 저장
 
-      pendingPhotoTarget = { cat, loc, pstrip, board };
+      const markOn = !!(ov.querySelector("#pb-mark")||{}).checked;
+      pendingPhotoTarget = { cat, loc, pstrip, board, mark: markOn };
       ov.remove();
       if(useCamera){ photoFileInput.setAttribute("capture","environment"); photoFileInput.removeAttribute("multiple"); photoFileInput.click(); }
       else {
@@ -8888,22 +8902,25 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           // pendingPhotoTarget에 이미 저장된 cat/loc/pstrip/board 사용
           const addBtns = pstrip.querySelectorAll(".photo-add");
           addBtns.forEach(b=>{ b.innerHTML="처리중…"; b.disabled=true; });
-          let savedCount=0, failCount=0;
+          let savedCount=0, failCount=0, fi=0;
           for(const file of files){
             let dataUrl=null;
             let origData=null;
             let boardApplied=true;
+            fi++;
+            // 부적합: 불량 위치 동그라미 표시 (원본에 그려 두어 동산보드 재합성 때도 유지)
+            const marked = markOn ? await markDefectFromFile(file, files.length>1?`${fi}/${files.length}`:"") : null;
             try{
               if(board){
-                try{ origData = await compressImage(file, 900, 0.82); }catch(e){ origData = null; }
-              }
+                try{ origData = marked || await compressImage(file, 900, 0.82); }catch(e){ origData = null; }
+              } else if(marked){ origData = null; }
               if(board && origData){
                 dataUrl = await composeBoardFromDataUrl(origData, board, 900);
               } else if(board){
                 dataUrl = await composePhotoWithBoard(file, board, 900);
               } else {
                 boardApplied = false;
-                dataUrl = await compressImage(file, 900, 0.6);
+                dataUrl = marked || await compressImage(file, 900, 0.6);
               }
             }
             catch(e){
@@ -8918,6 +8935,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
             if(!saved){ failCount++; continue; }
             if(!loc.photos) loc.photos=[];
             loc.photos.push(key);
+            if(marked || (board && board.status==="부적합")){ if(!loc.badPhotos) loc.badPhotos=[]; if(!loc.badPhotos.includes(key)) loc.badPhotos.push(key); }
             // ── 원본 + 동산보드 메타 저장 (재합성용) ──
             if(board && boardApplied && origData){
               const origKey = "photoOrig:"+current.id+":cat:"+cat.id+":loc:"+loc.id+":"+uid();
@@ -8953,25 +8971,31 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const files = Array.from(ev.target.files || []);
     photoFileInput.value = "";
     if(!files.length || !pendingPhotoTarget) return;
-    const {cat, loc, pstrip, board} = pendingPhotoTarget;
+    const {cat, loc, pstrip, board, mark} = pendingPhotoTarget;
 
     const addBtns = pstrip.querySelectorAll(".photo-add");
     addBtns.forEach(b=>{ b.innerHTML = "처리중…"; b.disabled = true; });
 
     let savedCount = 0;
     let failCount  = 0;
+    let fi = 0;
 
     for(const file of files){
       let dataUrl = null;
       let origData = null;
       let boardApplied = true;
+      fi++;
+      // 부적합: 촬영 직후 불량 위치 동그라미 표시
+      const marked = mark ? await markDefectFromFile(file, files.length>1?`${fi}/${files.length}`:"") : null;
       try{
         // 재합성을 위해 원본(정보표 없는 버전)을 먼저 확보
         if(board){
-          try{ origData = await compressImage(file, 900, 0.82); }catch(e){ origData = null; }
+          try{ origData = marked || await compressImage(file, 900, 0.82); }catch(e){ origData = null; }
         }
         if(board && origData){
           dataUrl = await composeBoardFromDataUrl(origData, board, 900);
+        } else if(!board && marked){
+          boardApplied = false; dataUrl = marked;
         } else {
           dataUrl = await composePhotoWithBoard(file, board, 900);
         }
@@ -8998,6 +9022,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
 
       if(!loc.photos) loc.photos = [];
       loc.photos.push(key);
+      if(marked || (board && board.status==="부적합")){ if(!loc.badPhotos) loc.badPhotos = []; if(!loc.badPhotos.includes(key)) loc.badPhotos.push(key); }
 
       // ── 원본 + 동산보드 메타 저장 (위치 수정 시 재합성용) ──
       if(board && boardApplied && origData){
@@ -9447,6 +9472,81 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     ctx.restore();
   }
 
+  /* ── 불량 위치 동그라미 표시 ──
+     사진 위를 손가락으로 끌면 그 범위를 감싸는 빨간 원(타원), 짧게 탭하면 그 자리에 원.
+     결과: 표시가 들어간 사진(dataURL) · 표시 없이 닫으면 null */
+  async function markDefectFromFile(file, label){
+    let base = null;
+    try{ base = await compressImage(file, 900, 0.85); }catch(e){ try{ base = await readAsDataURL(file); }catch(e2){ return null; } }
+    return await openDefectMarker(base, label);
+  }
+  function openDefectMarker(srcUrl, label){
+    return new Promise((resolve)=>{
+      const img = new Image();
+      img.onerror = ()=> resolve(null);
+      img.onload = ()=>{
+        const W = img.naturalWidth, H = img.naturalHeight;
+        const ov = document.createElement("div");
+        ov.className = "dm-overlay";
+        ov.style.cssText = "position:fixed;inset:0;z-index:200;background:#0B1220;display:flex;flex-direction:column;touch-action:none;";
+        ov.innerHTML = `
+          <div style="flex:none;padding:calc(env(safe-area-inset-top) + 10px) 14px 8px;color:#fff;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="font-size:16px;font-weight:800;flex:1;">⭕ 불량 위치 표시 ${label?`<span style="font-size:12px;opacity:.7;">(${label})</span>`:""}</div>
+              <span id="dm-cnt" style="font-size:12px;background:#E5484D;border-radius:999px;padding:2px 9px;font-weight:800;">0개</span>
+            </div>
+            <div style="font-size:12px;opacity:.75;margin-top:4px;line-height:1.45;">불량 부분을 손가락으로 끌어 감싸면 빨간 원이 그려집니다 · 짧게 탭하면 그 자리에 원</div>
+          </div>
+          <div id="dm-stage" style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px;">
+            <canvas id="dm-cv" style="max-width:100%;max-height:100%;touch-action:none;border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,.5);"></canvas>
+          </div>
+          <div style="flex:none;display:grid;grid-template-columns:1fr 1fr 1fr 1.4fr;gap:8px;padding:10px 12px calc(12px + env(safe-area-inset-bottom));">
+            <button id="dm-undo" style="border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:12px 4px;font-size:13.5px;font-weight:700;">↩ 되돌리기</button>
+            <button id="dm-clear" style="border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:12px 4px;font-size:13.5px;font-weight:700;">지우기</button>
+            <button id="dm-skip" style="border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:12px 4px;font-size:13px;font-weight:700;">표시 안 함</button>
+            <button id="dm-ok" style="border:none;background:#E5484D;color:#fff;border-radius:10px;padding:12px 4px;font-size:15px;font-weight:800;">✅ 완료</button>
+          </div>`;
+        document.body.appendChild(ov);
+        const cv = ov.querySelector("#dm-cv"); cv.width = W; cv.height = H;
+        const g = cv.getContext("2d");
+        const shapes = []; let drag = null;
+        const lw = Math.max(4, Math.round(Math.min(W,H)*0.012));
+        const ell = (s)=>{ const rx=Math.max(Math.abs(s.x2-s.x1)/2, lw*2), ry=Math.max(Math.abs(s.y2-s.y1)/2, lw*2);
+          const cx=(s.x1+s.x2)/2, cy=(s.y1+s.y2)/2;
+          g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2);
+          g.lineWidth = lw*1.9; g.strokeStyle = "rgba(255,255,255,.85)"; g.stroke();   // 바탕과 구분되는 흰 테두리
+          g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2);
+          g.lineWidth = lw; g.strokeStyle = "#FF1E1E"; g.stroke(); };
+        const draw = ()=>{ g.drawImage(img, 0, 0, W, H); shapes.forEach(ell); if(drag) ell(drag);
+          ov.querySelector("#dm-cnt").textContent = shapes.length+"개"; };
+        draw();
+        const pt = (e)=>{ const r = cv.getBoundingClientRect(); return { x:(e.clientX-r.left)*W/r.width, y:(e.clientY-r.top)*H/r.height, sx:e.clientX, sy:e.clientY }; };
+        let st0 = null;
+        cv.addEventListener("pointerdown", (e)=>{ e.preventDefault(); try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+          const p = pt(e); st0 = p; drag = {x1:p.x, y1:p.y, x2:p.x, y2:p.y}; draw(); });
+        cv.addEventListener("pointermove", (e)=>{ if(!drag) return; e.preventDefault(); const p = pt(e); drag.x2 = p.x; drag.y2 = p.y; draw(); });
+        const up = (e)=>{ if(!drag) return; e.preventDefault(); const p = pt(e);
+          const moved = Math.hypot(p.sx-st0.sx, p.sy-st0.sy);
+          if(moved < 12){ const r = Math.min(W,H)*0.08; drag = {x1:p.x-r, y1:p.y-r, x2:p.x+r, y2:p.y+r}; }   // 탭 → 기본 크기 원
+          else { const pad = lw*1.5; drag = {x1:Math.min(drag.x1,p.x)-pad, y1:Math.min(drag.y1,p.y)-pad, x2:Math.max(drag.x1,p.x)+pad, y2:Math.max(drag.y1,p.y)+pad}; }
+          shapes.push(drag); drag = null; draw(); };
+        cv.addEventListener("pointerup", up);
+        cv.addEventListener("pointercancel", ()=>{ drag = null; draw(); });
+        const done = (v)=>{ ov.remove(); resolve(v); };
+        ov.querySelector("#dm-undo").onclick = ()=>{ shapes.pop(); draw(); };
+        ov.querySelector("#dm-clear").onclick = ()=>{ shapes.length = 0; draw(); };
+        ov.querySelector("#dm-skip").onclick = ()=> done(null);
+        ov.querySelector("#dm-ok").onclick = ()=>{
+          if(!shapes.length){ if(confirm("표시한 원이 없습니다. 표시 없이 저장할까요?")) done(null); return; }
+          drag = null; draw();
+          let out = null; try{ out = cv.toDataURL("image/jpeg", 0.85); }catch(e){ out = null; }
+          done(out);
+        };
+      };
+      img.src = srcUrl;
+    });
+  }
+
   function compressImage(file, maxW, quality){
     return new Promise((resolve, reject)=>{
       const reader = new FileReader();
@@ -9478,9 +9578,39 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         border:2px solid #E5484D;border-radius:999px;padding:12px 22px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);">
         ${isBad?'⚠️ 부적합 해제':'⚠️ 부적합으로 표시'}
       </button>` : '';
-    ov.innerHTML = `<img class="photo-view" src="${dataUrl}">${toggleBtn}`;
+    const markBtn = (loc && key) ? `
+      <button id="pv-mark" style="position:fixed;left:50%;transform:translateX(-50%);bottom:84px;z-index:2;
+        background:rgba(255,255,255,.92);color:#C2142E;border:2px solid #E5484D;border-radius:999px;padding:10px 20px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);">
+        ⭕ 불량 위치 동그라미 표시
+      </button>` : '';
+    ov.innerHTML = `<img class="photo-view" src="${dataUrl}">${markBtn}${toggleBtn}`;
     ov.onclick = (e)=>{ if(e.target===ov || e.target.classList.contains('photo-view')) ov.remove(); };
     document.body.appendChild(ov);
+    const mb = ov.querySelector("#pv-mark");
+    if(mb){
+      mb.onclick = async (e)=>{
+        e.stopPropagation();
+        const meta = loc.photoMeta && loc.photoMeta[key];
+        let base = null;
+        if(meta && meta.origKey){ try{ base = await sGet(meta.origKey); }catch(_){ base = null; } }
+        const marked = await openDefectMarker(base || dataUrl, "");
+        if(!marked) return;
+        try{
+          if(base && meta.board){
+            await sSet(meta.origKey, marked);
+            await sSet(key, await composeBoardFromDataUrl(marked, meta.board, 900));
+          } else {
+            await sSet(key, marked);
+          }
+        }catch(err){ showToast("표시를 저장하지 못했습니다."); return; }
+        if(!loc.badPhotos) loc.badPhotos = [];
+        if(!loc.badPhotos.includes(key)) loc.badPhotos.push(key);
+        scheduleSave();
+        ov.remove();
+        showToast("불량 위치를 표시했습니다.");
+        if(typeof onChange==="function") onChange();
+      };
+    }
     const tb = ov.querySelector("#pv-bad-toggle");
     if(tb){
       tb.onclick = (e)=>{

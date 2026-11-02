@@ -154,6 +154,63 @@ nav button .bdg{position:absolute;transform:translate(14px,-4px);background:var(
 .note{font-size:12px;padding:10px 12px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);line-height:1.55}
 .note b{color:var(--ink)}
 kbd{font-family:var(--mono);font-size:11px;background:var(--chip);padding:1px 6px;border-radius:5px;border:1px solid var(--line)}
+
+/* ---- Digital Twin ---- */
+.twin-health{display:flex;gap:14px;align-items:center}
+.gauge{width:92px;height:92px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;position:relative}
+.gauge::after{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--panel)}
+.gauge b{position:relative;z-index:1;font-family:var(--mono);font-size:24px;font-weight:800;line-height:1;text-align:center}
+.gauge b small{display:block;font-size:9.5px;color:var(--ink-dim);font-weight:600;font-family:var(--sans);margin-top:3px}
+.hbars{flex:1;min-width:0;display:grid;gap:6px}
+.hbar{display:grid;grid-template-columns:62px 1fr 34px;gap:7px;align-items:center;font-size:11.5px;color:var(--ink-dim)}
+.hbar .tr{height:6px;border-radius:4px;background:var(--line);overflow:hidden}
+.hbar .tr i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand-2))}
+.hbar .v{font-family:var(--mono);text-align:right;color:var(--ink)}
+.bld{border-left:3px solid var(--line);border-right:3px solid var(--line);padding:8px 8px 0;border-radius:4px}
+.bld-roof{height:0;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:16px solid var(--line);margin:0 -11px}
+.fl{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);margin-bottom:6px;width:100%;text-align:left}
+.fl.ug{background:#0b1322;border-style:dashed}
+.fl .lb{width:40px;font-family:var(--mono);font-weight:800;font-size:13px;color:var(--brand)}
+.fl .bars{flex:1;min-width:0}
+.fl .fbar{height:9px;border-radius:6px;background:var(--line);display:flex;overflow:hidden}
+.fl .fbar i{display:block;height:100%}
+.fl .cs{font-size:10.5px;color:var(--ink-faint);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono)}
+.fl .n{font-family:var(--mono);font-weight:800;font-size:14px;min-width:24px;text-align:right}
+.fl .pl{font-size:10px;color:var(--brand-2)}
+.ground{height:4px;background:repeating-linear-gradient(90deg,var(--ink-faint) 0 6px,transparent 6px 10px);margin:4px -11px 8px;opacity:.6}
+.stage{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#fff;touch-action:manipulation;user-select:none}
+.stage img{display:block;width:100%;height:auto;pointer-events:none}
+.stage.placing{outline:3px dashed var(--brand);outline-offset:-3px;cursor:crosshair}
+.pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;z-index:2}
+.pin .hd{min-width:26px;padding:2px 5px;border-radius:7px;font-family:var(--mono);font-size:9.5px;font-weight:800;color:#04201d;box-shadow:0 2px 8px rgba(0,0,0,.45);border:1.5px solid #fff;white-space:nowrap}
+.pin .tl{width:2px;height:7px;background:#fff;box-shadow:0 0 2px #000}
+.pin.sel .hd{outline:3px solid var(--brand-2);transform:scale(1.15)}
+.pin.dim{opacity:.35}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--ink-dim);margin-top:8px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.banner{padding:10px 12px;border-radius:10px;background:#103a36;border:1px solid var(--brand);color:var(--ink);font-size:13px;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.banner button{margin-left:auto}
+.tn{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:8px;font-size:13px;width:100%;text-align:left}
+.tn:active{background:var(--chip)}
+.tn.sel{background:#123047}
+.tn.hit{background:#2a2414}
+.tn .tw{color:var(--ink-faint);font-family:var(--mono);font-size:11px;width:12px;flex-shrink:0}
+.tn .dt{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.tn .cd{font-family:var(--mono);font-size:10.5px;color:var(--brand);flex-shrink:0}
+.tn .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tn .fx{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);flex-shrink:0}
+.tn .imp{font-size:10px;font-weight:800;padding:1px 6px;border-radius:10px;background:var(--chip);color:var(--ink-dim);flex-shrink:0}
+.tn .inf{font-size:9.5px;color:var(--ink-faint);flex-shrink:0}
+.hist{border-left:2px solid var(--line);margin-left:6px;padding-left:12px}
+.hist .he{position:relative;padding:0 0 13px}
+.hist .he::before{content:"";position:absolute;left:-18px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--panel);border:2px solid var(--brand)}
+.hist .he.edit::before{border-color:var(--warn)}
+.hist .he .t{font-size:12px;color:var(--ink-faint);font-family:var(--mono)}
+.hist .he .d{font-size:13px}
+.hist .he .cl{font-size:11.5px;color:var(--ink-dim);font-family:var(--mono);margin-top:4px;line-height:1.6}
+.ver{color:var(--good);font-size:11px;font-weight:800}
+.chk-row{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel-2);margin-bottom:11px;font-size:14px}
+.chk-row input{width:18px;height:18px;accent-color:var(--brand)}
 </style>
 </head>
 <body>
@@ -174,12 +231,15 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--chip);padding:1px 6p
   <section class="pages" id="page-link"></section>
   <!-- ===== 3. 대장 (DB) ===== -->
   <section class="pages" id="page-db"></section>
+  <!-- ===== 4. 디지털트윈 (Twin) ===== -->
+  <section class="pages" id="page-twin"></section>
 </main>
 
 <nav>
   <button class="on" data-tab="collect" onclick="ui.tab('collect')"><span class="ni">📷</span>수집</button>
   <button data-tab="link" onclick="ui.tab('link')"><span class="ni">🔗</span>AI 연동<span class="bdg" id="linkBadge" style="display:none">0</span></button>
   <button data-tab="db" onclick="ui.tab('db')"><span class="ni">🗂️</span>대장·현행화</button>
+  <button data-tab="twin" onclick="ui.tab('twin')"><span class="ni">🏢</span>디지털트윈</button>
 </nav>
 
 <!-- Sheet -->
@@ -197,6 +257,7 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--chip);padding:1px 6p
 <input type="file" id="fileImport" accept="application/json" hidden>
 
 <script>
+(function(){ // 데이터 모듈은 IIFE로 감싸 메인 스크립트의 const 구조분해와 이름 충돌을 방지
 /* ============================================================
    RepiQ 현장수집 · 데이터 모듈
    - 34종 정보통신설비 장비 분류 (TTA K-10.0303 / 과기정통부 고시 기준)
@@ -258,6 +319,48 @@ const EQUIP_GROUPS = ["구내통신","방송수신","구내방송","전송","전
 const CAT_BY_CODE = Object.fromEntries(EQUIP_CATS.map(c=>[c.code,c]));
 
 /* ============================================================
+   디지털트윈 · 계통(토폴로지) 규칙
+   code → 상위 설비 후보(우선순위 순). 후보가 없으면 계통의 최상위(root).
+   규칙은 DAG(순환 없음)로 유지한다.
+   ============================================================ */
+const TOPO_PARENTS = {
+  // 구내통신: MDF → (FDF/RACK/OLT/ROUTER) → IDF → 세대단자함 → 인출구
+  FDF:["MDF"], OLT:["MDF","RACK"], ROUTER:["MDF","RACK"], RACK:["MDF","IDF"],
+  IDF:["MDF","FDF"], ONU:["IDF","FDF","MDF"], WORKSP:["IDF"], OUTLET:["WORKSP","IDF"],
+  PATCH:["RACK","IDF","MDF"], SW:["RACK","IDF","MDF"], CABLE:["IDF","MDF"],
+  CONDUIT:["IDF","MDF"], PULLBOX:["IDF","MDF"],
+  INBLD:["MDF"], ANT:["INBLD"],
+  // 방송공동수신: 안테나 → 헤드엔드 → 증폭/분배 → TAP
+  HEADEND:["SATANT"], AMP:["HEADEND"], TAP:["AMP","HEADEND"], COAX:["AMP","HEADEND"],
+  // 구내방송: 앰프 → 스피커/입력
+  SPK:["PAAMP"], MIC:["PAAMP"],
+  // 전원: UPS → PDU → 정류기/SPD/냉방
+  PDU:["UPS"], RECT:["PDU","UPS"], SPD:["PDU","GND"], AIRCON:["PDU"],
+  // 부대
+  ENVMON:["RACK","MDF","IDF"], CCTV:["SW"], ACCESS:["SW"],
+};
+
+/* 층 파싱: "B2", "지하1층", "3F", "12층", "RF/옥상" → 정수 (RF=999) */
+function parseFloor(s){
+  if(s==null) return null;
+  const t=String(s).toUpperCase().replace(/\s+/g,"");
+  if(!t) return null;
+  let m=t.match(/(?:^|[^A-Z])B(\d{1,2})(?:F|층)?/) || t.match(/^B(\d{1,2})/) || t.match(/지하(\d{1,2})/);
+  if(m) return -parseInt(m[1],10);
+  if(/(?:^|[^A-Z])(?:RF|PH)(?:$|[^A-Z])|옥상|지붕/.test(t)) return 999;
+  m=t.match(/(\d{1,3})(?:F|층)/) || t.match(/지상(\d{1,3})/);
+  if(m) return parseInt(m[1],10);
+  return null;
+}
+function floorLabel(n){ if(n==null) return "층미상"; if(n===999) return "RF"; return n<0?`B${-n}`:`${n}F`; }
+/* 실명 파싱 */
+function parseRoom(s){
+  if(!s) return "";
+  const m=String(s).match(/(TPS|EPS|MDF|IDF|[가-힣A-Za-z0-9]{1,8}실)/);
+  return m?m[1]:"";
+}
+
+/* ============================================================
    AI 프롬프트 — Gemini Vision (gemini-2.0-flash 계열)
    두 단계로 사용:
    (A) 도면 해석 : 층/구역 도면에서 심볼·실명(室名)·설비 위치 추출
@@ -280,14 +383,20 @@ ${cats}
 - 도면의 실명(예: TPS실, MDF실, 통신실, 전기실), 층/동 정보를 최대한 읽어라.
 - 각 설비의 표기 규격(예: UTP Cat6 24C, 광 12C, EMT 36Φ)이 있으면 그대로 옮겨라.
 - 확실치 않으면 confidence를 낮추고 note에 근거를 적어라.
+- 디지털트윈 배치를 위해 각 설비 심볼의 중심 위치를 이미지 기준 상대좌표 pos로 적어라
+  (좌상단 x=0,y=0 / 우하단 x=1,y=1, 소수 3자리). 위치를 특정할 수 없으면 pos를 생략.
+- 도면이 단일 층이면 floor에 "B1","3F","RF" 형식으로 적고, 여러 층(계통도)이면 각 item의 loc에 층을 포함하라.
+- upstream에는 도면 선로상 그 설비에 신호/전원을 공급하는 상위 설비의 label을 적어라(모르면 빈 문자열).
 - 반드시 JSON만 출력. 마크다운/설명 금지.
 
 출력 형식:
 {
  "plan_scope": "도면이 포괄하는 범위 (예: 지하1층 통신 계통)",
+ "floor": "B1",
  "locations": ["TPS실(3F)","MDF실(B1)", ...],
  "items": [
-   {"code":"IDF","label":"3층 TPS 단자함","loc":"3F TPS실","spec":"UTP Cat6 24C","qty":1,"confidence":0.0~1.0,"note":""}
+   {"code":"IDF","label":"3층 TPS 단자함","loc":"3F TPS실","spec":"UTP Cat6 24C","qty":1,
+    "pos":{"x":0.412,"y":0.305},"upstream":"B1 MDF","confidence":0.0~1.0,"note":""}
  ]
 }`;
   },
@@ -337,7 +446,8 @@ ${JSON.stringify(equipReads,null,1)}
 - 도면엔 있으나 사진 없음 → status="plan_only"(현장 확인 필요).
 - 사진엔 있으나 도면에 없음 → status="field_new"(도면 미반영 신규).
 - 규격이 도면≠사진이면 status="mismatch"로 두고 both 값을 남겨라.
-- 위치(loc)는 도면/사진 중 더 구체적인 값을 채택.
+- 위치(loc)는 도면/사진 중 더 구체적인 값을 채택하고 층(예: B1, 3F)을 반드시 포함.
+- planRef에는 매칭된 도면항목의 ref 값(예: "P3")을, photoRef에는 설비사진의 id 값을 그대로 적어라. 없으면 빈 문자열.
 - 반드시 JSON만 출력.
 
 출력 형식:
@@ -346,7 +456,7 @@ ${JSON.stringify(equipReads,null,1)}
   {"code":"IDF","name":"3층 TPS 단자함","loc":"3F TPS실",
    "spec_final":"UTP Cat6 24C","spec_plan":"","spec_field":"",
    "status":"match|plan_only|field_new|mismatch",
-   "planRef":"도면항목 label","photoRef":"설비사진 id 또는 text_found",
+   "planRef":"P3","photoRef":"eq_xxxx",
    "action":"현행화 조치 요약(예: 규격 갱신, 현장 재확인)","confidence":0.0~1.0}
  ],
  "summary":{"match":0,"plan_only":0,"field_new":0,"mismatch":0}
@@ -360,7 +470,8 @@ function kbApply(kind, obj){
   return obj;
 }
 
-window.REPIQ_DATA = { EQUIP_CATS, EQUIP_GROUPS, CAT_BY_CODE, AI, kbApply };
+window.REPIQ_DATA = { EQUIP_CATS, EQUIP_GROUPS, CAT_BY_CODE, AI, kbApply, TOPO_PARENTS, parseFloor, floorLabel, parseRoom };
+})();
 
 </script>
 <script>
@@ -370,7 +481,7 @@ window.REPIQ_DATA = { EQUIP_CATS, EQUIP_GROUPS, CAT_BY_CODE, AI, kbApply };
    AI  : Gemini Vision REST (사용자 키, 클라이언트 직접호출)
    패턴: 단일 상태객체 + 렌더 함수, 프레임워크 없음
    ============================================================ */
-const { EQUIP_CATS, EQUIP_GROUPS, CAT_BY_CODE, AI, kbApply } = window.REPIQ_DATA;
+const { EQUIP_CATS, EQUIP_GROUPS, CAT_BY_CODE, AI, kbApply, TOPO_PARENTS, parseFloor, floorLabel, parseRoom } = window.REPIQ_DATA;
 
 /* ---------- 유틸 ---------- */
 const $ = s => document.querySelector(s);
@@ -435,7 +546,7 @@ function blobToBase64(blob){ return new Promise((res)=>{ const r=new FileReader(
 const LS_KEY="repiq_field_state";
 let S = load();
 function load(){
-  try{ const raw=localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  try{ const raw=localStorage.getItem(LS_KEY); if(raw) return migrate(JSON.parse(raw)); }catch(e){}
   return blankState();
 }
 function blankState(){
@@ -446,8 +557,17 @@ function blankState(){
     equips:[],  // {id, code, photoId, locNote, ai:{extracted,text_found,quality,confidence}, readAt}
     roster:[],  // 매칭 결과 {code,name,loc,spec_final,...,status}
     linkedAt:null,
+    history:[], // 현행화 이력 {id, at, kind:"link"|"edit", source, summary, counts, changes[]}
     tab:"collect",
   };
+}
+/* 이전 버전 상태 → 트윈 스키마 보정 (tid/floor/room 부여) */
+function migrate(st){
+  st={...blankState(), ...st};
+  if(!Array.isArray(st.history)) st.history=[];
+  st.plans.forEach(p=>{ if(p.floor===undefined) p.floor=parseFloor(p.ai?.floor)??parseFloor(p.name)??parseFloor(p.ai?.plan_scope); });
+  st.roster=(st.roster||[]).map(r=>normItem(r, st.plans));
+  return st;
 }
 function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){ toast("저장공간 부족",("bad")); } }
 
@@ -460,7 +580,7 @@ async function callGemini(prompt, imageBlobs){
   }
   const url=`https://generativelanguage.googleapis.com/v1beta/models/${S.model}:generateContent?key=${encodeURIComponent(S.apiKey)}`;
   const body={contents:[{role:"user",parts}],
-    generationConfig:{temperature:0.1, maxOutputTokens:2048, responseMimeType:"application/json"}};
+    generationConfig:{temperature:0.1, maxOutputTokens:8192, responseMimeType:"application/json"}};
   const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   if(!r.ok){ const t=await r.text(); throw new Error(`AI 오류 ${r.status}: ${t.slice(0,160)}`); }
   const j=await r.json();
@@ -488,7 +608,7 @@ const ui = {
   },
   openSheet(kind, arg){
     this._sheet=kind; this._arg=arg;
-    const map={settings:"설정 · API 키", site:"사업장 정보", cat:"장비 종류 선택", detail:"항목 상세"};
+    const map={settings:"설정 · API 키", site:"사업장 정보", cat:"장비 종류 선택", detail:"항목 상세", item:"트윈 설비 상세"};
     $("#sheetTitle").textContent=map[kind]||"";
     $("#sheetBody").innerHTML=""; sheets[kind]?.($("#sheetBody"), arg);
     $("#scrim").classList.add("on"); $("#sheet").classList.add("on");
@@ -517,6 +637,7 @@ function render(){
   if(S.tab==="collect") renderCollect();
   if(S.tab==="link") renderLink();
   if(S.tab==="db") renderDB();
+  if(S.tab==="twin") renderTwin();
 }
 
 /* ---- 페이지 1: 수집 ---- */
@@ -713,12 +834,20 @@ function renderDB(){
           <button class="btn" onclick="exportJSON()">⤓ 백업(JSON)</button>
           <button class="btn ghost sm" onclick="$('#fileImport').click()">복원</button>
         </div>
+        <div class="row" style="margin-top:9px">
+          <button class="btn" onclick="exportTwin()">🏢 트윈 JSON</button>
+          <button class="btn ghost sm" onclick="addManualItem()">+ 설비 수동 추가</button>
+        </div>
         <div class="hint">CSV는 설비대장/DB 현행화 반영용입니다. JSON 백업은 사진 메타·AI 판독까지 포함합니다(사진 원본은 기기에 저장).</div>
       `:`<div class="empty"><div class="ic">🗂️</div>
         연동을 완료하면 여기에 최신 설비대장이 생성됩니다.<br>
         <button class="btn sm" style="margin-top:10px" onclick="ui.tab('link')">AI 연동으로 →</button></div>`}
     </div>`;
   root.appendChild(c0);
+  const ch=el("div","card");
+  ch.innerHTML=`<div class="card-h"><span class="n">⟲</span><h2>현행화 이력</h2><span class="sub">${S.history.length}건</span></div>
+    <div class="card-b" id="histBox"></div>`;
+  root.appendChild(ch); renderHistory($("#histBox"));
   if(S.roster.length){
     renderRosterList($("#rosterFull"), S.roster);
     $("#filterSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
@@ -751,19 +880,23 @@ async function renderRosterList(box, list){
       <img class="lp" id="lp-${uid()}" alt="">
       <div class="meta">
         <div class="nm">${esc(r.name||cat?.name||r.code)} <span class="badge ${sm.c}">${sm.t}</span></div>
-        <div class="kv">${esc(cat?.name||r.code)} · ${esc(r.loc||"위치미상")}</div>
+        <div class="kv">${esc(cat?.name||r.code)} · <b style="color:var(--brand)">${floorLabel(r.floor)}</b> · ${esc(r.loc||"위치미상")} ${r.verified?'<span class="ver">✔ 현장확인</span>':""}</div>
         <div class="kv" style="color:var(--ink)">${esc(r.spec_final||"-")}</div>
         ${r.status==="mismatch"?`<div class="kv" style="color:var(--warn)">도면:${esc(r.spec_plan||"-")} ↔ 현장:${esc(r.spec_field||"-")}</div>`:""}
         ${r.action?`<div class="kv" style="color:var(--brand)">▸ ${esc(r.action)}</div>`:""}
         <div class="conf"><i style="width:${Math.round((r.confidence||0)*100)}%"></i></div>
       </div>`;
+    if(r.tid){ row.style.cursor="pointer"; row.onclick=()=>ui.openSheet("item", r.tid); }
     box.appendChild(row);
     const imgEl=row.querySelector("img.lp");
     if(photo){ imgEl.src=await photoURL(photo); } else imgEl.style.display="none";
   }
 }
 function findPhotoForRoster(r){
-  // 사진 참조 우선, 없으면 같은 code 첫 설비사진
+  // 사진 id 참조 → 원문 참조 → 같은 code 첫 설비사진
+  if(r.photoId) return r.photoId;
+  const byId = r.photoRef && S.equips.find(e=>e.id===r.photoRef);
+  if(byId) return byId.photoId;
   const byRef = S.equips.find(e=> e.ai && (e.ai.text_found && r.photoRef && e.ai.text_found.includes?.(r.photoRef)));
   if(byRef) return byRef.photoId;
   const byCode = S.equips.find(e=>e.code===r.code);
@@ -774,6 +907,81 @@ function findPhotoForRoster(r){
    시트(모달) 내용
    ============================================================ */
 const sheets={
+  item(b, tid){
+    const r=byTid(tid); if(!r){ b.innerHTML=`<div class="empty">항목을 찾을 수 없습니다</div>`; return; }
+    const {map, children}=topology();
+    const blocked=new Set([r.tid, ...descendants(r.tid, children)]);
+    const inf=map[r.tid]?.inferred?byTid(map[r.tid].parent):null;
+    const parentOpts=S.roster.filter(o=>!blocked.has(o.tid))
+      .map(o=>`<option value="${o.tid}" ${r.parent===o.tid?"selected":""}>${esc(o.code)} · ${esc(o.name)} (${floorLabel(o.floor)})</option>`).join("");
+    const photo=findPhotoForRoster(r);
+    const nDown=descendants(r.tid, children).length;
+    b.innerHTML=`
+      ${photo?`<img id="iImg" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid var(--line);margin-bottom:12px">`:""}
+      <div class="row tight" style="margin-bottom:12px">
+        <span class="badge ${STATUS_META[r.status]?.c||"match"}">${STATUS_META[r.status]?.t||esc(r.status)}</span>
+        <span class="badge" style="background:var(--chip);color:var(--ink-dim)">ID ${esc(r.tid)}</span>
+        ${nDown?`<span class="badge chk">하위 ${nDown}개 영향</span>`:""}
+        ${validPos(r.pos)?`<span class="badge new">📍 배치됨</span>`:`<span class="badge miss">미배치</span>`}
+      </div>
+      <label class="chk-row"><input type="checkbox" id="iVer" ${r.verified?"checked":""}> 현장 확인 완료 (트윈 = 실물)</label>
+      <div class="grid2">
+        <label class="fld"><span>장비 분류</span><select class="inp" id="iCode">${EQUIP_CATS.map(c=>`<option value="${c.code}" ${c.code===r.code?"selected":""}>${c.code} · ${esc(c.name)}</option>`).join("")}</select></label>
+        <label class="fld"><span>상태</span><select class="inp" id="iSt">${Object.entries(STATUS_META).map(([k,m])=>`<option value="${k}" ${k===r.status?"selected":""}>${m.t}</option>`).join("")}</select></label>
+      </div>
+      <label class="fld"><span>설비명</span><input class="inp" id="iName" value="${esc(r.name)}"></label>
+      <div class="grid2">
+        <label class="fld"><span>층 (예: B1, 3F, RF)</span><input class="inp" id="iFloor" value="${r.floor==null?"":floorLabel(r.floor)}"></label>
+        <label class="fld"><span>위치</span><input class="inp" id="iLoc" value="${esc(r.loc||"")}"></label>
+      </div>
+      <label class="fld"><span>최종 규격</span><input class="inp" id="iSpec" value="${esc(r.spec_final||"")}"></label>
+      ${r.spec_plan||r.spec_field?`<div class="hint" style="margin:-4px 0 11px">도면: ${esc(r.spec_plan||"-")} · 현장: ${esc(r.spec_field||"-")}</div>`:""}
+      <label class="fld"><span>상위 설비 (계통)</span><select class="inp" id="iPar">
+        <option value="">${inf?`자동 추론: ${esc(inf.code)} · ${esc(inf.name)}`:"자동 (없음 / 최상위)"}</option>${parentOpts}</select></label>
+      <label class="fld"><span>메모</span><textarea class="inp" id="iMemo" placeholder="점검·조치 메모">${esc(r.memo||"")}</textarea></label>
+      <div class="row tight">
+        <button class="btn" id="iPlace" style="flex:1">📍 도면에 ${validPos(r.pos)?"재배치":"배치"}</button>
+        <button class="btn" id="iTopo" style="flex:1">🔀 영향 분석</button>
+      </div>
+      <button class="btn pri wide" style="margin-top:10px" id="iSave">저장</button>
+      <button class="btn danger ghost wide" style="margin-top:7px" id="iDel">대장에서 삭제</button>`;
+    if(photo) photoURL(photo).then(u=>{ const im=b.querySelector("#iImg"); if(im) im.src=u; });
+    const collect=()=>{
+      const fTxt=b.querySelector("#iFloor").value.trim();
+      return { verified:b.querySelector("#iVer").checked, code:b.querySelector("#iCode").value, status:b.querySelector("#iSt").value,
+        name:b.querySelector("#iName").value.trim()||r.name, floor:fTxt?parseFloor(/^\d+$/.test(fTxt)?fTxt+"F":fTxt):null,
+        loc:b.querySelector("#iLoc").value.trim(), spec_final:b.querySelector("#iSpec").value.trim(),
+        parent:b.querySelector("#iPar").value||undefined, memo:b.querySelector("#iMemo").value.trim() };
+    };
+    const apply=()=>{
+      const nv=collect(); const ch=[];
+      const show=(k,x)=> k==="floor"?(x==null?"":floorLabel(x)) : k==="parent"?(byTid(x)?.code||"") : k==="verified"?(x?"Y":"") : (x??"");
+      Object.entries(nv).forEach(([k,v])=>{
+        const ov=r[k];
+        const same = k==="verified" ? !!ov===!!v : (ov??"")===(v??"");
+        if(!same){
+          ch.push({field:k, from:String(show(k,ov)), to:String(show(k,v))});
+          if(v===undefined) delete r[k]; else r[k]=v;
+        }
+      });
+      if(ch.some(c=>c.field==="loc")){
+        r.room=parseRoom(r.loc);
+        if(!ch.some(c=>c.field==="floor") && parseFloor(r.loc)!=null) r.floor=parseFloor(r.loc);
+      }
+      logEdit(r, ch); save(); return ch.length;
+    };
+    b.querySelector("#iSave").onclick=()=>{ const n=apply(); ui.closeSheet(); render(); toast(n?`수정 ${n}건 기록됨`:"변경 없음", n?"good":""); };
+    b.querySelector("#iPlace").onclick=()=>{ apply(); ui.closeSheet(); TW.view="floor"; TW.floor=r.floor??null; TW.planId=r.pos?.planId||null; TW.placing=r.tid; ui.tab("twin"); };
+    b.querySelector("#iTopo").onclick=()=>{ apply(); ui.closeSheet(); TW.view="topo"; TW.sel=r.tid; ui.tab("twin"); };
+    b.querySelector("#iDel").onclick=()=>{
+      if(!confirm(`'${r.name}'을(를) 대장에서 삭제할까요?`)) return;
+      S.roster=S.roster.filter(x=>x.tid!==r.tid);
+      S.roster.forEach(x=>{ if(x.parent===r.tid) delete x.parent; });
+      pushHistory({kind:"edit", source:"manual", changes:[{type:"removed", tid:r.tid, name:r.name, from:r.spec_final||""}]});
+      if(TW.sel===r.tid) TW.sel=null;
+      save(); ui.closeSheet(); render(); toast("삭제됨");
+    };
+  },
   settings(b){
     b.innerHTML=`
       <label class="fld"><span>Gemini API 키</span>
@@ -839,8 +1047,12 @@ const sheets={
       const p=S.plans.find(x=>x.id===arg.id); if(!p) return;
       b.innerHTML=`
         <img id="dImg" style="width:100%;border-radius:12px;border:1px solid var(--line);margin-bottom:12px">
+        <div class="grid2">
         <label class="fld"><span>도면 이름</span>
           <input class="inp" id="dName" value="${esc(p.name)}"></label>
+        <label class="fld"><span>층 (트윈 배치용, 예: B1·3F)</span>
+          <input class="inp" id="dFloor" placeholder="계통도면은 빈칸" value="${p.floor==null?"":floorLabel(p.floor)}"></label>
+        </div>
         ${p.ai?`
           <div class="note" style="margin-bottom:10px"><b>AI 도면 해석</b><br>
             범위: ${esc(p.ai.plan_scope||"-")}<br>
@@ -857,7 +1069,9 @@ const sheets={
             <div class="kv">${esc(it.label||"")} · ${esc(it.loc||"")}</div>
             <div class="kv" style="color:var(--ink)">${esc(it.spec||"-")}</div></div>`;
           box.appendChild(r); }); }
-      b.querySelector("#dSave").onclick=()=>{ p.name=b.querySelector("#dName").value.trim(); save(); ui.closeSheet(); render(); };
+      b.querySelector("#dSave").onclick=()=>{ p.name=b.querySelector("#dName").value.trim();
+        const ft=b.querySelector("#dFloor").value.trim(); p.floor=ft?parseFloor(/^\d+$/.test(ft)?ft+"F":ft):null;
+        save(); ui.closeSheet(); render(); };
     } else {
       const e=S.equips.find(x=>x.id===arg.id); if(!e) return;
       const cat=CAT_BY_CODE[e.code];
@@ -912,7 +1126,9 @@ async function runPlanAI(){
       const blob=await DB.get(p.photoId);
       let res=await callGemini(AI.planPrompt({site:S.site, planName:p.name}), [blob]);
       res=kbApply("plan", res);
-      p.ai=res; p.parsedAt=now(); ok++; save();
+      p.ai=res; p.parsedAt=now(); ok++;
+      if(p.floor==null) p.floor=parseFloor(res.floor)??parseFloor(p.name)??parseFloor(res.plan_scope);
+      save();
     }catch(err){ fail++; setProg(`⚠️ ${esc(err.message)}`); }
   }
   save(); render();
@@ -943,25 +1159,28 @@ async function runEquipAI(){
 async function runMatch(){
   const btn=$("#btnLink"); if(btn){ btn.disabled=true; btn.innerHTML=`<span class="sp"></span> 연동 중`; }
   setProg("도면·설비 대조 중…");
-  // 도면 항목 취합
-  const planItems=[];
-  S.plans.forEach(p=>(p.ai?.items||[]).forEach(it=>planItems.push({...it, planName:p.name})));
+  // 도면 항목 취합 (ref 부여 → 대장↔도면 좌표 연결)
+  const planIdx=buildPlanItems();
+  const planItems=planIdx.list;
+  const planForAI=planItems.map(({pos,planId,planFloor,...rest})=>rest);
   // 설비 판독 취합
   const equipReads=S.equips.filter(e=>e.ai).map(e=>({
     id:e.id, code:e.code, locNote:e.locNote,
     extracted:e.ai.extracted, text_found:e.ai.text_found, confidence:e.ai.confidence
   }));
   try{
-    let res=await callGemini(AI.matchPrompt(planItems, equipReads, {site:S.site}), []);
+    let res=await callGemini(AI.matchPrompt(planForAI, equipReads, {site:S.site}), []);
     res=kbApply("match", res);
-    S.roster=(res.roster||[]).map(r=>({...r}));
+    const c=commitRoster((res.roster||[]).map(r=>attachPlanRefs({...r}, planIdx)), "ai");
+    resolveUpHints();
     S.linkedAt=now(); save(); render();
-    toast(`연동 완료 · 대장 ${S.roster.length}건 생성`,"good");
+    toast(`연동 완료 · 대장 ${S.roster.length}건 (+${c.added} −${c.removed} ~${c.changed})`,"good");
     setProg("");
   }catch(err){
     // AI 매칭 실패 시 로컬 규칙 기반 폴백
     setProg("AI 매칭 실패 → 로컬 규칙으로 대장 생성");
-    S.roster=localMatch(planItems, equipReads);
+    commitRoster(localMatch(planItems, equipReads).map(r=>attachPlanRefs(r, planIdx)), "local");
+    resolveUpHints();
     S.linkedAt=now(); save(); render();
     toast(`로컬 연동으로 대장 ${S.roster.length}건 생성`,"bad");
   }
@@ -971,22 +1190,24 @@ async function runMatch(){
 function localMatch(planItems, equipReads){
   const out=[]; const usedEquip=new Set();
   planItems.forEach(pi=>{
-    const m=equipReads.find(e=>e.code===pi.code && !usedEquip.has(e.id));
+    const pf=parseFloor(pi.loc)??pi.planFloor;
+    const cands=equipReads.filter(e=>e.code===pi.code && !usedEquip.has(e.id));
+    const m=cands.find(e=>pf!=null && parseFloor(e.locNote)===pf) || cands.find(e=>parseFloor(e.locNote)==null) || (pf==null?cands[0]:null);
     if(m){ usedEquip.add(m.id);
       const fSpec=Object.values(m.extracted||{}).filter(Boolean).join(" ");
       out.push({code:pi.code, name:pi.label||CAT_BY_CODE[pi.code]?.name, loc:pi.loc||m.locNote||"",
         spec_final:fSpec||pi.spec||"", spec_plan:pi.spec||"", spec_field:fSpec||"",
         status: fSpec&&pi.spec&&fSpec!==pi.spec?"mismatch":"match",
-        action:"", confidence:m.confidence||0.5, photoRef:m.text_found||""});
+        action:fSpec&&pi.spec&&fSpec!==pi.spec?"규격 갱신 검토":"", confidence:m.confidence||0.5, photoRef:m.id, planRef:pi.ref});
     } else out.push({code:pi.code, name:pi.label||CAT_BY_CODE[pi.code]?.name, loc:pi.loc||"",
         spec_final:pi.spec||"", spec_plan:pi.spec||"", status:"plan_only",
-        action:"현장 재확인", confidence:pi.confidence||0.4});
+        action:"현장 재확인", confidence:pi.confidence||0.4, planRef:pi.ref});
   });
   equipReads.forEach(e=>{ if(usedEquip.has(e.id)) return;
     const fSpec=Object.values(e.extracted||{}).filter(Boolean).join(" ");
     out.push({code:e.code, name:CAT_BY_CODE[e.code]?.name, loc:e.locNote||"",
       spec_final:fSpec, spec_field:fSpec, status:"field_new",
-      action:"도면 미반영 신규", confidence:e.confidence||0.5, photoRef:e.text_found||""});
+      action:"도면 미반영 신규", confidence:e.confidence||0.5, photoRef:e.id});
   });
   return out;
 }
@@ -997,7 +1218,9 @@ function localMatch(planItems, equipReads){
 async function delPlan(id){
   const p=S.plans.find(x=>x.id===id); if(!p) return;
   if(p.photoId){ await DB.del(p.photoId); delete _urlCache[p.photoId]; }
-  S.plans=S.plans.filter(x=>x.id!==id); S.linkedAt=null; save(); render();
+  S.plans=S.plans.filter(x=>x.id!==id);
+  S.roster.forEach(r=>{ if(r.pos?.planId===id) delete r.pos; });
+  S.linkedAt=null; save(); render();
 }
 async function delEquip(id){
   const e=S.equips.find(x=>x.id===id); if(!e) return;
@@ -1014,7 +1237,7 @@ $("#filePlan").addEventListener("change", async e=>{
   toast("도면 저장 중…");
   const blob=await resizeImage(f, 1900, 0.85);
   const pid=uid("ph_"); await DB.put(pid, blob);
-  S.plans.push({id:uid("pl_"), name:`도면 ${S.plans.length+1}`, photoId:pid, ai:null, addedAt:now()});
+  S.plans.push({id:uid("pl_"), name:`도면 ${S.plans.length+1}`, photoId:pid, ai:null, floor:null, addedAt:now()});
   S.linkedAt=null; save(); render(); toast("도면 추가됨","good");
 });
 
@@ -1037,7 +1260,7 @@ $("#fileImport").addEventListener("change", async e=>{
     const data=JSON.parse(await f.text());
     if(!data._repiq) throw new Error("RepiQ 백업 파일이 아닙니다");
     const key=S.apiKey, model=S.model;
-    S={...blankState(), ...data.state, apiKey:key, model:model};
+    S=migrate({...data.state, apiKey:key, model:model});
     save(); render();
     toast("복원 완료(사진 원본은 기기별로 별도)","good");
   }catch(err){ toast("복원 실패: "+err.message,"bad"); }
@@ -1047,12 +1270,16 @@ $("#fileImport").addEventListener("change", async e=>{
    내보내기
    ============================================================ */
 function exportCSV(){
-  const head=["구분","장비코드","장비명","위치","최종규격","도면규격","현장규격","상태","조치","신뢰도"];
-  const rows=S.roster.map(r=>[
-    S.site, r.code, r.name||CAT_BY_CODE[r.code]?.name||"", r.loc||"",
+  const {map}=topology();
+  const head=["구분","트윈ID","장비코드","장비명","층","실","위치","최종규격","도면규격","현장규격","상태","현장확인","상위설비","도면좌표","조치","신뢰도","메모"];
+  const rows=S.roster.map(r=>{ const par=byTid(map[r.tid]?.parent); return [
+    S.site, r.tid||"", r.code, r.name||CAT_BY_CODE[r.code]?.name||"", floorLabel(r.floor), r.room||"", r.loc||"",
     r.spec_final||"", r.spec_plan||"", r.spec_field||"",
-    STATUS_META[r.status]?.t||r.status, r.action||"", Math.round((r.confidence||0)*100)+"%"
-  ]);
+    STATUS_META[r.status]?.t||r.status, r.verified?"Y":"",
+    par?`${par.code} ${par.name}${map[r.tid].inferred?" (추론)":""}`:"",
+    validPos(r.pos)?`${(S.plans.find(p=>p.id===r.pos.planId)?.name)||""}@${r.pos.x},${r.pos.y}`:"",
+    r.action||"", Math.round((r.confidence||0)*100)+"%", r.memo||""
+  ];});
   const csv=[head,...rows].map(row=>row.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\r\n");
   const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
   download(blob, `RepiQ_설비대장_${S.site||"현장"}_${dstamp()}.csv`);
@@ -1071,6 +1298,413 @@ function download(blob, name){
 function dstamp(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`; }
 window.exportCSV=exportCSV; window.exportJSON=exportJSON;
 window.runPlanAI=runPlanAI; window.runEquipAI=runEquipAI; window.runMatch=runMatch;
+
+/* ============================================================
+   디지털트윈 엔진
+   - 대장 항목에 고유 tid를 부여하여 재연동 시에도 동일 설비로 추적
+   - 층/실 파싱 → 건물 모델, 도면 좌표(pos) → 평면 핀 배치
+   - 규칙 기반 계통 추론(TOPO_PARENTS) + 수동 지정 → 장애 영향 분석
+   - 재연동/수정 시 변경분(diff)을 현행화 이력으로 기록
+   ============================================================ */
+const STATUS_COLOR={match:"var(--good)", field_new:"var(--brand-2)", mismatch:"var(--warn)", plan_only:"var(--bad)"};
+const normKey = s => (s==null?"":String(s)).toLowerCase().replace(/[\s()\[\]·,./_-]+/g,"");
+const clamp01 = v => Math.max(0, Math.min(1, Number(v)));
+const validPos = p => p && isFinite(p.x) && isFinite(p.y);
+
+function normItem(r, plans){
+  const it={...r};
+  if(!it.tid) it.tid=uid("tw_");
+  if(!it.name) it.name=CAT_BY_CODE[it.code]?.name||it.code||"설비";
+  if(it.floor===undefined || it.floor===null){
+    let f=parseFloor(it.loc);
+    if(f==null && it.pos?.planId){ const p=(plans||S?.plans||[]).find(x=>x.id===it.pos.planId); f=p?.floor??null; }
+    it.floor=f;
+  }
+  if(!it.room) it.room=parseRoom(it.loc);
+  if(it.pos && !validPos(it.pos)) delete it.pos;
+  return it;
+}
+
+function pushHistory(entry){
+  S.history.unshift({id:uid("h_"), at:now(), ...entry});
+  if(S.history.length>80) S.history.length=80;
+}
+
+/* 수동 수정 기록 */
+function logEdit(item, changes){
+  if(!changes.length) return;
+  pushHistory({kind:"edit", source:"manual",
+    changes:changes.map(c=>({type:"changed", tid:item.tid, name:item.name, ...c}))});
+}
+
+/* 새 연동 결과를 기존 트윈에 병합 (tid·핀·계통·현장확인 유지) */
+function commitRoster(newList, source){
+  const prev=S.roster||[];
+  const fresh=newList.map(r=>normItem(r));
+  const used=new Set(); const changes=[];
+  fresh.forEach(n=>{
+    let best=null, bs=0;
+    prev.forEach(o=>{
+      if(used.has(o.tid) || o.code!==n.code) return;
+      let sc=1;
+      if(normKey(o.loc) && normKey(o.loc)===normKey(n.loc)) sc+=3;
+      else if(o.floor!=null && o.floor===n.floor) sc+=1.5;
+      if(normKey(o.name) && normKey(o.name)===normKey(n.name)) sc+=2;
+      if(o.photoRef && o.photoRef===n.photoRef) sc+=2;
+      if(sc>bs){ bs=sc; best=o; }
+    });
+    if(best && bs>=2.5){
+      used.add(best.tid); n.tid=best.tid;
+      if(best.pos?.manual || (!n.pos && best.pos)) n.pos=best.pos;
+      if(best.parent) n.parent=best.parent;
+      if(best.memo) n.memo=best.memo;
+      ["spec_final","status","loc"].forEach(f=>{
+        if((best[f]||"")!==(n[f]||"")) changes.push({type:"changed", tid:n.tid, name:n.name, field:f, from:best[f]||"", to:n[f]||""});
+      });
+      if(best.verified && (best.spec_final||"")===(n.spec_final||"")) n.verified=best.verified;
+    } else changes.push({type:"added", tid:n.tid, name:n.name, to:n.spec_final||""});
+  });
+  prev.forEach(o=>{
+    if(used.has(o.tid)) return;
+    if(o.manual || o.verified){ fresh.push(o); return; } // 수동 등록·현장확인 설비는 보존
+    changes.push({type:"removed", tid:o.tid, name:o.name, from:o.spec_final||""});
+  });
+  const ids=new Set(fresh.map(x=>x.tid));
+  fresh.forEach(x=>{ if(x.parent && !ids.has(x.parent)) delete x.parent; });
+  S.roster=fresh;
+  const counts={added:0,removed:0,changed:0}; changes.forEach(c=>counts[c.type]++);
+  pushHistory({kind:"link", source, summary:rosterSummary(), counts, total:fresh.length, changes:changes.slice(0,200)});
+  return counts;
+}
+
+/* 도면항목 ref → 대장항목에 좌표/층/상위 힌트 부여 */
+function attachPlanRefs(item, planIdx){
+  const pi = planIdx.byRef[item.planRef] || planIdx.byLabel[normKey(item.planRef)];
+  if(!pi) return item;
+  if(!item.pos && validPos(pi.pos)) item.pos={planId:pi.planId, x:clamp01(pi.pos.x), y:clamp01(pi.pos.y)};
+  if(item.floor==null) item.floor=parseFloor(item.loc)??parseFloor(pi.loc)??pi.planFloor??null;
+  if(pi.upstream) item._upHint=pi.upstream;
+  return item;
+}
+function buildPlanItems(){
+  const list=[]; let n=0;
+  S.plans.forEach(p=>(p.ai?.items||[]).forEach(it=>{ n++;
+    list.push({...it, ref:"P"+n, planId:p.id, planName:p.name, planFloor:p.floor??null}); }));
+  const byRef={}, byLabel={};
+  list.forEach(x=>{ byRef[x.ref]=x; if(x.label) byLabel[normKey(x.label)]=x; });
+  return {list, byRef, byLabel};
+}
+/* 도면 upstream 라벨 힌트 → 실제 parent tid 확정(수동 지정이 없을 때만) */
+function resolveUpHints(){
+  S.roster.forEach(r=>{
+    if(!r._upHint){ return; }
+    if(!r.parent){
+      const k=normKey(r._upHint);
+      const cand=S.roster.find(o=>o.tid!==r.tid && (normKey(o.name)===k || normKey(o.loc+o.code)===k || normKey(o.name).includes(k)));
+      if(cand && !isDescendant(cand.tid, r.tid)) r.parent=cand.tid;
+    }
+    delete r._upHint;
+  });
+}
+
+/* ---------- 계통(토폴로지) ---------- */
+function floorDist(a,b){ if(a==null||b==null) return 50; const fa=a===999?200:a, fb=b===999?200:b; return Math.abs(fa-fb); }
+function inferParent(item, roster){
+  const cands=TOPO_PARENTS[item.code]; if(!cands) return null;
+  for(const pc of cands){
+    let best=null, bd=1e9;
+    roster.forEach(o=>{ if(o.tid===item.tid || o.code!==pc) return;
+      let d=floorDist(item.floor,o.floor)*2 + (item.room&&o.room&&item.room===o.room?0:1);
+      if(d<bd){ bd=d; best=o; } });
+    if(best) return best.tid;
+  }
+  return null;
+}
+/* 유효 상위 맵 {tid: {parent, inferred}} */
+function topology(){
+  const map={}; const R=S.roster;
+  R.forEach(r=>{
+    if(r.parent) map[r.tid]={parent:r.parent, inferred:false};
+    else { const p=inferParent(r,R); map[r.tid]={parent:p, inferred:!!p}; }
+  });
+  // 순환 방지: 수동 지정끼리 순환하면 끊는다
+  R.forEach(r=>{ const seen=new Set([r.tid]); let cur=map[r.tid]?.parent;
+    while(cur){ if(seen.has(cur)){ map[r.tid].parent=null; break; } seen.add(cur); cur=map[cur]?.parent; } });
+  const children={};
+  R.forEach(r=>{ const p=map[r.tid].parent; if(p){ (children[p]=children[p]||[]).push(r.tid); } });
+  return {map, children};
+}
+function descendants(tid, children){
+  const out=[]; const st=[...(children[tid]||[])];
+  while(st.length){ const t=st.pop(); out.push(t); st.push(...(children[t]||[])); }
+  return out;
+}
+function isDescendant(maybeChild, ofTid){
+  const {children}=topology(); return descendants(ofTid, children).includes(maybeChild);
+}
+const byTid = tid => S.roster.find(r=>r.tid===tid);
+
+/* ---------- 트윈 동기화 지수 ---------- */
+function twinHealth(){
+  const R=S.roster, n=R.length; if(!n) return null;
+  const {map}=topology();
+  const sync=R.filter(r=>r.status==="match"||r.verified).length/n;
+  const pos=R.filter(r=>validPos(r.pos)).length/n;
+  const topo=R.filter(r=>!TOPO_PARENTS[r.code] || map[r.tid]?.parent).length/n;
+  const photo=R.filter(r=>findPhotoForRoster(r)).length/n;
+  const conf=R.reduce((a,r)=>a+(Number(r.confidence)||0),0)/n;
+  const score=Math.round(100*(.35*sync+.2*pos+.15*topo+.15*photo+.15*conf));
+  const days=S.linkedAt?Math.floor((Date.now()-new Date(S.linkedAt))/864e5):null;
+  return {score, sync, pos, topo, photo, conf, days, n};
+}
+
+/* ---------- 건물 모델 ---------- */
+function floorsModel(){
+  const fl=new Map();
+  const get=k=>{ if(!fl.has(k)) fl.set(k,{floor:k, items:[], plans:[]}); return fl.get(k); };
+  S.roster.forEach(r=>get(r.floor??null).items.push(r));
+  S.plans.forEach(p=>{ if(p.floor!=null) get(p.floor).plans.push(p); });
+  const arr=[...fl.values()];
+  arr.sort((a,b)=>{ if(a.floor==null) return 1; if(b.floor==null) return -1; return b.floor-a.floor; });
+  return arr;
+}
+
+/* ============================================================
+   트윈 UI
+   ============================================================ */
+const TW={view:"building", floor:undefined, planId:null, placing:null, sel:null, collapsed:{}};
+window.TW=TW;
+
+function renderTwin(){
+  const root=$("#page-twin"); root.innerHTML="";
+  if(!S.roster.length){
+    root.innerHTML=`<div class="card"><div class="card-b empty"><div class="ic">🏢</div>
+      디지털트윈은 설비대장을 기반으로 생성됩니다.<br>AI 연동을 완료하거나 대장에서 설비를 수동 추가하세요.
+      <div class="row" style="justify-content:center;margin-top:12px">
+        <button class="btn sm" onclick="ui.tab('link')">AI 연동 →</button>
+        <button class="btn sm" onclick="addManualItem()">+ 수동 추가</button></div></div></div>`;
+    return;
+  }
+  // 동기화 지수
+  const h=twinHealth();
+  const gc=h.score>=80?"var(--good)":h.score>=55?"var(--warn)":"var(--bad)";
+  const hb=(t,v)=>`<div class="hbar"><span>${t}</span><span class="tr"><i style="width:${Math.round(v*100)}%"></i></span><span class="v">${Math.round(v*100)}</span></div>`;
+  const c0=el("div","card");
+  c0.innerHTML=`<div class="card-h"><span class="n">DT</span><h2>트윈 동기화 지수</h2>
+      <span class="sub">${h.days==null?"연동 전":h.days===0?"오늘 현행화":`${h.days}일 경과`}</span></div>
+    <div class="card-b"><div class="twin-health">
+      <div class="gauge" style="background:conic-gradient(${gc} ${h.score*3.6}deg, var(--line) 0)"><b style="color:${gc}">${h.score}<small>/ 100</small></b></div>
+      <div class="hbars">${hb("현장일치",h.sync)}${hb("도면배치",h.pos)}${hb("계통연결",h.topo)}${hb("사진증빙",h.photo)}${hb("판독신뢰",h.conf)}</div>
+    </div>
+    ${h.days!=null&&h.days>=90?`<div class="note" style="margin-top:11px">⏱ 마지막 현행화 후 <b>${h.days}일</b> 경과 — 현장 재수집을 권장합니다.</div>`:""}
+    </div>`;
+  root.appendChild(c0);
+
+  const c1=el("div","card");
+  c1.innerHTML=`<div class="card-b">
+    <div class="seg" style="margin-bottom:13px">
+      <button data-v="building" class="${TW.view==="building"?"on":""}">🏢 건물</button>
+      <button data-v="floor" class="${TW.view==="floor"?"on":""}">🗺️ 평면 배치</button>
+      <button data-v="topo" class="${TW.view==="topo"?"on":""}">🔀 계통·영향</button>
+    </div><div id="twinBody"></div></div>`;
+  root.appendChild(c1);
+  c1.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{ TW.view=b.dataset.v; TW.placing=null; renderTwin(); });
+  const body=c1.querySelector("#twinBody");
+  if(TW.view==="building") renderBuilding(body);
+  else if(TW.view==="floor") renderFloor(body);
+  else renderTopo(body);
+}
+
+function statusBar(items){
+  const n=items.length||1; const cnt={match:0,field_new:0,mismatch:0,plan_only:0};
+  items.forEach(r=>{ if(cnt[r.status]!=null) cnt[r.status]++; });
+  return Object.entries(cnt).map(([k,v])=>v?`<i style="width:${v/n*100}%;background:${STATUS_COLOR[k]}"></i>`:"").join("");
+}
+function legendHTML(){
+  return `<div class="legend">${Object.entries(STATUS_META).map(([k,m])=>`<span><i style="background:${STATUS_COLOR[k]}"></i>${m.t}</span>`).join("")}<span>✔ 현장확인완료</span></div>`;
+}
+
+function renderBuilding(box){
+  const fls=floorsModel();
+  const above=fls.filter(f=>f.floor!=null && f.floor>0), below=fls.filter(f=>f.floor!=null && f.floor<=0), unk=fls.find(f=>f.floor==null);
+  const row=f=>{
+    const codes=[...new Set(f.items.map(r=>r.code))];
+    const issues=f.items.filter(r=>r.status==="mismatch"||r.status==="plan_only").length;
+    return `<button class="fl ${f.floor!=null&&f.floor<=0?"ug":""}" data-f="${f.floor==null?"null":f.floor}">
+      <span class="lb">${floorLabel(f.floor)}</span>
+      <span class="bars"><span class="fbar">${statusBar(f.items)}</span>
+        <span class="cs">${codes.join(" · ")||"설비 없음"}${f.plans.length?` <span class="pl">· 도면 ${f.plans.length}</span>`:""}</span></span>
+      ${issues?`<span class="badge chk">⚠ ${issues}</span>`:""}
+      <span class="n">${f.items.length}</span></button>`;
+  };
+  box.innerHTML=`
+    <div class="bld-roof"></div>
+    <div class="bld">${above.map(row).join("")||`<div class="faint" style="font-size:12px;padding:6px 0">지상층 데이터 없음</div>`}
+      <div class="ground"></div>
+      ${below.map(row).join("")}</div>
+    ${unk?`<div style="margin-top:10px">${row(unk)}</div><div class="hint">층미상 설비는 상세에서 층을 지정하면 건물 모델에 배치됩니다.</div>`:""}
+    ${legendHTML()}`;
+  box.querySelectorAll(".fl").forEach(b=>b.onclick=()=>{
+    const v=b.dataset.f; TW.floor = v==="null"?null:Number(v); TW.planId=null; TW.view="floor"; renderTwin(); });
+}
+
+function renderFloor(box){
+  const fls=floorsModel();
+  if(TW.floor===undefined || !fls.some(f=>f.floor===TW.floor)) TW.floor=fls[0]?.floor??null;
+  const cur=fls.find(f=>f.floor===TW.floor)||{floor:TW.floor,items:[],plans:[]};
+  const plans=cur.plans.length?cur.plans:S.plans;
+  if(!plans.some(p=>p.id===TW.planId)) TW.planId=plans[0]?.id||null;
+  const plan=S.plans.find(p=>p.id===TW.planId);
+  const placingItem=TW.placing?byTid(TW.placing):null;
+
+  box.innerHTML=`
+    <div class="chips" style="margin-bottom:10px">${fls.map(f=>`<button class="chip ${f.floor===TW.floor?"on":""}" data-f="${f.floor==null?"null":f.floor}">
+      <span class="k">${floorLabel(f.floor)}</span><span class="c">${f.items.length}</span></button>`).join("")}</div>
+    ${plans.length>1?`<select class="inp" id="twPlan" style="margin-bottom:10px">${plans.map(p=>`<option value="${p.id}" ${p.id===TW.planId?"selected":""}>${esc(p.name)} ${p.floor!=null?`(${floorLabel(p.floor)})`:""}</option>`).join("")}</select>`:""}
+    ${!cur.plans.length&&S.plans.length?`<div class="hint" style="margin:0 0 9px">이 층으로 지정된 도면이 없어 전체 도면을 표시합니다. 도면 상세에서 층을 지정하세요.</div>`:""}
+    ${placingItem?`<div class="banner">📍 <span><b>${esc(placingItem.name)}</b> — 도면에서 위치를 탭하세요</span><button class="btn sm" id="twCancel">취소</button></div>`:""}
+    <div id="twStage"></div>
+    ${legendHTML()}
+    <div class="divider"></div>
+    <div style="font-size:12px;color:var(--ink-faint);font-weight:700;margin-bottom:7px">${floorLabel(TW.floor)} 설비 ${cur.items.length}건</div>
+    <div id="twFloorList"></div>`;
+  box.querySelectorAll(".chip[data-f]").forEach(b=>b.onclick=()=>{ const v=b.dataset.f; TW.floor=v==="null"?null:Number(v); TW.planId=null; TW.placing=null; renderTwin(); });
+  box.querySelector("#twPlan")?.addEventListener("change",e=>{ TW.planId=e.target.value; renderTwin(); });
+  box.querySelector("#twCancel")?.addEventListener("click",()=>{ TW.placing=null; renderTwin(); });
+
+  const stageBox=box.querySelector("#twStage");
+  if(!plan){ stageBox.innerHTML=`<div class="empty"><div class="ic">🗺️</div>도면이 없습니다. 수집 탭에서 도면을 촬영하세요.</div>`; }
+  else {
+    const stage=el("div","stage"+(placingItem?" placing":""));
+    const img=el("img"); stage.appendChild(img);
+    photoURL(plan.photoId).then(u=>img.src=u);
+    S.roster.filter(r=>r.pos?.planId===plan.id && validPos(r.pos)).forEach(r=>{
+      const pin=el("div","pin"+(TW.sel===r.tid?" sel":"")+(cur.items.length&&r.floor!==TW.floor&&cur.plans.length?" dim":""));
+      pin.style.left=(r.pos.x*100)+"%"; pin.style.top=(r.pos.y*100)+"%";
+      pin.innerHTML=`<span class="hd" style="background:${STATUS_COLOR[r.status]||"var(--brand)"}">${esc(r.code)}${r.verified?" ✔":""}</span><span class="tl"></span>`;
+      pin.onclick=ev=>{ ev.stopPropagation(); if(TW.placing) return; TW.sel=r.tid; ui.openSheet("item", r.tid); };
+      stage.appendChild(pin);
+    });
+    stage.addEventListener("click",ev=>{
+      if(!TW.placing) return;
+      const it=byTid(TW.placing); if(!it) return;
+      const rc=stage.getBoundingClientRect();
+      const x=+clamp01((ev.clientX-rc.left)/rc.width).toFixed(3), y=+clamp01((ev.clientY-rc.top)/rc.height).toFixed(3);
+      const before=validPos(it.pos)?`${it.pos.x},${it.pos.y}`:"";
+      it.pos={planId:plan.id, x, y, manual:true};
+      if(it.floor==null && plan.floor!=null) it.floor=plan.floor;
+      logEdit(it,[{field:"pos", from:before, to:`${x},${y}@${plan.name}`}]);
+      TW.placing=null; TW.sel=it.tid; save(); renderTwin(); toast("배치 완료","good");
+    });
+    stageBox.appendChild(stage);
+  }
+
+  const lb=box.querySelector("#twFloorList");
+  if(!cur.items.length){ lb.innerHTML=`<div class="empty faint">이 층의 설비가 없습니다</div>`; return; }
+  cur.items.forEach(r=>{
+    const placed=validPos(r.pos);
+    const row=el("div","tn");
+    row.innerHTML=`<span class="dt" style="background:${STATUS_COLOR[r.status]||"var(--ink-faint)"}"></span>
+      <span class="cd">${esc(r.code)}</span><span class="nm">${esc(r.name)} ${r.verified?'<span class="ver">✔</span>':""}</span>
+      <span class="fx">${esc(r.room||"")}</span>
+      <button class="btn sm ${placed?"ghost":""}" style="padding:5px 9px">${placed?"재배치":"📍 배치"}</button>`;
+    row.querySelector("button").onclick=ev=>{ ev.stopPropagation();
+      if(!plan){ toast("도면이 없습니다","bad"); return; }
+      TW.placing=r.tid; renderTwin(); window.scrollTo({top:$("#twStage").getBoundingClientRect().top+scrollY-90, behavior:"smooth"}); };
+    row.onclick=()=>ui.openSheet("item", r.tid);
+    lb.appendChild(row);
+  });
+}
+
+function renderTopo(box){
+  const {map, children}=topology();
+  const R=S.roster;
+  const roots=R.filter(r=>!map[r.tid].parent);
+  const orphan=new Set(roots.filter(r=>TOPO_PARENTS[r.code]).map(r=>r.tid));
+  const tier=c=>TOPO_PARENTS[c]?1:0;
+  roots.sort((a,b)=>tier(a.code)-tier(b.code) || (EQUIP_CATS.indexOf(CAT_BY_CODE[a.code])-EQUIP_CATS.indexOf(CAT_BY_CODE[b.code])));
+  const sel=TW.sel?byTid(TW.sel):null;
+  const affected=new Set(sel?descendants(sel.tid, children):[]);
+
+  let impactHTML="";
+  if(sel){
+    const aff=[...affected].map(byTid).filter(Boolean);
+    const byFloor={}; aff.forEach(a=>{ const k=floorLabel(a.floor); byFloor[k]=(byFloor[k]||0)+1; });
+    const up=[]; let cur=map[sel.tid]?.parent; while(cur && up.length<10){ const u=byTid(cur); if(!u) break; up.unshift(u); cur=map[cur]?.parent; }
+    impactHTML=`<div class="note" style="margin-bottom:11px">
+      <b>${esc(sel.name)}</b> <span class="faint">${esc(sel.code)} · ${floorLabel(sel.floor)}</span><br>
+      ${up.length?`상위 경로: ${up.map(u=>esc(u.code)).join(" → ")} → <b>${esc(sel.code)}</b><br>`:""}
+      장애 시 영향: <b style="color:${aff.length?"var(--warn)":"var(--good)"}">하위 ${aff.length}개 설비</b>
+      ${aff.length?`<br><span class="mono" style="font-size:11.5px">${Object.entries(byFloor).map(([k,v])=>`${k}:${v}`).join("  ")}</span>`:""}
+      <div class="row tight" style="margin-top:8px"><button class="btn sm" id="tpEdit">상세·상위 지정</button><button class="btn sm ghost" id="tpClr">선택 해제</button></div></div>`;
+  }
+  box.innerHTML=`${impactHTML}
+    <div class="hint" style="margin:0 0 8px">설비를 탭하면 상·하위 경로와 장애 영향 범위를 분석합니다. <span class="inf">(추론)</span>은 규칙 기반 자동 연결이며, 상세에서 상위 설비를 직접 지정할 수 있습니다.</div>
+    <div id="tpTree"></div>
+    ${orphan.size?`<div class="note" style="margin-top:10px">🔌 <b>상위 연결 미확인 ${orphan.size}건</b> — 대장에 상위 설비(예: MDF, IDF, UPS)가 없거나 지정되지 않았습니다.</div>`:""}`;
+  box.querySelector("#tpEdit")?.addEventListener("click",()=>ui.openSheet("item", sel.tid));
+  box.querySelector("#tpClr")?.addEventListener("click",()=>{ TW.sel=null; renderTwin(); });
+
+  const tree=box.querySelector("#tpTree");
+  const draw=(r,depth)=>{
+    const kids=(children[r.tid]||[]).map(byTid).filter(Boolean);
+    const n=descendants(r.tid, children).length;
+    const col=TW.collapsed[r.tid];
+    const row=el("button","tn"+(TW.sel===r.tid?" sel":"")+(affected.has(r.tid)?" hit":""));
+    row.style.paddingLeft=(8+depth*16)+"px";
+    row.innerHTML=`<span class="tw">${kids.length?(col?"▸":"▾"):"·"}</span>
+      <span class="dt" style="background:${STATUS_COLOR[r.status]||"var(--ink-faint)"}"></span>
+      <span class="cd">${esc(r.code)}</span><span class="nm">${esc(r.name)}${r.verified?' <span class="ver">✔</span>':""}</span>
+      ${map[r.tid].inferred?'<span class="inf">(추론)</span>':""}${orphan.has(r.tid)?'<span class="badge miss">미연결</span>':""}
+      <span class="fx">${floorLabel(r.floor)}</span>${n?`<span class="imp">↓${n}</span>`:""}`;
+    row.querySelector(".tw").onclick=ev=>{ if(!kids.length) return; ev.stopPropagation(); TW.collapsed[r.tid]=!col; renderTwin(); };
+    row.onclick=()=>{ TW.sel = TW.sel===r.tid?null:r.tid; renderTwin(); };
+    tree.appendChild(row);
+    if(!col) kids.sort((a,b)=>(b.floor??-99)-(a.floor??-99)).forEach(k=>draw(k,depth+1));
+  };
+  roots.forEach(r=>draw(r,0));
+}
+
+/* ---------- 수동 설비 추가 ---------- */
+function addManualItem(){
+  const it=normItem({code:"ETC", name:"신규 설비", loc:"", status:"field_new", spec_final:"", confidence:1, manual:true, verified:true});
+  S.roster.push(it);
+  pushHistory({kind:"edit", source:"manual", changes:[{type:"added", tid:it.tid, name:it.name, to:""}]});
+  save(); render(); ui.openSheet("item", it.tid);
+}
+
+/* ---------- 이력 렌더 ---------- */
+function renderHistory(box){
+  if(!S.history.length){ box.innerHTML=`<div class="empty faint">아직 현행화 이력이 없습니다</div>`; return; }
+  const fl={spec_final:"규격",status:"상태",loc:"위치",name:"명칭",code:"분류",floor:"층",parent:"상위",verified:"현장확인",pos:"배치",memo:"메모"};
+  const sv=v=>{ const s=STATUS_META[v]?.t; return s||v; };
+  box.innerHTML=`<div class="hist">${S.history.slice(0,30).map(h=>{
+    const ch=h.changes||[];
+    const lines=ch.slice(0,8).map(c=> c.type==="added"?`+ ${esc(c.name)}`
+      : c.type==="removed"?`− ${esc(c.name)}`
+      : `~ ${esc(c.name)} · ${fl[c.field]||esc(c.field)}: ${esc(sv(c.from)||"∅")} → ${esc(sv(c.to)||"∅")}`).join("<br>");
+    const title = h.kind==="link"
+      ? `${h.source==="local"?"로컬 규칙":"AI"} 연동 · 대장 ${h.total??"-"}건 <span class="faint">(+${h.counts?.added||0} / −${h.counts?.removed||0} / ~${h.counts?.changed||0})</span>`
+      : `수동 수정 · ${ch.length}건`;
+    return `<div class="he ${h.kind}"><div class="t">${fmt(h.at)}</div><div class="d">${title}</div>
+      ${lines?`<div class="cl">${lines}${ch.length>8?`<br>… 외 ${ch.length-8}건`:""}</div>`:""}</div>`;
+  }).join("")}</div>`;
+}
+
+/* ---------- 트윈 JSON 내보내기 ---------- */
+function exportTwin(){
+  const {map}=topology(); const h=twinHealth();
+  const twin={_repiqTwin:1, version:2, site:S.site, siteNote:S.siteNote, exportedAt:now(), linkedAt:S.linkedAt, health:h,
+    building:{floors:floorsModel().map(f=>({floor:f.floor, label:floorLabel(f.floor), plans:f.plans.map(p=>({id:p.id,name:p.name})), assets:f.items.map(r=>r.tid)}))},
+    assets:S.roster.map(r=>({tid:r.tid, code:r.code, category:CAT_BY_CODE[r.code]?.name||"", group:CAT_BY_CODE[r.code]?.group||"",
+      name:r.name, floor:r.floor, room:r.room||"", loc:r.loc||"", spec:r.spec_final||"", spec_plan:r.spec_plan||"", spec_field:r.spec_field||"",
+      status:r.status, verified:!!r.verified, confidence:r.confidence??null, position:validPos(r.pos)?r.pos:null, memo:r.memo||""})),
+    edges:S.roster.filter(r=>map[r.tid]?.parent).map(r=>({from:map[r.tid].parent, to:r.tid, inferred:map[r.tid].inferred})),
+    history:S.history};
+  download(new Blob([JSON.stringify(twin,null,1)],{type:"application/json"}), `RepiQ_디지털트윈_${S.site||"현장"}_${dstamp()}.json`);
+  toast("트윈 데이터 내보냄","good");
+}
+window.exportTwin=exportTwin; window.addManualItem=addManualItem;
 
 /* ============================================================
    부팅

@@ -3691,7 +3691,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       <div class="sheet" style="max-height:88vh;overflow:auto;">
         <div class="sheet-title">📄 워드에서 사업장 자동 생성</div>
         <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 10px;">
-          제출용 <b>점검결과서(.docx)</b>를 등록하면 사업장을 만듭니다.<br>
+          제출용 <b>점검결과서(.docx)</b>를 등록하면 사업장을 만듭니다. <b>2차 점검</b>이면 사업장을 미리 만들지 않고 지난 결과서만 넣어도 사업장명·설비·이전 위치가 바로 준비됩니다.<br>
           · <b>성능점검 결과서</b> → 성능 사업장, <b>유지보수 점검결과서</b> → 유지보수 사업장으로 자동 구분<br>
           <span style="font-size:12px;">각 설비 점검표에서 설치위치·점검항목·결과(○/X/ㅡ)·비고를, 표 안의 현황사진을 함께 읽습니다.</span>
         </p>
@@ -3710,7 +3710,24 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           <input class="text-input" type="date" id="wd-date">
           <label class="field-label" style="margin-top:8px;">점검자</label>
           <input class="text-input" id="wd-inspector" placeholder="점검자명">
-          <button class="primary-btn" id="wd-create" style="width:100%;margin-top:14px;">✅ 사업장 생성하기</button>
+          <div id="wd-exist" style="display:none;margin-top:12px;"></div>
+          <label class="field-label" style="margin-top:12px;">가져오는 방식</label>
+          <label class="wd-mode-opt" style="display:flex;gap:9px;align-items:flex-start;border:1.5px solid var(--accent);background:var(--accent-weak);border-radius:10px;padding:10px 12px;cursor:pointer;margin-bottom:7px;">
+            <input type="radio" name="wd-mode" value="next" checked style="margin-top:3px;">
+            <span><b style="font-size:13.5px;">🆕 다음 차수로 새로 시작 (2차 점검)</b><br>
+              <span style="font-size:12px;color:var(--muted);line-height:1.55;">사업장명·설비·이전 점검 위치만 가져오고 결과는 비웁니다. 지난 결과는 <b>이전 차수 비교 기준</b>이 되어 전회 부적합·개선/반복이 표시됩니다.</span></span>
+          </label>
+          <div id="wd-next-opts" style="padding:0 4px 4px 30px;">
+            <label class="field-label" style="margin-top:2px;">이번 점검 유형</label>
+            <select class="text-input" id="wd-type"><option value="유지보수">🔧 유지보수점검</option><option value="유지보수2">⚠️ 유지보수점검(부적합)</option><option value="성능">📊 성능점검</option></select>
+            <label style="display:flex;gap:8px;align-items:center;font-size:12.5px;margin-top:8px;cursor:pointer;"><input type="checkbox" id="wd-act" checked> 이전 위치를 바로 점검 대상으로 활성화 <span style="color:var(--muted);">(끄면 ⏸대기로 두고 현장에서 하나씩 활성화)</span></label>
+          </div>
+          <label class="wd-mode-opt" style="display:flex;gap:9px;align-items:flex-start;border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;">
+            <input type="radio" name="wd-mode" value="copy" style="margin-top:3px;">
+            <span><b style="font-size:13.5px;">📄 결과까지 그대로 등록</b><br>
+              <span style="font-size:12px;color:var(--muted);line-height:1.55;">결과서의 점검결과·비고·현황사진을 그대로 옮겨 지난 점검 자료로 보관합니다.</span></span>
+          </label>
+          <button class="primary-btn" id="wd-create" style="width:100%;margin-top:14px;">🆕 다음 차수 점검 시작</button>
         </div>
         <button class="outline-btn" id="wd-cancel" style="width:100%;margin-top:8px;">닫기</button>
       </div>`;
@@ -3719,7 +3736,45 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     document.getElementById("wd-cancel").addEventListener("click", () => ov.remove());
 
     const prog = document.getElementById("wd-prog");
-    let parsed = null, parsedZip = null, parsedRel = null;
+    let parsed = null, parsedZip = null, parsedRel = null, wdDocDate = "";
+    const wdMode = ()=> (ov.querySelector('input[name="wd-mode"]:checked')||{}).value || "next";
+    function wdSyncMode(){
+      const next = wdMode()==="next";
+      ov.querySelectorAll(".wd-mode-opt").forEach(l=>{ const on=l.querySelector("input").checked;
+        l.style.borderColor = on?"var(--accent)":"var(--border)"; l.style.borderWidth = on?"1.5px":"1px"; l.style.background = on?"var(--accent-weak)":"#fff"; });
+      document.getElementById("wd-next-opts").style.display = next?"block":"none";
+      document.getElementById("wd-create").textContent = next ? "🆕 다음 차수 점검 시작" : "✅ 사업장 생성하기";
+      const d = document.getElementById("wd-date");
+      if(next){ if(!d.dataset.touched) d.value = todayStr(); } else if(!d.dataset.touched) d.value = wdDocDate || todayStr();
+    }
+    ov.querySelectorAll('input[name="wd-mode"]').forEach(r=> r.onchange = wdSyncMode);
+    document.getElementById("wd-date").addEventListener("input", e=>{ e.target.dataset.touched = "1"; });
+    /* 이미 같은 사업장이 있으면 → 그 사업장에서 이전 차수와 비교 */
+    function wdShowExisting(){
+      const box = document.getElementById("wd-exist");
+      const nm = cmpNorm(document.getElementById("wd-site").value);
+      const hits = nm ? indexList.filter(e=> cmpNorm(e.siteName)===nm) : [];
+      if(!hits.length){ box.style.display="none"; box.innerHTML=""; return; }
+      box.style.display="block";
+      box.innerHTML = `<div style="background:#FFF7E6;border:1px solid #F5D08A;border-radius:10px;padding:10px 12px;">
+        <div style="font-size:12.5px;font-weight:800;color:#92400E;">이미 만든 사업장이 있습니다 — 이전 차수와 비교할까요?</div>
+        <div style="font-size:11.5px;color:#7C5A1E;margin:3px 0 8px;line-height:1.5;">고른 사업장에 이 결과서를 <b>이전 차수 비교 기준</b>으로 넣습니다. 이전 위치도 이어받을 수 있습니다.</div>
+        ${hits.slice(0,6).map(e=>{ const mi = MODE_INFO[e.inspType]||MODE_INFO['성능'];
+          return `<button class="wd-exist-row" data-id="${e.id}" style="width:100%;text-align:left;background:#fff;border:1px solid #F5D08A;border-radius:9px;padding:9px 11px;margin-bottom:6px;cursor:pointer;display:flex;gap:8px;align-items:center;">
+            <span style="flex:1;min-width:0;"><b style="font-size:13px;">${escapeHtml(e.siteName)}</b><span style="font-size:11.5px;color:var(--muted);display:block;">${escapeHtml(e.date||'')} · ${escapeHtml(e.inspector||'')}</span></span>
+            <span style="flex-shrink:0;background:${mi.color};color:#fff;border-radius:999px;padding:2px 8px;font-size:10.5px;font-weight:800;">${mi.icon} ${escapeHtml(mi.label)}</span>
+            <span style="flex-shrink:0;font-size:12px;font-weight:800;color:var(--accent);">비교 ›</span></button>`; }).join('')}
+      </div>`;
+      box.querySelectorAll(".wd-exist-row").forEach(b=> b.onclick = async ()=>{
+        b.disabled = true;
+        const nmIn = document.getElementById("wd-site").value.trim();
+        ov.remove();
+        await openInspection(b.dataset.id);
+        setCompareBaseline(wdBaselineData(parsed, nmIn), ()=>renderDetail());
+        renderDetail();
+      });
+    }
+    document.getElementById("wd-site").addEventListener("input", ()=>{ if(parsed) wdShowExisting(); });
 
     document.getElementById("wd-file").addEventListener("change", async (ev) => {
       const file = ev.target.files[0];
@@ -3780,6 +3835,11 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         document.getElementById("wd-date").value = st.date || todayStr();
         document.getElementById("wd-inspector").value = parsed.inspector || (await sGet("last-inspector", false)) || "";
         document.getElementById("wd-stage2").style.display = "block";
+        // 이번 점검 유형: 지금 고른 모드가 같은 계열이면 그대로, 아니면 결과서 유형
+        const wt = document.getElementById("wd-type");
+        wt.value = (currentMode && ((parsed.inspType==="성능")===(currentMode==="성능"))) ? currentMode : (parsed.inspType==="성능"?"성능":"유지보수");
+        wdDocDate = st.date || "";
+        wdSyncMode(); wdShowExisting();
       }catch(err){ prog.textContent = "오류: " + err.message; }
     });
 
@@ -3794,6 +3854,18 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       if(!parsed) return;
       const site = document.getElementById("wd-site").value.trim();
       if(!site){ document.getElementById("wd-site").focus(); showToast("현장명을 입력해주세요."); return; }
+      if(wdMode()==="next"){
+        const btnN = document.getElementById("wd-create"); btnN.disabled = true; btnN.textContent = "준비 중…";
+        const inspN = document.getElementById("wd-inspector").value.trim();
+        if(inspN) await sSet("last-inspector", inspN);
+        try{
+          await wdStartNextRound(parsed, { site, building: document.getElementById("wd-building").value.trim(),
+            date: document.getElementById("wd-date").value || todayStr(), inspector: inspN,
+            type: document.getElementById("wd-type").value, activate: document.getElementById("wd-act").checked });
+          ov.remove();
+        }catch(e){ btnN.disabled=false; btnN.textContent="🆕 다음 차수 점검 시작"; showToast("오류: "+(e.message||e)); }
+        return;
+      }
       const btn = document.getElementById("wd-create");
       btn.disabled = true; btn.textContent = "처리 중…";
       const inspector = document.getElementById("wd-inspector").value.trim();
@@ -3872,6 +3944,51 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
 
 
 
+
+  /* ── 워드 결과서 → 이전 차수 비교용 자료 ── */
+  function wdBaselineData(parsed, siteName){
+    const st = (parsed && parsed.site) || {};
+    return { siteName: siteName || st.siteName || "", date: st.endDate || st.date || "", inspType: parsed.inspType || "",
+      inspector: parsed.inspector || "", categories: (parsed.categories||[]).map(c=>({ id:c.id, name:c.name,
+        locations: (c.locations||[]).map(l=>({ name:l.name, items:(l.items||[]).map(it=>({ name:it.name, std:it.std, result:it.result||"", note:it.note||"", value:it.value||"", unit:it.unit||"" })) })) })) };
+  }
+  /* ── 2차(다음 차수) 점검 바로 시작: 사업장·설비·이전 위치 준비 + 이전 결과서를 비교 기준으로 ── */
+  async function wdStartNextRound(parsed, f){
+    const T = tplByType(f.type);
+    const fresh = it => ({ id:uid(), name:it.name, std:it.std, hasValue:it.hasValue, unit:it.unit||"",
+      fields: it.fields ? JSON.parse(JSON.stringify(it.fields)) : undefined, delta: it.delta,
+      result:"", value:"", vals:{}, note:"", photos:[] });
+    const cats = [];
+    (parsed.categories||[]).forEach(pc=>{
+      const t = T.find(x=>x.id===pc.id) || T.find(x=>cmpNorm(x.name)===cmpNorm(pc.name));
+      if(cats.some(c=>c.id===(t?t.id:pc.id))) return;
+      const srcItems = t ? t.items : (((pc.locations||[]).slice().sort((a,b)=>(b.items||[]).length-(a.items||[]).length)[0]||{}).items||[]);
+      cats.push({ id: t?t.id:pc.id, name: t?t.name:pc.name, locations:[{ id:uid(), name:"", photos:[], items: srcItems.map(fresh) }] });
+    });
+    if(!cats.length) throw new Error("결과서에서 설비를 찾지 못했습니다.");
+    // 템플릿 순서대로
+    cats.sort((a,b)=>{ const ia=T.findIndex(x=>x.id===a.id), ib=T.findIndex(x=>x.id===b.id); return (ia<0?999:ia)-(ib<0?999:ib); });
+    const insp = { id:uid(), siteName:f.site, buildingName:f.building||"", lastDetailLocation:"", date:f.date, endDate:f.date,
+      inspector:f.inspector||"", inspType:f.type, createdAt:Date.now(), targetEquip:cats.map(c=>c.name), categories:cats };
+    const base = wdBaselineData(parsed, f.site);
+    const cb = { meta:{ siteName:base.siteName, date:base.date, inspType:base.inspType, inspector:base.inspector, src:"word" },
+      idx: buildCompareIndex(base), locs: buildBaseLocs(base) };
+    await sSet("inspection:"+insp.id, JSON.stringify(insp));
+    await sSet("cmpbase:"+insp.id, JSON.stringify(cb));
+    updateIndexEntry(insp);
+    await saveIndex();
+    currentMode = insp.inspType;
+    showNewForm = false; newFormStep = 1; newFormData = {};
+    await openInspection(insp.id);
+    // 이전 위치 이어받기
+    const r = applyBaselineLocations();
+    let nAct = 0;
+    if(f.activate){ (current.categories||[]).forEach(c=>(c.locations||[]).forEach(l=>{ if(l.pending && l.fromPrev){ delete l.pending; nAct++; } })); }
+    envDedupSync(current); scheduleSave(); renderDetail();
+    const nLoc = r.added + r.filled;
+    let prevBad = 0; for(const k in cb.idx){ if(cb.idx[k].result==="불량") prevBad++; }
+    showToast(`2차 점검 준비 완료 · 설비 ${cats.length}종 · 이전 위치 ${nLoc}곳${f.activate?" 활성화":" (⏸대기)"}${prevBad?` · 전회 부적합 ${prevBad}건`:""}`);
+  }
 
   /* ============ Render: List view ============ */
   let showNewForm = false;
@@ -6860,11 +6977,13 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin:2px 2px 10px;text-align:center;">
           이전 차수로 삼을 점검을 고르세요. 불러오면 <b>개선 / 반복지적 / 신규결함</b>과 <b>전회 부적합 위치</b>가 함께 표시됩니다.
         </div>
+        <button id="bp-word" style="width:100%;background:var(--accent-weak);border:1.5px solid var(--accent);color:var(--accent);border-radius:10px;padding:11px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:10px;">📄 이전 결과서(Word)로 불러오기</button>
         <div style="max-height:54vh;overflow-y:auto;">${body}</div>
         <button id="bp-close" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;margin-top:10px;">닫기</button>
       </div>`;
     document.body.appendChild(ov);
     ov.querySelector('#bp-close').onclick = close;
+    ov.querySelector('#bp-word').onclick = ()=>{ close(); pickWordBaseline(onDone); };
     ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
     ov.querySelectorAll('.bp-row').forEach(b=>{
       b.onclick = async ()=>{
@@ -6878,6 +6997,26 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         }catch(e){ showToast('불러오기 오류: '+e.message); b.disabled=false; }
       };
     });
+  }
+
+  /* 이전 결과서(Word)를 현재 사업장의 비교 기준으로 */
+  function pickWordBaseline(onDone){
+    const inp = document.createElement("input"); inp.type="file"; inp.accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"; inp.style.display="none";
+    document.body.appendChild(inp);
+    inp.onchange = async ()=>{
+      const file = inp.files && inp.files[0]; inp.remove(); if(!file) return;
+      if(!/\.docx$/i.test(file.name)){ showToast(".docx 형식만 지원합니다."); return; }
+      try{
+        if(!window.JSZip) throw new Error("JSZip 로드 실패 (인터넷 연결 확인)");
+        showToast("결과서 읽는 중…");
+        const zip = await JSZip.loadAsync(await file.arrayBuffer());
+        const res = await wdParseDoc(zip);
+        if(!res.categories.length){ showToast("결과서에서 설비 점검표를 찾지 못했습니다."); return; }
+        const nm = (res.site && res.site.siteName) || current.siteName;
+        setCompareBaseline(wdBaselineData(res, nm), onDone);
+      }catch(e){ showToast("불러오기 오류: "+(e.message||e)); }
+    };
+    inp.click();
   }
 
   /* ════════════════════════════════════════════════════════════════
@@ -7366,6 +7505,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
             점검 화면의 각 항목에도 <b>"전회 부적합"</b> 표시가 함께 뜹니다.
           </div>
           <button id="cmp-pick-saved" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;">🗂 저장된 이전 점검에서 고르기</button>
+          <button id="cmp-pick-word" style="width:100%;background:#fff;border:1.5px solid var(--accent);color:var(--accent);border-radius:10px;padding:12px;font-size:13.5px;font-weight:800;cursor:pointer;margin-top:8px;">📄 이전 결과서(Word)로 불러오기</button>
           <button id="cmp-pick" style="width:100%;background:#fff;border:1.5px solid var(--accent);color:var(--accent);border-radius:10px;padding:12px;font-size:13.5px;font-weight:800;cursor:pointer;margin-top:8px;">📂 JSON 파일로 불러오기</button>
           <button id="cmp-cancel" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;margin-top:8px;">닫기</button>
           <input type="file" id="cmp-file" accept=".json" style="display:none;">
@@ -7376,6 +7516,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       const fileInput = ov.querySelector('#cmp-file');
       ov.querySelector('#cmp-pick').onclick = ()=> fileInput.click();
       ov.querySelector('#cmp-pick-saved').onclick = ()=>{ close(); showSavedBaselinePicker(reopen); };
+      ov.querySelector('#cmp-pick-word').onclick = ()=>{ close(); pickWordBaseline(reopen); };
       fileInput.onchange = (ev)=>{ const f=ev.target.files[0]; if(f) loadCompareBaselineFile(f, reopen); };
       return;
     }

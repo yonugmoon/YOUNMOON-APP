@@ -603,6 +603,7 @@
     return tex;
   }
   function buildRoomB(focus, frag) {
+    S.genericFill = false;
     var rm = pickRoomB(focus);
     if (!rm) { buildDoll(focus, frag); return; }
     S.roomB = rm;
@@ -711,6 +712,7 @@
       devs.push({ a: a, u: U.clamp(u, 1, 42), h: U.clamp(hU, 1, 12) });
     });
     if (self) { // 랙 자체가 설비: 범용 장비(패치·스위치·서버) 충전 + 랙 상태 색
+      S.genericFill = true; // 실장 정보 없음 → 예시 그림 (HUD에 명시)
       var hsh = Math.abs(U.hash(self.id)), seq = [1, 1, 2, 1, 2, 4, 1, 2], u0 = 2;
       for (var i = 0; i < 8 + (hsh % 5) && u0 < 40; i++) { var hh = seq[(i + hsh) % seq.length]; devs.push({ a: self, u: u0, h: hh, generic: true, kind: hh === 1 ? (i % 2 ? 'patch' : 'sw') : 'srv' }); u0 += hh + ((hsh >> i) & 1); }
     }
@@ -925,7 +927,7 @@
     S.camDirty = true;
   }
   function fitR(R) {
-    var cam = S.camera, fov = cam.fov * Math.PI / 180, asp = S.w && S.h ? Math.max(0.3, (S.w - (S.cover || 0)) / S.h) : 1.6;
+    var cam = S.camera, fov = cam.fov * Math.PI / 180, asp = S.w && S.h ? Math.max(0.3, (S.safe ? S.safe.w : S.w) / (S.safe ? S.safe.h : S.h)) : 1.6;
     var fh = 2 * Math.atan(Math.tan(fov / 2) * asp);
     var k = asp >= 1.4 ? 0.82 : asp <= 0.8 ? 1.0 : 1.0 - (asp - 0.8) / 0.6 * 0.18;
     return R / Math.sin(Math.min(fov, fh) / 2) * k;
@@ -1314,7 +1316,7 @@
   function syncHud() {
     if (!S.hudEl || !S.focus) return;
     var s = st(), cpt = S.concept, parts = ['<b>3D · 시안 ' + cpt + ' ' + CONCEPT_NAME[cpt] + '</b>'];
-    if (cpt === 'B' && S.roomB) parts.push(U.esc(S.roomB.name));
+    if (cpt === 'B' && S.roomB) parts.push(U.esc(S.roomB.name) + (S.genericFill ? ' · <i class="tx-s3-hf" style="color:#fbbf24">랙 내부 장비는 예시 그림(실장 정보 미등록)</i>' : ''));
     else if (cpt === 'C') parts.push('계통 노드 ' + Object.keys(S.info).length + (S.holoEmpty ? ' · 등록된 연결 관계 없음' : ''));
     else parts.push(U.esc(S.focus.name || S.focus.code) + (s.stack ? ' · 전층 적층' : ''));
     var f = faultInfo();
@@ -1439,24 +1441,21 @@
   /* T2 떠 있는 패널(인스펙터·범례)을 피해 화면 중심·미니맵·HUD 배치 */
   function layoutAvoid() {
     if (!S.host || !S.camera || !S.w) return;
-    var hr = S.host.getBoundingClientRect(), cover = 0, hudL = 10;
-    var vis = function (el) { if (!el || !el.isConnected) return null; var r = el.getBoundingClientRect(); if (r.width < 4 || r.height < 4) return null; var cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) return null; return r; };
-    var ui = TX.ui;
-    if (ui && ui.view3d === S.host) {
-      var ir = vis(ui.inspector);
-      if (ir && ir.left > hr.left + hr.width * 0.35 && ir.left < hr.right - 4 && ir.bottom > hr.top + 20 && ir.top < hr.bottom) cover = Math.round(hr.right - ir.left + 34);
-      var lr = vis(ui.root && ui.root.querySelector('.tx-legend'));
-      if (lr && lr.bottom > hr.bottom - 80 && lr.left < hr.left + 260 && lr.right > hr.left) hudL = Math.round(lr.right - hr.left + 10);
-    }
-    cover = Math.min(cover, Math.round(S.w * 0.55));
-    if (cover !== S.cover) {
-      S.cover = cover;
-      if (cover > 0) S.camera.setViewOffset(S.w, S.h, cover / 2, 0, S.w, S.h); else S.camera.clearViewOffset();
+    var ui = TX.ui, sa = null;
+    if (ui && ui.view3d === S.host && typeof ui.safeArea === 'function') { try { sa = ui.safeArea('3d'); } catch (e) { sa = null; } }
+    if (!sa || !(sa.w > 40) || !(sa.h > 40)) sa = { x: 0, y: 0, w: S.w, h: S.h };
+    sa = { x: U.clamp(sa.x, 0, S.w - 40), y: U.clamp(sa.y, 0, S.h - 40), w: Math.min(sa.w, S.w), h: Math.min(sa.h, S.h) };
+    var key = [sa.x, sa.y, sa.w, sa.h].map(Math.round).join(',');
+    var sx = Math.round(S.w / 2 - (sa.x + sa.w / 2)), sy = Math.round(S.h / 2 - (sa.y + sa.h / 2));
+    if (key !== S.saKey) {
+      S.saKey = key; S.safe = sa; S.cover = Math.max(0, S.w - sa.w);
+      if (sx || sy) S.camera.setViewOffset(S.w, S.h, sx, sy, S.w, S.h); else S.camera.clearViewOffset();
       if (!S.userZoom && S.fitOnce) S.orbit.gR = fitR(S.sceneR);
       S.camDirty = true;
     }
-    if (S.miniWrap) S.miniWrap.style.right = (cover + 10) + 'px';
-    if (S.hudEl) { S.hudEl.style.left = hudL + 'px'; S.hudEl.style.maxWidth = Math.max(160, S.w - hudL - cover - 20) + 'px'; }
+    var right = Math.max(0, S.w - (sa.x + sa.w)), bottom = Math.max(0, S.h - (sa.y + sa.h));
+    if (S.miniWrap) { S.miniWrap.style.right = (right + 10) + 'px'; S.miniWrap.style.top = (sa.y + 10) + 'px'; }
+    if (S.hudEl) { S.hudEl.style.left = (sa.x + 10) + 'px'; S.hudEl.style.bottom = (bottom + 10) + 'px'; S.hudEl.style.maxWidth = Math.max(160, sa.w - 20 - (S.miniWrap && S.miniWrap.style.display !== 'none' && sa.h < 260 ? 230 : 0)) + 'px'; }
   }
   function resize() {
     if (!S.renderer || !S.host) return;
@@ -1466,7 +1465,7 @@
     S.w = w; S.h = h;
     S.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     S.renderer.setSize(w, h, false);
-    S.camera.aspect = w / h; S.cover = -1; layoutAvoid(); S.camera.updateProjectionMatrix();
+    S.camera.aspect = w / h; S.saKey = ''; layoutAvoid(); S.camera.updateProjectionMatrix();
     if (!S.userZoom && S.fitOnce && Math.abs(asp0 - w / h) > 0.02) S.orbit.gR = fitR(S.sceneR);
     S.anchors.forEach(function (a) { a.w = 0; });
     S.camDirty = true;

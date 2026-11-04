@@ -10489,8 +10489,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       (o.b?`<w:b/><w:bCs/>`:"")+(o.sz?`<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>`:"")+
       (o.color?`<w:color w:val="${o.color}"/>`:"")+`</w:rPr>`;
     const rn  = (t,o={})=>`<w:r>${rp(o)}<w:t xml:space="preserve">${x(t)}</w:t></w:r>`;
-    const pp  = (inner,o={})=>`<w:p><w:pPr><w:widowControl/><w:wordWrap/><w:autoSpaceDE/><w:autoSpaceDN/>`+
-      `<w:spacing${o.before!==undefined?` w:before="${o.before}"`:""} w:after="${o.after!==undefined?o.after:0}"/>`+
+    /* 결과서 앞장과 합쳐도 줄 간격이 바뀌지 않도록 줄 간격(1줄)·격자 맞춤 해제를 직접 지정 */
+    const pp  = (inner,o={})=>`<w:p><w:pPr>${o.pbb?`<w:pageBreakBefore/>`:""}<w:widowControl/><w:wordWrap/><w:autoSpaceDE/><w:autoSpaceDN/><w:snapToGrid w:val="0"/>`+
+      `<w:spacing${o.before!==undefined?` w:before="${o.before}"`:""} w:after="${o.after!==undefined?o.after:0}" w:line="240" w:lineRule="auto"/>`+
       (o.ind!==undefined?`<w:ind w:leftChars="200" w:left="${o.ind}"/>`:"")+
       (o.jc?`<w:jc w:val="${o.jc}"/>`:"")+(o.shade?`<w:shd w:val="clear" w:color="auto" w:fill="${o.shade}"/>`:"")+
       `</w:pPr>${inner}</w:p>`;
@@ -10579,6 +10580,14 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       `</w:tblPr>`+
       `<w:tblGrid><w:gridCol w:w="${UG1}"/><w:gridCol w:w="${UG2}"/><w:gridCol w:w="${UG3}"/><w:gridCol w:w="${UG4}"/><w:gridCol w:w="${UG5}"/><w:gridCol w:w="${CR}"/><w:gridCol w:w="${CB}"/></w:tblGrid>`;
     const closeTbl=()=>`</w:tbl>`;
+    /* 문단 줄 간격을 직접 지정 (지정 안 된 문단은 결과서 양식의 줄 간격을 따라가 쪽이 넘침) */
+    const fixLineSpacing = (xml)=> xml.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, (m0,inner)=>{
+      if(inner.indexOf("<w:pPr>")>=0) return m0;
+      if(/<w:spacing\b/.test(inner)) inner = inner.replace(/<w:spacing\b([^>]*?)\/>/, (m1,a)=> /w:line=|w:val=/.test(a) ? m1 : `<w:spacing${a} w:line="240" w:lineRule="auto"/>`);
+      if(inner.indexOf("<w:snapToGrid")<0) inner = /<w:spacing\b/.test(inner) ? inner.replace(/<w:spacing\b/, `<w:snapToGrid w:val="0"/><w:spacing`) : `<w:snapToGrid w:val="0"/>`+inner;
+      return `<w:pPr>${inner}</w:pPr>`; });
+    /* 새 페이지 맨 위에서 시작하는 1pt 문단 — 앞 쪽이 가득 차 있어도 빈 쪽이 생기지 않는다 */
+    const PAGE_TOP = `<w:p><w:pPr><w:pageBreakBefore/><w:snapToGrid w:val="0"/><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>`;
 
     // 그룹 행 (외관/기능/안전) — 첫 항목만 그룹명 표시, 나머지는 빈칸
     function groupRows(groupName, items, minRows, sz){
@@ -10640,9 +10649,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     // grid: [현황사진 라벨 1440(2.54cm) | 사진 4156(7.33cm) | 사진 4156(7.33cm)] = 9752(17.2cm)
     const PH_LABEL_W = 1440;                        // 현황사진/비고 라벨 열 2.54cm
     const PH_IMG_CELL_W = Math.round((TW - PH_LABEL_W) / 2); // 사진 셀 4156
-    const PH_IMG_CX = Math.round(7.2 * 360000);     // 이미지 7.2cm (가로)
-    const PH_IMG_CY = Math.round(9.3 * 360000);     // 이미지 9.3cm (세로로 긴 사진)
-    const PH_ROW_H = 5329;                          // 사진 행 높이 9.4cm
+    /* 결과서 앞장과 합칠 때 머릿글·꼬리말이 더 커도 사진 쪽이 넘치지 않도록 약 1.2cm 여유를 둔다 */
+    const PH_IMG_CX = Math.round(6.8 * 360000);     // 이미지 6.8cm (가로)
+    const PH_IMG_CY = Math.round(8.7 * 360000);     // 이미지 8.7cm (세로로 긴 사진)
+    const PH_ROW_H = 4989;                          // 사진 행 높이 8.8cm (여유 포함)
 
     // 테두리 헬퍼 (참고 파일: sz=3 기본, 굵은선 sz=9)
     const phB = (top,left,bottom,right)=>{
@@ -10907,7 +10917,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           const secNo = `${catIdx}-${li+1}`;
 
           // ── 성능점검표 제목 ──
-          body += pp(rn(`(${secNo}) ${cat.name} 성능점검표`, {sz:28, b:true}), {before:240, after:60, ind:440});
+          body += pp(rn(`(${secNo}) ${cat.name} 성능점검표`, {sz:28, b:true}), {before:240, after:60, ind:440, pbb:true});
 
           // ── 메인 성능점검표 테이블 (6열) ──
           body += openPerfTbl();
@@ -10987,7 +10997,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
             tc(pp(rn("<조치사항>",{sz:20,b:true}),{jc:"both",after:0})+pp(rn(fixText,{sz:20}),{jc:"both"}), PF_WIDE, {span:7, vm:"top", noR:true})
           , "atLeast");
 
-          // ── 사진 행을 같은 표 안에 이어 붙인다 (성능점검표 + 사진표 = 표 1개) ──
+          // ── 점검표(1쪽) / 사진표(1쪽)를 각각 정해진 페이지에 — 사진표는 항상 새 페이지 맨 위에서 시작 ──
+          body += closeTbl();
+          body += PAGE_TOP;
+          body += openPerfTbl();
           body += await buildPhotoSec(loc, secNo, cat.name, SP_PF);
           body += closeTbl();
           // 표 뒤 빈 단락 없음 — 다음 섹션 제목 단락이 표 구분자 역할을 한다.
@@ -11012,7 +11025,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         const secNo = `${catIdx}-${li+1}`;
 
         // ── 점검표 섹션 제목 ──
-        body += pp(rn(`${secNo}) ${cat.name} 유지보수·관리 점검표`, {sz:26}), {before:240, after:60, ind:440});
+        body += pp(rn(`${secNo}) ${cat.name} 유지보수·관리 점검표`, {sz:26}), {before:240, after:60, ind:440, pbb:true});
 
         // ── 메인 점검표 테이블 (성능점검과 동일한 틀: 17.2cm) ──
         body += openTbl();
@@ -11046,7 +11059,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         const noteOf = (it)=> it.result==="불량" ? (it.note||"")
                         : ((it.hasValue && it.value) ? `${it.value}${it.unit||""}` : "");
         const estLines = (it, sz)=> linesOf(it.name||"", noteOf(it), sz||20);
-        const MAX_UNITS = 24;                       // 한 페이지에 들어가는 총 행 단위 (워드 실측 기준)
+        const MAX_UNITS = 23;                       // 한 페이지 총 행 단위 (워드 실측 24 - 결과서 합칠 때 여유 1)
         const MIN_G = { 외관: 8, 기능: 9, 안전: 7 };  // 첨부 자료 기준 기본 빈 행 포함 행수
         const gRows = {
           외관: Math.max(grp.외관.length, MIN_G.외관),
@@ -11090,7 +11103,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           tc(mtGuide, TW, {span:7, vm:"center"})
         );
 
-        // ── 사진 행을 같은 표 안에 이어 붙인다 (점검표 + 사진표 = 표 1개) ──
+        // ── 체크리스트(1쪽) / 사진등록(1쪽)을 각각 정해진 페이지에 — 사진표는 항상 새 페이지 맨 위에서 시작 ──
+        body += closeTbl();
+        body += PAGE_TOP;
+        body += openTbl();
         body += await buildPhotoSec(loc, secNo, cat.name, SP_MT);
         body += closeTbl();
         // 표 뒤 빈 단락 없음 — 다음 섹션 제목 단락이 표 구분자 역할을 한다.
@@ -11206,7 +11222,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
 
     const docXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`+
 `<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 w16se wp14">`+
-`<w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${current.inspType==="성능"?1361:1440}" w:right="1077" w:bottom="${current.inspType==="성능"?1361:1134}" w:left="1077" w:header="850" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+`<w:body>${fixLineSpacing(body)}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${current.inspType==="성능"?1361:1440}" w:right="1077" w:bottom="${current.inspType==="성능"?1361:1134}" w:left="1077" w:header="850" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`;
 
     const stylesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Malgun Gothic" w:eastAsia="Malgun Gothic" w:hAnsi="Malgun Gothic" w:cs="Malgun Gothic"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="ko-KR" w:eastAsia="ko-KR" w:bidi="ar-SA"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>`;
 
@@ -12508,6 +12524,7 @@ ${m.notes || "-"}`;
         nHead++; brk = nHead>1 || !opts.firstSamePage; }
       // 첫 문단: 제목 아래 붙이기면 나누기 없음
       el=fixParas(el, def, false);
+      if(nHead && isPara(el) && LOC_HEAD.test(elText(el).trim())) el=el.replace(/<w:pageBreakBefore\/>/g, "");
       if(brk) el=el.replace(/<w:pPr>/, function(){ return '<w:pPr><w:pageBreakBefore/>'; });
       out.push(fixRuns(el, def));
     }

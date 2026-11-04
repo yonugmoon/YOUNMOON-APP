@@ -139,7 +139,7 @@
   var emitResize = U.debounce(function () {
     if (!ui || !S().open) return;
     var r2 = R.view2d.getBoundingClientRect(), r3 = R.view3d.getBoundingClientRect();
-    TwinX.emit('resize', { view: S().view, size2d: { w: Math.round(r2.width), h: Math.round(r2.height) }, size3d: { w: Math.round(r3.width), h: Math.round(r3.height) } });
+    TwinX.emit('resize', { view: S().view, size2d: { w: Math.round(r2.width), h: Math.round(r2.height) }, size3d: { w: Math.round(r3.width), h: Math.round(r3.height) }, safe2d: safeArea('2d'), safe3d: safeArea('3d') });
   }, 100);
 
   /* ============================================================
@@ -302,6 +302,7 @@
       root: root, toolbar: R.toolbar, viewport: R.viewport, view2d: R.view2d, view3d: R.view3d,
       floorRail: R.rail, inspector: R.insp, statusbar: R.status,
       toast: showToast,
+      safeArea: function (v) { return safeArea(v); },
       isVisible: function (v) { var s = S(); return !!(s.open && (s.view === v || s.view === 'split')); }
     };
 
@@ -313,6 +314,8 @@
       [R.view2d, R.view3d].forEach(function (v) { new MutationObserver(updateEmpty).observe(v, { childList: true }); });
     }
     if (window.ResizeObserver) new ResizeObserver(function () { emitResize(); }).observe(R.viewport);
+    // 서랍 슬라이드가 끝난 뒤 안전 영역이 확정되므로 한 번 더 알림
+    R.insp.addEventListener('transitionend', function (e) { if (e.target === R.insp && e.propertyName === 'transform') emitResize(); });
   }
 
   function legendHTML() {
@@ -1029,6 +1032,29 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initEntry); else initEntry();
 
+  /* 떠 있는 패널(층 레일·인스펙터·펼친 범례·모바일 하단 시트)을 뺀 안전 영역.
+     v('2d'|'3d') 지정 시 그 뷰 div 기준 좌표, 생략 시 뷰포트 기준. {x,y,w,h} (px) */
+  var GAP = 12;
+  function safeArea(v) {
+    var host = v === '2d' ? R.view2d : v === '3d' ? R.view3d : R.viewport;
+    if (!built || !host) return { x: 0, y: 0, w: 0, h: 0 };
+    var hr = host.getBoundingClientRect(), s = S(), mob = isMobile();
+    var x0 = hr.left, y0 = hr.top, x1 = hr.right, y1 = hr.bottom;
+    function cut(el, on, side) {
+      if (!on || !el || el.offsetParent === null) return;
+      var r = el.getBoundingClientRect();
+      if (r.right <= x0 || r.left >= x1 || r.bottom <= y0 || r.top >= y1 || !r.width) return; // 겹치지 않음
+      if (side === 'left') x0 = Math.max(x0, r.right + GAP);
+      else if (side === 'right') x1 = Math.min(x1, r.left - GAP);
+      else if (side === 'bottom') y1 = Math.min(y1, r.top - GAP);
+    }
+    cut(R.rail, true, mob ? 'none' : 'left');
+    if (mob) cut(R.insp, true, 'bottom');
+    else { cut(R.insp, !!s.panel.inspector, 'right'); if (!s.panel.inspector) cut(R.insp.querySelector('.tx-insp-tab'), true, 'right'); }
+    cut(R.legend, !mob, 'bottom');
+    return { x: Math.round(x0 - hr.left), y: Math.round(y0 - hr.top), w: Math.max(0, Math.round(x1 - x0)), h: Math.max(0, Math.round(y1 - y0)) };
+  }
+
   /* ---------------- 공개 API ---------------- */
   TwinX.shell = {
     version: '1.0.0',
@@ -1044,6 +1070,7 @@
         bottom: s.panel.inspector && mob ? Math.round(vp.bottom - ir.top) : 0
       };
     },
+    safeArea: safeArea,
     refresh: function () { lastInspSig = ''; syncAll(); emitResize(); },
     toast: function (m, k) { showToast(m, k); },
     openFromAdmin: openFromAdmin

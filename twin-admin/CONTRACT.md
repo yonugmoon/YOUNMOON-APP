@@ -75,6 +75,9 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
 - `view2d`, `view3d`는 `position:relative; overflow:hidden`인 div. 렌더러는 그 안에만 그림(오버레이 라벨 포함).
 - 뷰어는 `position:fixed; inset:0` 전체화면 오버레이. **뷰포트 면적 ≥ 화면의 80%** (1600×900 기준).
   인스펙터·층 레일은 뷰포트 위에 떠 있는 접이식 패널(뷰포트를 줄이지 않음), 툴바 ≤ 52px, 상태바 ≤ 28px.
+- (v1.2, T2) `TwinX.ui.safeArea(view?) → {x,y,w,h}`(px): 떠 있는 레일·인스펙터·범례·시트를 뺀 빈 영역(view 지정 시 그 뷰 기준 좌표).
+  `resize` payload `{view, size2d, size3d, safe2d, safe3d}`. 숨은 뷰는 `display:none`(크기 0) → `isVisible` 확인 후 렌더.
+  `ui-ready`는 DOM 최초 생성 시 **1회만**, 이후 열기는 `resize`만 발행. 뷰 내부 오버레이(줌 버튼·미니맵·힌트)는 safeArea 안에 배치.
 - 내보내기 메뉴는 `TwinX.cad2d.exportSvg()/exportPng()`, `TwinX.scene3d.snapshot()`(PNG Blob 다운로드)을 호출.
 
 ## 6. 진입점

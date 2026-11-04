@@ -549,6 +549,8 @@
         // 복도 없음: 같은 층 링크 설비를 직교 경로로, 층간 링크 설비는 그 층 라이저로
         var fa = {}; assets.forEach(function (a) { if (a.floor === f.code) fa[a.id] = a; });
         var fr = risers.filter(function (r) { return r.floors.indexOf(f.code) >= 0; });
+        // 이 층에 라이저가 없으면 같은 건물 라이저의 평면 위치(샤프트 연장 가정)로 연결
+        if (!fr.length) fr = risers.filter(function (r) { return r.building === f.building; });
         links.forEach(function (l) {
           var a = assetById[l.from], b = assetById[l.to];
           if (fa[a.id] && fa[b.id]) { ortho([a.x, a.y], [b.x, b.y], a.room !== b.room, 'link'); return; }

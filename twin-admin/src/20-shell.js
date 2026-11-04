@@ -696,17 +696,18 @@
     if (typeof r === 'number') return { score: r, factors: [] };
     var score = r.score != null ? r.score : r.total != null ? r.total : r.value;
     if (score == null) return null;
-    var fs = r.factors || r.reasons || r.basis || r.items || r.breakdown || [];
-    if (!Array.isArray(fs)) fs = Object.keys(fs).map(function (k) { return { label: k, value: fs[k] }; });
+    var fs = r.parts || r.factors || r.reasons || r.items || r.breakdown || [];
+    if (!Array.isArray(fs)) fs = typeof fs === 'object' ? Object.keys(fs).map(function (k) { return { label: k, value: fs[k] }; }) : [];
     return {
-      score: +score, level: r.level || r.grade || '',
+      score: +score, level: r.triage || (typeof r.level === 'string' ? r.level : ''), grade: C.GRADE[r.grade] ? r.grade : null,
+      basis: typeof r.basis === 'string' ? r.basis : '',
       factors: fs.map(function (f) {
         if (typeof f === 'string') return { label: f, value: null };
-        return { label: f.label || f.name || f.key || f.reason || '', value: f.value != null ? f.value : f.score != null ? f.score : f.weight != null ? f.weight : f.points, note: f.note || f.detail || '' };
+        return { label: f.k || f.label || f.name || f.key || f.reason || '', value: f.v != null ? f.v : f.value != null ? f.value : f.score != null ? f.score : f.weight != null ? f.weight : f.points, max: f.max, note: f.note || f.detail || '' };
       }).filter(function (f) { return f.label; })
     };
   }
-  function riskColor(v) { return v >= 70 ? C.GRADE.RED.css : v >= 40 ? C.GRADE.ORANGE.css : v >= 20 ? C.GRADE.YELLOW.css : C.GRADE.GREEN.css; }
+  function riskColor(v) { return v >= 60 ? C.GRADE.RED.css : v >= 40 ? C.GRADE.ORANGE.css : v >= 20 ? C.GRADE.YELLOW.css : C.GRADE.GREEN.css; }
 
   function linkRow(l, otherId, dir) {
     var o = TwinX.asset(otherId), lt = C.LINK[l.type] || C.LINK.path;
@@ -782,13 +783,14 @@
     var rk = riskInfo(a);
     if (rk) {
       var mx = Math.max.apply(null, rk.factors.map(function (f) { return +f.value || 0; }).concat([1]));
-      h += '<section class="tx-sec"><h4>위험 점수</h4><div class="tx-risk" style="--tx-r:' + riskColor(rk.score) + '">' +
+      h += '<section class="tx-sec"><h4>위험 점수</h4><div class="tx-risk" style="--tx-r:' + (rk.grade ? gcss(rk.grade) : riskColor(rk.score)) + '">' +
         '<div class="tx-risk-score"><b>' + Math.round(rk.score) + '</b><small>/ 100' + (rk.level ? ' · ' + esc(rk.level) : '') + '</small></div>' +
         '<div class="tx-risk-bar"><span style="width:' + U.clamp(rk.score, 0, 100) + '%"></span></div></div>';
       if (rk.factors.length) h += '<ul class="tx-factors">' + rk.factors.map(function (f) {
-        var v = +f.value || 0;
-        return '<li><span class="tx-f-l">' + esc(f.label) + (f.note ? '<small>' + esc(f.note) + '</small>' : '') + '</span><span class="tx-f-bar"><span style="width:' + (f.value == null ? 0 : U.clamp(v / mx * 100, 2, 100)) + '%;background:' + riskColor(v / mx * 100) + '"></span></span><b>' + (f.value == null ? '' : esc(Math.round(v * 10) / 10)) + '</b></li>';
+        var v = +f.value || 0, fm = +f.max || mx, pct = fm ? v / fm * 100 : 0;
+        return '<li><span class="tx-f-l">' + esc(f.label) + (f.note ? '<small>' + esc(f.note) + '</small>' : '') + '</span><span class="tx-f-bar"><span style="width:' + (f.value == null || !v ? 0 : U.clamp(pct, 3, 100)) + '%;background:' + riskColor(pct) + '"></span></span><b>' + (f.value == null ? '' : esc(Math.round(v * 10) / 10) + (f.max ? '<small>/' + esc(f.max) + '</small>' : '')) + '</b></li>';
       }).join('') + '</ul>';
+      if (rk.basis) h += '<p class="tx-src-note">' + esc(rk.basis) + '</p>';
       h += '</section>';
     }
     return h;

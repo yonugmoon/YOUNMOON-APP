@@ -30,20 +30,22 @@ ADMIN_5(`base/ICT_Twin_ADMIN_5.html`)는 **빌드된 React 번들 + 덧붙인 �
 {
   source: 'admin' | 'demo',
   site: { name, building },
-  floors: [{ code:'F04', name:'4층', level:4, elevation:12.6 /*m*/, bounds:{x0,y0,x1,y1} /*mm*/,
+  floors: [{ code:'F04', name:'4층', level:4, building, elevation:12.6 /*m: 지상 (level-1)×4.2, 지하 level×4.2*/, bounds:{x0,y0,x1,y1} /*mm*/,
              trays:[{a:[x,y], b:[x,y], main:true}] /*추정 케이블트레이 경로 mm*/ }],   // 위층→아래층 순
   rooms:  [{ id:'F04-R1', floor:'F04', building, name:'MDF실', type /*C.ROOM 키*/, x,y,w,h /*mm*/,
              door?: 'N'|'S'|'E'|'W', measures:[Measure], raw }],
   assets: [{ id:'A001', room:'F04-R1', floor:'F04', name, category /*설비구분*/, kind, model, maker, spec,
              x,y /*mm, 층 평면 절대좌표*/, status:'정상'|'주의'|'이상'|..., grade:'GREEN'|'YELLOW'|'ORANGE'|'RED'|'NONE',
-             measures:[Measure], rack?:{name,u}, raw }],
+             measures:[Measure], rack?:{name, u /*표시용 '20U~24U'*/, u0, u1 /*숫자*/}, gradeReason?, raw }],
   links:  [{ id, from /*asset id*/, to, type:'data'|'optical'|'power'|'ground'|'path', label, cable }],
   risers: [{ id, name, x, y /*mm*/, floors:[floorCode...] }],         // 층간 수직 간선(TPS/EPS 기반 추정)
   measurements: [Measure],                                           // 전체 실측 행
   updatedAt
 }
-Measure = { std:'gnd'|'heat'|'pwr'|'sig'|'env'|null, item, value, unit?, judge:'good'|'bad'|'na'|'none', date, assetId?, roomId?, raw }
+Measure = { std:'gnd'|'heat'|'pwr'|'sig'|'env'|null, item, value, unit?, judge:'good'|'bad'|'na'|'none', warn?:boolean,
+            date /*없으면 null*/, assetId?, roomId?, match? /*매칭 근거: 'asset'|'room'|... 추정 여부 표시용*/, source? /*'row'|'history'|'v14-snapshot'*/, raw }
 ```
+- (v1.1, T1 요청 승인) floors.building, rack.u0/u1, Measure.warn/match/source 공식화. 측정 매칭은 추정일 수 있으므로 화면에 `match`·`source` 근거를 함께 표기.
 - `kind`: `'rack'|'server'|'power'|'ap'|'cctv'|'video'|'ground'|'tray'|'panel'` (3D 모델·2D 심볼 결정).
 - `grade` 규칙(T1): 상태 '이상'/'불량' 또는 실측 bad → RED, '주의' → ORANGE, 실측 경고성(주의) → YELLOW, 그 외 GREEN, 자료 없음 NONE.
 - 링크 방향 `from → to` = 상위(공급) → 하위(의존). ADMIN `연결유형` 매핑: 케이블→data, 광→optical, 전원→power, 접지→ground.

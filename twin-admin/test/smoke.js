@@ -24,7 +24,7 @@ async function runRes(browser, W, H) {
   const errs = [];
   pg.on('pageerror', e => errs.push('PAGEERR ' + (e.message || '').slice(0, 300)));
   pg.on('console', m => { if (m.type() === 'error') errs.push('CONSOLE ' + m.text().slice(0, 300)); });
-  const results = []; const mem = [];
+  const results = []; const mem = []; let baseOverflow = null;
   const ev = (fn, arg) => pg.evaluate(fn, arg);
   const shot = async name => { const p = path.join(OUT, `${tag}_${name}.png`); await pg.screenshot({ path: p }); return p; };
   const mods = () => ev(() => window.TwinX ? ['data', 'shell', 'cad2d', 'scene3d', 'analysis'].filter(k => TwinX[k]) : []);
@@ -76,6 +76,7 @@ async function runRes(browser, W, H) {
     const r = await ev(() => { const b = [...document.querySelectorAll('.sidebar nav button')].find(x => x.textContent.includes('디지털 트윈')); if (!b) return { b: false }; b.click(); return { b: true }; });
     must(r.b, '「디지털 트윈」 메뉴 없음'); await sleep(1000);
     const s = await ev(() => ({ work: !!document.querySelector('.work-area'), svg: [...document.querySelectorAll('.canvas-panel svg')].filter(s => s.getBoundingClientRect().width > 200).length, model: window.TwinX && TwinX.model && TwinX.model.source }));
+    baseOverflow = await ev(() => getComputedStyle(document.body).overflow);
     must(s.work, '.work-area 없음'); must(s.svg >= 1, 'ADMIN 도면 SVG 없음');
     return `ADMIN SVG ${s.svg}개 · TwinX.model=${s.model || 'null'}`;
   });
@@ -274,7 +275,7 @@ async function runRes(browser, W, H) {
     const dead = r.visited.filter(v => !v.active);
     must(r.svg >= 1, 'ADMIN 도면 SVG 사라짐');
     must(r.overlay === 0, `닫은 뒤에도 tx- 전체화면 요소 ${r.overlay}개 남음`);
-    must(r.scrollLock !== 'hidden', 'body overflow:hidden 잔존 (스크롤 잠금 미해제)');
+    must(r.scrollLock === baseOverflow, `body overflow ${baseOverflow}→${r.scrollLock} (뷰어 닫은 뒤 원복 안 됨)`);
     must(!dead.length, '메뉴 이동 실패: ' + dead.map(d => d.t).join(','));
     return `메뉴 ${r.visited.length}개 이동 OK · ADMIN SVG ${r.svg}`;
   });

@@ -1,0 +1,20 @@
+/* T3 · 2D CAD 뷰포트 (TwinX.cad2d) */
+.tx-cad-wrap{position:absolute;inset:0;overflow:hidden;background:#06101f;touch-action:none;user-select:none;-webkit-user-select:none}
+.tx-cad-svg{display:block;width:100%;height:100%;cursor:grab}
+.tx-cad-panning .tx-cad-svg{cursor:grabbing}
+.tx-cad-zoom{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px;z-index:3}
+.tx-cad-zoom button{width:30px;height:30px;border:1px solid #1e3a8a;border-radius:6px;background:rgba(11,18,32,.88);color:#cbd5e1;font:700 16px Arial,"Noto Sans KR",sans-serif;cursor:pointer;line-height:1;padding:0}
+.tx-cad-zoom button:hover{background:#14293f;color:#fff;border-color:#3e63db}
+.tx-cad-tip{position:absolute;display:none;z-index:4;pointer-events:none;max-width:280px;padding:8px 10px;border-radius:6px;background:rgba(2,6,23,.95);border:1px solid #334155;color:#e2e8f0;font:12px/1.45 Arial,"Noto Sans KR","Malgun Gothic",sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.tx-cad-tip b{font-size:13px;color:#f8fafc}
+.tx-cad-tip-sub{color:#94a3b8;font-size:11px}
+.tx-cad-tip-g{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:0}
+.tx-cad-tip-m{font-size:11px;color:#7dd3fc}
+.tx-cad-tip-m span{color:#64748b}
+.tx-cad-tip-bad{color:#fda4af !important;font-weight:700}
+.tx-cad-tip-none{color:#64748b}
+.tx-cad-tip-src{margin-top:3px;font-size:10px;color:#64748b}
+.tx-cad-dev{position:fixed;inset:0;z-index:99990;display:flex;flex-direction:column;background:#06101f}
+.tx-cad-devbar{display:flex;gap:6px;padding:6px 8px;background:#14293f}
+.tx-cad-devbar button{border:1px solid #3e63db;background:#22374d;color:#fff;border-radius:4px;padding:3px 10px;cursor:pointer}
+.tx-cad-devhost{position:relative;flex:1;overflow:hidden}

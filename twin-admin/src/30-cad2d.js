@@ -293,7 +293,7 @@
     var bw = Math.max(1000, b.x1 - b.x0), bh = Math.max(1000, b.y1 - b.y0);
     var s = Math.min(1240 / bw, 720 / bh, Math.sqrt(1000 * 640 / (bw * bh)));
     var pw = bw * s, ph = bh * s;
-    var LM = 122, TM = 122, BM = 176, RG = 64;
+    var LM = 122, TM = 138, BM = 176, RG = 64;
     var W = Math.ceil(Math.max(1340, LM + pw + RG + LEGW + 28)), H = Math.ceil(Math.max(800, TM + ph + BM));
     var availW = W - LM - RG - LEGW - 28, availH = H - TM - BM;
     var px0 = LM + (availW - pw) / 2, py0 = TM + (availH - ph) / 2;
@@ -317,7 +317,6 @@
       '<rect x="14" y="14" width="' + (W - 28) + '" height="' + (H - 28) + '" fill="none" stroke="#1e3a8a" stroke-width="2"/>' +
       '<rect x="22" y="22" width="' + (W - 44) + '" height="' + (H - 44) + '" fill="none" stroke="#1e3a8a" stroke-width="0.8"/>');
     // 시트 상단 좌측 도면 머리 (작게)
-    o.push('<text x="36" y="44" class="tx-c-tbh" fill="#475569">' + esc(fl.code) + ' · ' + esc(fl.name || '') + ' · ICT FLOOR PLAN</text>');
 
     /* ---- 구조 그리드 ---- */
     var exs = [], eys = [];
@@ -504,6 +503,7 @@
       trays.forEach(function (t) {
         var ow = (t.main ? 6.5 : 4.5) * Math.max(0.75, k), dx = t.x2 - t.x1, dy = t.y2 - t.y1, ln = t.len || 1, ox = -dy / ln * ow, oy = dx / ln * ow;
         var rung = Math.max(5, 300 * s);
+        if (Math.abs(dx) < 1 || Math.abs(dy) < 1) boxes.add(Math.min(t.x1, t.x2) - Math.abs(ox) - 1, Math.min(t.y1, t.y2) - Math.abs(oy) - 1, Math.abs(dx) + Math.abs(ox) * 2 + 2, Math.abs(dy) + Math.abs(oy) * 2 + 2);
         tq.push('<line x1="' + n(t.x1) + '" y1="' + n(t.y1) + '" x2="' + n(t.x2) + '" y2="' + n(t.y2) + '" stroke="' + tcol + '" stroke-opacity="0.1" stroke-width="' + n(ow * 2) + '"/>' +
           '<line x1="' + n(t.x1 - ox) + '" y1="' + n(t.y1 - oy) + '" x2="' + n(t.x2 - ox) + '" y2="' + n(t.y2 - oy) + '" stroke="' + tcol + '" stroke-width="1.2"/>' +
           '<line x1="' + n(t.x1 + ox) + '" y1="' + n(t.y1 + oy) + '" x2="' + n(t.x2 + ox) + '" y2="' + n(t.y2 + oy) + '" stroke="' + tcol + '" stroke-width="1.2"/>' +
@@ -556,6 +556,17 @@
       var tx = (best.x1 + best.x2) / 2 + lane; return 'M' + n(x1) + ' ' + n(y1) + 'H' + n(tx) + 'V' + n(y2) + 'H' + n(x2);
     }
     var linkO = [], hotLinks = [], linkIdx = 0;
+    function segBoxes(d) { // 직교 경로 세그먼트를 얇은 장애물로 등록(라벨·태그 회피용)
+      var tk = d.match(/[MLHVv]|-?[\d.]+/g) || [], cx = 0, cy = 0, i = 0;
+      while (i < tk.length) {
+        var c = tk[i++];
+        if (c === 'M') { cx = +tk[i++]; cy = +tk[i++]; continue; }
+        var nx = cx, ny = cy;
+        if (c === 'H') nx = +tk[i++]; else if (c === 'V') ny = +tk[i++]; else if (c === 'v') ny = cy + (+tk[i++]); else if (c === 'L') { nx = +tk[i++]; ny = +tk[i++]; } else continue;
+        boxes.add(Math.min(cx, nx) - 2, Math.min(cy, ny) - 2, Math.abs(nx - cx) + 4, Math.abs(ny - cy) + 4);
+        cx = nx; cy = ny;
+      }
+    }
     if (L.links !== false) {
       (M.links || []).forEach(function (lk) {
         var p1 = P[lk.from], p2 = P[lk.to];
@@ -584,6 +595,7 @@
           }
           ttl = meta.name + ' · ' + (p1 ? p1.a.name + ' → ' + (other ? other.name : lk.to) : (other ? other.name : lk.from) + ' → ' + p2.a.name) + ' (' + ofl + ' 연결 · 라이저 경유)';
         }
+        segBoxes(d);
         var pth = '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="' + sw + '" stroke-opacity="' + so + '"' + dash + (onPath ? ' class="tx-c-flow"' : '') + ' stroke-linejoin="round"><title>' + esc(ttl) + '</title></path>';
         (onPath || isSel ? hotLinks : linkO).push(pth);
       });
@@ -708,27 +720,42 @@
       order.forEach(function (p) {
         var a = p.a, g = C.GRADE[a.grade] || C.GRADE.NONE, col = g.css;
         var important = a.id === sel || (fault && (a.id === src || imp.has(a.id))) || a.grade === 'RED' || a.grade === 'ORANGE';
-        var compact = dense && !important;
+        var must = a.id === sel || (fault && (a.id === src || imp.has(a.id)));
         var sm = (L.measure !== false) ? summarize(a.measures) : (L.ground !== false && gndBad(a.measures) ? summarize((a.measures || []).filter(function (m) { return m.std === 'gnd'; })) : null);
-        var l1 = String(a.id), l1b = a.grade && a.grade !== 'NONE' ? a.grade : '', l2 = compact ? '' : fitText(String(a.name || '').replace(/^(지하\d+층|지상\d+층|\d+층)\s*/, ''), 10.5, 150);
-        var l3 = (!compact && sm) ? fitText((sm.bad ? '⚠ ' : '실측 ') + sm.items.slice(0, 1).map(mText).join(''), 9.5, 150, false) : '';
-        if (fault && !compact && (a.id === src || imp.has(a.id))) l3 = a.id === src ? '⚡ 장애 발생원' : (imp.get(a.id).sev === 'outage' ? '✖ 서비스 중단 영향' : '△ 성능 저하 영향');
-        var wT = Math.max(tw(l1 + (l1b ? ' ' + l1b : ''), 10, true), tw(l2, 10.5), tw(l3, 9.5)) + 12;
-        var hT = compact ? 16 : 18 + (l2 ? 13 : 0) + (l3 ? 13 : 0);
-        var best = null, bs = 1e12, ringD = [14, 34, 62, 96];
-        for (var ri = 0; ri < ringD.length; ri++) {
-          for (var di = 0; di < 8; di++) {
-            var dx = dirs[di][0], dy = dirs[di][1], dd = ringD[ri];
-            var x0 = dx > 0 ? p.x + p.e[0] + dd : dx < 0 ? p.x - p.e[0] - dd - wT : p.x - wT / 2;
-            var y0 = dy > 0 ? p.y + p.e[1] + dd * 0.6 : dy < 0 ? p.y - p.e[1] - dd * 0.6 - hT : p.y - hT / 2;
-            var ov = boxes.hit(x0 - 2, y0 - 2, wT + 4, hT + 4);
-            var out = Math.max(0, region.x0 - x0) + Math.max(0, x0 + wT - region.x1) + Math.max(0, region.y0 - y0) + Math.max(0, y0 + hT - region.y1);
-            var sc = ov + out * 400 + ri * 60 + di * 2;
-            if (sc < bs) { bs = sc; best = { x: x0, y: y0, ov: ov + out }; }
+        var l1 = String(a.id), l1b = a.grade && a.grade !== 'NONE' ? a.grade : '';
+        var fl2 = fitText(String(a.name || '').replace(/^(지하\d+층|지상\d+층|\d+층)\s*/, ''), 10.5, 150);
+        var fl3 = sm ? fitText((sm.bad ? '⚠ ' : '실측 ') + sm.items.slice(0, 1).map(mText).join(''), 9.5, 150, false) : '';
+        if (fault && (a.id === src || imp.has(a.id))) fl3 = a.id === src ? '⚡ 장애 발생원' : (imp.get(a.id).sev === 'outage' ? '✖ 서비스 중단 영향' : '△ 성능 저하 영향');
+        function place(cmp) {
+          var l2 = cmp ? '' : fl2, l3 = cmp ? '' : fl3;
+          var wT = Math.max(tw(l1 + (l1b ? ' ' + l1b : ''), 10, true), tw(l2, 10.5), tw(l3, 9.5)) + 12;
+          var hT = cmp ? 16 : 18 + (l2 ? 13 : 0) + (l3 ? 13 : 0);
+          var best = null, bs = 1e12, ringD = [14, 34, 62, 96];
+          for (var ri = 0; ri < ringD.length; ri++) {
+            for (var di = 0; di < 8; di++) {
+              var dx = dirs[di][0], dy = dirs[di][1], dd = ringD[ri];
+              var x0 = dx > 0 ? p.x + p.e[0] + dd : dx < 0 ? p.x - p.e[0] - dd - wT : p.x - wT / 2;
+              var y0 = dy > 0 ? p.y + p.e[1] + dd * 0.6 : dy < 0 ? p.y - p.e[1] - dd * 0.6 - hT : p.y - hT / 2;
+              var ov = boxes.hit(x0 - 2, y0 - 2, wT + 4, hT + 4);
+              var out = Math.max(0, region.x0 - x0) + Math.max(0, x0 + wT - region.x1) + Math.max(0, region.y0 - y0) + Math.max(0, y0 + hT - region.y1);
+              var sc = ov + out * 400 + ri * 60 + di * 2;
+              if (sc < bs) { bs = sc; best = { x: x0, y: y0, ov: ov + out * 50, w: wT, h: hT, l2: l2, l3: l3, cmp: cmp }; }
+            }
+            if (best && best.ov <= wT * hT * 0.04) break;
           }
-          if (best && best.ov === 0) break;
+          best.ok = best.ov <= best.w * best.h * 0.06;
+          return best;
         }
-        if (!best || (best.ov > 0 && !important && (dense || best.ov > wT * hT * 0.25))) { tagsSkipped++; return; }
+        var best = (dense && !important) ? null : place(false);
+        if (!best || !best.ok) {
+          var cb = place(true);
+          if (cb.ok) best = cb;
+          else if (must) best = best || place(false);
+          else if (important && !dense && best && best.ov < best.w * best.h * 0.25) { /* keep */ }
+          else best = null;
+        }
+        if (!best) { tagsSkipped++; return; }
+        var compact = best.cmp, wT = best.w, hT = best.h, l2 = best.l2, l3 = best.l3;
         tagsShown++;
         boxes.add(best.x - 2, best.y - 2, wT + 4, hT + 4);
         var nx = clamp(p.x, best.x, best.x + wT), ny = clamp(p.y, best.y, best.y + hT);
@@ -759,7 +786,6 @@
     });
     lg.push('<g transform="translate(44,' + ly + ')"><rect x="-10" y="-10" width="20" height="20" fill="#082f49" stroke="#38bdf8" stroke-width="2"/><path d="M-10 -10L10 10M-10 10L10 -10" stroke="#38bdf8"/></g><text x="86" y="' + (ly + 4) + '" class="tx-c-tb">EPS/TPS 수직 라이저</text>'); ly += ROWH;
     lg.push('<line x1="24" y1="' + (ly - 5) + '" x2="64" y2="' + (ly - 5) + '" stroke="#facc15"/><line x1="24" y1="' + (ly + 5) + '" x2="64" y2="' + (ly + 5) + '" stroke="#facc15"/><line x1="24" y1="' + ly + '" x2="64" y2="' + ly + '" stroke="#facc15" stroke-width="10" stroke-dasharray="1.1 6"/><text x="86" y="' + (ly + 4) + '" class="tx-c-tb">케이블 트레이 (추정)</text>'); ly += ROWH - 4;
-    lg.push('<g transform="translate(44,' + ly + ')"><circle r="8" fill="none" stroke="#22d3ee" stroke-dasharray="3 2"/><path d="M-2.6 -3V1M-4 1H4" stroke="#22d3ee"/></g>'.replace(/.*/, '') );
     ly += 6;
     lg.push('<text x="14" y="' + ly + '" class="tx-c-tbh">결선 LINK</text>'); ly += 14;
     Object.keys(C.LINK).forEach(function (lk) {

@@ -24,7 +24,7 @@
     labels: true,           // 실·설비 라벨
     explode: 1.5,           // 층간격 배율 1.0~2.4
     walk: false,            // 1인칭 워크스루
-    layers: { tray: true, links: true, thermal: false, ground: true, measure: true },
+    layers: { tray: true, links: true, thermal: false, ground: true, measure: true, underlay: true },
     selected: null,         // 선택 설비 ID (model.assets[].id)
     room: null,             // 선택 실 ID (model.rooms[].id)
     fault: { active: false, source: null }, // 장애 파급 시뮬레이션

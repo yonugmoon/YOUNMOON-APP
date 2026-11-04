@@ -296,7 +296,8 @@
   /* ==================================================================
      시트 조립 (DOM 무관) — 반환 {svg(inner), W, H, code, dwg, stats}
      ================================================================== */
-  function build(code) {
+  var mapInfo = null; // 마지막 빌드의 mm↔시트 좌표 (배경 맞춤용)
+  function build(code, forExport) {
     var t0 = performance.now();
     var M = TX.model, st = TX.state, L = st.layers || {};
     var fl = M && (M.floors || []).find(function (f) { return f.code === code; });
@@ -328,6 +329,7 @@
     var legendX = W - 28 - LEGW;
 
     o.push(defs(s));
+    mapInfo = { floor: code, px0: px0, py0: py0, s: s, x0: b.x0, y0: b.y0 };
     o.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="' + PAPER + '"/>' +
       '<rect x="14" y="14" width="' + (W - 28) + '" height="' + (H - 28) + '" fill="none" stroke="#1e3a8a" stroke-width="2"/>' +
       '<rect x="22" y="22" width="' + (W - 44) + '" height="' + (H - 44) + '" fill="none" stroke="#1e3a8a" stroke-width="0.8"/>');
@@ -392,6 +394,17 @@
       o.push('<g class="tx-c-rm" data-r="' + esc(r.id) + '"><rect class="tx-c-rmf" ' + rect + ' fill="' + stl.fill + '" fill-opacity="' + (r.type === 'corr' ? 0.07 : 0.11) + '"/>' + pat +
         (active ? '<rect x="' + n(x + 3) + '" y="' + n(y + 3) + '" width="' + n(Math.max(0, w - 6)) + '" height="' + n(Math.max(0, h - 6)) + '" fill="#38bdf8" fill-opacity="0.09" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="6 3"/>' : '') + '</g>');
     });
+
+    /* ---- CAD 배경 겹쳐 보기 (사용자 업로드 평면도 이미지, 60-workbench) ---- */
+    var ul = TX.underlay && TX.underlay.get(code);
+    if (ul && ul.show && L.underlay !== false) {
+      var href = forExport ? ul.dataURL : (ul.url || ul.dataURL);
+      var t = ul.tf, ca = Math.cos(t.rot) * t.s, sa = Math.sin(t.rot) * t.s;
+      o.push('<defs><filter id="tx-ul-inv" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0"/>' +
+        '<feComponentTransfer><feFuncR type="linear" slope="0.85" intercept="0.03"/><feFuncG type="linear" slope="0.9" intercept="0.05"/><feFuncB type="linear" slope="1" intercept="0.1"/></feComponentTransfer></filter></defs>' +
+        '<g class="tx-ul" opacity="' + ul.opacity + '" transform="translate(' + (px0 - b.x0 * s) + ',' + (py0 - b.y0 * s) + ') scale(' + s + ')" pointer-events="none">' +
+        '<image href="' + href + '" xlink:href="' + href + '" x="0" y="0" width="' + ul.w + '" height="' + ul.h + '" preserveAspectRatio="none" transform="matrix(' + [ca, sa, -sa, ca, t.tx, t.ty].join(' ') + ')"' + (ul.invert ? ' filter="url(#tx-ul-inv)"' : '') + '/></g>');
+    }
 
     /* ---- 열화상 (실측 발열값이 있을 때만) ---- */
     var heatCount = 0;
@@ -1055,8 +1068,8 @@
   /* ---------- 내보내기 (현재 줌 무관 전체 시트) ---------- */
   function svgText(code) {
     code = code || curFloor(); if (!code) return '';
-    var res = build(code); if (!res) return '';
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="' + res.W + '" height="' + res.H + '" viewBox="0 0 ' + res.W + ' ' + res.H + '">' + res.svg + '</svg>';
+    var res = build(code, true); if (!res) return '';
+    return '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="' + res.W + '" height="' + res.H + '" viewBox="0 0 ' + res.W + ' ' + res.H + '">' + res.svg + '</svg>';
   }
   function fileBase(code) { return dwgNo(code || curFloor() || 'X') + '_정보통신설비평면도'; }
   function exportSvg() {
@@ -1064,10 +1077,10 @@
     U.download(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + t], { type: 'image/svg+xml;charset=utf-8' }), fileBase() + '.svg'); return true;
   }
   function pngBlob(scale) {
-    var code = curFloor(), res = code && build(code);
+    var code = curFloor(), res = code && build(code, true);
     if (!res) return Promise.reject(new Error('no drawing'));
     scale = scale || 2;
-    var text = '<svg xmlns="http://www.w3.org/2000/svg" width="' + res.W + '" height="' + res.H + '" viewBox="0 0 ' + res.W + ' ' + res.H + '">' + res.svg + '</svg>';
+    var text = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="' + res.W + '" height="' + res.H + '" viewBox="0 0 ' + res.W + ' ' + res.H + '">' + res.svg + '</svg>';
     return new Promise(function (resolve, reject) {
       var img = new Image();
       img.onload = function () {
@@ -1109,6 +1122,18 @@
     exportSvg: exportSvg,
     exportPng: exportPng,
     pngBlob: pngBlob,
+    /* 화면 좌표(clientX/Y) → 현재 층 평면 mm (배경 2점 맞춤용) */
+    screenToMm: function (cx, cy) {
+      if (!mapInfo || !dom.svg || !dom.svg.getScreenCTM()) return null;
+      var pt = dom.svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+      var p = pt.matrixTransform(dom.svg.getScreenCTM().inverse());
+      return { x: (p.x - mapInfo.px0) / mapInfo.s + mapInfo.x0, y: (p.y - mapInfo.py0) / mapInfo.s + mapInfo.y0, floor: mapInfo.floor };
+    },
+    mmToScreen: function (x, y) {
+      if (!mapInfo || !dom.svg || !dom.svg.getScreenCTM()) return null;
+      var pt = dom.svg.createSVGPoint(); pt.x = mapInfo.px0 + (x - mapInfo.x0) * mapInfo.s; pt.y = mapInfo.py0 + (y - mapInfo.y0) * mapInfo.s;
+      var p = pt.matrixTransform(dom.svg.getScreenCTM()); return { x: p.x, y: p.y };
+    },
     svgText: svgText,
     build: build,
     mount: mount,
@@ -1122,6 +1147,7 @@
   var WATCH = ['floor', 'selected', 'room', 'layers', 'fault', 'labels', 'view', 'open', 'panel'];
   TX.on('ui-ready', function (ui) { ui = ui || TX.ui; if (ui && ui.view2d) mount(ui.view2d); });
   TX.on('model', function () { fitNext = true; schedule(); });
+  TX.on('underlay', function () { schedule(); });
   TX.on('state', function (p) {
     var ch = (p && p.changed) || [];
     if (ch.indexOf('floor') >= 0) fitNext = true;

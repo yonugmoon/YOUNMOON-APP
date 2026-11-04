@@ -106,3 +106,11 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
 - 공용 헬퍼: `node twin-admin/test/shot.js <html> <outDir> [view] [concept]` (T5가 확장 가능) — 콘솔 오류 출력 + 스크린샷.
 - 스크린샷은 직접 열어 눈으로 품질을 확인하세요 (Read 도구로 PNG 확인).
 - git 커밋·푸시는 하지 마세요 (통합 리드가 함).
+
+## 10. v1.3 현행화 도구 (`src/60-workbench.js`, 통합 리드)
+- **랙·U 입력** `TwinX.rack = {get,set,remove,all,exportJSON,importJSON}` — localStorage `twinx_rack_v1` `{설비ID:{name,size,u0,u1,face,at}}`.
+  T1(10-data)이 v14 시범값보다 우선 적용(`asset.rack.source:'user'`), 빈 name은 랙 정보 삭제. 인스펙터 「랙 · U」 행의 `[data-act="rack-edit"]` 버튼으로 편집.
+- **CAD 배경** `TwinX.underlay = {get(floor), image(floor), update, remove, fitToFloor, load(floor,File), list}` — IndexedDB `twinx_underlay_v1`.
+  레코드 `{floor, name, w, h /*px*/, tf:{s /*mm/px*/, rot /*rad*/, tx, ty /*mm*/}, opacity, show, invert}`; 이미지 px→평면 mm = R(rot)·s·p + t.
+  변경 시 `underlay` 이벤트. T3는 실 바닥 위·열화상 아래에 `<image>`(내보내기 시 dataURL), T4는 층 텍스처에 곱하기 합성. `state.layers.underlay`로 일괄 숨김.
+- T3 추가 API: `TwinX.cad2d.screenToMm(clientX, clientY)`, `mmToScreen(x, y)` (2점 맞춤용).

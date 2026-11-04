@@ -330,6 +330,16 @@
         a.rack = { name: m.rack, u: m.u, u0: ur ? ur.u0 : null, u1: ur ? ur.u1 : null, source: 'v14-ASSET_META' };
       }
     });
+    // 사용자 랙·U 입력(60-workbench, localStorage) — v14 시범값보다 우선, 빈 이름은 '랙 정보 없음'
+    var userRack = readRackStore();
+    assets.forEach(function (a) {
+      var r = userRack[a.id];
+      if (!r) return;
+      if (!r.name) { delete a.rack; return; }
+      var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+      a.rack = { name: r.name, u: (r.u0 != null && r.u1 != null) ? pad(r.u0) + 'U~' + pad(r.u1) + 'U' : '', u0: r.u0 != null ? r.u0 : null, u1: r.u1 != null ? r.u1 : null,
+                 size: r.size || 42, face: r.face || '전면', source: 'user', at: r.at || null };
+    });
 
     /* --- 측정 행 → Measure --- */
     function norm(s) { return str(s).replace(/\s+/g, '').replace(/(설비|시스템|기기|장치)/g, ''); }
@@ -577,10 +587,11 @@
   /* ---------------- 4. 캐시 · 서명 ---------------- */
   var walkCache = { t: 0, v: null };
   var conv = { twin: null, rows: null, sig: null, model: null };
+  function readRackStore() { try { return JSON.parse(localStorage.getItem('twinx_rack_v1') || '{}') || {}; } catch (e) { return {}; } }
   function signatureOf(d) {
     var t = d.twin || {};
     try {
-      return hashStr(JSON.stringify([t.rooms, t.assets, t.links, t.history, t.rules, d.rows]));
+      return hashStr(JSON.stringify([t.rooms, t.assets, t.links, t.history, t.rules, d.rows, localStorage.getItem('twinx_rack_v1') || '']));
     } catch (e) { return String(Date.now()); }
   }
   function read(force) {
@@ -591,14 +602,14 @@
     var model = null, sig = null;
     if (d && d.twin) {
       // 같은 참조면 서명 재계산 생략 (React 불변 갱신)
-      if (conv.model && conv.twin === d.twin && conv.rows === d.rows && conv.twinSnap === snap(d.twin)) { model = conv.model; sig = conv.sig; }
+      if (conv.model && conv.twin === d.twin && conv.rows === d.rows && conv.twinSnap === snap(d.twin) && conv.rackSig === (localStorage.getItem('twinx_rack_v1') || '')) { model = conv.model; sig = conv.sig; }
       else {
         sig = signatureOf(d);
         if (conv.model && sig === conv.sig) model = conv.model;
         else {
           try { model = convert(d); } catch (e) { console.error('[TwinX.data] 변환 실패', e); model = null; }
         }
-        conv = { twin: d.twin, rows: d.rows, twinSnap: snap(d.twin), sig: sig, model: model };
+        conv = { twin: d.twin, rows: d.rows, twinSnap: snap(d.twin), rackSig: localStorage.getItem('twinx_rack_v1') || '', sig: sig, model: model };
       }
     }
     walkCache = { t: now, v: { model: model, sig: sig } };

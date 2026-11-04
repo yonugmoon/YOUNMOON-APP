@@ -247,6 +247,15 @@
     });
     // 방위 · 축척
     g.fillStyle = 'rgba(30,41,59,0.65)'; g.font = 'bold ' + Math.round(ppm * 0.6) + 'px ' + font; g.textAlign = 'center';
+    // CAD 배경 겹쳐 보기 (60-workbench): 실 바닥 위에 곱하기 합성으로 원본 평면도 선을 은은하게 투영
+    var ul = TX.underlay && TX.underlay.get(fl.code), ulImg = ul && ul.show && TX.underlay.image(fl.code);
+    if (ulImg && st().layers && st().layers.underlay !== false) {
+      var kk = ppm / 1000, t = ul.tf, ca = Math.cos(t.rot) * t.s, sa = Math.sin(t.rot) * t.s;
+      g.save(); g.globalAlpha = Math.min(1, ul.opacity + 0.25); g.globalCompositeOperation = 'multiply';
+      g.setTransform(kk * ca, kk * sa, -kk * sa, kk * ca, kk * (t.tx - x0), kk * (t.ty - y0));
+      g.drawImage(ulImg, 0, 0, ul.w, ul.h); g.restore();
+      S.ulDrawn = true;
+    }
     g.fillText('N ▲', cw - ppm * 0.9, ppm * 0.75);
     var sb = 5 * ppm, sx = ppm * 0.4, sy = ch - ppm * 0.35;
     g.fillStyle = 'rgba(30,41,59,0.75)'; g.fillRect(sx, sy - lw * 2, sb, lw * 2); g.fillRect(sx, sy - lw * 6, lw * 1.5, lw * 6); g.fillRect(sx + sb - lw * 1.5, sy - lw * 6, lw * 1.5, lw * 6);
@@ -1484,6 +1493,7 @@
   });
   TX.on('close', function () { if (S.devRoot) S.devRoot.style.display = 'none'; stopLoop(); S.walk.keys = {}; });
   TX.on('model', function () { invalidateCaches(); S.need.static = true; S.need.fit = true; S.walk.init = false; checkRun(); });
+  TX.on('underlay', function () { invalidateCaches(); S.need.static = true; checkRun(); });
   TX.on('resize', function () { resize(); layoutAvoid(); checkRun(); setTimeout(layoutAvoid, 380); });
   TX.on('fault', function () { S.need.overlay = true; });
   TX.on('select', function (id) { S.need.overlay = true; if (id) S.pendingFly = id; });

@@ -230,6 +230,7 @@
             tbtn('camera', 'camera', '카메라', '카메라 프리셋') +
             '<button type="button" class="tx-tbtn tx-tbtn-fault" data-act="fault" aria-pressed="false" title="선택 설비를 발생원으로 장애 파급 시뮬레이션">' + ic('zap', 17) + '<span class="tx-tbtn-lbl">장애 시뮬레이션</span></button>' +
             tbtn('export', 'download', '내보내기', '도면·스냅샷 내보내기') +
+            '<button type="button" class="tx-tbtn" data-act="underlay" title="CAD 평면도 이미지를 2D·3D 도면 배경으로 겹쳐 보기">' + ic('layers', 17) + '<span class="tx-tbtn-lbl">도면 배경</span></button>' +
           '</div>' +
         '</div>' +
         '<div class="tx-tb-right">' + searchHTML('tx-search-tb') +
@@ -745,7 +746,9 @@
     var rows = [['설비구분', a.category], ['종류', KIND_NAME[a.kind] || a.kind], ['모델', a.model], ['제조사', a.maker], ['규격', a.spec],
       ['랙 · U', a.rack ? [a.rack.name, a.rack.u].filter(Boolean).join(' · ') : '']];
     h += '<div class="tx-sec"><h4>기본 정보</h4><dl class="tx-dl">' + rows.map(function (r) {
-      return '<dt>' + r[0] + '</dt><dd' + (r[1] ? '' : ' class="tx-muted"') + '>' + esc(r[1] || '—') + '</dd>';
+      var edit = r[0] === '랙 · U' && TwinX.rack ? ' <button type="button" class="tx-rack-edit" data-act="rack-edit" data-id="' + esc(a.id) + '">' + (a.rack ? '편집' : '+ 입력') + '</button>' +
+        (a.rack && a.rack.source === 'v14-ASSET_META' ? '<small class="tx-muted"> (시범값)</small>' : a.rack && a.rack.source === 'user' ? '<small class="tx-muted"> (현장 입력)</small>' : '') : '';
+      return '<dt>' + r[0] + '</dt><dd' + (r[1] ? '' : ' class="tx-muted"') + '>' + esc(r[1] || '—') + edit + '</dd>';
     }).join('') + '</dl></div>';
 
     // 실측

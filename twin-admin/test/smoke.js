@@ -175,7 +175,12 @@ async function runRes(browser, W, H) {
     const target = await ev(() => { const A = TwinX.model && TwinX.model.assets; if (!A || !A.length) return null;
       let best = A[0], bs = -1; A.forEach(a => { const s = TwinX.analysis ? TwinX.analysis.impact(a.id).size : 0; if (s > bs) { bs = s; best = a; } }); return { id: best.id, name: best.name, floor: best.floor, n: bs }; });
     must(target, '모델에 설비 없음');
-    const input = await pg.$('.tx-root input[type=search], [class*="tx-"] input[type=search], [class*="tx-"] input[placeholder*="검색"], [id^="tx-"] input');
+    const SEL = '.tx-root input[type=search] >> visible=true, .tx-root input[placeholder*="검색"] >> visible=true';
+    let input = await pg.$('.tx-root input[placeholder*="검색"] >> visible=true') || await pg.$('.tx-root input[type=search] >> visible=true');
+    if (!input) { // 좁은 화면: 툴바 '메뉴' 서랍 안 검색창
+      await ev(() => { const b = [...TwinX.ui.root.querySelectorAll('button')].find(x => /메뉴/.test((x.title || x.getAttribute('aria-label') || x.textContent).trim()) && x.offsetParent); b && b.click(); }); await sleep(500);
+      input = await pg.$('.tx-root input[placeholder*="검색"] >> visible=true') || await pg.$('.tx-root input[type=search] >> visible=true');
+    }
     let how = 'api';
     if (input) {
       var hidden = !(await input.isVisible());

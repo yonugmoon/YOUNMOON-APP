@@ -485,7 +485,8 @@
     var g = gradeOf(a), rk = riskOf(a), mc = (a.measures || []).length;
     var score = rk.est ? (scoreMode === 'always' ? '≈' + rk.total : '') : String(Math.round(rk.total));
     var badge = st().layers && st().layers.measure && mc ? '<em>실측 ' + mc + '</em>' : '';
-    var html = '<i></i>' + U.esc(a.id) + ' <b>' + g + (score ? ' ' + score : '') + '</b>' + badge;
+    // 상태 등급(asset.grade)과 위험점수(analysis.risk)는 서로 다른 값 → 점수에 '위험' 명시
+    var html = '<i></i>' + U.esc(a.id) + ' <b>' + g + '</b>' + (score ? ' <small class="tx-s3-rk">위험 ' + score + '</small>' : '') + badge;
     return anchor(pos, html, 'tx-s3-chip tx-g-' + g, pri + (g === 'RED' ? 30 : g === 'ORANGE' ? 20 : g === 'YELLOW' ? 10 : 0), { a: a.id, t: a.name + (rk.est ? ' · 점수 미산출(등급 기반)' : ' · 위험점수 ' + Math.round(rk.total)) }, frag);
   }
   function roomChip(rm, pos, frag) {
@@ -1381,6 +1382,10 @@
     S.labelsEl = U.el('div', 'tx-s3-labels'); wrap.appendChild(S.labelsEl);
     S.miniWrap = U.el('div', 'tx-s3-mini'); S.miniHead = U.el('div', 'tx-s3-mini-h'); S.miniEl = document.createElement('canvas'); S.miniEl.title = '클릭: 해당 위치로 이동';
     S.miniWrap.appendChild(S.miniHead); S.miniWrap.appendChild(S.miniEl); wrap.appendChild(S.miniWrap);
+    // 미니맵 접기: 헤더 클릭 토글, 좁은 화면(≤760px)은 기본 접힘
+    if (window.innerWidth <= 760) S.miniWrap.classList.add('tx-s3-mini-c');
+    S.miniHead.title = '클릭: 미니맵 접기/펼치기';
+    S.miniHead.addEventListener('click', function (e) { e.stopPropagation(); S.miniWrap.classList.toggle('tx-s3-mini-c'); });
     S.hudEl = U.el('div', 'tx-s3-hud'); wrap.appendChild(S.hudEl);
     S.wrap = wrap; S.canvas = canvas;
     if (typeof THREE === 'undefined') { S.failed = true; wrap.appendChild(U.el('div', 'tx-s3-err', '3D 라이브러리(three.js)를 불러오지 못했습니다.')); return; }

@@ -25,6 +25,7 @@
 
   function n(v) { return Math.round(v * 10) / 10; }
   function mm(v) { return Math.round(v).toLocaleString('en-US'); }
+  function fin(v) { return typeof v === "number" && isFinite(v); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   /* 텍스트 폭 추정 (한글 1em, 영숫자 ~0.56em) */
   function tw(s, size, mono) {
@@ -56,18 +57,31 @@
     return s;
   }
   function mLabel(m) { return (m.std && C.STD[m.std]) || String(m.item || '측정').slice(0, 8); }
-  function mText(m) { var v = mVal(m); return mLabel(m) + (v ? ' ' + v : '') + (m.judge === 'bad' ? ' 불량' : ''); }
+  function mText(m) { var v = mVal(m); return mLabel(m) + (v ? ' ' + v : '') + (m.judge === 'bad' ? ' 불량' : m.warn ? ' 주의' : ''); }
+  /* 매칭 근거(v1.1): explicit/v14 = 직접 연결, 그 외(명칭·실 추정) = 추정 */
+  function mEst(m) { return !!(m && m.match && m.match !== 'explicit' && m.match !== 'v14' && m.match !== 'asset' && m.match !== 'room'); }
+  var SRC_LABEL = { inspection: '정기점검', row: '정기점검', history: '점검이력', 'v14-snapshot': 'v14 스냅샷' };
+  var MATCH_LABEL = { explicit: '직접 연결', v14: '설비 메타', 'asset-name': '설비명 매칭(추정)', asset: '설비', room: '실' };
+  function mEvid(m) {
+    var a = SRC_LABEL[m.source] || (m.source ? String(m.source) : '정기점검');
+    var b = m.match ? (MATCH_LABEL[m.match] || (/^room-/.test(m.match) ? '실 매칭(추정·' + m.match.slice(5) + ')' : String(m.match))) : '';
+    return a + (b ? ' · ' + b : '');
+  }
   function byDateDesc(a, b) { return String(b.date || '').localeCompare(String(a.date || '')); }
+  function uniqT(arr) { var seen = {}; return arr.filter(function (m) { var t = mText(m); if (seen[t]) return false; seen[t] = 1; return true; }); }
   function summarize(list) {
     if (!list || !list.length) return null;
+    list = uniqT(list.slice().sort(byDateDesc));
     var bad = list.filter(function (m) { return m.judge === 'bad'; }).sort(byDateDesc);
-    if (bad.length) return { bad: true, items: bad.slice(0, 2), all: list };
+    if (bad.length) return { bad: true, est: bad.slice(0, 2).some(mEst), items: bad.slice(0, 2), all: list };
+    var wn = list.filter(function (m) { return m.warn; }).sort(byDateDesc);
+    if (wn.length) return { bad: false, warn: true, est: wn.slice(0, 2).some(mEst), items: wn.slice(0, 2), all: list };
     var seen = {}, main = [];
     list.slice().sort(byDateDesc).forEach(function (m) {
       var k = m.std || m.item; if (seen[k] || (m.value == null || m.value === '')) return; seen[k] = 1; main.push(m);
     });
     if (!main.length) return null;
-    return { bad: false, items: main.slice(0, 2), all: list };
+    return { bad: false, est: main.slice(0, 2).some(mEst), items: main.slice(0, 2), all: list };
   }
   function gndBad(list) { return (list || []).some(function (m) { return m.std === 'gnd' && m.judge === 'bad'; }); }
   function heatOf(list) {
@@ -88,7 +102,8 @@
         var k = gx * 8192 + gy, a = this.g.get(k); if (!a) this.g.set(k, a = []); a.push(i);
       }
   };
-  Boxes.prototype.hit = function (x, y, w, h) {
+  Boxes.prototype.hit = function (x, y, w, h, cap) {
+    if (cap == null) cap = Infinity;
     var cs = 64, x2 = x + w, y2 = y + h, area = 0, q = ++this.q;
     for (var gx = Math.floor(x / cs); gx <= Math.floor(x2 / cs); gx++)
       for (var gy = Math.floor(y / cs); gy <= Math.floor(y2 / cs); gy++) {
@@ -96,7 +111,7 @@
         for (var j = 0; j < a.length; j++) {
           var i = a[j]; if (this.stamp[i] === q) continue; this.stamp[i] = q;
           var r = this.r[i], ox = Math.min(x2, r[2]) - Math.max(x, r[0]), oy = Math.min(y2, r[3]) - Math.max(y, r[1]);
-          if (ox > 0 && oy > 0) area += ox * oy;
+          if (ox > 0 && oy > 0) { area += ox * oy; if (area > cap) return area; }
         }
       }
     return area;
@@ -105,10 +120,10 @@
   /* ---------- 모델 접근 ---------- */
   function boundsOf(fl, rooms, assets) {
     var b = fl && fl.bounds;
-    if (b && isFinite(b.x0) && isFinite(b.x1) && b.x1 > b.x0 && b.y1 > b.y0) return b;
+    if (b && fin(b.x0) && fin(b.x1) && b.x1 > b.x0 && b.y1 > b.y0) return b;
     var xs = [], ys = [];
     rooms.forEach(function (r) { xs.push(r.x, r.x + r.w); ys.push(r.y, r.y + r.h); });
-    assets.forEach(function (a) { if (isFinite(a.x) && isFinite(a.y)) { xs.push(a.x); ys.push(a.y); } });
+    assets.forEach(function (a) { if (fin(a.x) && fin(a.y)) { xs.push(a.x); ys.push(a.y); } });
     if (!xs.length) return { x0: 0, y0: 0, x1: 20000, y1: 12000 };
     return { x0: Math.min.apply(null, xs), y0: Math.min.apply(null, ys), x1: Math.max.apply(null, xs), y1: Math.max.apply(null, ys) };
   }
@@ -286,7 +301,7 @@
     var M = TX.model, st = TX.state, L = st.layers || {};
     var fl = M && (M.floors || []).find(function (f) { return f.code === code; });
     if (!fl) return null;
-    var rooms = (M.rooms || []).filter(function (r) { return r.floor === code && isFinite(r.x) && isFinite(r.w); });
+    var rooms = (M.rooms || []).filter(function (r) { return r.floor === code && fin(r.x) && fin(r.w); });
     var assets = (M.assets || []).filter(function (a) { return a.floor === code; });
     var roomById = {}; rooms.forEach(function (r) { roomById[r.id] = r; });
     var b = boundsOf(fl, rooms, assets);
@@ -388,7 +403,7 @@
         void rad;
       });
       assets.forEach(function (a) {
-        var h = heatOf(a.measures); if (!h || !isFinite(a.x)) return; heatCount++;
+        var h = heatOf(a.measures); if (!h || !fin(a.x)) return; heatCount++;
         var rr = clamp((1600 + clamp(h.v, 0, 80) * (h.delta ? 220 : 55)) * s, 18, 130);
         o.push('<circle cx="' + n(X(a.x)) + '" cy="' + n(Y(a.y)) + '" r="' + n(rr) + '" fill="url(#tx-c-heat' + h.lvl + ')" pointer-events="none" style="mix-blend-mode:screen"/>');
       });
@@ -447,7 +462,7 @@
     cxs.forEach(function (x, i) {
       var xx = X(x);
       dimO.push('<line x1="' + n(xx) + '" y1="' + n(dY1 - 6) + '" x2="' + n(xx) + '" y2="' + n(by0 - T - 4) + '" stroke="#64748b" stroke-width="0.6"/><path d="M' + n(xx - 3.5) + ' ' + n(dY1 + 3.5) + 'L' + n(xx + 3.5) + ' ' + n(dY1 - 3.5) + '" stroke="#cbd5e1" stroke-width="1.2"/>');
-      if (i > 0) { var t = mm(x - cxs[i - 1]), segw = xx - X(cxs[i - 1]); if (tw(t, 10, true) + 4 < segw) dimO.push('<text x="' + n((xx + X(cxs[i - 1])) / 2) + '" y="' + n(dY1 - 4) + '" text-anchor="middle" class="tx-c-dim">' + t + '</text>'); }
+      if (i > 0 && cxs.length > 2) { var t = mm(x - cxs[i - 1]), segw = xx - X(cxs[i - 1]); if (tw(t, 10, true) + 4 < segw) dimO.push('<text x="' + n((xx + X(cxs[i - 1])) / 2) + '" y="' + n(dY1 - 4) + '" text-anchor="middle" class="tx-c-dim">' + t + '</text>'); }
     });
     dimO.push('<line x1="' + n(bx0) + '" y1="' + n(dY2) + '" x2="' + n(bx1) + '" y2="' + n(dY2) + '" stroke="#64748b" stroke-width="0.8"/>' +
       '<path d="M' + n(bx0 - 3.5) + ' ' + n(dY2 + 3.5) + 'L' + n(bx0 + 3.5) + ' ' + n(dY2 - 3.5) + 'M' + n(bx1 - 3.5) + ' ' + n(dY2 + 3.5) + 'L' + n(bx1 + 3.5) + ' ' + n(dY2 - 3.5) + '" stroke="#cbd5e1" stroke-width="1.2"/>' +
@@ -457,7 +472,7 @@
     cys.forEach(function (y, i) {
       var yy = Y(y);
       dimO.push('<line x1="' + n(dX1 - 6) + '" y1="' + n(yy) + '" x2="' + n(bx0 - T - 4) + '" y2="' + n(yy) + '" stroke="#64748b" stroke-width="0.6"/><path d="M' + n(dX1 - 3.5) + ' ' + n(yy + 3.5) + 'L' + n(dX1 + 3.5) + ' ' + n(yy - 3.5) + '" stroke="#cbd5e1" stroke-width="1.2"/>');
-      if (i > 0) {
+      if (i > 0 && cys.length > 2) {
         var t = mm(y - cys[i - 1]), segh = yy - Y(cys[i - 1]), my = (yy + Y(cys[i - 1])) / 2;
         if (tw(t, 10, true) + 4 < segh) dimO.push('<text x="' + n(dX1 - 4) + '" y="' + n(my) + '" text-anchor="middle" class="tx-c-dim" transform="rotate(-90 ' + n(dX1 - 4) + ' ' + n(my) + ')">' + t + '</text>');
       }
@@ -473,9 +488,9 @@
     var P = {}, autoIdx = {}, symBoxes = new Boxes();
     var placed = assets.map(function (a) {
       var x, y, rm = roomById[a.room];
-      if (isFinite(a.x) && isFinite(a.y)) { x = X(clamp(a.x, b.x0, b.x1)); y = Y(clamp(a.y, b.y0, b.y1)); }
+      if (fin(a.x) && fin(a.y)) { x = X(clamp(a.x, b.x0, b.x1)); y = Y(clamp(a.y, b.y0, b.y1)); }
       else if (rm) {
-        var i = autoIdx[rm.id] = (autoIdx[rm.id] || 0) + 1, cnt = assets.filter(function (q) { return q.room === rm.id && !isFinite(q.x); }).length;
+        var i = autoIdx[rm.id] = (autoIdx[rm.id] || 0) + 1, cnt = assets.filter(function (q) { return q.room === rm.id && !fin(q.x); }).length;
         var cols2 = Math.ceil(Math.sqrt(cnt * rm.w / Math.max(1, rm.h))), rows = Math.ceil(cnt / cols2);
         x = X(rm.x + rm.w * (((i - 1) % cols2) + 0.5) / cols2); y = Y(rm.y + rm.h * (Math.floor((i - 1) / cols2) + 0.5) / rows);
       } else return null;
@@ -534,8 +549,8 @@
     if (cov.length) o.push('<g pointer-events="none"><clipPath id="tx-c-clip"><rect x="' + n(bx0) + '" y="' + n(by0) + '" width="' + n(pw) + '" height="' + n(ph) + '"/></clipPath><g clip-path="url(#tx-c-clip)">' + cov.join('') + '</g></g>');
 
     /* ---- 라이저 ---- */
-    var risers = (M.risers || []).filter(function (r) { return (r.floors || []).indexOf(code) >= 0 && isFinite(r.x); });
-    risers.forEach(function (rs) { rs._px = X(rs.x); rs._py = Y(rs.y); rs._to = {}; });
+    var risers = (M.risers || []).filter(function (r) { return (r.floors || []).indexOf(code) >= 0 && fin(r.x); });
+    risers = risers.map(function (rs) { return { id: rs.id, name: rs.name, floors: rs.floors || [], x: rs.x, y: rs.y, _px: X(clamp(rs.x, b.x0 + 300, b.x1 - 300)), _py: Y(clamp(rs.y, b.y0 + 300, b.y1 - 300)), _to: {} }; }); // 모델 원본 불변
 
     /* ---- 결선 (직교 경로: 트레이/복도 축 · 타층은 라이저 경유) ---- */
     var axes = trays.slice();
@@ -649,12 +664,12 @@
       if (L.measure !== false || L.ground !== false) {
         var sm = summarize(L.measure !== false ? r.measures : (r.measures || []).filter(function (m) { return m.std === 'gnd'; }));
         if (sm && (L.measure !== false || sm.bad)) {
-          var txt = '실측 ' + sm.items.map(mText).join(' · ');
+          var txt = (sm.est ? '실측≈ ' : '실측 ') + sm.items.map(mText).join(' · ');
           var maxw = p.w - 10, bt = fitText(txt, 9.5, maxw - 10);
           if (bt && maxw > 50 && p.h > 26) {
             var bwid = tw(bt, 9.5) + 10, bxp = p.x + p.w - bwid - 5, byp = p.y + 5;
-            lab.push('<g pointer-events="none"><rect x="' + n(bxp) + '" y="' + n(byp) + '" width="' + n(bwid) + '" height="14" rx="3" fill="' + (sm.bad ? '#4c0519' : '#0c2a3f') + '" stroke="' + (sm.bad ? '#f43f5e' : '#38bdf8') + '" stroke-width="0.9"/>' +
-              '<text x="' + n(bxp + 5) + '" y="' + n(byp + 10.2) + '" style="font:700 9.5px ' + FONT.replace(/"/g, "'") + '" fill="' + (sm.bad ? '#fecdd3' : '#bae6fd') + '">' + esc(bt) + '</text></g>');
+            lab.push('<g pointer-events="none"><rect x="' + n(bxp) + '" y="' + n(byp) + '" width="' + n(bwid) + '" height="14" rx="3" fill="' + (sm.bad ? '#4c0519' : sm.warn ? '#3b2a05' : '#0c2a3f') + '" stroke="' + (sm.bad ? '#f43f5e' : sm.warn ? '#eab308' : '#38bdf8') + '" stroke-width="0.9"/>' +
+              '<text x="' + n(bxp + 5) + '" y="' + n(byp + 10.2) + '" style="font:700 9.5px ' + FONT.replace(/"/g, "'") + '" fill="' + (sm.bad ? '#fecdd3' : sm.warn ? '#fde68a' : '#bae6fd') + '">' + esc(bt) + '</text></g>');
             boxes.add(bxp, byp, bwid, 14);
           }
         }
@@ -711,10 +726,8 @@
     if (showTags && placed.length) {
       var dense = placed.length > 40;
       var GR = { RED: 0, ORANGE: 1, YELLOW: 2, GREEN: 3, NONE: 4 };
-      var order = placed.slice().sort(function (p, q) {
-        function pri(z) { var a = z.a; return (a.id === sel ? -100 : 0) + (fault && (a.id === src || imp.has(a.id)) ? -50 : 0) + (GR[a.grade] != null ? GR[a.grade] : 4) * 2 + (summarize(a.measures) && summarize(a.measures).bad ? -3 : 0); }
-        return pri(p) - pri(q);
-      });
+      placed.forEach(function (z) { var a = z.a; z.pri = (a.id === sel ? -100 : 0) + (fault && (a.id === src || imp.has(a.id)) ? -50 : 0) + (GR[a.grade] != null ? GR[a.grade] : 4) * 2 + (gndBad(a.measures) || (a.measures || []).some(function (m) { return m.judge === 'bad'; }) ? -3 : 0); });
+      var order = placed.slice().sort(function (p, q) { return p.pri - q.pri; });
       var region = { x0: bx0 - T - 30, y0: by0 - T - 20, x1: Math.min(bx1 + T + 40, legendX - 8), y1: by1 + T + 30 };
       var dirs = [[1, -1], [1, 1], [-1, -1], [-1, 1], [1, 0], [-1, 0], [0, -1], [0, 1]];
       order.forEach(function (p) {
@@ -724,21 +737,23 @@
         var sm = (L.measure !== false) ? summarize(a.measures) : (L.ground !== false && gndBad(a.measures) ? summarize((a.measures || []).filter(function (m) { return m.std === 'gnd'; })) : null);
         var l1 = String(a.id), l1b = a.grade && a.grade !== 'NONE' ? a.grade : '';
         var fl2 = fitText(String(a.name || '').replace(/^(지하\d+층|지상\d+층|\d+층)\s*/, ''), 10.5, 150);
-        var fl3 = sm ? fitText((sm.bad ? '⚠ ' : '실측 ') + sm.items.slice(0, 1).map(mText).join(''), 9.5, 150, false) : '';
+        var fl3 = sm ? fitText((sm.bad ? '⚠ ' : sm.warn ? '△ ' : '실측 ') + (sm.est ? '≈' : '') + sm.items.slice(0, 1).map(mText).join(''), 9.5, 150, false) : '';
         if (fault && (a.id === src || imp.has(a.id))) fl3 = a.id === src ? '⚡ 장애 발생원' : (imp.get(a.id).sev === 'outage' ? '✖ 서비스 중단 영향' : '△ 성능 저하 영향');
         function place(cmp) {
           var l2 = cmp ? '' : fl2, l3 = cmp ? '' : fl3;
           var wT = Math.max(tw(l1 + (l1b ? ' ' + l1b : ''), 10, true), tw(l2, 10.5), tw(l3, 9.5)) + 12;
           var hT = cmp ? 16 : 18 + (l2 ? 13 : 0) + (l3 ? 13 : 0);
-          var best = null, bs = 1e12, ringD = [14, 34, 62, 96];
+          var best = null, bs = 1e12, ringD = cmp ? [10, 26, 48] : [14, 34, 62, 96];
           for (var ri = 0; ri < ringD.length; ri++) {
             for (var di = 0; di < 8; di++) {
               var dx = dirs[di][0], dy = dirs[di][1], dd = ringD[ri];
               var x0 = dx > 0 ? p.x + p.e[0] + dd : dx < 0 ? p.x - p.e[0] - dd - wT : p.x - wT / 2;
               var y0 = dy > 0 ? p.y + p.e[1] + dd * 0.6 : dy < 0 ? p.y - p.e[1] - dd * 0.6 - hT : p.y - hT / 2;
-              var ov = boxes.hit(x0 - 2, y0 - 2, wT + 4, hT + 4);
               var out = Math.max(0, region.x0 - x0) + Math.max(0, x0 + wT - region.x1) + Math.max(0, region.y0 - y0) + Math.max(0, y0 + hT - region.y1);
-              var sc = ov + out * 400 + ri * 60 + di * 2;
+              var pen = out * 400 + ri * 60 + di * 2;
+              if (pen >= bs) continue;
+              var ov = boxes.hit(x0 - 2, y0 - 2, wT + 4, hT + 4, bs - pen);
+              var sc = ov + pen;
               if (sc < bs) { bs = sc; best = { x: x0, y: y0, ov: ov + out * 50, w: wT, h: hT, l2: l2, l3: l3, cmp: cmp }; }
             }
             if (best && best.ov <= wT * hT * 0.04) break;
@@ -812,6 +827,7 @@
     }
     var layerTxt = [['tray', '트레이'], ['links', '결선'], ['measure', '실측'], ['ground', '접지'], ['thermal', '열화상']].map(function (q) { return (L[q[0]] !== false && (q[0] !== 'thermal' || L.thermal) ? '■ ' : '□ ') + q[1]; }).join('  ');
     lg.push('<text x="14" y="' + ly + '" class="tx-c-sm" style="font-size:9.5px">표시: ' + layerTxt + '</text>'); ly += 14;
+    lg.push('<text x="14" y="' + ly + '" class="tx-c-sm" style="font-size:9.5px">실측 배지: <tspan fill="#f43f5e">■</tspan>불량 <tspan fill="#eab308">■</tspan>주의 <tspan fill="#38bdf8">■</tspan>양호 · ≈ 매칭 추정</text>'); ly += 14;
     if (L.thermal && !heatCount) { lg.push('<text x="14" y="' + ly + '" class="tx-c-sm" style="font-size:9.5px" fill="#fbbf24">※ 이 층에 발열(열화상) 실측값 없음</text>'); ly += 14; }
     var legTop = 40, legAvail = H - 28 - 108 - 16 - legTop, legH = ly + 6, lsc = Math.min(1, legAvail / legH);
     o.push('<g transform="translate(' + legendX + ',' + legTop + ')"><rect x="0" y="0" width="' + LEGW + '" height="' + n(Math.min(legAvail, legH * lsc)) + '" fill="#0b1220" stroke="#1e3a8a"/>' +
@@ -862,7 +878,7 @@
      DOM · 뷰포트 상호작용
      ================================================================== */
   var dom = { host: null, wrap: null, svg: null, tip: null };
-  var view = null, sheet = null, last = null, dirty = true, raf = 0, fitNext = true, moved = false;
+  var view = null, sheet = null, last = null, dirty = true, raf = 0, fitNext = true, moved = false, userView = false;
 
   function curFloor() {
     var M = TX.model; if (!M || !M.floors || !M.floors.length) return null;
@@ -875,10 +891,39 @@
     return true;
   }
   function applyView() { if (dom.svg && view) dom.svg.setAttribute('viewBox', n(view.x) + ' ' + n(view.y) + ' ' + n(view.w) + ' ' + n(view.h)); }
-  function fit() { if (!sheet) return; view = { x: 0, y: 0, w: sheet.W, h: sheet.H }; applyView(); }
+  /* 뷰포트 위에 떠 있는 셸 패널(층 레일·인스펙터·범례)을 피한 빈 영역 계산 */
+  function freeArea() {
+    var hr = dom.wrap.getBoundingClientRect(), f = { x0: 0, y0: 0, x1: hr.width, y1: hr.height, cw: hr.width, ch: hr.height };
+    var ui = TX.ui; if (!ui || !hr.width) return f;
+    [ui.floorRail, ui.inspector].forEach(function (el) {
+      if (!el || !el.getBoundingClientRect) return;
+      var r = el.getBoundingClientRect(); if (r.width < 4 || r.width > hr.width * 0.4 || r.height < hr.height * 0.2) return;
+      var cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) return;
+      var l = r.left - hr.left, rr = r.right - hr.left;
+      if (rr < hr.width * 0.4 && rr > f.x0) f.x0 = rr + 6;
+      else if (l > hr.width * 0.6 && l < f.x1) f.x1 = l - 6;
+    });
+    if (f.x1 - f.x0 < hr.width * 0.45) { f.x0 = 0; f.x1 = hr.width; }
+    return f;
+  }
+  function layoutChrome() {
+    if (!dom.wrap) return;
+    var f = freeArea(), z = dom.wrap.querySelector('.tx-cad-zoom');
+    if (z) z.style.right = Math.max(10, f.cw - f.x1 + 6) + 'px';
+  }
+  function fit() {
+    if (!sheet) return;
+    userView = false;
+    var f = dom.wrap ? freeArea() : null;
+    if (!f || !f.cw || !f.ch) { view = { x: 0, y: 0, w: sheet.W, h: sheet.H }; applyView(); return; }
+    var pad = 4, fw = f.x1 - f.x0 - pad * 2, fh = f.y1 - f.y0 - pad * 2, kk = Math.min(fw / sheet.W, fh / sheet.H);
+    var ox = f.x0 + pad + (fw - sheet.W * kk) / 2, oy = f.y0 + pad + (fh - sheet.H * kk) / 2;
+    view = { x: -ox / kk, y: -oy / kk, w: f.cw / kk, h: f.ch / kk }; applyView(); layoutChrome();
+  }
   function zoom(f, cx, cy) {
     if (!view || !sheet) return;
-    var nw = clamp(view.w * f, sheet.W / 14, sheet.W * 1.6), r = nw / view.w, nh = view.h * r;
+    userView = true;
+    var nw = clamp(view.w * f, sheet.W / 14, sheet.W * 2.2), r = nw / view.w, nh = view.h * r;
     if (cx == null) { cx = view.x + view.w / 2; cy = view.y + view.h / 2; }
     view = { x: cx - (cx - view.x) * r, y: cy - (cy - view.y) * r, w: nw, h: nh }; applyView();
   }
@@ -914,7 +959,7 @@
     var id, h = '';
     function mlist(ms) {
       if (!ms || !ms.length) return '<div class="tx-cad-tip-m tx-cad-tip-none">정기점검 실측 자료 없음</div>';
-      return ms.slice().sort(byDateDesc).slice(0, 4).map(function (m) { return '<div class="tx-cad-tip-m' + (m.judge === 'bad' ? ' tx-cad-tip-bad' : '') + '">' + esc(mText(m)) + (m.date ? ' <span>' + esc(m.date) + '</span>' : '') + '</div>'; }).join('') + '<div class="tx-cad-tip-src">출처: 정기점검 실측</div>';
+      return ms.slice().sort(byDateDesc).slice(0, 4).map(function (m) { return '<div class="tx-cad-tip-m' + (m.judge === 'bad' ? ' tx-cad-tip-bad' : '') + '">' + esc(mText(m)) + ' <span>' + esc((m.date ? m.date + ' · ' : '') + mEvid(m)) + '</span></div>'; }).join('') + '<div class="tx-cad-tip-src">출처: 정기점검 실측 (자동 수집 아님) · ≈ 매칭 추정</div>';
     }
     var ea = t.closest('[data-a]'), er = !ea && t.closest('[data-r]');
     if (ea) {
@@ -945,7 +990,6 @@
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pts.size === 1) { drag = { x: e.clientX, y: e.clientY, vx: view ? view.x : 0, vy: view ? view.y : 0 }; moved = false; }
       if (pts.size === 2) { var a = Array.from(pts.values()); pinch = { d: Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y) }; drag = null; moved = true; }
-      try { svg.setPointerCapture(e.pointerId); } catch (er) { }
     });
     svg.addEventListener('pointermove', function (e) {
       if (pts.has(e.pointerId)) pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -956,8 +1000,8 @@
       }
       if (drag && view) {
         var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-        if (!moved && Math.abs(dx) + Math.abs(dy) > 4) { moved = true; wrap.classList.add('tx-cad-panning'); hideTip(); }
-        if (moved) { var m = svg.getScreenCTM(); var sc = m ? m.a : 1; view.x = drag.vx - dx / sc; view.y = drag.vy - dy / sc; applyView(); }
+        if (!moved && Math.abs(dx) + Math.abs(dy) > 4) { moved = true; wrap.classList.add('tx-cad-panning'); hideTip(); try { svg.setPointerCapture(e.pointerId); } catch (er) { } }
+        if (moved) { userView = true; var m = svg.getScreenCTM(); var sc = m ? m.a : 1; view.x = drag.vx - dx / sc; view.y = drag.vy - dy / sc; applyView(); }
         return;
       }
       showTip(e);
@@ -1082,9 +1126,10 @@
     var ch = (p && p.changed) || [];
     if (ch.indexOf('floor') >= 0) fitNext = true;
     if (ch.some(function (c) { return WATCH.indexOf(c) >= 0; })) schedule();
+    if (ch.indexOf('panel') >= 0 || ch.indexOf('selected') >= 0) setTimeout(function () { if (!visible()) return; if (!userView) fit(); else layoutChrome(); }, 260); // 패널 전환 애니메이션 후
   });
   TX.on('select', schedule);
   TX.on('fault', schedule);
-  TX.on('resize', function () { if (dirty) schedule(); else if (visible()) applyView(); });
+  TX.on('resize', function () { if (dirty) schedule(); else if (visible()) { if (!userView) fit(); else layoutChrome(); } });
   if (TX.ui && TX.ui.view2d) mount(TX.ui.view2d);
 })();

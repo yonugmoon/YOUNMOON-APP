@@ -38,6 +38,7 @@ async function runRes(browser, W, H) {
     const m = await ev(() => {
       const s = window.TwinX && TwinX.scene3d; if (!s) return null;
       const r = s.renderer || (s.getRenderer && s.getRenderer()) || (s._renderer);
+      if ((!r || !r.info) && typeof s.stats === 'function') { const st = s.stats(); if (!st) return { renderer: false }; return Object.assign({ renderer: 'stats()', heapMB: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e5) / 10 : null }, st); }
       if (!r || !r.info) return { renderer: false };
       return { renderer: true, geometries: r.info.memory.geometries, textures: r.info.memory.textures, calls: r.info.render.calls, triangles: r.info.render.triangles,
                heapMB: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e5) / 10 : null };
@@ -177,18 +178,23 @@ async function runRes(browser, W, H) {
     const input = await pg.$('.tx-root input[type=search], [class*="tx-"] input[type=search], [class*="tx-"] input[placeholder*="검색"], [id^="tx-"] input');
     let how = 'api';
     if (input) {
-      await input.click(); await input.fill(target.name.slice(0, 6)); await sleep(600);
+      var hidden = !(await input.isVisible());
+      await input.click({ timeout: 3000 }).catch(() => { hidden = true; });
+      await input.fill(target.name.slice(0, 6), { timeout: 3000 }).catch(async () => { hidden = true; await input.evaluate((el, v) => { el.focus(); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, target.name.slice(0, 6)); });
+      await sleep(600);
       const clicked = await ev(t => { const root = TwinX.ui.root; const cand = [...root.querySelectorAll('li,button,[data-id],[data-asset]')].find(e => e.offsetParent && (e.dataset.id === t.id || e.dataset.asset === t.id || e.textContent.includes(t.name)) && !e.closest('.tx-inspector'));
         if (cand) { cand.click(); return true; } return false; }, target);
       if (!clicked) await input.press('Enter');
-      await sleep(900); how = clicked ? 'search-click' : 'search-enter';
+      await sleep(900); how = (clicked ? 'search-click' : 'search-enter') + (hidden ? '(검색창 비가시·클릭불가→스크립트 입력)' : '');
     }
     let sel = await ev(() => TwinX.state.selected);
     if (sel !== target.id && !input) { await ev(id => TwinX.select(id), target.id); await sleep(800); sel = await ev(() => TwinX.state.selected); }
     const insp = await ev(t => { const i = TwinX.ui.inspector; return i ? { txt: i.textContent.includes(t.name), vis: i.getBoundingClientRect().width > 0 } : null; }, target);
     must(input, '검색 입력창 없음 (API 선택으로 대체 확인: selected=' + sel + ')');
     must(sel === target.id, `검색 후 선택 실패 (${how}, selected=${sel}, 기대 ${target.id})`);
-    return `${target.id} ${target.name} via ${how} · 인스펙터 표시=${insp && insp.txt}`;
+    const msg = `${target.id} ${target.name} via ${how} · 인스펙터 표시=${insp && insp.txt}`;
+    if (how.includes('비가시')) throw new Error('검색창을 사용자가 클릭할 수 없음 · ' + msg);
+    return msg;
   });
 
   await step('12_fault_sim', async () => {
@@ -295,7 +301,7 @@ async function runRes(browser, W, H) {
   let md = `# smoke ${new Date().toISOString()}\n\n| 단계 | ${all.map(r => r.tag).join(' | ')} |\n|---|${all.map(() => '---').join('|')}|\n`;
   for (const s of steps) md += `| ${s} | ${all.map(r => { const x = r.results.find(y => y.step === s); return x ? `${x.status}${x.errors.length ? ' (err ' + x.errors.length + ')' : ''}${x.ratio != null ? ' ' + x.ratio + '%' : ''}` : '-'; }).join(' | ')} |\n`;
   md += '\n## 메모\n';
-  for (const r of all) { md += `\n### ${r.tag}\n`; r.results.forEach(x => { if (x.note || x.errors.length) md += `- ${x.step} [${x.status}] ${x.note}${x.errors.length ? '\n  - ' + x.errors.slice(0, 5).join('\n  - ') : ''}\n`; }); if (r.mem.length) md += `- 3D 메모리: ${r.mem.map(m => `${m.label}: geo=${m.geometries} tex=${m.textures} calls=${m.calls}`).join(' / ')}\n`; }
+  for (const r of all) { md += `\n### ${r.tag}\n`; r.results.forEach(x => { if (x.note || x.errors.length) md += `- ${x.step} [${x.status}] ${x.note}${x.errors.length ? '\n  - ' + x.errors.slice(0, 5).join('\n  - ') : ''}\n`; }); if (r.mem.length) md += `- 3D 메모리: ${r.mem.map(m => `${m.label}: geo=${m.geometries} tex=${m.textures} prog=${m.programs} calls=${m.calls} tri=${m.triangles} frame=${m.frameMs}ms heap=${m.heapMB}MB`).join(' / ')}\n`; }
   fs.writeFileSync(path.join(OUT, 'smoke-results.md'), md);
   const counts = {}; all.forEach(r => r.results.forEach(x => { counts[x.status] = (counts[x.status] || 0) + 1; }));
   console.log('\nSUMMARY', JSON.stringify(counts), '→', path.join(OUT, 'smoke-results.md'));

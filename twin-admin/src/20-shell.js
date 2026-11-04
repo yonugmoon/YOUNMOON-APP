@@ -217,7 +217,7 @@
     root.setAttribute('aria-label', '2D·3D 통합 도면 뷰어');
     root.hidden = true;
     root.innerHTML =
-      '<header class="tx-toolbar">' +
+      '<div class="tx-toolbar" role="toolbar" aria-label="뷰어 도구">' +
         '<div class="tx-tb-left">' +
           '<span class="tx-brand" aria-hidden="true">' + ic('cube', 18) + '</span>' +
           '<div class="tx-title"><b>디지털 트윈 통합 뷰어</b><span class="tx-crumb"><span data-r="site"></span><i>·</i><span class="tx-crumb-floor" data-r="floor"></span></span></div>' +
@@ -237,28 +237,28 @@
           '<button type="button" class="tx-ibtn tx-fs-btn" data-act="fullscreen" aria-label="전체화면 (F)" title="전체화면 (F)">' + ic('max', 18) + '</button>' +
           '<button type="button" class="tx-ibtn tx-close-btn" data-act="close" aria-label="뷰어 닫기 (Esc)" title="닫기 (Esc)">' + ic('x', 19) + '</button>' +
         '</div>' +
-      '</header>' +
-      '<main class="tx-viewport">' +
+      '</div>' +
+      '<div class="tx-viewport" role="main">' +
         '<div class="tx-views">' +
-          '<section class="tx-pane tx-pane-2d" aria-label="2D CAD 도면"><div class="tx-view tx-view-2d"></div>' +
-            '<div class="tx-empty" data-empty="2d"><span class="tx-empty-ic">' + ic('map', 30) + '</span><b>2D CAD 도면</b><small data-empty-msg="2d"></small></div></section>' +
+          '<div role="region" class="tx-pane tx-pane-2d" aria-label="2D CAD 도면"><div class="tx-view tx-view-2d"></div>' +
+            '<div class="tx-empty" data-empty="2d"><span class="tx-empty-ic">' + ic('map', 30) + '</span><b>2D CAD 도면</b><small data-empty-msg="2d"></small></div></div>' +
           '<div class="tx-splitter" role="separator" tabindex="0" aria-label="2D·3D 분할 크기 조절 (방향키)" aria-valuemin="15" aria-valuemax="85"><span></span></div>' +
-          '<section class="tx-pane tx-pane-3d" aria-label="3D 입체 뷰"><div class="tx-view tx-view-3d"></div>' +
-            '<div class="tx-empty" data-empty="3d"><span class="tx-empty-ic">' + ic('cube', 30) + '</span><b>3D 입체 구성도</b><small data-empty-msg="3d"></small></div></section>' +
+          '<div role="region" class="tx-pane tx-pane-3d" aria-label="3D 입체 뷰"><div class="tx-view tx-view-3d"></div>' +
+            '<div class="tx-empty" data-empty="3d"><span class="tx-empty-ic">' + ic('cube', 30) + '</span><b>3D 입체 구성도</b><small data-empty-msg="3d"></small></div></div>' +
         '</div>' +
-        '<nav class="tx-rail" aria-label="층 선택">' +
+        '<div role="navigation" class="tx-rail" aria-label="층 선택">' +
           '<button type="button" class="tx-rail-toggle" data-act="rail" aria-label="층 레일 접기/펴기">' + ic('layers', 15) + '<span data-r="railcur"></span>' + ic('left', 14).replace('tx-ic', 'tx-ic tx-rail-chev') + '</button>' +
           '<div class="tx-rail-list"></div>' +
-        '</nav>' +
+        '</div>' +
         '<div class="tx-legend">' +
           '<button type="button" class="tx-legend-btn" data-act="legend" aria-expanded="true">' + ic('legend', 14) + '<span>범례</span>' + ic('down', 12).replace('tx-ic', 'tx-ic tx-caret') + '</button>' +
           '<div class="tx-legend-body"></div>' +
         '</div>' +
-        '<aside class="tx-insp" aria-label="설비 상세">' +
+        '<div role="complementary" class="tx-insp" aria-label="설비 상세">' +
           '<button type="button" class="tx-insp-tab" data-act="insp" aria-label="상세 패널 열기/닫기">' + ic('right', 16).replace('tx-ic', 'tx-ic tx-insp-chev') + '<span>상세</span></button>' +
           '<div class="tx-insp-grab" data-act="insp" aria-hidden="true"><span></span></div>' +
           '<div class="tx-insp-body"></div>' +
-        '</aside>' +
+        '</div>' +
         popHTML('concept', '3D 입체 구성도 시안', bodyConcept(), true) +
         popHTML('doll', '돌하우스 층별 · 간선 제어', bodyDoll()) +
         popHTML('layers', '시각화 레이어', bodyLayers()) +
@@ -267,23 +267,23 @@
         '<div class="tx-sheet" role="dialog" aria-label="뷰어 메뉴" hidden>' +
           '<div class="tx-sheet-head"><b>뷰어 메뉴</b><button type="button" class="tx-ibtn" data-act="menu" aria-label="메뉴 닫기">' + ic('x', 18) + '</button></div>' +
           '<div class="tx-sheet-body">' + searchHTML('tx-search-sheet') +
-            '<section><h4>보기</h4>' + segHTML('tx-seg-block') + '</section>' +
-            '<section><h4>3D 시안</h4>' + bodyConcept() + '</section>' +
-            '<section><h4>돌하우스 · 층</h4>' + bodyDoll() + '</section>' +
-            '<section><h4>레이어</h4>' + bodyLayers() + '</section>' +
-            '<section><h4>카메라</h4>' + bodyCamera() + '</section>' +
-            '<section><h4>장애 시뮬레이션</h4><button type="button" class="tx-fault-block" data-act="fault" aria-pressed="false">' + ic('zap', 17) + '<span data-r="faultlbl">선택 설비를 발생원으로 시작</span></button></section>' +
-            '<section><h4>내보내기</h4>' + bodyExport() + '</section>' +
+            '<div class="tx-sheet-sec"><h4>보기</h4>' + segHTML('tx-seg-block') + '</div>' +
+            '<div class="tx-sheet-sec"><h4>3D 시안</h4>' + bodyConcept() + '</div>' +
+            '<div class="tx-sheet-sec"><h4>돌하우스 · 층</h4>' + bodyDoll() + '</div>' +
+            '<div class="tx-sheet-sec"><h4>레이어</h4>' + bodyLayers() + '</div>' +
+            '<div class="tx-sheet-sec"><h4>카메라</h4>' + bodyCamera() + '</div>' +
+            '<div class="tx-sheet-sec"><h4>장애 시뮬레이션</h4><button type="button" class="tx-fault-block" data-act="fault" aria-pressed="false">' + ic('zap', 17) + '<span data-r="faultlbl">선택 설비를 발생원으로 시작</span></button></div>' +
+            '<div class="tx-sheet-sec"><h4>내보내기</h4>' + bodyExport() + '</div>' +
           '</div>' +
         '</div>' +
-      '</main>' +
-      '<footer class="tx-status" role="status" aria-live="polite">' +
+      '</div>' +
+      '<div class="tx-status" role="status" aria-live="polite">' +
         '<span class="tx-st-item tx-st-src" data-r="src"></span>' +
         '<span class="tx-st-item tx-st-loc" data-r="loc"></span>' +
         '<span class="tx-st-item tx-st-grades" data-r="grades"></span>' +
         '<span class="tx-st-item tx-st-fault" data-r="fault"></span>' +
         '<span class="tx-st-hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 보기 <kbd>[</kbd><kbd>]</kbd> 층 <kbd>F</kbd> 전체화면 <kbd>Esc</kbd> 닫기</span>' +
-      '</footer>' +
+      '</div>' +
       '<div class="tx-toasts" aria-live="polite"></div>';
     document.body.appendChild(root);
 
@@ -741,14 +741,14 @@
 
     var rows = [['설비구분', a.category], ['종류', KIND_NAME[a.kind] || a.kind], ['모델', a.model], ['제조사', a.maker], ['규격', a.spec],
       ['랙 · U', a.rack ? [a.rack.name, a.rack.u].filter(Boolean).join(' · ') : '']];
-    h += '<section class="tx-sec"><h4>기본 정보</h4><dl class="tx-dl">' + rows.map(function (r) {
+    h += '<div class="tx-sec"><h4>기본 정보</h4><dl class="tx-dl">' + rows.map(function (r) {
       return '<dt>' + r[0] + '</dt><dd' + (r[1] ? '' : ' class="tx-muted"') + '>' + esc(r[1] || '—') + '</dd>';
-    }).join('') + '</dl></section>';
+    }).join('') + '</dl></div>';
 
     // 실측
     var ms = (a.measures || []).slice().sort(function (x, y) { var o = { bad: 0, none: 1, na: 2, good: 3 }; return (o[x.judge] || 1) - (o[y.judge] || 1); });
     var bad = ms.filter(function (x) { return x.judge === 'bad'; }).length;
-    h += '<section class="tx-sec"><h4>정기점검 실측 <span class="tx-count">' + ms.length + '</span>' + (bad ? '<span class="tx-count tx-count-bad">부적합 ' + bad + '</span>' : '') + '</h4>';
+    h += '<div class="tx-sec"><h4>정기점검 실측 <span class="tx-count">' + ms.length + '</span>' + (bad ? '<span class="tx-count tx-count-bad">부적합 ' + bad + '</span>' : '') + '</h4>';
     if (ms.length) {
       h += '<ul class="tx-meas">' + ms.map(function (x) {
         var std = x.std && C.STD[x.std];
@@ -756,34 +756,34 @@
           '<span class="tx-meas-r"><b>' + esc(x.value == null ? '-' : x.value) + (x.unit ? '<u>' + esc(x.unit) + '</u>' : '') + '</b><em>' + judgeName(x.judge) + '</em></span></li>';
       }).join('') + '</ul><p class="tx-src-note">ADMIN 정기점검 실측 자료 · 기술기준 판정 (자동 수집 아님)</p>';
     } else h += '<p class="tx-empty-line">등록된 정기점검 실측 자료가 없습니다</p>';
-    h += '</section>';
+    h += '</div>';
 
     // 연결
     var ups = m.links.filter(function (l) { return l.to === a.id; }), dns = m.links.filter(function (l) { return l.from === a.id; });
-    h += '<section class="tx-sec"><h4>연결 관계 <span class="tx-count">' + (ups.length + dns.length) + '</span></h4>';
+    h += '<div class="tx-sec"><h4>연결 관계 <span class="tx-count">' + (ups.length + dns.length) + '</span></h4>';
     if (ups.length + dns.length) {
       if (ups.length) h += '<div class="tx-sub">상위 · 공급 ' + ups.length + '</div>' + ups.map(function (l) { return linkRow(l, l.from, 'up'); }).join('');
       if (dns.length) h += '<div class="tx-sub">하위 · 의존 ' + dns.length + '</div>' + dns.map(function (l) { return linkRow(l, l.to, 'down'); }).join('');
     } else h += '<p class="tx-empty-line">등록된 결선이 없습니다</p>';
-    h += '</section>';
+    h += '</div>';
 
     // 장애 영향 요약
     var imp = impactSummary(a.id);
     if (imp) {
-      h += '<section class="tx-sec"><h4>장애 영향 요약</h4><div class="tx-kpis">' +
+      h += '<div class="tx-sec"><h4>장애 영향 요약</h4><div class="tx-kpis">' +
         '<div class="tx-kpi" style="--tx-k:' + C.GRADE.RED.css + '"><b>' + imp.down + '</b><small>서비스 중단</small></div>' +
         '<div class="tx-kpi" style="--tx-k:' + C.GRADE.ORANGE.css + '"><b>' + imp.risk + '</b><small>위험 · 영향</small></div></div>';
       if (imp.ids.length) h += '<div class="tx-impact-list">' + imp.ids.slice(0, 6).map(function (x) {
         var o = TwinX.asset(x[0]);
         return '<button type="button" class="tx-mini" data-select="' + esc(x[0]) + '"><i class="tx-dot" style="background:' + (x[1] === 'down' ? C.GRADE.RED.css : C.GRADE.ORANGE.css) + '"></i>' + esc(o ? o.name : x[0]) + '</button>';
       }).join('') + (imp.ids.length > 6 ? '<span class="tx-more">외 ' + (imp.ids.length - 6) + '대</span>' : '') + '</div>';
-      h += '<p class="tx-src-note">이 설비 장애 시 하위 결선을 따라 계산한 추정치입니다</p></section>';
+      h += '<p class="tx-src-note">이 설비 장애 시 하위 결선을 따라 계산한 추정치입니다</p></div>';
     }
     // 위험 점수
     var rk = riskInfo(a);
     if (rk) {
       var mx = Math.max.apply(null, rk.factors.map(function (f) { return +f.value || 0; }).concat([1]));
-      h += '<section class="tx-sec"><h4>위험 점수</h4><div class="tx-risk" style="--tx-r:' + (rk.grade ? gcss(rk.grade) : riskColor(rk.score)) + '">' +
+      h += '<div class="tx-sec"><h4>위험 점수</h4><div class="tx-risk" style="--tx-r:' + (rk.grade ? gcss(rk.grade) : riskColor(rk.score)) + '">' +
         '<div class="tx-risk-score"><b>' + Math.round(rk.score) + '</b><small>/ 100' + (rk.level ? ' · ' + esc(rk.level) : '') + '</small></div>' +
         '<div class="tx-risk-bar"><span style="width:' + U.clamp(rk.score, 0, 100) + '%"></span></div></div>';
       if (rk.factors.length) h += '<ul class="tx-factors">' + rk.factors.map(function (f) {
@@ -791,7 +791,7 @@
         return '<li><span class="tx-f-l">' + esc(f.label) + (f.note ? '<small>' + esc(f.note) + '</small>' : '') + '</span><span class="tx-f-bar"><span style="width:' + (f.value == null || !v ? 0 : U.clamp(pct, 3, 100)) + '%;background:' + riskColor(pct) + '"></span></span><b>' + (f.value == null ? '' : esc(Math.round(v * 10) / 10) + (f.max ? '<small>/' + esc(f.max) + '</small>' : '')) + '</b></li>';
       }).join('') + '</ul>';
       if (rk.basis) h += '<p class="tx-src-note">' + esc(rk.basis) + '</p>';
-      h += '</section>';
+      h += '</div>';
     }
     return h;
   }
@@ -804,18 +804,18 @@
     var h = '<div class="tx-insp-hero"><span class="tx-kind">' + ic(s.stack ? 'stack' : 'building', 22) + '</span><div class="tx-hero-txt"><span class="tx-eyebrow">' + esc((m.site && m.site.name) || '') + '</span><h3>' + esc(title) + '</h3>' +
       '<div class="tx-hero-meta"><span class="tx-status-txt">실 ' + rooms.length + ' · 설비 ' + list.length + '대' + (s.stack ? ' · ' + m.floors.length + '개 층' : '') + '</span></div></div></div>';
     var tot = list.length || 1;
-    h += '<section class="tx-sec"><h4>등급 분포</h4><div class="tx-dist">' + GORDER.map(function (g) {
+    h += '<div class="tx-sec"><h4>등급 분포</h4><div class="tx-dist">' + GORDER.map(function (g) {
       return c[g] ? '<span style="flex:' + c[g] + ';background:' + gcss(g) + '" title="' + esc(C.GRADE[g].name) + ' ' + c[g] + '"></span>' : '';
     }).join('') + (list.length ? '' : '<span style="flex:1;background:#e1e7ee"></span>') + '</div><div class="tx-dist-legend">' + GORDER.map(function (g) {
       return '<span class="' + (c[g] ? '' : 'tx-zero') + '"><i class="tx-dot" style="background:' + gcss(g) + '"></i>' + esc(C.GRADE[g].name) + '<b>' + c[g] + '</b><small>' + Math.round(c[g] / tot * 100) + '%</small></span>';
-    }).join('') + '</div></section>';
+    }).join('') + '</div></div>';
     var bad = list.filter(function (a) { return /RED|ORANGE|YELLOW/.test(gradeOf(a)); }).sort(function (x, y) { return GORDER.indexOf(gradeOf(x)) - GORDER.indexOf(gradeOf(y)); });
-    h += '<section class="tx-sec"><h4>조치 필요 설비 <span class="tx-count' + (bad.length ? ' tx-count-bad' : '') + '">' + bad.length + '</span></h4>';
+    h += '<div class="tx-sec"><h4>조치 필요 설비 <span class="tx-count' + (bad.length ? ' tx-count-bad' : '') + '">' + bad.length + '</span></h4>';
     h += bad.length ? '<div class="tx-alist">' + bad.map(function (a) {
       var g = gradeOf(a);
       return '<button type="button" class="tx-arow" data-select="' + esc(a.id) + '" style="--tx-g:' + gcss(g) + '"><span class="tx-arow-ic">' + ic(KIND_IC[a.kind] || 'box', 16) + '</span><span class="tx-arow-main"><b>' + esc(a.name) + '</b><small>' + esc(a.id) + ' · ' + esc(s.stack ? floorShort(TwinX.floor(a.floor)) + ' · ' : '') + esc(roomName(a.room) || '-') + '</small></span>' + gradeBadge(g) + '</button>';
     }).join('') + '</div>' : '<p class="tx-empty-line tx-ok">' + ic('clip', 15) + '이상·주의 설비가 없습니다</p>';
-    h += '</section><p class="tx-hint">' + ic('info', 13) + '도면에서 설비를 클릭하거나 상단 검색으로 찾으면 상세가 표시됩니다.</p>';
+    h += '</div><p class="tx-hint">' + ic('info', 13) + '도면에서 설비를 클릭하거나 상단 검색으로 찾으면 상세가 표시됩니다.</p>';
     return h;
   }
 
@@ -872,7 +872,11 @@
     // T1 데이터 모듈이 없는 단독 시험 환경 → 시범 모델로 대체
     if (!m && !TwinX.data && TwinX.demoModel) setTimeout(function () { if (!TwinX.model) TwinX.setModel(TwinX.demoModel()); }, 0);
     if (m && s.floor && !TwinX.floor(s.floor) && m.floors.length) TwinX.setState({ floor: m.floors[0].code });
-    if (isMobile() && first) TwinX.setState({ panel: { inspector: false, legend: false } });
+    if (first) { // 저장된 선호가 없으면 범례는 칩으로 접어 둔다(도면 우선)
+      var savedPanel = null; try { savedPanel = (JSON.parse(localStorage.getItem('twinx_ui_v1') || 'null') || {}).panel; } catch (e) { }
+      if (!savedPanel || savedPanel.legend == null) TwinX.setState({ panel: { legend: false } });
+    }
+    if (first && window.innerWidth < 1100) TwinX.setState({ panel: { inspector: false, legend: isMobile() ? false : s.panel.legend } }); // 좁은 화면: 도면 우선, 설비 선택 시 자동으로 열림
     if (!scrollLock) {
       scrollLock = { html: document.documentElement.style.overflow, body: document.body.style.overflow };
       document.documentElement.style.overflow = 'hidden';
@@ -990,7 +994,10 @@
       b.title = '도면을 전체화면으로 크게 보기 · 2D CAD / 3D 입체 / 분할 (Shift+T)';
       b.innerHTML = '<span aria-hidden="true">🧊</span><span>2D·3D 통합 뷰어</span><kbd>⇧T</kbd>';
       b.addEventListener('click', openFromAdmin);
-      heading.appendChild(b);
+      // 헤딩 우측은 v14 탭으로 붐비므로(1280px에서 상세 패널에 가려짐) 층 선택·제목 묶음 바로 뒤에 둔다
+      var grp = heading.firstElementChild;
+      if (grp && grp.tagName === 'DIV' && grp.querySelector('select.floor-select')) { grp.classList.add('tx-entry-host'); grp.appendChild(b); }
+      else heading.insertBefore(b, heading.firstChild);
     }
     // 2) 사이드바 「디지털 트윈」 메뉴 옆 보조 배지
     var navBtn = null, nb = document.querySelectorAll('.sidebar nav button');

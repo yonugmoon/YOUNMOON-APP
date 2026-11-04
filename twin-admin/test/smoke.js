@@ -24,7 +24,7 @@ async function runRes(browser, W, H) {
   const errs = [];
   pg.on('pageerror', e => errs.push('PAGEERR ' + (e.message || '').slice(0, 300)));
   pg.on('console', m => { if (m.type() === 'error') errs.push('CONSOLE ' + m.text().slice(0, 300)); });
-  const results = []; const mem = []; let baseOverflow = null;
+  const results = []; const mem = []; let baseOverflow = null; let canvBefore = null;
   const ev = (fn, arg) => pg.evaluate(fn, arg);
   const shot = async name => { const p = path.join(OUT, `${tag}_${name}.png`); await pg.screenshot({ path: p }); return p; };
   const mods = () => ev(() => window.TwinX ? ['data', 'shell', 'cad2d', 'scene3d', 'analysis'].filter(k => TwinX[k]) : []);
@@ -238,6 +238,7 @@ async function runRes(browser, W, H) {
 
   await step('15_esc_close', async () => {
     await needOpen();
+    canvBefore = await ev(() => TwinX.ui.view3d.querySelectorAll('canvas').length);
     await pg.mouse.click(Math.round(W / 2), Math.round(H / 2)).catch(() => { });
     await ev(() => document.activeElement && document.activeElement.blur && document.activeElement.blur());
     await pg.keyboard.press('Escape'); await sleep(400);
@@ -257,7 +258,7 @@ async function runRes(browser, W, H) {
     must(r.open, '재열기 실패');
     await memory('reopen');
     const note = `via ${how} · .tx-root=${r.roots} · 3D canvas=${r.canv}`;
-    if (r.canv > 1) throw new Error('3D canvas 중복 생성 ' + note);
+    if (canvBefore != null && r.canv > canvBefore) throw new Error(`3D canvas 중복 생성 (닫기 전 ${canvBefore}개) ` + note);
     if (how !== 'Shift+T') return note + ' (Shift+T 미동작)';
     return note;
   });

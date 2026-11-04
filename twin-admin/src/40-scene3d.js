@@ -542,7 +542,7 @@
     S.floorR = Math.hypot(fw, fd, 3) / 2;
     var hs = (yMax - yMin) + 3;
     S.sceneR = stack ? Math.hypot(fw, fd, hs) / 2 : S.floorR;
-    S.center = new THREE.Vector3(0, fy + 0.8, 0);
+    S.center = new THREE.Vector3(0, stack ? (fy * 0.6 + (yMin + yMax) / 2 * 0.4) + 0.8 : fy + 0.8, 0);
     S.gridY = yMin - 1.4;
   }
   function addRisers(bag, g, fls, yMin, yMax, frag) {
@@ -676,8 +676,15 @@
       assetChip(a, new THREE.Vector3(p.wx, RF + top + 0.6, p.wz), 50, frag);
     });
     anchor(new THREE.Vector3(-hw + 0.2, CH + 0.3, -hd), U.esc(rm.name) + ' <span>' + U.esc(rm.id) + ' · ' + (W * D).toFixed(1) + '㎡</span>', 'tx-s3-room tx-s3-tech tx-s3-title', 120, { r: rm.id }, frag);
-    S.center = new THREE.Vector3(0, 1.1, 0);
-    S.floorR = S.sceneR = Math.hypot(W, D, CH) / 2 * 1.02;
+    var roomR = Math.hypot(W, D, CH) / 2 * 1.02, pts = placedC.slice();
+    loose.forEach(function (a) { var p = places[a.id]; if (p) pts.push([p.wx, p.wz]); });
+    if (pts.length) {
+      var ax0 = Math.min.apply(null, pts.map(function (p) { return p[0]; })), ax1 = Math.max.apply(null, pts.map(function (p) { return p[0]; }));
+      var az0 = Math.min.apply(null, pts.map(function (p) { return p[1]; })), az1 = Math.max.apply(null, pts.map(function (p) { return p[1]; }));
+      S.center = new THREE.Vector3((ax0 + ax1) / 2, 1.1, (az0 + az1) / 2);
+      S.sceneR = Math.min(roomR, Math.max(2.6, Math.hypot(ax1 - ax0 + 1.6, az1 - az0 + 1.6, CH) / 2));
+    } else { S.center = new THREE.Vector3(0, 1.1, 0); S.sceneR = roomR; }
+    S.floorR = roomR;
     S.focusY = 0; S.walkB = null; S.gridY = -1.2;
   }
   function addCabinet(bag, g, cb, baseY, frag) {
@@ -877,6 +884,10 @@
 
   /* ---------------- 정적 빌드 ---------------- */
   function buildStatic() {
+    var tb = performance.now();
+    try { buildStatic0(); } finally { S.buildMs = performance.now() - tb; }
+  }
+  function buildStatic0() {
     S.need.static = false; S.need.overlay = true;
     clearGroup(S.gStatic, S.bagS); S.bagS = new Bag();
     clearLabels();
@@ -908,7 +919,7 @@
     var o = S.orbit;
     if (S.need.fit) { S.need.fit = false; fitCamera(!S.fitOnce); S.fitOnce = true; }
     else { o.gT.copy(S.center); }
-    o.minR = Math.max(1.2, S.floorR * 0.08); o.maxR = fitR(S.sceneR) * 3;
+    o.minR = Math.max(1.2, Math.min(S.sceneR, S.floorR) * 0.12); o.maxR = Math.max(fitR(S.sceneR), fitR(S.floorR)) * 3;
     if (walkActive()) initWalk(false);
     syncHud();
     S.camDirty = true;
@@ -916,7 +927,8 @@
   function fitR(R) {
     var cam = S.camera, fov = cam.fov * Math.PI / 180, asp = S.w && S.h ? Math.max(0.3, (S.w - (S.cover || 0)) / S.h) : 1.6;
     var fh = 2 * Math.atan(Math.tan(fov / 2) * asp);
-    return R / Math.sin(Math.min(fov, fh) / 2) * 0.82;
+    var k = asp >= 1.4 ? 0.82 : asp <= 0.8 ? 1.0 : 1.0 - (asp - 0.8) / 0.6 * 0.18;
+    return R / Math.sin(Math.min(fov, fh) / 2) * k;
   }
   function fitCamera(snap) {
     var o = S.orbit;
@@ -1003,7 +1015,7 @@
       var strong = onPath || touch || cpt === 'C';
       if (strong) {
         var rad = onPath ? 0.07 : touch ? 0.05 : 0.04;
-        var tube = new THREE.Mesh(bag.keep(new THREE.TubeGeometry(curve, 48, rad, 6, false)), mBasic(bag, col, onPath ? 0.95 : touch ? 0.9 : 0.55, { depthWrite: false, blending: THREE.AdditiveBlending }));
+        var tube = new THREE.Mesh(bag.keep(new THREE.TubeGeometry(curve, 48, rad, 6, false)), mBasic(bag, col, onPath ? 0.95 : touch ? 0.9 : 0.55, onPath || cpt !== 'C' ? { depthWrite: false } : { depthWrite: false, blending: THREE.AdditiveBlending }));
         g.add(tube);
         var n = onPath ? 3 : 2, sz = onPath ? 0.14 : 0.09;
         for (var i = 0; i < n; i++) {
@@ -1036,7 +1048,16 @@
       w.x = X(along ? corr.x + Math.min(1500, corr.w * 0.1) : corr.x + corr.w / 2);
       w.z = Z(along ? corr.y + corr.h / 2 : corr.y + Math.min(1500, corr.h * 0.1));
       w.yaw = along ? 0 : Math.PI / 2;
-    } else { w.x = (S.walkB.x0 + S.walkB.x1) / 2; w.z = (S.walkB.z0 + S.walkB.z1) / 2; w.yaw = 0; }
+    } else {
+      var sr = st().room && TX.room(st().room), rs = roomsOf(S.focus.code).slice().sort(function (a, b) { return b.w * b.h - a.w * a.h; });
+      var rm = sr && sr.floor === S.focus.code ? sr : rs[0];
+      if (rm) {
+        var dr = doorsOf(S.focus)[rm.id] || { side: 'S', at: rm.x + rm.w / 2 }, cxm = rm.x + rm.w / 2, cym = rm.y + rm.h / 2, ins = 900;
+        var px = dr.side === 'W' ? rm.x + ins : dr.side === 'E' ? rm.x + rm.w - ins : dr.at, py = dr.side === 'N' ? rm.y + ins : dr.side === 'S' ? rm.y + rm.h - ins : dr.at;
+        w.x = X(px); w.z = Z(py); w.yaw = Math.atan2(Z(cym) - w.z, X(cxm) - w.x);
+        if (Math.hypot(Z(cym) - w.z, X(cxm) - w.x) < 0.2) w.yaw = 0;
+      } else { w.x = (S.walkB.x0 + S.walkB.x1) / 2; w.z = (S.walkB.z0 + S.walkB.z1) / 2; w.yaw = 0; }
+    }
     w.pitch = -0.06; w.keys = {};
   }
   function applyCamera() {
@@ -1216,11 +1237,18 @@
     var placed = [];
     cand.forEach(function (an) {
       if (!an.w) { an.w = an.el.offsetWidth || 80; an.h = an.el.offsetHeight || 18; }
-      var x0 = an.sx - an.w / 2 - 2, y0 = an.sy - an.h - 2, x1 = x0 + an.w + 4, y1 = y0 + an.h + 4, hit = false;
-      for (var i = 0; i < placed.length && !hit; i++) { var p = placed[i]; if (x0 < p[2] && x1 > p[0] && y0 < p[3] && y1 > p[1]) hit = true; }
-      if (hit && an.pri < 200) { if (an.vis) { an.el.style.visibility = 'hidden'; an.vis = false; } return; }
-      placed.push([x0, y0, x1, y1]);
-      an.el.style.transform = 'translate3d(' + (an.sx - an.w / 2).toFixed(1) + 'px,' + (an.sy - an.h).toFixed(1) + 'px,0)';
+      var x0 = an.sx - an.w / 2 - 2, x1 = x0 + an.w + 4, dy = 0, ok = false;
+      for (var step = 0; step < 3 && !ok; step++) { // 겹치면 위로 최대 2칸 비켜 배치
+        dy = -step * (an.h + 3);
+        var y0 = an.sy - an.h - 2 + dy, y1 = y0 + an.h + 4, hit = false;
+        for (var i = 0; i < placed.length && !hit; i++) { var p = placed[i]; if (x0 < p[2] && x1 > p[0] && y0 < p[3] && y1 > p[1]) hit = true; }
+        if (!hit && y0 > 14) ok = true;
+      }
+      if (!ok && an.pri < 200) { if (an.vis) { an.el.style.visibility = 'hidden'; an.vis = false; } return; }
+      if (!ok) dy = 0;
+      an.dy = dy;
+      placed.push([x0, an.sy - an.h - 2 + dy, x1, an.sy + 2 + dy]);
+      an.el.style.transform = 'translate3d(' + (an.sx - an.w / 2).toFixed(1) + 'px,' + (an.sy - an.h + dy).toFixed(1) + 'px,0)';
       an.el.style.zIndex = String(Math.min(999, Math.round(an.pri)));
       if (!an.vis) { an.el.style.visibility = 'visible'; an.vis = true; }
     });
@@ -1416,7 +1444,7 @@
     var ui = TX.ui;
     if (ui && ui.view3d === S.host) {
       var ir = vis(ui.inspector);
-      if (ir && ir.left > hr.left + hr.width * 0.35 && ir.left < hr.right - 4 && ir.bottom > hr.top + 20 && ir.top < hr.bottom) cover = Math.round(hr.right - ir.left + 6);
+      if (ir && ir.left > hr.left + hr.width * 0.35 && ir.left < hr.right - 4 && ir.bottom > hr.top + 20 && ir.top < hr.bottom) cover = Math.round(hr.right - ir.left + 34);
       var lr = vis(ui.root && ui.root.querySelector('.tx-legend'));
       if (lr && lr.bottom > hr.bottom - 80 && lr.left < hr.left + 260 && lr.right > hr.left) hudL = Math.round(lr.right - hr.left + 10);
     }
@@ -1494,7 +1522,7 @@
     g.drawImage(src, 0, 0);
     if (st().labels !== false) S.anchors.forEach(function (an) {
       if (!an.vis) return;
-      var cs = getComputedStyle(an.el), x = (an.sx - an.w / 2) * k, y = (an.sy - an.h) * k, w = an.w * k, h = an.h * k;
+      var cs = getComputedStyle(an.el), x = (an.sx - an.w / 2) * k, y = (an.sy - an.h + (an.dy || 0)) * k, w = an.w * k, h = an.h * k;
       g.fillStyle = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : 'rgba(15,23,42,0.9)';
       if (/tx-s3-tech/.test(an.el.className)) g.fillStyle = '#ea580c';
       roundRect(g, x, y, w, h, 5 * k); g.fill();
@@ -1537,7 +1565,7 @@
     /* 시험·진단용 */
     stats: function () {
       var r = S.renderer; if (!r) return null;
-      return { running: !!S.raf, concept: S.concept, builds: S.builds, frameMs: +S.frameMs.toFixed(2), calls: r.info.render.calls, triangles: r.info.render.triangles,
+      return { running: !!S.raf, concept: S.concept, builds: S.builds, buildMs: +(S.buildMs || 0).toFixed(1), frameMs: +S.frameMs.toFixed(2), calls: r.info.render.calls, triangles: r.info.render.triangles,
         geometries: r.info.memory.geometries, textures: r.info.memory.textures, programs: (r.info.programs || []).length, anchors: S.anchors.length,
         visibleLabels: S.anchors.filter(function (a) { return a.vis; }).length, assets: Object.keys(S.info).length, size: [S.w, S.h] };
     },

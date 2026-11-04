@@ -873,8 +873,8 @@
     if (!m && !TwinX.data && TwinX.demoModel) setTimeout(function () { if (!TwinX.model) TwinX.setModel(TwinX.demoModel()); }, 0);
     if (m && s.floor && !TwinX.floor(s.floor) && m.floors.length) TwinX.setState({ floor: m.floors[0].code });
     if (first) { // 저장된 선호가 없으면 범례는 칩으로 접어 둔다(도면 우선)
-      var savedPanel = null; try { savedPanel = (JSON.parse(localStorage.getItem('twinx_ui_v1') || 'null') || {}).panel; } catch (e) { }
-      if (!savedPanel || savedPanel.legend == null) TwinX.setState({ panel: { legend: false } });
+      var seen = '1'; try { seen = localStorage.getItem('twinx_shell_seen_v1'); localStorage.setItem('twinx_shell_seen_v1', '1'); } catch (e) { }
+      if (!seen) TwinX.setState({ panel: { legend: false } });
     }
     if (first && window.innerWidth < 1100) TwinX.setState({ panel: { inspector: false, legend: isMobile() ? false : s.panel.legend } }); // 좁은 화면: 도면 우선, 설비 선택 시 자동으로 열림
     if (!scrollLock) {

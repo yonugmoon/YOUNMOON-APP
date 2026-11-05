@@ -38,6 +38,16 @@ def main():
     # Three.js r128 (MIT) — ADMIN 은 오프라인 단일 파일이므로 CDN 대신 인라인. 기존 전역 THREE 가 있으면 재사용.
     three = VENDOR.read_text(encoding='utf-8')
     parts.append('<script id="twinx-three">if(!window.THREE){\n' + guard(three, 'three') + '\n}</script>')
+    # pdf.js 3.11.174 (Apache-2.0) — PDF 도면·결과서용. 실행하지 않는 text/plain 으로 넣고 필요할 때만 Blob 으로 로딩
+    for sid, fn in (('twinx-pdfjs', 'pdfjs-3.11.174.min.js'), ('twinx-pdfworker', 'pdfjs-3.11.174.worker.min.js')):
+        fp = ROOT / 'vendor' / fn
+        if fp.exists():
+            parts.append(f'<script type="text/plain" id="{sid}">' + guard(fp.read_text(encoding='utf-8'), fn) + '</script>')
+    cm = ROOT / 'vendor' / 'pdfjs-cmaps-ko'
+    if cm.is_dir():
+        import base64, json
+        data = {f.stem: base64.b64encode(f.read_bytes()).decode() for f in sorted(cm.glob('*.bcmap'))}
+        parts.append('<script type="application/json" id="twinx-pdfcmaps">' + json.dumps(data) + '</script>')
     for p in js_files:
         parts.append(f'<script id="twinx-{p.stem}">\n/* ---- {p.name} ---- */\n' + guard(p.read_text(encoding='utf-8'), p.name) + '\n</script>')
     parts.append('<!-- twinx-layer:end -->')

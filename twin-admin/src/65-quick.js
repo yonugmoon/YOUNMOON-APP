@@ -152,10 +152,10 @@
     var rooms = [['실코드', '건물코드', '건물명', '층코드', '층명', '실명', '실유형', 'X', 'Y', 'W', 'H']];
     D.rooms.forEach(function (r) { var f = D.floors.find(function (q) { return q.code === r.floor; }); rooms.push([r.id, f.bcode, f.building, f.code, f.name, r.name, r.kind, Math.round(r.x), Math.round(r.y), Math.round(r.w), Math.round(r.h)]); });
     var assets = [['설비ID', '소속실', '설비명', '설비구분', '모델명', '제조사', '규격', '사진URL', 'X', 'Y', '상태', '설치일', '교체주기(개월)']];
-    D.assets.filter(function (a) { return a.room; }).forEach(function (a) { assets.push([a.id, a.room, a.name, a.category, a.model, a.maker, a.year ? '설치연도 ' + a.year : '', '', Math.round(a.x), Math.round(a.y), a.status, '', '']); });
+    D.assets.filter(function (a) { return a.room; }).forEach(function (a) { assets.push([a.id, a.room, a.name, a.category, a.model, a.maker, [a.year ? '설치연도 ' + a.year : '', a.serial ? 'S/N ' + a.serial : ''].filter(Boolean).join(' · '), '', Math.round(a.x), Math.round(a.y), a.status, '', '']); });
     var ids = {}; D.assets.forEach(function (a) { if (a.room) ids[a.id] = 1; });
     var links = [['연결ID', '출발설비ID', '도착설비ID', '연결유형', '케이블번호', '출발단자', '도착단자', '연결상태']];
-    D.links.filter(function (l) { return ids[l.from] && ids[l.to]; }).forEach(function (l) { links.push([l.id, l.from, l.to, { optical: '광', data: '케이블', power: '전원' }[l.type] || '광', '', '', '', '정상']); });
+    D.links.filter(function (l) { return ids[l.from] && ids[l.to]; }).forEach(function (l) { links.push([l.id, l.from, l.to, { optical: '광', data: 'UTP', power: '전원' }[l.type] || '광', '', '', '', '정상']); });
     var hist = [['점검ID', '설비ID', '점검일', '점검자', '상태', '측정항목', '측정값', '단위', '비고', '작업구분']];
     var maps = [['층코드', '도면파일경로', '축척', '기준점X', '기준점Y', '도면너비', '도면높이']];
     toModel().floors.forEach(function (f) { if (D.rooms.some(function (r) { return r.floor === f.code; })) maps.push([f.code, '', 10, 0, 0, Math.ceil(f.bounds.x1 / 10) + 10, Math.ceil(f.bounds.y1 / 10) + 10]); });
@@ -163,7 +163,9 @@
     var src = [['설비명', '규격(모델명)', '수량', '제조사', '설치 위치', '설치연도', '비고']];
     D.source.forEach(function (r) { src.push([r.name, r.model, r.qty, r.maker, r.loc, r.year || '확인불가', r.note]); });
     var meas = [['건물', '층', '점검 위치', '설비', '측정 항목', '측정값', '단위', '기준', '판정']];
-    return [['01_건물층실', rooms], ['02_설비마스터', assets], ['03_연결관계', links], ['04_점검이력', hist], ['05_도면매핑', maps], ['06_상태규칙', rules], ['측정값 데이터', meas], ['현행화표_원본', src]];
+    var out = [['01_건물층실', rooms], ['02_설비마스터', assets], ['03_연결관계', links], ['04_점검이력', hist], ['05_도면매핑', maps], ['06_상태규칙', rules], ['측정값 데이터', meas], ['현행화표_원본', src]];
+    if (TX.pipe && TX.pipe.photoSheet) out.push(['현장사진_목록', TX.pipe.photoSheet(D)]);
+    return out;
   }
   /* 최소 XLSX 작성기 (ZIP 무압축 저장 + inlineStr) — 외부 라이브러리 없이 오프라인 동작 */
   var CRC = (function () { var t = []; for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -172,7 +174,7 @@
     var enc = new TextEncoder(), parts = [], central = [], off = 0;
     function u16(v) { return [v & 255, (v >>> 8) & 255]; } function u32(v) { return [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255]; }
     files.forEach(function (f) {
-      var name = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data);
+      var name = enc.encode(f.name), data = f.data || enc.encode(f.text), crc = crc32(data);
       var head = [].concat([0x50, 0x4b, 3, 4], u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0));
       parts.push(new Uint8Array(head), name, data);
       central.push([[].concat([0x50, 0x4b, 1, 2], u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(off)), name]);
@@ -181,7 +183,7 @@
     var cdStart = off, cdLen = 0;
     central.forEach(function (c) { var h = new Uint8Array(c[0]); parts.push(h, c[1]); cdLen += h.length + c[1].length; });
     parts.push(new Uint8Array([].concat([0x50, 0x4b, 5, 6], u16(0), u16(0), u16(files.length), u16(files.length), u32(cdLen), u32(cdStart), u16(0))));
-    return new Blob(parts, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    return new Blob(parts, { type: files.mime || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   }
   function colName(i) { var s = ''; i++; while (i) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
   function xmlEsc(v) { return String(v).replace(/[&<>"]/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]; }).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, ''); }
@@ -196,8 +198,8 @@
         }).join('') + '</row>';
       }).join('') + '</sheetData></worksheet>';
   }
-  function buildXlsx() {
-    var sh = sheetsData(), files = [];
+  function buildXlsx(sheets) {
+    var sh = sheets || sheetsData(), files = [];
     files.push({ name: '[Content_Types].xml', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
       sh.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') + '</Types>' });
     files.push({ name: '_rels/.rels', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' });
@@ -217,6 +219,56 @@
     U.download(buildXlsx(), 'ICT_Twin_Quick_' + stamp + '.xlsx');
     toast('ADMIN 등록용 엑셀을 내보냈습니다' + (unplaced ? ' · 미배치 설비 ' + unplaced + '대는 제외됨' : ''), unplaced ? 'warn' : 'success');
   }
+
+  /* ---------------- 도면이 없을 때: 현행화표 기반 자동 작도 ---------------- */
+  function autoDraw(codes, all) {
+    var made = { rooms: 0, assets: 0, skipped: 0 };
+    codes.forEach(function (code) {
+      var f = D.floors.find(function (x) { return x.code === code; }); if (!f) return;
+      var hasPlan = TX.underlay && TX.underlay.get(code);
+      // 전체 작도: 도면(사진·PDF)이 있는데 실이 아직 없는 층은 사용자가 도면 위에 그리도록 건너뜀
+      if (all && hasPlan && !D.rooms.some(function (r) { return r.floor === code; })) { made.skipped++; return; }
+      var un = D.assets.filter(function (a) { return a.floor === code && !a.room; });
+      var have = D.rooms.filter(function (r) { return r.floor === code; });
+      var groups = {}, order = [];
+      un.forEach(function (a) { var g = (a.roomHint || '').trim() || '통신실'; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(a); });
+      var CELL = 1500, x = 2000, Y0 = 2000, maxH = 4200, newRooms = [];
+      if (!have.length) {
+        order.forEach(function (g) {
+          var n = groups[g].length, cols = Math.max(2, Math.ceil(Math.sqrt(n))), rows = Math.ceil(n / cols);
+          var w = Math.max(4200, cols * CELL + 1200), h = Math.max(4200, rows * CELL + 1200);
+          var kind = (ROOM_TYPES.find(function (t) { return g.indexOf(t[0].replace('실', '')) >= 0; }) || ['통신실'])[0];
+          newRooms.push({ name: g.indexOf(f.name) === 0 ? g : f.name + ' ' + g, kind: kind, x: x, y: Y0, w: w, h: h, list: groups[g] });
+          x += w + 600; maxH = Math.max(maxH, h);
+        });
+        if (!newRooms.length) newRooms.push({ name: f.name + ' 통신실', kind: '통신실', x: x, y: Y0, w: 3600, h: 3600, list: [] }), x += 4200;
+        newRooms.push({ name: f.name + ' 계단실', kind: '계단실', x: x, y: Y0, w: 3000, h: maxH, list: [] }); x += 3000;
+        newRooms.push({ name: f.name + ' 복도', kind: '복도', x: 2000, y: Y0 + maxH, w: x - 2000, h: 1800, list: [] });
+        newRooms.forEach(function (r) {
+          var n = 1; while (D.rooms.some(function (q) { return q.id === code + '-R' + pad(n, 2); })) n++;
+          r.id = code + '-R' + pad(n, 2); D.rooms.push({ id: r.id, floor: code, name: r.name, kind: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, auto: true }); made.rooms++;
+        });
+        if (hasPlan) { f.w = Math.max(f.w, x + 2000); f.h = Math.max(f.h, Y0 + maxH + 1800 + 2000); } else { f.w = x + 2000; f.h = Y0 + maxH + 1800 + 2000; } f.auto = true;
+      } else {
+        var tel = have.find(function (r) { return TYPE_OF[r.kind] === 'telecom'; }) || have[0];
+        order.forEach(function (g) { var r = have.find(function (q) { return q.name.indexOf(g) >= 0 || g.indexOf(q.name) >= 0; }) || tel; newRooms.push({ id: r.id, x: r.x, y: r.y, w: r.w, h: r.h, list: groups[g] }); });
+      }
+      newRooms.forEach(function (r) {
+        var n = r.list.length; if (!n) return;
+        var cols = Math.max(1, Math.floor((r.w - 600) / CELL)), sx = r.x + 600 + CELL / 2 - CELL / 2, sy = r.y + 600;
+        r.list.forEach(function (a, i) { a.room = r.id; a.x = Math.round(Math.min(r.x + r.w - 300, sx + (i % cols) * CELL + 300)); a.y = Math.round(Math.min(r.y + r.h - 300, sy + Math.floor(i / cols) * CELL + 300)); made.assets++; });
+      });
+    });
+    autoLink(); save(); apply();
+    if (TX.cad2d && TX.cad2d.fit) setTimeout(TX.cad2d.fit, 60);
+    return made;
+  }
+  function photoBtn(a) {
+    if (!TX.pipe) return '';
+    var c = TX.pipe.photos.count(a.id), ok = c.full && c.plate;
+    return '<button type="button" class="tx-wb-link tx-qk-ph' + (ok ? ' is-ok' : c.total ? ' is-part' : '') + '" data-q="ph" data-id="' + esc(a.id) + '" title="전경·명판·모듈 사진">📷 ' + c.total + (a.plateOk ? ' ✔' : '') + '</button>';
+  }
+  function assetOpts() { return D.assets.map(function (a) { var f = D.floors.find(function (x) { return x.code === a.floor; }) || {}; return '<option value="' + esc(a.id) + '">' + esc((f.building || '') + ' ' + (f.name || '') + ' · ' + a.name) + '</option>'; }).join(''); }
 
   /* ---------------- 패널 ---------------- */
   var P = null, step = 1, sel = null, cap = null;
@@ -239,7 +291,7 @@
     renderPanel(); startTool();
   }
   function close(keep) { if (P) { P.remove(); P = null; } stopTool(); if (!keep && D.active) setActive(false); }
-  var STEPS = ['현행화표', '도면·축척', '실 그리기', '설비 배치', '연결·내보내기'];
+  var STEPS = ['현행화·사진', '도면 확보', '실 그리기', '설비 배치', '검증·내보내기'];
   function renderPanel() {
     if (!P) return;
     var f = fl(), code = f && f.code;
@@ -250,22 +302,24 @@
       (D.floors.length && step > 1 ? '<label class="tx-qk-floor">작업 층<select data-q="floor">' + D.floors.map(function (x) { return '<option value="' + esc(x.code) + '"' + (x.code === code ? ' selected' : '') + '>' + esc(x.building + ' ' + x.name) + ' (' + esc(x.code) + ')</option>'; }).join('') + '</select></label>' : '') +
       '<div class="tx-wb-body">';
     if (step === 1) {
-      h += '<p class="tx-wb-guide">설비 현행화표(설비명·규격·수량·제조사·설치 위치·설치연도·비고)를 <b>엑셀·한글 표에서 복사해 붙여넣으세요</b>. 수량만큼 설비가 만들어지고, 설치 위치(예: 「본관 7층」)로 건물·층이 자동 생성됩니다. 「확인불가」는 빈 값으로 처리합니다.</p>' +
+      h += '<p class="tx-wb-guide">설비 현행화표(설비명·규격·수량·제조사·설치 위치·설치연도·비고)를 <b>엑셀·한글 표에서 복사해 붙여넣으세요</b>. 수량만큼 설비가 만들어지고, 설치 위치(예: 「본관 7층」)로 건물·층이 자동 생성됩니다. 「확인불가」는 빈 값으로 처리합니다. 설비마다 <b>📷 사진</b>(전경·명판·모듈)을 붙이고 명판의 모델명·S/N을 옮겨 적으면 「확인불가」가 채워집니다.</p>' +
         '<label class="tx-qk-lbl">사업장 이름<input type="text" data-q="site" value="' + esc(D.site) + '" placeholder="예: ○○청사"></label>' +
         '<textarea data-q="paste" class="tx-qk-paste" placeholder="설비명\t규격(모델명)\t수량\t제조사\t설치 위치\t설치연도\t비고\nLTE 광중계기\tKELIS(R640)\t2\t에프알텍\t본관 7층\t확인불가\tkt"></textarea>' +
         '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="import">표 불러오기</button><button type="button" class="tx-wb-btn" data-q="addfloor">층 직접 추가</button></div>' +
         (D.assets.length ? '<h5>생성된 설비 <span class="tx-count">' + D.assets.length + '</span></h5><ul class="tx-wb-list tx-qk-alist">' + D.assets.map(function (a) {
-          return '<li><span><b>' + esc(a.name) + '</b><small>' + esc(a.id) + ' · ' + esc((D.floors.find(function (x) { return x.code === a.floor; }) || {}).building || '') + ' ' + esc((D.floors.find(function (x) { return x.code === a.floor; }) || {}).name || '') + (a.model ? ' · ' + esc(a.model) : '') + '</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-q="adel" data-id="' + esc(a.id) + '">삭제</button></li>';
+          return '<li><span><b>' + esc(a.name) + '</b><small>' + esc(a.id) + ' · ' + esc((D.floors.find(function (x) { return x.code === a.floor; }) || {}).building || '') + ' ' + esc((D.floors.find(function (x) { return x.code === a.floor; }) || {}).name || '') + (a.model ? ' · ' + esc(a.model) : '') + '</small></span>' + photoBtn(a) + '<button type="button" class="tx-wb-link tx-wb-danger" data-q="adel" data-id="' + esc(a.id) + '">삭제</button></li>';
         }).join('') + '</ul>' : '');
     } else if (step === 2) {
       var ul = code && TX.underlay && TX.underlay.get(code);
       h += '<p class="tx-wb-guide">이 층의 <b>대피소 도면(또는 종이도면) 사진</b>을 올리고, 길이를 아는 두 점(벽 양 끝, 복도 길이 등)을 클릭한 뒤 <b>실측 거리(mm)</b>를 입력하면 축척이 맞춰집니다. 사진은 정면에서 찍을수록 정확합니다.</p>' +
         (ul ? '<div class="tx-wb-file"><b>' + esc(ul.name || '도면 사진') + '</b><span>' + ul.w + '×' + ul.h + 'px · 1px = ' + ul.tf.s.toFixed(2) + 'mm · 도면 ' + (ul.w * ul.tf.s / 1000).toFixed(1) + '×' + (ul.h * ul.tf.s / 1000).toFixed(1) + 'm</span></div>' : '') +
-        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn ' + (ul ? '' : 'tx-wb-pri') + '" data-q="photo">' + (ul ? '사진 교체' : '도면 사진 올리기') + '</button>' +
+        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn ' + (ul ? '' : 'tx-wb-pri') + '" data-q="photo">' + (ul ? '도면 교체' : '도면 올리기 (사진·PDF)') + '</button>' +
         (ul ? '<button type="button" class="tx-wb-btn tx-wb-pri" data-q="scale">치수로 축척 맞춤</button><button type="button" class="tx-wb-btn" data-q="rot">90° 회전</button>' : '') + '</div>' +
         '<label class="tx-qk-lbl">실측 거리 (mm)<input type="number" min="100" step="10" data-q="dist" value="' + (tool.dist || '') + '" placeholder="예: 12000 (복도 12m)"></label>' +
         (ul ? '<label class="tx-wb-rng">사진 투명도 <input type="range" min="10" max="100" step="5" data-q="op" value="' + Math.round(ul.opacity * 100) + '"><output>' + Math.round(ul.opacity * 100) + '%</output></label>' : '') +
-        '<p class="tx-wb-help">사진이 없으면 이 단계를 건너뛰고 기본 40×25m 평면에 실을 그릴 수 있습니다. 실측 치수가 없으면 종이도면의 치수 표기나 표준 문 폭(약 900mm)을 기준으로 사용해도 됩니다.</p>';
+        '<p class="tx-wb-help">실측 치수가 없으면 종이도면의 치수 표기나 표준 문 폭(약 900mm)을 기준으로 사용해도 됩니다. PDF 도면은 선택한 페이지를 고해상도 이미지로 바꿔 올립니다.</p>' +
+        '<div class="tx-qk-alt"><b>도면이 전혀 없나요?</b><span>현행화표의 설치 위치를 기준으로 층마다 통신실(또는 표기된 실)·복도·계단실을 자동으로 만들고 설비를 격자로 배치합니다. 이후 ③·④에서 고칠 수 있고, ⑤에서 라이저도·개통도를 자동 작도합니다.</span>' +
+        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn" data-q="autodraw">이 층 자동 작도</button><button type="button" class="tx-wb-btn" data-q="autodrawall">전체 층 자동 작도</button></div></div>';
     } else if (step === 3) {
       var rs = D.rooms.filter(function (r) { return r.floor === code; });
       h += '<p class="tx-wb-guide">도면 위에서 <b>실의 한 모서리에서 대각선 모서리까지 끌어서</b> 사각형을 그립니다(100mm 단위 정렬). 그리기 전에 실 이름·유형을 정하세요. 도면 이동은 「그리기 중지」 후 드래그.</p>' +
@@ -280,14 +334,16 @@
         (as.length ? '<ul class="tx-wb-list tx-qk-alist">' + as.map(function (a) {
           var r = a.room && D.rooms.find(function (q) { return q.id === a.room; });
           return '<li class="' + (tool.placeId === a.id ? 'is-sel' : '') + '"><span><b>' + esc(a.name) + '</b><small>' + (r ? '📍 ' + esc(r.name) : '<em class="tx-qk-un">미배치</em>') + (a.roomHint ? ' · 표기: ' + esc(a.roomHint) : '') + (a.model ? ' · ' + esc(a.model) : '') + '</small></span>' +
-            '<button type="button" class="tx-wb-link" data-q="pick" data-id="' + esc(a.id) + '">' + (tool.placeId === a.id ? '클릭 대기' : r ? '다시 배치' : '배치') + '</button></li>';
+            photoBtn(a) + '<button type="button" class="tx-wb-link" data-q="pick" data-id="' + esc(a.id) + '">' + (tool.placeId === a.id ? '클릭 대기' : r ? '다시 배치' : '배치') + '</button></li>';
         }).join('') + '</ul>' : '<p class="tx-wb-empty">이 층의 설비가 없습니다 (① 현행화표에서 생성)</p>');
     } else {
       h += '<label class="tx-wb-chk"><input type="checkbox" data-q="auto"' + (D.autoLinks ? ' checked' : '') + '> 기본 연결 규칙: 같은 층 OFD → 광중계기·5G RU (광)</label>' +
         '<h5>연결 <span class="tx-count">' + D.links.length + '</span></h5>' +
-        (D.links.length ? '<ul class="tx-wb-list">' + D.links.map(function (l) { var a = D.assets.find(function (x) { return x.id === l.from; }), b = D.assets.find(function (x) { return x.id === l.to; }); return '<li><span><b>' + esc(a ? a.name : l.from) + ' → ' + esc(b ? b.name : l.to) + '</b><small>광 · ' + (l.auto ? '기본 규칙' : '수동') + '</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-q="ldel" data-id="' + esc(l.id) + '">삭제</button></li>'; }).join('') + '</ul>' : '<p class="tx-wb-empty">연결 없음 (같은 층에 OFD가 없으면 규칙이 적용되지 않습니다)</p>') +
+        (D.assets.length > 1 ? '<div class="tx-qk-link"><select data-q="lfrom">' + assetOpts() + '</select><span>→</span><select data-q="lto">' + assetOpts() + '</select><select data-q="ltype"><option value="optical">광</option><option value="data">UTP</option><option value="power">전원</option></select><button type="button" class="tx-wb-btn" data-q="ladd">연결 추가</button></div>' : '') +
+        (D.links.length ? '<ul class="tx-wb-list">' + D.links.map(function (l) { var a = D.assets.find(function (x) { return x.id === l.from; }), b = D.assets.find(function (x) { return x.id === l.to; }); return '<li><span><b>' + esc(a ? a.name : l.from) + ' → ' + esc(b ? b.name : l.to) + '</b><small>' + ({ optical: '광', data: 'UTP', power: '전원' }[l.type] || '광') + ' · ' + (l.auto ? '기본 규칙' : '수동') + (a && b && a.floor !== b.floor ? ' · 층간(라이저)' : '') + '</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-q="ldel" data-id="' + esc(l.id) + '">삭제</button></li>'; }).join('') + '</ul>' : '<p class="tx-wb-empty">연결 없음 (같은 층에 OFD가 없으면 규칙이 적용되지 않습니다)</p>') +
         '<div class="tx-qk-check">' + checks().map(function (c) { return '<div class="' + (c[1] ? 'ok' : 'ng') + '">' + (c[1] ? '✔ ' : '✖ ') + esc(c[0]) + '</div>'; }).join('') + '</div>' +
-        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="export">ADMIN 등록용 엑셀 내보내기</button></div>' +
+        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn" data-q="diag">라이저도·개통도 자동 작도</button>' + (TX.pipe ? '<button type="button" class="tx-wb-btn" data-q="phzip">현장 사진 ZIP</button>' : '') + '</div>' +
+        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="export">ADMIN 등록용 엑셀 내보내기</button>' + (TX.pipe ? '<button type="button" class="tx-wb-btn" data-q="report">점검 결과서 변환</button>' : '') + '</div>' +
         '<p class="tx-wb-help">내보낸 파일 → ADMIN <b>데이터 관리 → 엑셀 등록 → 「전체 교체 적용」</b>. 이후 점검 결과서는 <b>측정 대시보드 → 측정 엑셀 등록</b>으로 올리고 「측정 매칭 확인」에서 연결하세요. 「현행화표_원본」 시트에 설치연도·비고 원문이 보존됩니다.</p>' +
         '<div class="tx-wb-acts tx-wb-acts-2"><button type="button" class="tx-wb-link" data-q="jexport">초안 백업(JSON)</button><button type="button" class="tx-wb-link" data-q="jimport">초안 불러오기</button><button type="button" class="tx-wb-link tx-wb-danger" data-q="reset">초안 전체 삭제</button></div>';
     }
@@ -300,7 +356,7 @@
     var floorsWithRooms = D.floors.filter(function (f) { return D.rooms.some(function (r) { return r.floor === f.code; }); });
     return [['실이 1개 이상 있음', D.rooms.length > 0], ['모든 설비 배치 완료 (' + placed.length + '/' + D.assets.length + ')', D.assets.length > 0 && placed.length === D.assets.length],
       ['설비가 있는 모든 층에 실이 있음', D.floors.filter(function (f) { return D.assets.some(function (a) { return a.floor === f.code; }); }).every(function (f) { return floorsWithRooms.indexOf(f) >= 0; })],
-      ['사업장 이름 입력', !!D.site]];
+      ['사업장 이름 입력', !!D.site]].concat(TX.pipe && TX.pipe.checks ? TX.pipe.checks(D) : []);
   }
   function bind() {
     P.addEventListener('click', function (e) {
@@ -326,6 +382,12 @@
       else if (a === 'pick') { tool.placeId = id; startTool('place'); renderPanel(); }
       else if (a === 'ldel') { D.links = D.links.filter(function (l) { return l.id !== id; }); save(); apply(); }
       else if (a === 'export') exportXlsx();
+      else if (a === 'ph') { if (TX.pipe) TX.pipe.photos.open(id); }
+      else if (a === 'autodraw' || a === 'autodrawall') { var nn = autoDraw(a === 'autodraw' ? [curFloor()] : D.floors.map(function (x) { return x.code; }), a === 'autodrawall'); toast('자동 작도: 실 ' + nn.rooms + '개 · 설비 ' + nn.assets + '대 배치' + (nn.skipped ? ' · 도면이 있는 ' + nn.skipped + '개 층은 건너뜀(도면 위에 직접 그리기)' : ''), 'success'); }
+      else if (a === 'ladd') { var fr = P.querySelector('[data-q="lfrom"]').value, to = P.querySelector('[data-q="lto"]').value, ty = P.querySelector('[data-q="ltype"]').value; if (fr === to) { toast('출발과 도착 설비가 같습니다', 'warn'); return; } if (D.links.some(function (l) { return l.from === fr && l.to === to; })) { toast('이미 있는 연결입니다', 'warn'); return; } var k = 1; while (D.links.some(function (l) { return l.id === 'L' + pad(k, 3); })) k++; D.links.push({ id: 'L' + pad(k, 3), from: fr, to: to, type: ty, auto: false }); save(); apply(); }
+      else if (a === 'diag') { if (TX.pipe) TX.pipe.diagrams.open(); }
+      else if (a === 'phzip') { if (TX.pipe) TX.pipe.photos.exportZip(D); }
+      else if (a === 'report') { if (TX.pipe) TX.pipe.report.open(); }
       else if (a === 'jexport') U.download(new Blob([JSON.stringify({ _twinxQuick: 1, draft: D }, null, 1)], { type: 'application/json' }), 'TwinX_간이현행화_초안_' + U.today() + '.json');
       else if (a === 'jimport') pickFile('application/json', function (file) { file.text().then(function (t) { try { var d = JSON.parse(t); if (!d._twinxQuick) throw new Error('초안 파일이 아닙니다'); D = Object.assign(blank(), d.draft, { active: true }); save(); apply(); toast('초안을 불러왔습니다', 'success'); } catch (err) { toast('불러오기 실패: ' + err.message, 'error'); } }); });
       else if (a === 'reset') { if (confirm('간이 현행화 초안을 모두 삭제할까요? (ADMIN 등록 자료에는 영향 없음)')) { D = blank(); D.active = true; save(); TX.setModel(TX.demoModel()); renderPanel(); } }
@@ -346,15 +408,16 @@
   function pickFile(accept, cb) { var i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.style.display = 'none'; i.onchange = function () { var f = i.files && i.files[0]; i.remove(); if (f) cb(f); }; document.body.appendChild(i); i.click(); }
   function pickImage() {
     var code = curFloor(); if (!code) { toast('먼저 ① 현행화표로 층을 만들거나 층을 추가하세요', 'warn'); return; }
-    pickFile('image/*', function (file) {
-      TX.underlay.load(code, file).then(function (ok) {
+    pickFile('image/*,application/pdf,.pdf', function (file0) {
+      var pr = /\.pdf$/i.test(file0.name) || file0.type === 'application/pdf' ? (TX.pipe ? TX.pipe.pdfToImage(file0) : Promise.reject(new Error('PDF 모듈 없음'))) : Promise.resolve(file0);
+      pr.then(function (file) { return file && TX.underlay.load(code, file); }).catch(function (err) { toast('도면을 읽지 못했습니다: ' + err.message, 'error'); return false; }).then(function (ok) {
         if (!ok) return;
         var r = TX.underlay.get(code); var f = fl();
         // 기본: 이미지 좌상단 = 원점, 장변 40m 가정 (치수 맞춤 전 임시)
         var s = 40000 / Math.max(r.w, r.h);
         TX.underlay.update(code, { tf: { s: s, rot: 0, tx: 0, ty: 0 }, opacity: 0.85, invert: true });
         f.w = Math.round(r.w * s); f.h = Math.round(r.h * s); save(); apply();
-        toast('사진을 올렸습니다 · 「치수로 축척 맞춤」을 진행하세요', 'success');
+        toast('도면을 올렸습니다 · 「치수로 축척 맞춤」을 진행하세요', 'success');
       });
     });
   }
@@ -488,5 +551,7 @@
   TX.on('close', function () { close(true); });
   TX.on('open', function () { if (D.active && D.floors.length) setTimeout(function () { TX.setModel(toModel()); }, 50); });
 
-  TX.quick = { active: function () { return !!D.active; }, open: open, close: close, draft: function () { return D; }, parseTable: parseTable, parseLoc: parseLoc, buildXlsx: buildXlsx, model: toModel };
+  TX.quick = { active: function () { return !!D.active; }, open: open, close: close, draft: function () { return D; }, parseTable: parseTable, parseLoc: parseLoc, buildXlsx: buildXlsx, model: toModel, autoDraw: autoDraw,
+    // 66-pipeline 확장용 내부 접근점
+    _: { save: function () { save(); }, apply: apply, refresh: renderPanel, zip: zip, pad: pad, xlsx: function (sheets) { return buildXlsx(sheets); } } };
 })();

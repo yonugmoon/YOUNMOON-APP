@@ -128,3 +128,10 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   5단계: ① 현행화표 붙여넣기(TSV, 수량 → #1·#2 전개, 「확인불가」→빈칸) ② 도면 사진(`TwinX.underlay.load`) + 2점 치수 축척 ③ 실 사각형 그리기(100mm 스냅)
   ④ 클릭 배치(실 내부만) ⑤ 같은 층 OFD→중계기/RU 광 자동연결 · 점검 · ADMIN 엑셀(01~06 + 측정값 데이터 + 현행화표_원본) 내보내기.
   작업 중(`TwinX.quick.active()`)에는 T1 `refresh()`가 ADMIN 데이터로 덮어쓰지 않고 `source:'quick'` 초안 모델을 유지. 메뉴 「현행화 ▾ → 간이 현행화 모드」.
+- **제작 파이프라인(v1.7)** `TwinX.pipe` (`src/66-pipeline.js`) —
+  `pdfToImage(file,page)` · `pdfTables(file)` (pdf.js 3.11.174 + 한글 CMap, 빌드 시 `text/plain`/JSON 인라인 → 필요할 때 Blob 로딩),
+  `readAny/readXlsx/readDocx/unzip` (DecompressionStream, 외부 라이브러리 없음),
+  `photos = {open,count,add,all,exportZip}` — IndexedDB `twinx_photo_v1` `{key:"설비ID|full|plate|module|n", asset, slot, n, blob(JPEG), w, h, at}`,
+  `diagrams = {open, riser(), topo()}` (현재 `TwinX.model` 기준 SVG), `report = {open, load, sheets, send}` — 결과서 → 9열 측정 + 트윈연결 + 변환검증,
+  `send()`는 ADMIN 「측정 엑셀 등록」의 파일 선택을 가로채 변환 파일을 전달(실패 시 다운로드).
+  `TwinX.quick` 추가: `autoDraw(codes, all)`, 초안 설비 필드 `serial`, `plateOk`, 링크 `type: optical|data|power`(수동 층간 연결), 내부 접근점 `TwinX.quick._`.

@@ -653,6 +653,8 @@
     else pendingToast = true;
   }
   function refresh(force) {
+    // 간이 현행화 모드(65-quick) 작업 중에는 초안 모델을 유지 (ADMIN 자료로 덮어쓰지 않음)
+    if (TwinX.quick && TwinX.quick.active && TwinX.quick.active()) return { changed: false, source: 'quick' };
     var m = read(force);
     if (m) {
       var sig = walkCache.v && walkCache.v.sig;

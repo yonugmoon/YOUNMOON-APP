@@ -122,3 +122,9 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
 - **측정 매칭 확인(v1.5)** `TwinX.matching = {open, groups, stats, set, exportCSV}` — localStorage `twinx_match_v1`
   `{그룹키 "건물|층|점검 위치|설비": {assetId}|{roomId}|{ignore:true}}`. T1이 자동 매칭보다 먼저 적용(`Measure.match:'manual'|'ignored'`, `Measure.groupKey`).
   측정 행 서명이 바뀌면(업로드) ADMIN 화면 우하단에 확인 알림(`twinx_match_seen_v1`로 1회 표시), 툴바 「현행화 ▾ → 측정 매칭 확인」.
+- **간이 현행화 모드(v1.6)** `TwinX.quick = {active, open, close, draft, parseTable, parseLoc, buildXlsx, model}` (`src/65-quick.js`) —
+  현장 자료(설비 현행화표 + 대피소/종이 도면 사진)만으로 초안 모델을 만든다. localStorage `twinx_quick_v1`
+  `{active, site, buildings[{code,name}], floors[{code,building,bcode,name,level,w,h}], rooms[{id,floor,name,kind,x,y,w,h}], assets[{id,tag,name,model,maker,year,note,floor,room,x,y,status,category,srcLoc}], links, autoLinks, source[]}`.
+  5단계: ① 현행화표 붙여넣기(TSV, 수량 → #1·#2 전개, 「확인불가」→빈칸) ② 도면 사진(`TwinX.underlay.load`) + 2점 치수 축척 ③ 실 사각형 그리기(100mm 스냅)
+  ④ 클릭 배치(실 내부만) ⑤ 같은 층 OFD→중계기/RU 광 자동연결 · 점검 · ADMIN 엑셀(01~06 + 측정값 데이터 + 현행화표_원본) 내보내기.
+  작업 중(`TwinX.quick.active()`)에는 T1 `refresh()`가 ADMIN 데이터로 덮어쓰지 않고 `source:'quick'` 초안 모델을 유지. 메뉴 「현행화 ▾ → 간이 현행화 모드」.

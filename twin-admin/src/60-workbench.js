@@ -785,6 +785,7 @@
   function dismissNotice() { if (notice) { notice.remove(); notice = null; } }
   function checkUpload() {
     if (!TX.model || TX.model.source !== 'admin') return;
+    if (TX.state.open) return; // 뷰어 안에서는 「현행화 ▾」 메뉴 배지로 안내 (패널 가림 방지)
     var sig = inspSig(); if (sig === lastSig) return; lastSig = sig;
     var seen = null; try { seen = localStorage.getItem(SEEN_KEY); } catch (e) { }
     if (seen === sig) return;
@@ -802,6 +803,8 @@
     });
   }
   TX.on('model', function () { setTimeout(checkUpload, 300); if (mm) renderMatch(); });
+  TX.on('open', function () { dismissNotice(); });
+  TX.on('close', function () { lastSig = null; setTimeout(checkUpload, 400); });
   // 첫 모델이 이 모듈보다 먼저 들어온 경우 대비: 페이지 로드 후에도 확인
   function lateCheck() { [1500, 4000, 8000].forEach(function (t) { setTimeout(checkUpload, t); }); }
   if (document.readyState === 'complete') lateCheck(); else window.addEventListener('load', lateCheck);

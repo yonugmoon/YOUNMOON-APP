@@ -910,7 +910,7 @@
   function freeArea() {
     var hr = dom.wrap.getBoundingClientRect(), f = { x0: 0, y0: 0, x1: hr.width, y1: hr.height, cw: hr.width, ch: hr.height };
     var ui = TX.ui; if (!ui || !hr.width) return f;
-    [ui.floorRail, ui.inspector].forEach(function (el) {
+    [ui.floorRail, ui.inspector, document.querySelector('.tx-qk')].forEach(function (el) { // .tx-qk: 간이 현행화 패널
       if (!el || !el.getBoundingClientRect) return;
       var r = el.getBoundingClientRect(); if (r.width < 4 || r.width > hr.width * 0.4 || r.height < hr.height * 0.2) return;
       var cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) return;

@@ -391,7 +391,8 @@
       return best ? { room: best, how: how } : null;
     }
 
-    var measurements = [], matched = { asset: 0, room: 0, none: 0 };
+    var measurements = [], matched = { asset: 0, room: 0, none: 0, manual: 0, ignored: 0 };
+    var matchOv = readMatchStore(); // 측정 매칭 수동 지정(60-workbench): {그룹키:{assetId|roomId|ignore}}
     rowsIn.forEach(function (row, idx) {
       if (!row || typeof row !== 'object') return;
       var item = str(row['측정 항목'] || row.측정항목 || row['점검 항목'] || row.항목);
@@ -406,13 +407,18 @@
       };
       if (jv.warn) m.warn = true;
       applyRules(m);
-      var a = null, r = null;
-      if (str(row.assetId) && assetById[str(row.assetId)]) { a = assetById[str(row.assetId)]; m.match = 'explicit'; }
-      if (!a) { a = matchAssetByText(str(row['점검 위치']) + ' ' + str(row.설비) + ' ' + item); if (a) m.match = 'asset-name'; }
+      m.groupKey = [m.building, m.floorText, m.location, m.equip].join('|');
+      var a = null, r = null, ov = matchOv[m.groupKey];
+      if (ov && ov.ignore) { m.match = 'ignored'; matched.ignored++; measurements.push(m); return; }
+      if (ov && ov.assetId && assetById[ov.assetId]) { a = assetById[ov.assetId]; m.match = 'manual'; }
+      else if (ov && ov.roomId && roomById[ov.roomId]) { r = roomById[ov.roomId]; m.match = 'manual'; }
+      if (m.match === 'manual') matched.manual++;
+      if (!a && !r && str(row.assetId) && assetById[str(row.assetId)]) { a = assetById[str(row.assetId)]; m.match = 'explicit'; }
+      if (!a && !r) { a = matchAssetByText(str(row['점검 위치']) + ' ' + str(row.설비) + ' ' + item); if (a) m.match = 'asset-name'; }
       if (a) r = roomById[a.room];
       if (!r && str(row.roomId) && roomById[str(row.roomId)]) { r = roomById[str(row.roomId)]; m.match = 'explicit'; }
       if (!r) { var mr = matchRoom(row); if (mr) { r = mr.room; m.match = 'room-' + mr.how; } }
-      if (r && !a) { // 같은 실의 설비구분 유사 설비
+      if (r && !a && m.match !== 'manual') { // 같은 실의 설비구분 유사 설비
         var cand = assets.filter(function (x) { return x.room === r.id && (catSimilar(x.category, row.설비) || catSimilar(x.name, row.설비)); });
         if (cand.length) { a = cand[0]; m.match += '+category'; }
       }
@@ -604,12 +610,14 @@
   /* ---------------- 4. 캐시 · 서명 ---------------- */
   var walkCache = { t: 0, v: null };
   var conv = { twin: null, rows: null, sig: null, model: null };
+  function extraSig() { return ['twinx_rack_v1', 'twinx_geom_v1', 'twinx_match_v1'].map(function (k) { return localStorage.getItem(k) || ''; }).join('|'); }
+  function readMatchStore() { try { return JSON.parse(localStorage.getItem('twinx_match_v1') || '{}') || {}; } catch (e) { return {}; } }
   function readGeomStore() { try { return JSON.parse(localStorage.getItem('twinx_geom_v1') || '{}') || {}; } catch (e) { return {}; } }
   function readRackStore() { try { return JSON.parse(localStorage.getItem('twinx_rack_v1') || '{}') || {}; } catch (e) { return {}; } }
   function signatureOf(d) {
     var t = d.twin || {};
     try {
-      return hashStr(JSON.stringify([t.rooms, t.assets, t.links, t.history, t.rules, d.rows, localStorage.getItem('twinx_rack_v1') || '', localStorage.getItem('twinx_geom_v1') || '']));
+      return hashStr(JSON.stringify([t.rooms, t.assets, t.links, t.history, t.rules, d.rows, localStorage.getItem('twinx_rack_v1') || '', localStorage.getItem('twinx_geom_v1') || '', localStorage.getItem('twinx_match_v1') || '']));
     } catch (e) { return String(Date.now()); }
   }
   function read(force) {
@@ -620,14 +628,14 @@
     var model = null, sig = null;
     if (d && d.twin) {
       // 같은 참조면 서명 재계산 생략 (React 불변 갱신)
-      if (conv.model && conv.twin === d.twin && conv.rows === d.rows && conv.twinSnap === snap(d.twin) && conv.rackSig === (localStorage.getItem('twinx_rack_v1') || '') + '|' + (localStorage.getItem('twinx_geom_v1') || '')) { model = conv.model; sig = conv.sig; }
+      if (conv.model && conv.twin === d.twin && conv.rows === d.rows && conv.twinSnap === snap(d.twin) && conv.rackSig === extraSig()) { model = conv.model; sig = conv.sig; }
       else {
         sig = signatureOf(d);
         if (conv.model && sig === conv.sig) model = conv.model;
         else {
           try { model = convert(d); } catch (e) { console.error('[TwinX.data] 변환 실패', e); model = null; }
         }
-        conv = { twin: d.twin, rows: d.rows, twinSnap: snap(d.twin), rackSig: (localStorage.getItem('twinx_rack_v1') || '') + '|' + (localStorage.getItem('twinx_geom_v1') || ''), sig: sig, model: model };
+        conv = { twin: d.twin, rows: d.rows, twinSnap: snap(d.twin), rackSig: extraSig(), sig: sig, model: model };
       }
     }
     walkCache = { t: now, v: { model: model, sig: sig } };

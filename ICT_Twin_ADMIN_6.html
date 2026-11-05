@@ -6310,6 +6310,45 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
 .tx-wb-menu b { font-size: 13px; }
 .tx-wb-menu small { font-size: 11.5px; color: var(--tx-muted, #6b7d93); }
 
+/* 측정 매칭 확인 */
+.tx-wb-mmdlg { width: min(1180px, 100%); display: flex; flex-direction: column; }
+.tx-wb-mmdlg .tx-wb-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.tx-mm-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: var(--tx-bg, #f5f7fa); }
+.tx-mm-bar i { display: block; height: 100%; }
+.tx-mm-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--tx-muted, #6b7d93); align-items: center; }
+.tx-mm-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.tx-mm-rate { margin-left: auto; color: var(--tx-text, #22374d); font-size: 13px; }
+.tx-mm-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tx-mm-seg { display: flex; background: var(--tx-bg, #f5f7fa); border-radius: 9px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.tx-mm-seg button { border: 0; background: none; height: 28px; padding: 0 11px; border-radius: 7px; font: 600 12px var(--tx-font, Arial, sans-serif); color: var(--tx-muted, #6b7d93); cursor: pointer; }
+.tx-mm-seg button.is-on { background: #fff; color: var(--tx-blue, #3e63db); box-shadow: 0 1px 3px rgba(8,20,40,.12); }
+.tx-mm-tools input { flex: 1; min-width: 200px; height: 34px; padding: 0 12px; border: 1px solid var(--tx-border, #e1e7ee); border-radius: 8px; font: 13px var(--tx-font, Arial, sans-serif); }
+.tx-mm-tablewrap { max-height: calc(100vh - 360px); min-height: 160px; overflow: auto; border: 1px solid var(--tx-border, #e1e7ee); border-radius: 10px; }
+.tx-mm-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.tx-mm-table th { position: sticky; top: 0; background: #f8fafc; text-align: left; font-weight: 700; color: var(--tx-muted, #6b7d93); font-size: 11.5px; padding: 8px 10px; border-bottom: 1px solid var(--tx-border, #e1e7ee); z-index: 1; }
+.tx-mm-table td { padding: 8px 10px; border-bottom: 1px solid #eef2f6; vertical-align: top; }
+.tx-mm-table td small { display: block; color: var(--tx-muted, #6b7d93); font-size: 11px; margin-top: 2px; }
+.tx-mm-table tr.tx-mm-none td:first-child { box-shadow: inset 3px 0 0 #f43f5e; }
+.tx-mm-table tr.tx-mm-est td:first-child { box-shadow: inset 3px 0 0 #3e63db; }
+.tx-mm-table tr.tx-mm-ok td:first-child { box-shadow: inset 3px 0 0 #10b981; }
+.tx-mm-table tr.tx-mm-ign td { opacity: .6; }
+.tx-mm-n { white-space: nowrap; font-weight: 700; }
+.tx-mm-n em { display: block; font-style: normal; font-size: 11px; color: #be123c; font-weight: 600; }
+.tx-mm-badge { display: inline-block; font-size: 10.5px; font-weight: 800; padding: 1px 7px; border-radius: 10px; }
+.tx-mm-b-ok { background: #dcfce7; color: #047857; } .tx-mm-b-est { background: #e0e7ff; color: #3730a3; }
+.tx-mm-b-none { background: #ffe4e6; color: #be123c; } .tx-mm-b-ign { background: #f1f5f9; color: #64748b; }
+.tx-mm-tgt { margin-top: 3px; } .tx-mm-tgt b { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; }
+.tx-mm-table select { width: 240px; max-width: 100%; height: auto; min-height: 32px; padding: 5px 8px; line-height: 1.3; border: 1px solid var(--tx-border, #e1e7ee); border-radius: 7px; font: 12px/1.3 var(--tx-font, Arial, sans-serif); color: var(--tx-text, #22374d); background: #fff; box-sizing: border-box; }
+.tx-wb-form select, .tx-wb-grid select { line-height: 1.3; padding-top: 0; padding-bottom: 0; }
+.tx-mm-empty { text-align: center; color: var(--tx-faint, #95a3b5); padding: 30px !important; }
+.tx-wb-mbadge { font-style: normal; display: inline-block; min-width: 18px; padding: 0 6px; margin-left: 4px; border-radius: 9px; background: #f43f5e; color: #fff; font-size: 10.5px; text-align: center; }
+.tx-wb-notice { position: fixed; z-index: 9700; right: 20px; bottom: 20px; display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 16px; max-width: min(520px, calc(100vw - 40px));
+  background: #fff; border-left: 4px solid #f97316; border-radius: 12px; box-shadow: 0 10px 30px rgba(8,20,40,.22), 0 2px 6px rgba(8,20,40,.12); font-family: Arial, "Noto Sans KR", "Malgun Gothic", sans-serif; color: #22374d; }
+.tx-wb-notice > div { display: flex; flex-direction: column; gap: 2px; }
+.tx-wb-notice b { font-size: 13.5px; } .tx-wb-notice span { font-size: 12px; color: #6b7d93; }
+.tx-wb-notice .tx-wb-btn { margin: 0; white-space: nowrap; }
+@media (max-width: 759px) { .tx-mm-table th:nth-child(3), .tx-mm-table td:nth-child(3) { display: none; } .tx-mm-tablewrap { max-height: calc(100vh - 420px); } .tx-wb-notice { left: 12px; right: 12px; bottom: 12px; } }
+
 </style>
 <script id="twinx-three">if(!window.THREE){
 /**
@@ -6933,7 +6972,8 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
       return best ? { room: best, how: how } : null;
     }
 
-    var measurements = [], matched = { asset: 0, room: 0, none: 0 };
+    var measurements = [], matched = { asset: 0, room: 0, none: 0, manual: 0, ignored: 0 };
+    var matchOv = readMatchStore(); // 측정 매칭 수동 지정(60-workbench): {그룹키:{assetId|roomId|ignore}}
     rowsIn.forEach(function (row, idx) {
       if (!row || typeof row !== 'object') return;
       var item = str(row['측정 항목'] || row.측정항목 || row['점검 항목'] || row.항목);
@@ -6948,13 +6988,18 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
       };
       if (jv.warn) m.warn = true;
       applyRules(m);
-      var a = null, r = null;
-      if (str(row.assetId) && assetById[str(row.assetId)]) { a = assetById[str(row.assetId)]; m.match = 'explicit'; }
-      if (!a) { a = matchAssetByText(str(row['점검 위치']) + ' ' + str(row.설비) + ' ' + item); if (a) m.match = 'asset-name'; }
+      m.groupKey = [m.building, m.floorText, m.location, m.equip].join('|');
+      var a = null, r = null, ov = matchOv[m.groupKey];
+      if (ov && ov.ignore) { m.match = 'ignored'; matched.ignored++; measurements.push(m); return; }
+      if (ov && ov.assetId && assetById[ov.assetId]) { a = assetById[ov.assetId]; m.match = 'manual'; }
+      else if (ov && ov.roomId && roomById[ov.roomId]) { r = roomById[ov.roomId]; m.match = 'manual'; }
+      if (m.match === 'manual') matched.manual++;
+      if (!a && !r && str(row.assetId) && assetById[str(row.assetId)]) { a = assetById[str(row.assetId)]; m.match = 'explicit'; }
+      if (!a && !r) { a = matchAssetByText(str(row['점검 위치']) + ' ' + str(row.설비) + ' ' + item); if (a) m.match = 'asset-name'; }
       if (a) r = roomById[a.room];
       if (!r && str(row.roomId) && roomById[str(row.roomId)]) { r = roomById[str(row.roomId)]; m.match = 'explicit'; }
       if (!r) { var mr = matchRoom(row); if (mr) { r = mr.room; m.match = 'room-' + mr.how; } }
-      if (r && !a) { // 같은 실의 설비구분 유사 설비
+      if (r && !a && m.match !== 'manual') { // 같은 실의 설비구분 유사 설비
         var cand = assets.filter(function (x) { return x.room === r.id && (catSimilar(x.category, row.설비) || catSimilar(x.name, row.설비)); });
         if (cand.length) { a = cand[0]; m.match += '+category'; }
       }
@@ -7146,12 +7191,14 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
   /* ---------------- 4. 캐시 · 서명 ---------------- */
   var walkCache = { t: 0, v: null };
   var conv = { twin: null, rows: null, sig: null, model: null };
+  function extraSig() { return ['twinx_rack_v1', 'twinx_geom_v1', 'twinx_match_v1'].map(function (k) { return localStorage.getItem(k) || ''; }).join('|'); }
+  function readMatchStore() { try { return JSON.parse(localStorage.getItem('twinx_match_v1') || '{}') || {}; } catch (e) { return {}; } }
   function readGeomStore() { try { return JSON.parse(localStorage.getItem('twinx_geom_v1') || '{}') || {}; } catch (e) { return {}; } }
   function readRackStore() { try { return JSON.parse(localStorage.getItem('twinx_rack_v1') || '{}') || {}; } catch (e) { return {}; } }
   function signatureOf(d) {
     var t = d.twin || {};
     try {
-      return hashStr(JSON.stringify([t.rooms, t.assets, t.links, t.history, t.rules, d.rows, localStorage.getItem('twinx_rack_v1') || '', localStorage.getItem('twinx_geom_v1') || '']));
+      return hashStr(JSON.stringify([t.rooms, t.assets, t.links, t.history, t.rules, d.rows, localStorage.getItem('twinx_rack_v1') || '', localStorage.getItem('twinx_geom_v1') || '', localStorage.getItem('twinx_match_v1') || '']));
     } catch (e) { return String(Date.now()); }
   }
   function read(force) {
@@ -7162,14 +7209,14 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
     var model = null, sig = null;
     if (d && d.twin) {
       // 같은 참조면 서명 재계산 생략 (React 불변 갱신)
-      if (conv.model && conv.twin === d.twin && conv.rows === d.rows && conv.twinSnap === snap(d.twin) && conv.rackSig === (localStorage.getItem('twinx_rack_v1') || '') + '|' + (localStorage.getItem('twinx_geom_v1') || '')) { model = conv.model; sig = conv.sig; }
+      if (conv.model && conv.twin === d.twin && conv.rows === d.rows && conv.twinSnap === snap(d.twin) && conv.rackSig === extraSig()) { model = conv.model; sig = conv.sig; }
       else {
         sig = signatureOf(d);
         if (conv.model && sig === conv.sig) model = conv.model;
         else {
           try { model = convert(d); } catch (e) { console.error('[TwinX.data] 변환 실패', e); model = null; }
         }
-        conv = { twin: d.twin, rows: d.rows, twinSnap: snap(d.twin), rackSig: (localStorage.getItem('twinx_rack_v1') || '') + '|' + (localStorage.getItem('twinx_geom_v1') || ''), sig: sig, model: model };
+        conv = { twin: d.twin, rows: d.rows, twinSnap: snap(d.twin), rackSig: extraSig(), sig: sig, model: model };
       }
     }
     walkCache = { t: now, v: { model: model, sig: sig } };
@@ -12150,6 +12197,196 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
   }
   TX.on('resize', function () { drawPreview(); });
 
+  /* =========================================================
+     4. 측정 매칭 확인: 업로드된 측정 행 ↔ 설비ID/실 자동 매칭 결과 검토·수동 지정
+        localStorage 'twinx_match_v1' {그룹키(건물|층|점검 위치|설비):{assetId}|{roomId}|{ignore:true}}
+        → 10-data가 자동 매칭보다 먼저 적용 (match:'manual'·'ignored')
+     ========================================================= */
+  var MATCH_KEY = 'twinx_match_v1', SEEN_KEY = 'twinx_match_seen_v1';
+  function matchStore() { try { return JSON.parse(localStorage.getItem(MATCH_KEY) || '{}') || {}; } catch (e) { return {}; } }
+  var matchSaveTimer = null;
+  function matchSave(o) { try { localStorage.setItem(MATCH_KEY, JSON.stringify(o)); } catch (e) { toast('브라우저 저장공간에 저장하지 못했습니다', 'error'); return; } clearTimeout(matchSaveTimer); matchSaveTimer = setTimeout(reloadModel, 250); }
+  var HOW = {
+    manual: ['확정', '수동 지정', 'ok'], explicit: ['확정', '설비ID·실코드 일치', 'ok'],
+    'asset-name': ['추정', '설비명/ID 포함', 'est'], 'room-name': ['추정', '실명 일치', 'est'], 'room-name-core': ['추정', '실명 핵심어+층', 'est'], 'room-type': ['추정', '실 유형+층', 'est'],
+    ignored: ['제외', '트윈 대상 아님', 'ign']
+  };
+  function howOf(m) {
+    if (!m.match) return ['미매칭', '연결 대상 없음', 'none'];
+    var base = m.match.replace('+category', ''), h = HOW[base] || ['추정', base, 'est'];
+    return [h[0], h[1] + (m.match.indexOf('+category') >= 0 ? ' → 설비구분 유사' : ''), h[2]];
+  }
+  /* 측정 행을 「건물|층|점검 위치|설비」 그룹으로 묶음 (같은 위치의 여러 항목을 한 번에 지정) */
+  function matchGroups() {
+    var M = TX.model, gs = {}, order = [];
+    (M && M.measurements || []).forEach(function (m) {
+      if (m.source && m.source !== 'inspection') return;
+      var k = m.groupKey || [m.building, m.floorText, m.location, m.equip].join('|');
+      var g = gs[k];
+      if (!g) { g = gs[k] = { key: k, building: m.building, floor: m.floorText, location: m.location, equip: m.equip, rows: [], bad: 0, m: m }; order.push(g); }
+      g.rows.push(m); if (m.judge === 'bad') g.bad++;
+    });
+    order.forEach(function (g) { g.how = howOf(g.m); g.assetId = g.m.assetId; g.roomId = g.m.roomId; });
+    return order;
+  }
+  function matchStats(groups) {
+    var s = { rows: 0, ok: 0, est: 0, room: 0, none: 0, ign: 0, groups: groups.length };
+    groups.forEach(function (g) {
+      var n = g.rows.length; s.rows += n;
+      if (g.how[2] === 'ok') s.ok += n; else if (g.how[2] === 'ign') s.ign += n; else if (g.how[2] === 'none') s.none += n;
+      else if (!g.assetId) s.room += n; else s.est += n;
+    });
+    return s;
+  }
+  function targetOptions(sel) {
+    var M = TX.model; if (!M) return '';
+    var o = ['<option value="">자동 매칭에 맡기기</option>', '<option value="x"' + (sel === 'x' ? ' selected' : '') + '>측정 제외 (트윈 대상 아님)</option>'];
+    M.floors.forEach(function (f) {
+      var rs = M.rooms.filter(function (r) { return r.floor === f.code; });
+      if (!rs.length) return;
+      o.push('<optgroup label="' + esc(f.name + (f.building ? ' · ' + f.building : '')) + '">');
+      rs.forEach(function (r) {
+        o.push('<option value="r:' + esc(r.id) + '"' + (sel === 'r:' + r.id ? ' selected' : '') + '>[실] ' + esc(r.name) + ' (' + esc(r.id) + ')</option>');
+        M.assets.filter(function (a) { return a.room === r.id; }).forEach(function (a) {
+          o.push('<option value="a:' + esc(a.id) + '"' + (sel === 'a:' + a.id ? ' selected' : '') + '>　' + esc(a.id) + ' ' + esc(a.name) + '</option>');
+        });
+      });
+      o.push('</optgroup>');
+    });
+    return o.join('');
+  }
+  var mm = null, mmFilter = 'todo', mmQuery = '';
+  function closeMatch() { if (mm) { mm.remove(); mm = null; } }
+  function openMatch() {
+    closeWbMenu(); closeModal(); dismissNotice();
+    if (!TX.state.open) TX.open();
+    if (!mm) { mm = U.el('div', 'tx-wb-modal tx-wb-mm'); root().appendChild(mm); bindMatch(); }
+    renderMatch();
+    markSeen();
+  }
+  function renderMatch() {
+    if (!mm) return;
+    var groups = matchGroups(), st = matchStats(groups), ov = matchStore();
+    var F = { all: '전체', todo: '확인 필요', none: '미매칭', est: '추정', room: '실만 연결', ok: '확정', ign: '제외' };
+    var q = mmQuery.toLowerCase();
+    var vis = groups.filter(function (g) {
+      var k = g.how[2] === 'ok' ? 'ok' : g.how[2] === 'ign' ? 'ign' : g.how[2] === 'none' ? 'none' : !g.assetId ? 'room' : 'est';
+      var pass = mmFilter === 'all' || mmFilter === k || (mmFilter === 'todo' && (k === 'none' || k === 'est' || k === 'room'));
+      return pass && (!q || (g.building + ' ' + g.floor + ' ' + g.location + ' ' + g.equip).toLowerCase().indexOf(q) >= 0);
+    });
+    var pct = function (n) { return st.rows ? Math.round(n / st.rows * 1000) / 10 : 0; };
+    var bar = [['ok', st.ok, '#10b981'], ['est', st.est, '#3e63db'], ['room', st.room, '#eab308'], ['none', st.none, '#f43f5e'], ['ign', st.ign, '#94a3b8']];
+    var h = '<div class="tx-wb-dlg tx-wb-mmdlg" role="dialog" aria-modal="true" aria-label="측정 매칭 확인">' +
+      '<div class="tx-wb-hd"><div><small>측정 업로드 · 설비ID 자동 매칭 확인</small><b>측정 자료 ' + st.rows + '건 · 위치 그룹 ' + st.groups + '개</b></div><button type="button" class="tx-wb-x" data-m="close" aria-label="닫기">✕</button></div>' +
+      '<div class="tx-wb-body">' +
+        '<div class="tx-mm-bar">' + bar.map(function (b) { return b[1] ? '<i style="width:' + pct(b[1]) + '%;background:' + b[2] + '"></i>' : ''; }).join('') + '</div>' +
+        '<div class="tx-mm-legend">' +
+          '<span><i style="background:#10b981"></i>확정 ' + st.ok + '건</span><span><i style="background:#3e63db"></i>설비 추정 ' + st.est + '건</span>' +
+          '<span><i style="background:#eab308"></i>실만 연결 ' + st.room + '건</span><span><i style="background:#f43f5e"></i>미매칭 ' + st.none + '건</span><span><i style="background:#94a3b8"></i>제외 ' + st.ign + '건</span>' +
+          '<b class="tx-mm-rate">설비 연결률 ' + pct(st.ok + st.est) + '%</b></div>' +
+        '<div class="tx-mm-tools"><div class="tx-mm-seg">' + Object.keys(F).map(function (k) { return '<button type="button" data-m="f" data-k="' + k + '" class="' + (mmFilter === k ? 'is-on' : '') + '">' + F[k] + '</button>'; }).join('') + '</div>' +
+          '<input type="search" data-m="q" placeholder="건물·층·점검 위치·설비 검색" value="' + esc(mmQuery) + '"></div>' +
+        '<div class="tx-mm-tablewrap"><table class="tx-mm-table"><thead><tr><th>건물 · 층</th><th>점검 위치 · 설비 (측정표 기재)</th><th>항목</th><th>현재 매칭</th><th>연결 대상 지정</th><th></th></tr></thead><tbody>' +
+        (vis.length ? vis.map(function (g) {
+          var cur = ov[g.key], sel = cur ? (cur.ignore ? 'x' : cur.assetId ? 'a:' + cur.assetId : cur.roomId ? 'r:' + cur.roomId : '') : '';
+          var a = g.assetId && TX.asset(g.assetId), r = g.roomId && TX.room(g.roomId);
+          var tgt = a ? '<b>' + esc(a.id) + '</b> ' + esc(a.name) : r ? '<b>[실]</b> ' + esc(r.name) : '<span class="tx-muted">—</span>';
+          var canApprove = !cur && (a || r);
+          return '<tr data-key="' + esc(g.key) + '" class="tx-mm-' + g.how[2] + '"><td>' + esc(g.building || '—') + '<small>' + esc(g.floor || '층 미기재') + '</small></td>' +
+            '<td><b>' + esc(g.location || '(점검 위치 없음)') + '</b><small>' + esc(g.equip || '') + '</small></td>' +
+            '<td class="tx-mm-n">' + g.rows.length + (g.bad ? '<em>불량 ' + g.bad + '</em>' : '') + '</td>' +
+            '<td><span class="tx-mm-badge tx-mm-b-' + g.how[2] + '">' + g.how[0] + '</span><div class="tx-mm-tgt">' + tgt + '</div><small>' + esc(g.how[1]) + '</small></td>' +
+            '<td><select data-m="sel" aria-label="연결 대상">' + targetOptions(sel) + '</select></td>' +
+            '<td>' + (canApprove ? '<button type="button" class="tx-wb-link" data-m="approve">추정 승인</button>' : cur ? '<button type="button" class="tx-wb-link tx-wb-danger" data-m="reset">자동으로</button>' : '') + '</td></tr>';
+        }).join('') : '<tr><td colspan="6" class="tx-mm-empty">해당하는 측정 위치가 없습니다</td></tr>') +
+        '</tbody></table></div>' +
+        '<p class="tx-wb-help">같은 <b>건물·층·점검 위치·설비</b>의 측정 항목은 한 그룹으로 묶여 한 번에 지정됩니다. 지정 내용은 다음 업로드에도 그대로 적용됩니다. 가장 확실한 방법은 측정 엑셀에 <b>설비ID 열</b>을 넣는 것이며, 아래 「설비ID 매핑표」를 내려받아 활용하세요.</p>' +
+      '</div>' +
+      '<div class="tx-wb-ft"><div class="tx-wb-ft-l"><button type="button" class="tx-wb-link" data-m="csv">설비ID 매핑표 내보내기 (CSV)</button><button type="button" class="tx-wb-link" data-m="mexport">지정 내용 내보내기</button><button type="button" class="tx-wb-link" data-m="mimport">가져오기</button></div>' +
+        '<div><button type="button" class="tx-wb-btn" data-m="approve-all" title="현재 목록의 추정 매칭을 모두 확정합니다">보이는 추정 모두 승인</button><button type="button" class="tx-wb-btn tx-wb-pri" data-m="close">완료</button></div></div>' +
+      '</div>';
+    var sc = mm.querySelector('.tx-mm-tablewrap'), top = sc ? sc.scrollTop : 0;
+    mm.innerHTML = h;
+    var sc2 = mm.querySelector('.tx-mm-tablewrap'); if (sc2) sc2.scrollTop = top;
+  }
+  function setOverride(key, val) {
+    var o = matchStore();
+    if (!val) delete o[key];
+    else if (val === 'x') o[key] = { ignore: true };
+    else if (val.indexOf('a:') === 0) o[key] = { assetId: val.slice(2) };
+    else if (val.indexOf('r:') === 0) o[key] = { roomId: val.slice(2) };
+    matchSave(o);
+  }
+  function bindMatch() {
+    mm.addEventListener('click', function (e) {
+      if (e.target === mm) { closeMatch(); return; }
+      var b = e.target.closest('[data-m]'); if (!b) return;
+      var a = b.getAttribute('data-m'), tr = b.closest('tr'), key = tr && tr.getAttribute('data-key');
+      if (a === 'close') closeMatch();
+      else if (a === 'f') { mmFilter = b.getAttribute('data-k'); renderMatch(); }
+      else if (a === 'approve' || a === 'reset') {
+        var g = matchGroups().find(function (x) { return x.key === key; }); if (!g) return;
+        setOverride(key, a === 'reset' ? '' : g.assetId ? 'a:' + g.assetId : 'r:' + g.roomId);
+      } else if (a === 'approve-all') {
+        var o = matchStore(), n = 0;
+        Array.prototype.forEach.call(mm.querySelectorAll('tbody tr[data-key]'), function (row) {
+          var k = row.getAttribute('data-key'), g = matchGroups().find(function (x) { return x.key === k; });
+          if (g && !o[k] && (g.assetId || g.roomId) && g.how[2] !== 'ok') { o[k] = g.assetId ? { assetId: g.assetId } : { roomId: g.roomId }; n++; }
+        });
+        if (!n) { toast('승인할 추정 매칭이 없습니다', 'info'); return; }
+        matchSave(o); toast('추정 매칭 ' + n + '개 그룹을 확정했습니다', 'success');
+      } else if (a === 'csv') exportMatchCSV();
+      else if (a === 'mexport') U.download(new Blob([JSON.stringify({ _twinxMatch: 1, exportedAt: new Date().toISOString(), site: TX.model && TX.model.site, map: matchStore() }, null, 1)], { type: 'application/json' }), 'TwinX_측정매칭_' + U.today() + '.json');
+      else if (a === 'mimport') pickFile('application/json', function (file) {
+        file.text().then(function (t) { try { var d = JSON.parse(t); if (!d || !d._twinxMatch) throw new Error('TwinX 측정 매칭 파일이 아닙니다'); var o = matchStore(); Object.assign(o, d.map || {}); matchSave(o); toast('매칭 지정 ' + Object.keys(d.map || {}).length + '건을 가져왔습니다', 'success'); } catch (err) { toast('가져오기 실패: ' + err.message, 'error'); } });
+      });
+    });
+    mm.addEventListener('change', function (e) {
+      var t = e.target; if (t.getAttribute('data-m') !== 'sel') return;
+      var tr = t.closest('tr'); setOverride(tr.getAttribute('data-key'), t.value);
+    });
+    mm.addEventListener('input', U.debounce(function (e) { if (e.target.getAttribute('data-m') === 'q') { mmQuery = e.target.value; renderMatch(); var q = mm.querySelector('[data-m="q"]'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } } }, 200));
+    mm.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); closeMatch(); } });
+  }
+  function exportMatchCSV() {
+    var rows = [['건물', '층', '점검 위치', '설비(측정표)', '측정 항목 수', '설비ID', '설비명', '실코드', '실명', '매칭 상태', '매칭 근거']];
+    matchGroups().forEach(function (g) {
+      var a = g.assetId && TX.asset(g.assetId), r = g.roomId && TX.room(g.roomId);
+      rows.push([g.building, g.floor, g.location, g.equip, g.rows.length, a ? a.id : '', a ? a.name : '', r ? r.id : '', r ? r.name : '', g.how[0], g.how[1]]);
+    });
+    var csv = '﻿' + rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n');
+    U.download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'TwinX_설비ID매핑표_' + U.today() + '.csv');
+  }
+
+  /* ---- 측정 업로드 감지 → 알림 (뷰어 밖 ADMIN 화면에서도 표시) ---- */
+  var notice = null, lastSig = null;
+  function inspSig() { var ms = (TX.model && TX.model.measurements || []).filter(function (m) { return !m.source || m.source === 'inspection'; }); return ms.length + ':' + U.hash(ms.map(function (m) { return m.groupKey + '/' + m.item; }).join('\n')); }
+  function markSeen() { try { localStorage.setItem(SEEN_KEY, inspSig()); } catch (e) { } dismissNotice(); }
+  function dismissNotice() { if (notice) { notice.remove(); notice = null; } }
+  function checkUpload() {
+    if (!TX.model || TX.model.source !== 'admin') return;
+    var sig = inspSig(); if (sig === lastSig) return; lastSig = sig;
+    var seen = null; try { seen = localStorage.getItem(SEEN_KEY); } catch (e) { }
+    if (seen === sig) return;
+    var st = matchStats(matchGroups()), todo = st.none + st.est + st.room;
+    if (!st.rows) return;
+    if (!todo) { markSeen(); return; }
+    dismissNotice();
+    notice = U.el('div', 'tx-wb-notice');
+    notice.innerHTML = '<div><b>측정 자료 ' + st.rows + '건 · 설비 매칭 확인이 필요합니다</b><span>미매칭 ' + st.none + '건 · 추정 ' + (st.est + st.room) + '건 · 설비 연결률 ' + (st.rows ? Math.round((st.ok + st.est) / st.rows * 100) : 0) + '%</span></div>' +
+      '<button type="button" class="tx-wb-btn tx-wb-pri" data-n="open">매칭 확인</button><button type="button" class="tx-wb-x" data-n="later" aria-label="나중에">✕</button>';
+    document.body.appendChild(notice);
+    notice.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-n]'); if (!b) return;
+      if (b.getAttribute('data-n') === 'open') openMatch(); else markSeen();
+    });
+  }
+  TX.on('model', function () { setTimeout(checkUpload, 300); if (mm) renderMatch(); });
+  // 첫 모델이 이 모듈보다 먼저 들어온 경우 대비: 페이지 로드 후에도 확인
+  function lateCheck() { [1500, 4000, 8000].forEach(function (t) { setTimeout(checkUpload, t); }); }
+  if (document.readyState === 'complete') lateCheck(); else window.addEventListener('load', lateCheck);
+  TX.matching = { open: openMatch, groups: matchGroups, stats: function () { return matchStats(matchGroups()); }, set: setOverride, exportCSV: exportMatchCSV };
+
   /* ---------- 「현행화」 드롭다운 ---------- */
   var wbMenu = null, wbBtn = null;
   function openWbMenu(btn) {
@@ -12162,6 +12399,7 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
     wbMenu.innerHTML =
       '<button type="button" role="menuitem" data-wbm="underlay"><b>도면 배경 (CAD 겹쳐 보기)</b><small>' + (ul ? '등록됨 · ' + esc(ul.name || '') : '층 평면도 이미지 올리기 · 2점 맞춤') + '</small></button>' +
       '<button type="button" role="menuitem" data-wbm="geom"><b>구조 편집 (문·트레이·라이저)</b><small>' + (nd || nt || g.risers.length ? '이 층 문 ' + nd + ' · 트레이 ' + nt + '구간 · 라이저 ' + g.risers.length : '2D 도면에서 직접 등록') + '</small></button>' +
+      (function () { var st = matchStats(matchGroups()), todo = st.none + st.est + st.room; return '<button type="button" role="menuitem" data-wbm="match"><b>측정 매칭 확인' + (todo ? ' <em class="tx-wb-mbadge">' + todo + '</em>' : '') + '</b><small>' + (st.rows ? '측정 ' + st.rows + '건 · 설비 연결률 ' + Math.round((st.ok + st.est) / st.rows * 100) + '% · 미매칭 ' + st.none + '건' : '업로드된 측정 자료 없음') + '</small></button>'; })() +
       '<button type="button" role="menuitem" data-wbm="rack"><b>랙·U 입력</b><small>' + (nr ? '입력 ' + nr + '대 · ' : '') + '설비 선택 후 인스펙터 「랙 · U」 편집</small></button>';
     root().appendChild(wbMenu);
     wbMenu.style.top = (r.bottom + 6) + 'px';
@@ -12179,7 +12417,7 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
   /* ---------- 진입점 (셸 버튼 · 인스펙터 버튼) ---------- */
   document.addEventListener('click', function (e) {
     var mi = e.target.closest && e.target.closest('[data-wbm]');
-    if (mi) { var k = mi.getAttribute('data-wbm'); closeWbMenu(); if (k === 'underlay') { if (gp) toggleGeom(false); togglePanel(true); } else if (k === 'geom') toggleGeom(true); else if (k === 'rack') rackHint(); return; }
+    if (mi) { var k = mi.getAttribute('data-wbm'); closeWbMenu(); if (k === 'underlay') { if (gp) toggleGeom(false); togglePanel(true); } else if (k === 'geom') toggleGeom(true); else if (k === 'rack') rackHint(); else if (k === 'match') openMatch(); return; }
     if (wbMenu && !(e.target.closest && e.target.closest('.tx-wb-menu,[data-act="wb-menu"]'))) closeWbMenu();
     var b = e.target.closest && e.target.closest('[data-act="rack-edit"],[data-act="underlay"],[data-act="geom"],[data-act="wb-menu"]');
     if (!b) return;
@@ -12194,7 +12432,7 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
     if (ch.indexOf('floor') >= 0) { stopCalib(); renderPanel(); tool.pts = []; drawPreview(); renderGeom(); }
     if (ch.indexOf('view') >= 0 && gp && TX.state.view === '3d') toggleGeom(false);
   });
-  TX.on('close', function () { togglePanel(false); toggleGeom(false); closeModal(); });
+  TX.on('close', function () { togglePanel(false); toggleGeom(false); closeModal(); closeMatch(); });
   TX.on('model', function () { if (panel) renderPanel(); if (gp) renderGeom(); });
 
   TX.workbench = { openRackEditor: openRackEditor, toggleUnderlayPanel: togglePanel, startCalibration: startCalib, toggleGeomPanel: toggleGeom };

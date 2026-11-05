@@ -281,12 +281,16 @@ async function runRes(browser, W, H) {
       for (const b of nav) { b.click(); await wait(350); const main = document.querySelector('.work-area, main, .content, #root'); visited.push({ t: b.textContent.trim(), active: b.classList.contains('active') || b.getAttribute('aria-current') != null, len: (main && main.textContent.length) || 0 }); }
       const tb = nav.find(x => x.textContent.includes('디지털 트윈')); tb && tb.click(); await wait(900);
       const svg = [...document.querySelectorAll('.canvas-panel svg')].filter(s => s.getBoundingClientRect().width > 200).length;
-      const overlay = [...document.querySelectorAll('[class*="tx-"]')].filter(e => { const s = getComputedStyle(e); return s.position === 'fixed' && e.getBoundingClientRect().width > innerWidth * 0.5 && s.display !== 'none' && s.visibility !== 'hidden'; }).length;
-      return { visited, svg, overlay, scrollLock: getComputedStyle(document.body).overflow };
+      // 측정 업로드 알림(.tx-wb-notice)은 의도된 닫기 가능한 알림이므로 제외하고, 대신 닫기 동작을 확인
+      const overlay = [...document.querySelectorAll('[class*="tx-"]')].filter(e => { if (e.closest('.tx-wb-notice')) return false; const s = getComputedStyle(e); return s.position === 'fixed' && e.getBoundingClientRect().width > innerWidth * 0.5 && s.display !== 'none' && s.visibility !== 'hidden'; }).length;
+      const nt = document.querySelector('.tx-wb-notice [data-n="later"]'); if (nt) { nt.click(); await wait(100); }
+      const noticeLeft = !!document.querySelector('.tx-wb-notice');
+      return { visited, svg, overlay, noticeLeft, scrollLock: getComputedStyle(document.body).overflow };
     });
     const dead = r.visited.filter(v => !v.active);
     must(r.svg >= 1, 'ADMIN 도면 SVG 사라짐');
     must(r.overlay === 0, `닫은 뒤에도 tx- 전체화면 요소 ${r.overlay}개 남음`);
+    must(!r.noticeLeft, '측정 업로드 알림이 ✕로 닫히지 않음');
     must(r.scrollLock === baseOverflow, `body overflow ${baseOverflow}→${r.scrollLock} (뷰어 닫은 뒤 원복 안 됨)`);
     must(!dead.length, '메뉴 이동 실패: ' + dead.map(d => d.t).join(','));
     return `메뉴 ${r.visited.length}개 이동 OK · ADMIN SVG ${r.svg}`;

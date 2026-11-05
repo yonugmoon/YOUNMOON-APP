@@ -119,3 +119,6 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   T1 적용: `room.door/doorAt/doorW/doorSrc:'user'` (`door:'none'` = 문 없음), 층에 등록 트레이가 있으면 `floor.trays` 교체(`source:'user'`),
   등록 라이저가 하나라도 있으면 `model.risers` 전체 교체(`source:'user'`, `estimated:false`). T3·T4는 `doorAt`/`doorW`가 있으면 그 위치·폭으로 그림.
 - 툴바 「현행화 ▾」(`data-act="wb-menu"`) → 도면 배경 / 구조 편집 / 랙·U 입력.
+- **측정 매칭 확인(v1.5)** `TwinX.matching = {open, groups, stats, set, exportCSV}` — localStorage `twinx_match_v1`
+  `{그룹키 "건물|층|점검 위치|설비": {assetId}|{roomId}|{ignore:true}}`. T1이 자동 매칭보다 먼저 적용(`Measure.match:'manual'|'ignored'`, `Measure.groupKey`).
+  측정 행 서명이 바뀌면(업로드) ADMIN 화면 우하단에 확인 알림(`twinx_match_seen_v1`로 1회 표시), 툴바 「현행화 ▾ → 측정 매칭 확인」.

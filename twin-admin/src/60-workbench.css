@@ -78,3 +78,39 @@
   .tx-wb-panel { left: 12px; right: 12px; width: auto; top: calc(var(--tx-tb-h, 52px) + 8px); }
   .tx-wb-calbar span { display: none; }
 }
+
+/* 구조 편집 패널 */
+.tx-wb-geom { width: 340px; }
+.tx-wb-tabs { display: flex; gap: 4px; padding: 8px 14px 0; border-bottom: 1px solid var(--tx-border, #e1e7ee); }
+.tx-wb-tabs button { flex: 1; height: 32px; border: 0; border-bottom: 2px solid transparent; background: none; font: 600 12.5px var(--tx-font, Arial, sans-serif); color: var(--tx-muted, #6b7d93); cursor: pointer; }
+.tx-wb-tabs button.is-on { color: var(--tx-blue, #3e63db); border-bottom-color: var(--tx-blue, #3e63db); }
+.tx-wb-guide { margin: 0 0 10px; font-size: 12px; line-height: 1.55; color: var(--tx-text, #22374d); background: var(--tx-blue-soft, #eef2fd); border-radius: 8px; padding: 8px 10px; }
+.tx-wb-row2 { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.tx-wb-row2 label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--tx-muted, #6b7d93); }
+.tx-wb-row2 input[type=number] { width: 110px; height: 30px; padding: 0 8px; border: 1px solid var(--tx-border, #e1e7ee); border-radius: 7px; font: 13px var(--tx-font, Arial, sans-serif); }
+.tx-wb-chk { flex-direction: row !important; align-items: center; gap: 6px !important; color: var(--tx-text, #22374d) !important; font-weight: 500 !important; cursor: pointer; }
+.tx-wb-chk input { accent-color: var(--tx-blue, #3e63db); }
+.tx-wb-pts { font-size: 12px; color: #b45309; font-weight: 600; }
+.tx-wb-geom h5 { margin: 12px 0 6px; font-size: 12.5px; color: var(--tx-text, #22374d); display: flex; align-items: center; gap: 6px; }
+.tx-wb-geom .tx-count { font-size: 11px; background: var(--tx-bg, #f5f7fa); border-radius: 10px; padding: 0 7px; color: var(--tx-muted, #6b7d93); }
+.tx-wb-list { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tx-wb-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; border: 1px solid var(--tx-border, #e1e7ee); border-radius: 8px; }
+.tx-wb-list li span { display: flex; flex-direction: column; min-width: 0; }
+.tx-wb-list li b { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-wb-list li small { font-size: 11px; color: var(--tx-muted, #6b7d93); }
+.tx-wb-rlist li { flex-direction: column; align-items: stretch; }
+.tx-wb-rlist li.is-sel { border-color: var(--tx-blue, #3e63db); box-shadow: 0 0 0 2px var(--tx-blue-soft, #eef2fd); }
+.tx-wb-rtop { display: flex; gap: 8px; align-items: center; }
+.tx-wb-rtop input { flex: 1; height: 28px; padding: 0 8px; border: 1px solid var(--tx-border, #e1e7ee); border-radius: 6px; font: 600 12.5px var(--tx-font, Arial, sans-serif); }
+.tx-wb-fchips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 4px; }
+.tx-wb-fchips button { height: 24px; padding: 0 9px; border: 1px solid var(--tx-border, #e1e7ee); border-radius: 12px; background: #fff; font: 600 11.5px var(--tx-font, Arial, sans-serif); color: var(--tx-muted, #6b7d93); cursor: pointer; }
+.tx-wb-fchips button.is-on { background: var(--tx-blue, #3e63db); border-color: var(--tx-blue, #3e63db); color: #fff; }
+.tx-wb-empty { margin: 0 0 8px; font-size: 12px; color: var(--tx-faint, #95a3b5); }
+.tx-wb-gprev { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 28; }
+
+/* 「현행화」 드롭다운 */
+.tx-wb-menu { position: fixed; z-index: 9560; width: 292px; padding: 6px; background: #fff; border-radius: 12px; box-shadow: var(--tx-shadow, 0 10px 30px rgba(8,20,40,.22)); font-family: var(--tx-font, Arial, "Noto Sans KR", sans-serif); }
+.tx-wb-menu button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 9px 10px; border: 0; border-radius: 8px; background: none; text-align: left; cursor: pointer; color: var(--tx-text, #22374d); }
+.tx-wb-menu button:hover, .tx-wb-menu button:focus { background: var(--tx-blue-soft, #eef2fd); outline: none; }
+.tx-wb-menu b { font-size: 13px; }
+.tx-wb-menu small { font-size: 11.5px; color: var(--tx-muted, #6b7d93); }

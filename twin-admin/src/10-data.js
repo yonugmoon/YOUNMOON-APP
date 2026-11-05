@@ -516,6 +516,21 @@
       return { id: 'RS-' + (i + 1), name: Object.keys(names).slice(0, 2).join('·') + ' 수직 간선(추정)', x: Math.round(c.x), y: Math.round(c.y),
         floors: fl, rooms: c.rooms.map(function (r) { return r.id; }), building: c.building, estimated: true };
     });
+    // 사용자 등록 구조(60-workbench, localStorage 'twinx_geom_v1') — 추정값보다 우선
+    var geom = readGeomStore();
+    var floorCodes = floors.map(function (f) { return f.code; });
+    if (geom.risers && geom.risers.length) {
+      risers = geom.risers.map(function (r, i) {
+        return { id: r.id || ('RU-' + (i + 1)), name: r.name || ('EPS 라이저 ' + (i + 1)), x: Math.round(+r.x), y: Math.round(+r.y),
+          floors: (r.floors && r.floors.length ? r.floors : floorCodes).filter(function (c) { return floorCodes.indexOf(c) >= 0; })
+            .sort(function (a, b) { return lvOf(b) - lvOf(a); }), rooms: [], building: r.building || null, estimated: false, source: 'user' };
+      }).filter(function (r) { return isFinite(r.x) && isFinite(r.y) && r.floors.length; });
+    }
+    Object.keys(geom.doors || {}).forEach(function (rid) {
+      var r = rooms.find(function (q) { return q.id === rid; }), d = geom.doors[rid];
+      if (!r || !d) return;
+      r.door = d.side; r.doorAt = d.side === 'none' ? null : (d.at != null ? +d.at : null); r.doorW = d.w ? +d.w : null; r.doorSrc = 'user';
+    });
 
     /* --- 트레이 (층별 추정 경로) --- */
     floors.forEach(function (f) {
@@ -571,6 +586,8 @@
         });
       }
       f.trays = trays;
+      var ut = geom.trays && geom.trays[f.code];
+      if (ut && ut.length) f.trays = ut.map(function (t) { return { a: [+t.a[0], +t.a[1]], b: [+t.b[0], +t.b[1]], main: !!t.main, kind: 'user', path: t.path || null, source: 'user' }; });
     });
 
     /* --- 사이트 --- */
@@ -587,11 +604,12 @@
   /* ---------------- 4. 캐시 · 서명 ---------------- */
   var walkCache = { t: 0, v: null };
   var conv = { twin: null, rows: null, sig: null, model: null };
+  function readGeomStore() { try { return JSON.parse(localStorage.getItem('twinx_geom_v1') || '{}') || {}; } catch (e) { return {}; } }
   function readRackStore() { try { return JSON.parse(localStorage.getItem('twinx_rack_v1') || '{}') || {}; } catch (e) { return {}; } }
   function signatureOf(d) {
     var t = d.twin || {};
     try {
-      return hashStr(JSON.stringify([t.rooms, t.assets, t.links, t.history, t.rules, d.rows, localStorage.getItem('twinx_rack_v1') || '']));
+      return hashStr(JSON.stringify([t.rooms, t.assets, t.links, t.history, t.rules, d.rows, localStorage.getItem('twinx_rack_v1') || '', localStorage.getItem('twinx_geom_v1') || '']));
     } catch (e) { return String(Date.now()); }
   }
   function read(force) {
@@ -602,14 +620,14 @@
     var model = null, sig = null;
     if (d && d.twin) {
       // 같은 참조면 서명 재계산 생략 (React 불변 갱신)
-      if (conv.model && conv.twin === d.twin && conv.rows === d.rows && conv.twinSnap === snap(d.twin) && conv.rackSig === (localStorage.getItem('twinx_rack_v1') || '')) { model = conv.model; sig = conv.sig; }
+      if (conv.model && conv.twin === d.twin && conv.rows === d.rows && conv.twinSnap === snap(d.twin) && conv.rackSig === (localStorage.getItem('twinx_rack_v1') || '') + '|' + (localStorage.getItem('twinx_geom_v1') || '')) { model = conv.model; sig = conv.sig; }
       else {
         sig = signatureOf(d);
         if (conv.model && sig === conv.sig) model = conv.model;
         else {
           try { model = convert(d); } catch (e) { console.error('[TwinX.data] 변환 실패', e); model = null; }
         }
-        conv = { twin: d.twin, rows: d.rows, twinSnap: snap(d.twin), rackSig: localStorage.getItem('twinx_rack_v1') || '', sig: sig, model: model };
+        conv = { twin: d.twin, rows: d.rows, twinSnap: snap(d.twin), rackSig: (localStorage.getItem('twinx_rack_v1') || '') + '|' + (localStorage.getItem('twinx_geom_v1') || ''), sig: sig, model: model };
       }
     }
     walkCache = { t: now, v: { model: model, sig: sig } };

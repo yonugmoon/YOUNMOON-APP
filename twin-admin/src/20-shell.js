@@ -230,7 +230,7 @@
             tbtn('camera', 'camera', '카메라', '카메라 프리셋') +
             '<button type="button" class="tx-tbtn tx-tbtn-fault" data-act="fault" aria-pressed="false" title="선택 설비를 발생원으로 장애 파급 시뮬레이션">' + ic('zap', 17) + '<span class="tx-tbtn-lbl">장애 시뮬레이션</span></button>' +
             tbtn('export', 'download', '내보내기', '도면·스냅샷 내보내기') +
-            '<button type="button" class="tx-tbtn" data-act="underlay" title="CAD 평면도 이미지를 2D·3D 도면 배경으로 겹쳐 보기">' + ic('layers', 17) + '<span class="tx-tbtn-lbl">도면 배경</span></button>' +
+            '<button type="button" class="tx-tbtn" data-act="wb-menu" aria-haspopup="menu" aria-expanded="false" title="현행화 도구: 도면 배경 · 구조 편집 · 랙 입력">' + ic('building', 17) + '<span class="tx-tbtn-lbl">현행화</span>' + ic('down', 13).replace('tx-ic', 'tx-ic tx-caret') + '</button>' +
           '</div>' +
         '</div>' +
         '<div class="tx-tb-right">' + searchHTML('tx-search-tb') +

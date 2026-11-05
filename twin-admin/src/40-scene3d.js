@@ -175,12 +175,13 @@
         }
         cand.forEach(function (k) { if (!best || k.d < best.d) best = k; });
       });
+      if (r.door === 'none') return; // 사용자 지정: 문 없음
       var side = r.door || (best ? best.side : 'S');
       var along = side === 'N' || side === 'S';
-      var len = along ? r.w : r.h, lo = along ? r.x : r.y, dw = Math.min(950, len * 0.45);
-      var at = best && best.side === side ? best.at : lo + len / 2;
-      at = U.clamp(at, lo + dw / 2 + 200, lo + len - dw / 2 - 200);
-      if (len < dw + 400) at = lo + len / 2;
+      var len = along ? r.w : r.h, lo = along ? r.x : r.y, dw = r.doorW ? Math.min(+r.doorW, len * 0.9) : Math.min(950, len * 0.45);
+      var at = r.doorAt != null ? +r.doorAt : best && best.side === side ? best.at : lo + len / 2;
+      at = U.clamp(at, lo + dw / 2 + (r.doorAt != null ? 50 : 200), lo + len - dw / 2 - (r.doorAt != null ? 50 : 200));
+      if (len < dw + 100) at = lo + len / 2;
       out[r.id] = { side: side, at: at, w: dw };
     });
     return (S.doorCache[fl.code] = out);

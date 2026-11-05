@@ -114,3 +114,8 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   레코드 `{floor, name, w, h /*px*/, tf:{s /*mm/px*/, rot /*rad*/, tx, ty /*mm*/}, opacity, show, invert}`; 이미지 px→평면 mm = R(rot)·s·p + t.
   변경 시 `underlay` 이벤트. T3는 실 바닥 위·열화상 아래에 `<image>`(내보내기 시 dataURL), T4는 층 텍스처에 곱하기 합성. `state.layers.underlay`로 일괄 숨김.
 - T3 추가 API: `TwinX.cad2d.screenToMm(clientX, clientY)`, `mmToScreen(x, y)` (2점 맞춤용).
+- **구조 편집(v1.4)** `TwinX.geom = {all,setDoor,clearDoor,addTrayPath,removeTrayPath,clearTrays,addRiser,updateRiser,removeRiser,exportJSON,importJSON}` —
+  localStorage `twinx_geom_v1` `{doors:{실ID:{side:'N'|'S'|'E'|'W'|'none', at /*벽 방향 mm(N/S=x, E/W=y)*/, w /*mm*/}}, trays:{층코드:[{a,b,main,path}]}, risers:[{id,name,x,y,floors}]}`.
+  T1 적용: `room.door/doorAt/doorW/doorSrc:'user'` (`door:'none'` = 문 없음), 층에 등록 트레이가 있으면 `floor.trays` 교체(`source:'user'`),
+  등록 라이저가 하나라도 있으면 `model.risers` 전체 교체(`source:'user'`, `estimated:false`). T3·T4는 `doorAt`/`doorW`가 있으면 그 위치·폭으로 그림.
+- 툴바 「현행화 ▾」(`data-act="wb-menu"`) → 도면 배경 / 구조 편집 / 랙·U 입력.

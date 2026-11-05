@@ -278,6 +278,8 @@
 
   /* 문 측 추정: room.door 우선, 없으면 인접 복도 방향, 없으면 층 중심 방향 */
   function doorOf(r, corrs, b) {
+    if (r.door === 'none') return null;
+    if (r.door && r.doorAt != null) return { side: r.door, c: r.doorAt, w: r.doorW, user: true };
     if (r.type === 'corr' || r.type === 'park' || r.type === 'lobby') return r.door ? { side: r.door } : null;
     var best = null;
     function consider(side, gap, a0, a1) { if (a1 - a0 > 600 && gap > -300 && gap < 3200 && (!best || gap < best.gap)) best = { side: side, gap: gap, c: (a0 + a1) / 2 }; }
@@ -429,7 +431,7 @@
       o.push('<rect x="' + n(p.x) + '" y="' + n(p.y) + '" width="' + n(p.w) + '" height="' + n(p.h) + '" fill="none" stroke="#cbd5e1" stroke-width="' + n(r.type === 'corr' ? wIn * 0.55 : hv ? wIn + 0.9 : wIn) + '"' + (r.type === 'corr' ? ' stroke-opacity="0.6"' : '') + ' pointer-events="none"/>');
       var d = doorOf(r, corrs, b); if (!d) return;
       var side = d.side, len = (side === 'N' || side === 'S') ? p.w : p.h;
-      var dw = clamp(900 * s, 8, Math.min(len * 0.4, 30)); if (len < 18) return;
+      var dw = d.user ? clamp((d.w || 900) * s, 6, len * 0.9) : clamp(900 * s, 8, Math.min(len * 0.4, 30)); if (len < 18) return;
       var cx, cy, ux, uy, vx, vy;
       if (side === 'N' || side === 'S') {
         cx = d.c != null ? clamp(X(d.c), p.x + dw * 0.7, p.x + p.w - dw * 0.7) : p.x + p.w / 2; cy = side === 'S' ? p.y + p.h : p.y; ux = 1; uy = 0; vx = 0; vy = side === 'S' ? -1 : 1;

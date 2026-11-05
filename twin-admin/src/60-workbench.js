@@ -398,19 +398,271 @@
     cal = null;
   }
 
+  /* =========================================================
+     3. 구조 편집: 문 · 케이블 트레이 · EPS 라이저 직접 등록
+        localStorage 'twinx_geom_v1' {doors:{실ID:{side,at,w}}, trays:{층코드:[{a,b,main,path}]}, risers:[{id,name,x,y,floors}]}
+        → 10-data가 추정값보다 우선 적용 (트레이: 층 단위 교체, 라이저: 하나라도 있으면 전체 교체)
+     ========================================================= */
+  var GEOM_KEY = 'twinx_geom_v1';
+  function geomStore() { try { var g = JSON.parse(localStorage.getItem(GEOM_KEY) || '{}') || {}; g.doors = g.doors || {}; g.trays = g.trays || {}; g.risers = g.risers || []; return g; } catch (e) { return { doors: {}, trays: {}, risers: [] }; } }
+  function geomSave(g) { try { localStorage.setItem(GEOM_KEY, JSON.stringify(g)); reloadModel(); return true; } catch (e) { toast('브라우저 저장공간에 저장하지 못했습니다', 'error'); return false; } }
+  var SIDE_NAME = { N: '북측', S: '남측', E: '동측', W: '서측', none: '문 없음' };
+
+  TX.geom = {
+    all: geomStore,
+    setDoor: function (roomId, d) { var g = geomStore(); g.doors[roomId] = d; geomSave(g); },
+    clearDoor: function (roomId) { var g = geomStore(); delete g.doors[roomId]; geomSave(g); },
+    addTrayPath: function (floor, pts, main) {
+      var g = geomStore(), path = 'P' + Date.now().toString(36), list = g.trays[floor] = g.trays[floor] || [];
+      for (var i = 1; i < pts.length; i++) list.push({ a: pts[i - 1], b: pts[i], main: !!main, path: path });
+      geomSave(g); return path;
+    },
+    removeTrayPath: function (floor, path) { var g = geomStore(); g.trays[floor] = (g.trays[floor] || []).filter(function (t) { return t.path !== path; }); if (!g.trays[floor].length) delete g.trays[floor]; geomSave(g); },
+    clearTrays: function (floor) { var g = geomStore(); delete g.trays[floor]; geomSave(g); },
+    addRiser: function (r) { var g = geomStore(); r.id = 'RU-' + Date.now().toString(36); g.risers.push(r); geomSave(g); return r.id; },
+    updateRiser: function (id, patch) { var g = geomStore(); g.risers.forEach(function (r) { if (r.id === id) Object.assign(r, patch); }); geomSave(g); },
+    removeRiser: function (id) { var g = geomStore(); g.risers = g.risers.filter(function (r) { return r.id !== id; }); geomSave(g); },
+    exportJSON: function () { U.download(new Blob([JSON.stringify({ _twinxGeom: 1, exportedAt: new Date().toISOString(), site: TX.model && TX.model.site, geom: geomStore() }, null, 1)], { type: 'application/json' }), 'TwinX_구조입력_' + U.today() + '.json'); },
+    importJSON: function (text) {
+      var d = JSON.parse(text); if (!d || !d._twinxGeom || !d.geom) throw new Error('TwinX 구조 입력 파일이 아닙니다');
+      var g = geomStore(); Object.assign(g.doors, d.geom.doors || {}); Object.keys(d.geom.trays || {}).forEach(function (k) { g.trays[k] = d.geom.trays[k]; });
+      (d.geom.risers || []).forEach(function (r) { if (!g.risers.some(function (q) { return q.id === r.id; })) g.risers.push(r); });
+      geomSave(g);
+    }
+  };
+
+  var gp = null; // 구조 편집 패널
+  var tool = { kind: 'door', pts: [], main: true, doorW: 900, noDoor: false, free: false, cursor: null, selRiser: null };
+  function toggleGeom(force) {
+    var open = force != null ? force : !gp;
+    if (!open) { if (gp) gp.remove(); gp = null; stopTool(); return; }
+    if (panel) togglePanel(false);
+    if (TX.state.view === '3d') TX.setState({ view: '2d' });
+    if (!gp) { gp = U.el('div', 'tx-wb-panel tx-wb-geom'); root().appendChild(gp); bindGeom(); }
+    startTool(); renderGeom();
+  }
+  function renderGeom() {
+    if (!gp) return;
+    var code = curFloor(), g = geomStore(), M = TX.model;
+    var rooms = TX.roomsOf(code), fl = TX.floor(code);
+    var tabs = [['door', '문'], ['tray', '케이블 트레이'], ['riser', 'EPS 라이저']];
+    var h = '<div class="tx-wb-hd"><div><small>구조 편집 · 현장 현행화</small><b>' + esc(floorName(code)) + ' 문·트레이·라이저</b></div><button type="button" class="tx-wb-x" data-g="close" aria-label="닫기">✕</button></div>' +
+      '<div class="tx-wb-tabs">' + tabs.map(function (t) { return '<button type="button" data-g="tab" data-k="' + t[0] + '" class="' + (tool.kind === t[0] ? 'is-on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div><div class="tx-wb-body">';
+    if (tool.kind === 'door') {
+      var ud = rooms.filter(function (r) { return g.doors[r.id]; });
+      h += '<p class="tx-wb-guide">도면에서 <b>실 벽 근처를 클릭</b>하면 가장 가까운 벽에 문이 놓입니다.</p>' +
+        '<div class="tx-wb-row2"><label>문 폭 (mm)<input type="number" min="500" max="3000" step="50" data-gi="doorW" value="' + tool.doorW + '"></label>' +
+        '<label class="tx-wb-chk"><input type="checkbox" data-gi="noDoor"' + (tool.noDoor ? ' checked' : '') + '> 클릭한 실을 「문 없음」으로</label></div>' +
+        '<h5>등록된 문 <span class="tx-count">' + ud.length + '</span></h5>' +
+        (ud.length ? '<ul class="tx-wb-list">' + ud.map(function (r) { var d = g.doors[r.id]; return '<li><span><b>' + esc(r.name) + '</b><small>' + SIDE_NAME[d.side] + (d.side !== 'none' ? ' · 폭 ' + d.w + 'mm' : '') + '</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-g="door-del" data-id="' + esc(r.id) + '">삭제</button></li>'; }).join('') + '</ul>'
+          : '<p class="tx-wb-empty">아직 없음 · 문 위치는 복도 방향으로 추정 중</p>');
+    } else if (tool.kind === 'tray') {
+      var ut = g.trays[code] || [], paths = {};
+      ut.forEach(function (t) { var p = paths[t.path] = paths[t.path] || { n: 0, len: 0, main: t.main }; p.n++; p.len += Math.hypot(t.b[0] - t.a[0], t.b[1] - t.a[1]); });
+      h += '<p class="tx-wb-guide">도면에서 경로의 꺾이는 점을 차례로 클릭하고 <b>더블클릭 또는 Enter</b>로 완료합니다. 직각으로 자동 정렬되며(Shift: 자유 각도), 기존 경로 끝점에 자동으로 붙습니다. Esc: 그리던 경로 취소.</p>' +
+        '<div class="tx-wb-row2"><label class="tx-wb-chk"><input type="checkbox" data-gi="main"' + (tool.main ? ' checked' : '') + '> 간선(메인) 트레이</label>' +
+        '<span class="tx-wb-pts">' + (tool.pts.length ? '그리는 중 · 점 ' + tool.pts.length + '개 <button type="button" class="tx-wb-link" data-g="tray-done">완료</button>' : '') + '</span></div>' +
+        '<h5>등록된 경로 <span class="tx-count">' + Object.keys(paths).length + '</span></h5>' +
+        (Object.keys(paths).length ? '<ul class="tx-wb-list">' + Object.keys(paths).map(function (k, i) { var p = paths[k]; return '<li><span><b>경로 ' + (i + 1) + (p.main ? ' · 간선' : ' · 지선') + '</b><small>' + p.n + '구간 · ' + (p.len / 1000).toFixed(1) + 'm</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-g="tray-del" data-id="' + k + '">삭제</button></li>'; }).join('') + '</ul>' +
+          '<button type="button" class="tx-wb-link tx-wb-danger" data-g="tray-clear">이 층 등록 경로 모두 지우기 (추정 경로로 복귀)</button>'
+          : '<p class="tx-wb-empty">아직 없음 · 이 층은 추정 경로로 표시 중 (등록하면 추정 경로를 대체합니다)</p>');
+    } else {
+      var floorsAll = (M ? M.floors : []);
+      h += '<p class="tx-wb-guide">도면에서 <b>라이저(EPS 샤프트) 위치를 클릭</b>해 추가하고, 관통하는 층을 선택하세요. 등록 라이저가 하나라도 있으면 추정 라이저 대신 등록값을 씁니다.</p>' +
+        '<h5>등록된 라이저 <span class="tx-count">' + g.risers.length + '</span></h5>' +
+        (g.risers.length ? '<ul class="tx-wb-list tx-wb-rlist">' + g.risers.map(function (r) {
+          var fs = r.floors && r.floors.length ? r.floors : floorsAll.map(function (f) { return f.code; });
+          return '<li class="' + (tool.selRiser === r.id ? 'is-sel' : '') + '"><div class="tx-wb-rtop"><input type="text" data-gr="name" data-id="' + esc(r.id) + '" value="' + esc(r.name || '') + '" aria-label="라이저 이름"><button type="button" class="tx-wb-link tx-wb-danger" data-g="riser-del" data-id="' + esc(r.id) + '">삭제</button></div>' +
+            '<div class="tx-wb-fchips">' + floorsAll.map(function (f) { return '<button type="button" data-g="riser-floor" data-id="' + esc(r.id) + '" data-f="' + esc(f.code) + '" class="' + (fs.indexOf(f.code) >= 0 ? 'is-on' : '') + '">' + esc(f.name) + '</button>'; }).join('') + '</div>' +
+            '<small>X ' + Math.round(r.x) + ' · Y ' + Math.round(r.y) + ' mm</small></li>';
+        }).join('') + '</ul>' : '<p class="tx-wb-empty">아직 없음 · TPS/EPS 실 위치로 추정 중' + (M && M.risers && M.risers.length ? ' (추정 ' + M.risers.length + '개)' : '') + '</p>');
+    }
+    h += '<div class="tx-wb-acts tx-wb-acts-2"><button type="button" class="tx-wb-link" data-g="g-export">구조 입력 내보내기</button><button type="button" class="tx-wb-link" data-g="g-import">가져오기</button></div></div>';
+    gp.innerHTML = h;
+    void fl;
+  }
+  function bindGeom() {
+    gp.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-g]'); if (!b) return;
+      var a = b.getAttribute('data-g'), code = curFloor(), id = b.getAttribute('data-id');
+      if (a === 'close') toggleGeom(false);
+      else if (a === 'tab') { tool.kind = b.getAttribute('data-k'); tool.pts = []; drawPreview(); renderGeom(); }
+      else if (a === 'door-del') { TX.geom.clearDoor(id); toast('문을 추정 위치로 되돌렸습니다', 'info'); }
+      else if (a === 'tray-done') finishTray();
+      else if (a === 'tray-del') TX.geom.removeTrayPath(code, id);
+      else if (a === 'tray-clear') { if (confirm(floorName(code) + ' 등록 트레이 경로를 모두 지울까요?')) TX.geom.clearTrays(code); }
+      else if (a === 'riser-del') { TX.geom.removeRiser(id); }
+      else if (a === 'riser-floor') {
+        var r = geomStore().risers.find(function (q) { return q.id === id; }); if (!r) return;
+        var all = TX.model.floors.map(function (f) { return f.code; }), fs = (r.floors && r.floors.length ? r.floors : all).slice(), f = b.getAttribute('data-f'), i = fs.indexOf(f);
+        if (i >= 0) fs.splice(i, 1); else fs.push(f);
+        if (!fs.length) { toast('라이저는 최소 1개 층을 관통해야 합니다', 'warn'); return; }
+        TX.geom.updateRiser(id, { floors: fs });
+      }
+      else if (a === 'g-export') TX.geom.exportJSON();
+      else if (a === 'g-import') pickFile('application/json', function (file) { file.text().then(function (t) { try { TX.geom.importJSON(t); toast('구조 입력을 가져왔습니다', 'success'); } catch (err) { toast('가져오기 실패: ' + err.message, 'error'); } }); });
+    });
+    gp.addEventListener('change', function (e) {
+      var t = e.target;
+      if (t.dataset.gi === 'doorW') tool.doorW = U.clamp(parseInt(t.value, 10) || 900, 500, 3000);
+      else if (t.dataset.gi === 'noDoor') tool.noDoor = t.checked;
+      else if (t.dataset.gi === 'main') tool.main = t.checked;
+      else if (t.dataset.gr === 'name') TX.geom.updateRiser(t.dataset.id, { name: t.value.trim() || 'EPS 라이저' });
+    });
+    gp.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); toggleGeom(false); } });
+  }
+
+  /* ---- 도면 클릭 캡처 + 미리보기 오버레이 ---- */
+  var gcap = null;
+  function startTool() {
+    stopTool();
+    var host = TX.ui && TX.ui.view2d; if (!host || !TX.cad2d || !TX.cad2d.screenToMm) { toast('2D 도면 모듈이 없어 구조 편집을 할 수 없습니다', 'error'); return; }
+    gcap = { host: host, down: null };
+    gcap.svg = U.svg('svg', { class: 'tx-wb-gprev' }); host.appendChild(gcap.svg);
+    host.classList.add('tx-wb-calib');
+    gcap.onDown = function (e) { gcap.down = { x: e.clientX, y: e.clientY }; };
+    gcap.onClick = function (e) {
+      if (!gp || (gp.contains && gp.contains(e.target))) return;
+      if (e.target.closest && e.target.closest('.tx-wb-calbar,.tx-cad-zoom,button')) return;
+      e.stopPropagation(); e.preventDefault();
+      if (gcap.down && Math.abs(e.clientX - gcap.down.x) + Math.abs(e.clientY - gcap.down.y) > 5) return;
+      var mm = TX.cad2d.screenToMm(e.clientX, e.clientY); if (!mm) return;
+      if (tool.kind === 'door') placeDoor(mm);
+      else if (tool.kind === 'tray') { if (e.detail >= 2) { finishTray(); return; } addTrayPoint(mm, e.shiftKey); }
+      else placeRiser(mm);
+    };
+    gcap.onMove = function (e) { tool.free = e.shiftKey; tool.cursor = TX.cad2d.screenToMm(e.clientX, e.clientY); if (tool.kind === 'tray' && tool.pts.length) drawPreview(); };
+    gcap.onKey = function (e) {
+      if (!gp || /INPUT|SELECT|TEXTAREA/.test((document.activeElement || {}).tagName || '')) return;
+      if (tool.kind === 'tray' && e.key === 'Enter' && tool.pts.length) { e.preventDefault(); finishTray(); }
+      else if (tool.kind === 'tray' && e.key === 'Escape' && tool.pts.length) { e.preventDefault(); e.stopPropagation(); tool.pts = []; drawPreview(); renderGeom(); }
+    };
+    host.addEventListener('pointerdown', gcap.onDown, true);
+    host.addEventListener('click', gcap.onClick, true);
+    host.addEventListener('pointermove', gcap.onMove);
+    window.addEventListener('keydown', gcap.onKey, true);
+  }
+  function stopTool() {
+    if (!gcap) return;
+    gcap.host.removeEventListener('pointerdown', gcap.onDown, true);
+    gcap.host.removeEventListener('click', gcap.onClick, true);
+    gcap.host.removeEventListener('pointermove', gcap.onMove);
+    window.removeEventListener('keydown', gcap.onKey, true);
+    gcap.host.classList.remove('tx-wb-calib'); gcap.svg.remove(); gcap = null; tool.pts = [];
+  }
+  function snapPt(mm, free) {
+    var p = [Math.round(mm.x / 50) * 50, Math.round(mm.y / 50) * 50];
+    // 기존 트레이 끝점·라이저에 자석 스냅 (400mm)
+    var code = curFloor(), best = null, bd = 400;
+    var cands = [];
+    ((TX.floor(code) || {}).trays || []).forEach(function (t) { cands.push(t.a, t.b); });
+    (TX.model.risers || []).forEach(function (r) { if (r.floors.indexOf(code) >= 0) cands.push([r.x, r.y]); });
+    if (tool.pts.length > 1) cands.push(tool.pts[0]); // 경로 닫기용 시작점만 (직전 점 제외)
+    cands.forEach(function (c) { var d = Math.hypot(c[0] - mm.x, c[1] - mm.y); if (d < bd) { bd = d; best = c; } });
+    if (best) return [Math.round(best[0]), Math.round(best[1])];
+    if (!free && tool.pts.length) { var l = tool.pts[tool.pts.length - 1]; if (Math.abs(p[0] - l[0]) > Math.abs(p[1] - l[1])) p[1] = l[1]; else p[0] = l[0]; }
+    return p;
+  }
+  function addTrayPoint(mm, free) {
+    var p = snapPt(mm, free), l = tool.pts[tool.pts.length - 1];
+    if (l && Math.hypot(p[0] - l[0], p[1] - l[1]) < 100) return;
+    tool.pts.push(p); drawPreview(); renderGeom();
+  }
+  function finishTray() {
+    if (tool.pts.length < 2) { toast('경로에는 점이 2개 이상 필요합니다', 'warn'); return; }
+    var code = curFloor(), n = tool.pts.length - 1;
+    TX.geom.addTrayPath(code, tool.pts.slice(), tool.main);
+    tool.pts = []; drawPreview();
+    toast('케이블 트레이 경로를 등록했습니다 · ' + n + '구간', 'success');
+  }
+  function placeDoor(mm) {
+    var code = curFloor(), best = null;
+    TX.roomsOf(code).forEach(function (r) {
+      if (r.type === 'corr') return;
+      var inX = mm.x >= r.x - 600 && mm.x <= r.x + r.w + 600, inY = mm.y >= r.y - 600 && mm.y <= r.y + r.h + 600;
+      if (!inX || !inY) return;
+      [['N', Math.abs(mm.y - r.y), mm.x >= r.x && mm.x <= r.x + r.w], ['S', Math.abs(mm.y - (r.y + r.h)), mm.x >= r.x && mm.x <= r.x + r.w],
+       ['W', Math.abs(mm.x - r.x), mm.y >= r.y && mm.y <= r.y + r.h], ['E', Math.abs(mm.x - (r.x + r.w)), mm.y >= r.y && mm.y <= r.y + r.h]].forEach(function (c) {
+        if (c[2] && c[1] <= 900 && (!best || c[1] < best.d)) best = { r: r, side: c[0], d: c[1] };
+      });
+    });
+    if (!best) { toast('실 벽 가까이(0.9m 이내)를 클릭하세요', 'warn'); return; }
+    var r = best.r;
+    if (tool.noDoor) { TX.geom.setDoor(r.id, { side: 'none' }); toast(r.name + ' · 문 없음으로 지정', 'success'); return; }
+    var along = best.side === 'N' || best.side === 'S', lo = along ? r.x : r.y, len = along ? r.w : r.h, w = Math.min(tool.doorW, len - 200);
+    var at = Math.round(U.clamp(along ? mm.x : mm.y, lo + w / 2 + 50, lo + len - w / 2 - 50));
+    TX.geom.setDoor(r.id, { side: best.side, at: at, w: Math.round(w) });
+    toast(r.name + ' · ' + SIDE_NAME[best.side] + ' 벽에 문 등록 (폭 ' + Math.round(w) + 'mm)', 'success');
+  }
+  function placeRiser(mm) {
+    var p = [Math.round(mm.x / 50) * 50, Math.round(mm.y / 50) * 50];
+    var code = curFloor(), rm = TX.roomsOf(code).find(function (r) { return p[0] >= r.x && p[0] <= r.x + r.w && p[1] >= r.y && p[1] <= r.y + r.h; });
+    var n = geomStore().risers.length + 1;
+    var id = TX.geom.addRiser({ name: (rm ? rm.name + ' ' : '') + 'EPS 라이저 ' + n, x: p[0], y: p[1], floors: TX.model.floors.map(function (f) { return f.code; }) });
+    tool.selRiser = id;
+    toast('라이저를 추가했습니다 · 패널에서 관통 층을 확인하세요', 'success');
+  }
+  function drawPreview() {
+    if (!gcap) return;
+    var svg = gcap.svg, hr = gcap.host.getBoundingClientRect();
+    if (tool.kind !== 'tray' || !tool.pts.length) { svg.innerHTML = ''; return; }
+    var pts = tool.pts.slice();
+    if (tool.cursor) pts.push(snapPt(tool.cursor, tool.free));
+    var sc = pts.map(function (p) { var q = TX.cad2d.mmToScreen(p[0], p[1]); return q ? [q.x - hr.left, q.y - hr.top] : null; }).filter(Boolean);
+    var last = pts[pts.length - 1], prev = pts[pts.length - 2], len = prev ? Math.hypot(last[0] - prev[0], last[1] - prev[1]) : 0;
+    svg.innerHTML = '<polyline points="' + sc.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ') + '" fill="none" stroke="#facc15" stroke-width="5" stroke-opacity="0.35"/>' +
+      '<polyline points="' + sc.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ') + '" fill="none" stroke="#facc15" stroke-width="1.6" stroke-dasharray="6 4"/>' +
+      sc.slice(0, tool.pts.length).map(function (q) { return '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="4.5" fill="#facc15" stroke="#0b1220" stroke-width="1.5"/>'; }).join('') +
+      (sc.length > 1 ? '<text x="' + (sc[sc.length - 1][0] + 10).toFixed(1) + '" y="' + (sc[sc.length - 1][1] - 10).toFixed(1) + '" fill="#fde68a" font-size="12" font-weight="700" style="paint-order:stroke;stroke:#0b1220;stroke-width:3px">' + (len / 1000).toFixed(2) + ' m</text>' : '');
+  }
+  TX.on('resize', function () { drawPreview(); });
+
+  /* ---------- 「현행화」 드롭다운 ---------- */
+  var wbMenu = null, wbBtn = null;
+  function openWbMenu(btn) {
+    closeWbMenu(); wbBtn = btn;
+    var r = btn.getBoundingClientRect(), code = curFloor();
+    var g = geomStore(), ul = TX.underlay.get(code), nd = TX.roomsOf(code).filter(function (q) { return g.doors[q.id]; }).length, nt = (g.trays[code] || []).length;
+    var nr = Object.keys(rackStore()).length;
+    wbMenu = U.el('div', 'tx-wb-menu');
+    wbMenu.setAttribute('role', 'menu');
+    wbMenu.innerHTML =
+      '<button type="button" role="menuitem" data-wbm="underlay"><b>도면 배경 (CAD 겹쳐 보기)</b><small>' + (ul ? '등록됨 · ' + esc(ul.name || '') : '층 평면도 이미지 올리기 · 2점 맞춤') + '</small></button>' +
+      '<button type="button" role="menuitem" data-wbm="geom"><b>구조 편집 (문·트레이·라이저)</b><small>' + (nd || nt || g.risers.length ? '이 층 문 ' + nd + ' · 트레이 ' + nt + '구간 · 라이저 ' + g.risers.length : '2D 도면에서 직접 등록') + '</small></button>' +
+      '<button type="button" role="menuitem" data-wbm="rack"><b>랙·U 입력</b><small>' + (nr ? '입력 ' + nr + '대 · ' : '') + '설비 선택 후 인스펙터 「랙 · U」 편집</small></button>';
+    root().appendChild(wbMenu);
+    wbMenu.style.top = (r.bottom + 6) + 'px';
+    wbMenu.style.left = Math.max(8, Math.min(window.innerWidth - 300, r.left)) + 'px';
+    btn.setAttribute('aria-expanded', 'true');
+  }
+  function closeWbMenu() { if (wbMenu) { wbMenu.remove(); wbMenu = null; } if (wbBtn) { wbBtn.setAttribute('aria-expanded', 'false'); wbBtn = null; } }
+  function rackHint() {
+    var id = TX.state.selected;
+    if (id) openRackEditor(id);
+    else { toast('랙을 입력할 설비를 도면에서 선택하거나 상단 검색으로 찾아 주세요', 'info'); TX.setState({ panel: { inspector: true } }); }
+  }
+  window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && wbMenu) { e.stopPropagation(); closeWbMenu(); } }, true);
+
   /* ---------- 진입점 (셸 버튼 · 인스펙터 버튼) ---------- */
   document.addEventListener('click', function (e) {
-    var b = e.target.closest && e.target.closest('[data-act="rack-edit"],[data-act="underlay"]');
+    var mi = e.target.closest && e.target.closest('[data-wbm]');
+    if (mi) { var k = mi.getAttribute('data-wbm'); closeWbMenu(); if (k === 'underlay') { if (gp) toggleGeom(false); togglePanel(true); } else if (k === 'geom') toggleGeom(true); else if (k === 'rack') rackHint(); return; }
+    if (wbMenu && !(e.target.closest && e.target.closest('.tx-wb-menu,[data-act="wb-menu"]'))) closeWbMenu();
+    var b = e.target.closest && e.target.closest('[data-act="rack-edit"],[data-act="underlay"],[data-act="geom"],[data-act="wb-menu"]');
     if (!b) return;
-    if (b.getAttribute('data-act') === 'rack-edit') openRackEditor(b.getAttribute('data-id'));
-    else togglePanel();
+    var act = b.getAttribute('data-act');
+    if (act === 'wb-menu') { if (wbMenu) closeWbMenu(); else openWbMenu(b); return; }
+    if (act === 'rack-edit') openRackEditor(b.getAttribute('data-id'));
+    else if (act === 'geom') toggleGeom();
+    else { if (gp) toggleGeom(false); togglePanel(); }
   });
   TX.on('state', function (p) {
     var ch = (p && p.changed) || [];
-    if (ch.indexOf('floor') >= 0) { stopCalib(); renderPanel(); }
+    if (ch.indexOf('floor') >= 0) { stopCalib(); renderPanel(); tool.pts = []; drawPreview(); renderGeom(); }
+    if (ch.indexOf('view') >= 0 && gp && TX.state.view === '3d') toggleGeom(false);
   });
-  TX.on('close', function () { togglePanel(false); closeModal(); });
-  TX.on('model', function () { if (panel) renderPanel(); });
+  TX.on('close', function () { togglePanel(false); toggleGeom(false); closeModal(); });
+  TX.on('model', function () { if (panel) renderPanel(); if (gp) renderGeom(); });
 
-  TX.workbench = { openRackEditor: openRackEditor, toggleUnderlayPanel: togglePanel, startCalibration: startCalib };
+  TX.workbench = { openRackEditor: openRackEditor, toggleUnderlayPanel: togglePanel, startCalibration: startCalib, toggleGeomPanel: toggleGeom };
 })();

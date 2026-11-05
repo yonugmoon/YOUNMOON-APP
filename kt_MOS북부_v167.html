@@ -10574,8 +10574,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
 
     // 테이블 열기/닫기
     const openTbl=()=>
-      `<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/>`+
-      `<w:tblLayout w:type="fixed"/>`+
+      `<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:jc w:val="center"/>`+
+      /* 표 들여쓰기 0 + 가운데 정렬 고정 — 지정하지 않으면 워드에서 표 오른쪽 끝선이 본문 여백 밖으로
+         삐져나와 점검표·사진표 오른쪽에 얇은 세로줄(빈 칸)처럼 보인다. (성능점검표와 동일하게 맞춤) */
+      `<w:tblInd w:w="0" w:type="dxa"/><w:tblLayout w:type="fixed"/>`+
       `<w:tblCellMar><w:left w:w="99" w:type="dxa"/><w:right w:w="99" w:type="dxa"/></w:tblCellMar>`+
       `</w:tblPr>`+
       `<w:tblGrid><w:gridCol w:w="${UG1}"/><w:gridCol w:w="${UG2}"/><w:gridCol w:w="${UG3}"/><w:gridCol w:w="${UG4}"/><w:gridCol w:w="${UG5}"/><w:gridCol w:w="${CR}"/><w:gridCol w:w="${CB}"/></w:tblGrid>`;
@@ -10693,7 +10695,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     //  워드가 표를 합칠 때 두 번째 표의 속성을 tblPrEx 로 각 행에 보존하므로
     //  동일하게 재현한다.
     const PH_PREX =
-      `<w:tblPrEx><w:jc w:val="center"/>`+
+      `<w:tblPrEx><w:jc w:val="center"/><w:tblInd w:w="0" w:type="dxa"/>`+
       `<w:tblBorders><w:top w:val="single" w:sz="3" w:space="0" w:color="000000"/>`+
       `<w:left w:val="single" w:sz="3" w:space="0" w:color="000000"/>`+
       `<w:bottom w:val="single" w:sz="3" w:space="0" w:color="000000"/>`+
@@ -10714,7 +10716,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       if(!M){
       out += pp(rn(""), {after:60});
       out += pp(rn(`${secNo}-2) ${catName} 점검사진`,{sz:24,b:true}),{after:60});
-      out += `<w:tbl><w:tblPr><w:tblOverlap w:val="never"/><w:tblW w:w="${TW}" w:type="dxa"/><w:jc w:val="center"/>`+
+      out += `<w:tbl><w:tblPr><w:tblOverlap w:val="never"/><w:tblW w:w="${TW}" w:type="dxa"/><w:jc w:val="center"/><w:tblInd w:w="0" w:type="dxa"/>`+
         `<w:tblBorders><w:top w:val="single" w:sz="3" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="3" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="3" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="3" w:space="0" w:color="000000"/></w:tblBorders>`+
         `<w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="102" w:type="dxa"/><w:right w:w="102" w:type="dxa"/></w:tblCellMar></w:tblPr>`+
         `<w:tblGrid><w:gridCol w:w="${PH_LABEL_W}"/><w:gridCol w:w="${PH_IMG_CELL_W}"/><w:gridCol w:w="${PH_IMG_CELL_W}"/></w:tblGrid>`;
@@ -10876,7 +10878,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         const PHOTO_CX = Math.round(7.2*360000);
         const PHOTO_CY = Math.round(9.3*360000);
 
-        body += `<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr>`;
+        body += `<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/><w:jc w:val="center"/><w:tblInd w:w="0" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr>`;
         body += `<w:tblGrid><w:gridCol w:w="${GRID_C}"/><w:gridCol w:w="${TW-GRID_C}"/></w:tblGrid>`;
 
         for(let i=0; i<badPhotos.length; i+=2){

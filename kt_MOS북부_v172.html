@@ -12679,6 +12679,24 @@ ${m.notes || "-"}`;
     var got=await getBlock(szip, sourceMode, opts.sourceAnchor?norm(opts.sourceAnchor):null);
     var block=got.block, ridMedia=got.ridMedia, fixInfo=null;
     if(opts.fixPages!==false && got.elems){ fixInfo=fixBlock(got.elems, got.def, opts); block=fixInfo.xml; }
+    /* 표를 '창에 자동으로 맞춤' — 표 너비 = 본문 너비 100%(pct 5000), 열 비율 유지, 가운데·들여쓰기 0
+       (결과서 여백이 점검앱과 달라도 표가 오른쪽으로 쏠리거나 여백 밖으로 나가지 않음) */
+    var nFit=0;
+    if(opts.autofitWindow!==false){
+      block=block.replace(/<w:tblPr>([\s\S]*?)<\/w:tblPr>/g, function(m0, pr){
+        nFit++;
+        pr=pr.replace(/<w:tblW\b[^>]*\/>/g,"").replace(/<w:tblLayout\b[^>]*\/>/g,"").replace(/<w:jc\b[^>]*\/>/g,"").replace(/<w:tblInd\b[^>]*\/>/g,"");
+        // 스키마 순서: tblStyle, tblpPr, tblOverlap, bidiVisual, tblStyleRowBandSize, tblStyleColBandSize, tblW, jc, tblCellSpacing, tblInd, …
+        var head=/^(?:<w:tblStyle\b[^>]*\/>)?(?:<w:tblpPr\b[^>]*\/>)?(?:<w:tblOverlap\b[^>]*\/>)?(?:<w:bidiVisual\b[^>]*\/>)?(?:<w:tblStyleRowBandSize\b[^>]*\/>)?(?:<w:tblStyleColBandSize\b[^>]*\/>)?/.exec(pr)[0];
+        var rest=pr.slice(head.length);
+        var cs=/^(<w:tblCellSpacing\b[^>]*\/>)?/.exec(rest)[0]; rest=rest.slice(cs.length);
+        return '<w:tblPr>'+head+'<w:tblW w:w="5000" w:type="pct"/><w:jc w:val="center"/>'+cs+'<w:tblInd w:w="0" w:type="dxa"/>'+rest+'</w:tblPr>';
+      });
+      // 사진 행 속성(tblPrEx)의 정렬·들여쓰기도 표와 같게
+      block=block.replace(/<w:tblPrEx>([\s\S]*?)<\/w:tblPrEx>/g, function(m0, pr){
+        pr=pr.replace(/<w:tblW\b[^>]*\/>/g,"").replace(/<w:tblLayout\b[^>]*\/>/g,"");
+        return '<w:tblPrEx>'+pr+'</w:tblPrEx>'; });
+    }
 
     var baseDoc=await tzip.file("word/document.xml").async("string");
     var baseRels=await tzip.file("word/_rels/document.xml.rels").async("string");
@@ -12771,7 +12789,7 @@ ${m.notes || "-"}`;
 
     var out=await tzip.generateAsync({type: (opts.outType||"uint8array"), compression:"DEFLATE",
       mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
-    return {out:out, imgs:Object.keys(ridMedia).length, insertedAt:pos, heads:fixInfo?fixInfo.heads:0, fixed:!!fixInfo, sectNote:sectNote};
+    return {out:out, imgs:Object.keys(ridMedia).length, insertedAt:pos, heads:fixInfo?fixInfo.heads:0, fixed:!!fixInfo, sectNote:sectNote, fitTables:nFit};
   }
 
   var api={mergeDocx:mergeDocx, getBlock:getBlock, norm:norm, splitTopLevel:splitTopLevel, bodyInner:bodyInner, elText:elText};
@@ -12793,6 +12811,7 @@ ${m.notes || "-"}`;
         '<div class="mt-card"><h3>2단계 · 점검앱 워드 (.docx)</h3><p class="mt-desc">점검앱에서 내보낸 설비별 점검표·현황사진 Word를 선택하세요.</p><input type="file" id="mt-source" accept=".docx"><div class="mt-fname" id="mt-sname"></div></div>'+
         '<div class="mt-card"><h3>병합 옵션</h3>'+
           '<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-bottom:8px;cursor:pointer"><input type="checkbox" id="mt-fix" checked style="margin-top:3px"><span><b>점검앱 페이지 고정 (권장)</b><br><span style="color:#64708A;font-size:12px">설비별 점검표가 정해진 1쪽에서 밀리지 않도록 점검앱 서식(줄 간격·글자 크기)을 유지하고, 설비마다 새 페이지에서 시작합니다. 점검앱 워드 끝의 생성일시·매크로 안내 페이지는 넣지 않습니다.</span></span></label>'+
+          '<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-bottom:8px;cursor:pointer"><input type="checkbox" id="mt-fit" checked style="margin-top:3px"><span><b>표를 창에 자동으로 맞춤 (권장)</b><br><span style="color:#64708A;font-size:12px">점검표·사진표 너비를 결과서 본문 너비에 맞춰(워드 「창에 자동으로 맞춤」과 같음) 오른쪽으로 쏠리지 않게 합니다.</span></span></label>'+
           '<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="mt-first" style="margin-top:3px"><span>첫 번째 설비 점검표는 제목(5. …점검표_설비별) 바로 아래에 붙이기<br><span style="color:#64708A;font-size:12px">끄면(기본) 첫 설비도 새 페이지에서 시작해 1쪽 구성이 그대로 유지됩니다.</span></span></label>'+
         '</div>'+
         '<button class="mt-run" id="mt-run">\uD83D\uDD17 자동 병합 실행</button>'+
@@ -12848,14 +12867,16 @@ ${m.notes || "-"}`;
       var bufs=[B.t.buf, B.s.buf];
       st.textContent="\u23F3 병합 중\u2026 (본문 삽입 · 이미지 재매핑)";
       var r=await window.__RepMerge.mergeDocx(new Uint8Array(bufs[0]), new Uint8Array(bufs[1]), window.JSZip, {outType:"blob", tag:"apx",
-        fixPages:!!(document.getElementById("mt-fix")||{checked:true}).checked, firstSamePage:!!(document.getElementById("mt-first")||{}).checked});
+        fixPages:!!(document.getElementById("mt-fix")||{checked:true}).checked,
+        autofitWindow:!!(document.getElementById("mt-fit")||{checked:true}).checked, firstSamePage:!!(document.getElementById("mt-first")||{}).checked});
       var base=(tf.name||"결과서").replace(/\.docx$/i,"");
       var outName=base+"_병합완성.docx";
       var url=URL.createObjectURL(r.out);
       var a=document.createElement("a"); a.href=url; a.download=outName; document.body.appendChild(a); a.click();
       setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },1500);
       var where = r.insertedAt && r.insertedAt.replace ? "{{APP_MERGE}} 마커 위치" : "설비별 점검표 제목 뒤";
-      var fx = r.fixed ? ("<br>\uD83D\uDCC4 페이지 고정: 설비별 점검표 <b>"+r.heads+"</b>개"+(((document.getElementById("mt-first")||{}).checked)?" (첫 점검표는 제목 아래, 나머지는 새 페이지에서 시작)":"를 각각 새 페이지에서 시작")+(r.sectNote?(" \u00B7 "+esc(r.sectNote)):"")) : "";
+      var fitTxt = r.fitTables ? ("<br>\u2194\uFE0F 표 "+r.fitTables+"개를 창에 자동으로 맞춤") : "";
+      var fx = fitTxt + (r.fixed ? ("<br>\uD83D\uDCC4 페이지 고정: 설비별 점검표 <b>"+r.heads+"</b>개"+(((document.getElementById("mt-first")||{}).checked)?" (첫 점검표는 제목 아래, 나머지는 새 페이지에서 시작)":"를 각각 새 페이지에서 시작")+(r.sectNote?(" \u00B7 "+esc(r.sectNote)):"")) : "");
       st.className="mt-status ok"; st.innerHTML="\u2705 병합 완료! 사진 <b>"+r.imgs+"</b>장 삽입 ("+where+") \u00B7 <b>"+esc(outName)+"</b> 다운로드됨."+fx+"<br>워드에서 열어 삽입 위치를 확인하세요.";
     }catch(e){
       st.className="mt-status err";

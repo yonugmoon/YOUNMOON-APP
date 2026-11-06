@@ -12792,8 +12792,33 @@ ${m.notes || "-"}`;
     ov.querySelector("#mt-back").onclick=window.__closeMergeTool;
     ov.querySelector("#mt-run").onclick=window.__runMerge;
     var tI=ov.querySelector("#mt-target"), sI=ov.querySelector("#mt-source");
-    tI.onchange=function(){ ov.querySelector("#mt-tname").textContent = tI.files[0]?("\u2713 "+tI.files[0].name):""; };
-    sI.onchange=function(){ ov.querySelector("#mt-sname").textContent = sI.files[0]?("\u2713 "+sI.files[0].name):""; };
+    /* 파일을 고르는 즉시 메모리로 읽어 둔다.
+       (실행 버튼을 누를 때 읽으면, 그사이 워드에서 다시 저장하거나 OneDrive 동기화로 파일이 바뀐 경우
+        브라우저가 "The requested file could not be read…" 오류로 읽기를 막는다) */
+    window.__mtBuf = {t:null, s:null};
+    function grab(inp, key, nameEl){
+      var f = inp.files && inp.files[0]; window.__mtBuf[key] = null;
+      if(!f){ nameEl.textContent = ""; return; }
+      nameEl.style.color = ""; nameEl.textContent = "\u23F3 " + f.name + " 읽는 중\u2026";
+      f.arrayBuffer().then(function(b){
+        window.__mtBuf[key] = {name:f.name, buf:b};
+        nameEl.textContent = "\u2713 " + f.name;
+      }).catch(function(e){
+        nameEl.style.color = "#D7263D";
+        nameEl.textContent = "\u26A0\uFE0F " + f.name + " — " + window.__mtReadErr(e);
+      });
+    }
+    // 같은 파일을 다시 골라도 다시 읽히도록 — 창을 열 때 이전 선택을 비움
+    tI.onclick=function(){ tI.value=""; }; sI.onclick=function(){ sI.value=""; };
+    tI.onchange=function(){ grab(tI, "t", ov.querySelector("#mt-tname")); };
+    sI.onchange=function(){ grab(sI, "s", ov.querySelector("#mt-sname")); };
+  };
+  window.__mtReadErr=function(e){
+    var n=(e&&e.name)||"", m=(e&&e.message)||String(e||"");
+    if(n==="NotReadableError" || /could not be read|NotReadable/i.test(m))
+      return "파일을 읽을 수 없습니다. 워드에서 이 파일을 닫고, 파일을 고른 뒤 다시 저장·이동했다면 [파일 선택]으로 다시 골라 주세요. (OneDrive·네트워크 폴더 파일이면 PC에 내려받은 뒤 선택)";
+    if(n==="NotFoundError") return "파일을 찾을 수 없습니다. 이동·삭제되었는지 확인하고 다시 골라 주세요.";
+    return "파일 읽기 실패 ("+m+")";
   };
   window.__closeMergeTool=function(){
     var ov=document.getElementById("mt-overlay"); if(ov) ov.remove();
@@ -12802,14 +12827,14 @@ ${m.notes || "-"}`;
   window.__runMerge=async function(){
     var st=document.getElementById("mt-status");
     var run=document.getElementById("mt-run");
-    var tf=(document.getElementById("mt-target").files||[])[0];
-    var sf=(document.getElementById("mt-source").files||[])[0];
+    var B=window.__mtBuf||{};
+    var tf=B.t?{name:B.t.name}:null, sf=B.s?{name:B.s.name}:null;
     if(!tf||!sf){ st.className="mt-status err"; st.textContent="\u26A0\uFE0F 결과서 파일과 점검앱 워드 파일을 모두 선택하세요."; return; }
     if(!window.JSZip){ st.className="mt-status err"; st.textContent="\u26A0\uFE0F 워드 처리 라이브러리(JSZip)를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요."; return; }
     if(!window.__RepMerge){ st.className="mt-status err"; st.textContent="\u26A0\uFE0F 병합 엔진 로드 실패."; return; }
     run.disabled=true; st.className="mt-status"; st.textContent="\u23F3 파일 읽는 중\u2026";
     try{
-      var bufs=await Promise.all([tf.arrayBuffer(), sf.arrayBuffer()]);
+      var bufs=[B.t.buf, B.s.buf];
       st.textContent="\u23F3 병합 중\u2026 (본문 삽입 · 이미지 재매핑)";
       var r=await window.__RepMerge.mergeDocx(new Uint8Array(bufs[0]), new Uint8Array(bufs[1]), window.JSZip, {outType:"blob", tag:"apx",
         fixPages:!!(document.getElementById("mt-fix")||{checked:true}).checked, firstSamePage:!!(document.getElementById("mt-first")||{}).checked});
@@ -12822,7 +12847,8 @@ ${m.notes || "-"}`;
       var fx = r.fixed ? ("<br>\uD83D\uDCC4 페이지 고정: 설비별 점검표 <b>"+r.heads+"</b>개"+(((document.getElementById("mt-first")||{}).checked)?" (첫 점검표는 제목 아래, 나머지는 새 페이지에서 시작)":"를 각각 새 페이지에서 시작")+(r.sectNote?(" \u00B7 "+esc(r.sectNote)):"")) : "";
       st.className="mt-status ok"; st.innerHTML="\u2705 병합 완료! 사진 <b>"+r.imgs+"</b>장 삽입 ("+where+") \u00B7 <b>"+esc(outName)+"</b> 다운로드됨."+fx+"<br>워드에서 열어 삽입 위치를 확인하세요.";
     }catch(e){
-      st.className="mt-status err"; st.textContent="\u274C 병합 실패: "+((e&&e.message)||e);
+      st.className="mt-status err";
+      st.textContent="\u274C 병합 실패: "+((e&&(e.name==="NotReadableError"||/could not be read/i.test(e.message||"")))?window.__mtReadErr(e):((e&&e.message)||e));
     } finally { run.disabled=false; }
   };
   document.addEventListener("keydown", function(e){

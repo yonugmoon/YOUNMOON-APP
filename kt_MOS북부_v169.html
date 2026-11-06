@@ -3562,6 +3562,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     };
     const catMap = {}, order = [];
     let perfCnt = 0, maintCnt = 0, firstInspector = "", extraSeq = 0;
+    const extraByName = {};
     const skipped = [];
 
     detailTables.forEach(function(D){
@@ -3571,15 +3572,28 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       let h = D.heading || "";
       if(/성능/.test(h)) perfCnt++; else if(/유지보수/.test(h)) maintCnt++;
 
-      /* 설비명: "(1-1)"/"1-1)" 접두 + "…점검표" 접미 제거 */
-      let cn = h.replace(/^[\(（]?\s*\d+\s*(?:[-–—]\s*\d+\s*)?[\)）]?/, "").trim();
+      /* 설비명: 번호 접두 + "…점검표" 접미 제거
+         번호는 단계 수와 상관없이 지운다: "(1-1)" "1-1)" "1-1-1)" "5-1-1)" "1.2.3)" "(3)" …
+         (최종 결과서·유지보수(부적합) 워드는 "1-1-1)" 3단 번호라, 예전에는 "-1) 케이블 설비"가 남아
+          34종과 매칭되지 않고 위치마다 별도 '추가 설비'로 생겼다) */
+      let cn = h.replace(/^[\(（\[]?\s*\d+(?:\s*[-–—.]\s*\d+)*\s*[\)）\].]?\s*/, "")
+                .replace(/^(?:[-–—]\s*\d+\s*[\)）]\s*)+/, "").trim();
       cn = cn.replace(/성능\s*점검표[\s\S]*$/, "")
              .replace(/유지보수[\s\S]*$/, "")
              .replace(/점검표[\s\S]*$/, "").trim();
       cn = xlClean(cn);
       if(!cn) return;
-      const hit = matchCat(cn);
-      const catId   = hit ? hit.id : ("wx" + (++extraSeq) + "_" + xlNorm(cn).slice(0,8));
+      // "케이블 설비 - 지하1층 MDF실" 처럼 제목에 위치가 붙은 경우 → 설비명/위치 분리
+      let headLoc = "";
+      let hit = matchCat(cn);
+      if(!hit){
+        const sp = cn.split(/\s+[-–—]\s+/);
+        if(sp.length > 1){ const h2 = matchCat(sp[0]); if(h2){ hit = h2; headLoc = sp.slice(1).join(" - ").trim(); cn = sp[0].trim(); } }
+      }
+      // 34종에 없는 설비도 같은 이름이면 한 설비로 묶는다 (위치마다 따로 생기지 않게)
+      const exKey = xlNorm(cn);
+      if(!hit && !extraByName[exKey]) extraByName[exKey] = "wx" + (++extraSeq) + "_" + exKey.slice(0,8);
+      const catId   = hit ? hit.id : extraByName[exKey];
       const catName = hit ? hit.name : cn;
 
       const rows = rowsOf(D.tbl);
@@ -3649,7 +3663,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       if(!items.length){ skipped.push(cn); return; }
 
       const imgIds = blipIds(D.tbl);
-      const loc = { id: uid(), name: locName || "(위치 미상)", memo: memoParts.join("\n"),
+      const loc = { id: uid(), name: locName || headLoc || "(위치 미상)", memo: memoParts.join("\n"),
                     photos: [], selectedPhotos: [], items: items, _imgIds: imgIds, _real: real };
       if(!catMap[catId]){ catMap[catId] = { id: catId, name: catName, locations: [] }; order.push(catId); }
       catMap[catId].locations.push(loc);

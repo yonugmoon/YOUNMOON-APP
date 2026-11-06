@@ -2540,7 +2540,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
   const MODE_INFO = {
     '유지보수':  {label:'유지보수점검',        icon:'🔧', color:'#E60012', desc:'외관·기능·안전 유지보수 점검'},
     '유지보수2': {label:'유지보수점검(부적합)', icon:'⚠️', color:'#6B7280', desc:'부적합 사진만 추출 보고서'},
-    '성능':      {label:'성능점검',            icon:'📊', color:'#2563EB', desc:'TTA K-10.0303 성능기준 측정'}
+    '성능':      {label:'성능점검',            icon:'📊', color:'#2563EB', desc:'설비 성능 측정·점검'}
   };
   let meetings = [];  // 회의록 목록
   let currentMeetingForm = null;  // 현재 작성 중인 회의록
@@ -4467,7 +4467,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
             </div>
           </section>
 
-          <div class="hx-foot">TTA K-10.0303 기준 · 데이터는 이 기기에 저장됩니다</div>
+          <div class="hx-foot">데이터는 이 기기에 저장됩니다</div>
         </div>
       </div>`;
 
@@ -4634,7 +4634,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       const _n  = indexList.filter(e=>(e.inspType||'성능')===currentMode).length;
       html.push(`<div class="q-head">
         <div><h3>${_mi.icon} ${escapeHtml(_mi.label)}</h3>
-          <p>${_n ? '저장된 점검 '+_n+'건' : '저장된 점검 없음'} · TTA K-10.0303</p></div>
+          <p>${_n ? '저장된 점검 '+_n+'건' : '저장된 점검 없음'}</p></div>
         <button class="q-new" id="open-new">+ 새 점검 시작</button>
       </div>`);
     }

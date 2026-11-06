@@ -12726,7 +12726,18 @@ ${m.notes || "-"}`;
         var own='<w:sectPr><w:pgSz w:w="'+Sx.w+'" w:h="'+Sx.h+'"/><w:pgMar w:top="'+Sx.t+'" w:right="'+Sx.r+'" w:bottom="'+Sx.b+'" w:left="'+Sx.l+'" w:header="'+hd+'" w:footer="'+ft+'" w:gutter="0"/></w:sectPr>';
         var prevSect=tSect.replace(/<w:type\b[^>]*\/>/g,"");
         var tiny='<w:pPr><w:snapToGrid w:val="0"/><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/></w:rPr>';
-        block='<w:p>'+tiny+prevSect+'</w:pPr></w:p>'+block.replace(/<w:pageBreakBefore\/>/, "")+'<w:p>'+tiny+own+'</w:pPr></w:p>';
+        var prevPara='<w:p>'+tiny+prevSect+'</w:pPr></w:p>';
+        if(opts.firstSamePage && !pos.replace && !pos.before && isPara(elems[pos.idx])){
+          // 「첫 점검표는 제목 아래에 붙이기」: 점검앱 구역을 '5. …점검표_설비별' 제목부터 시작
+          //  → 제목과 첫 점검표가 같은 쪽(점검앱 쪽 설정)에 놓인다
+          var ai=pos.idx, prevEl=elems[ai-1]||"";
+          var anchorEl=elems[ai].replace(/<w:pageBreakBefore(?:\s[^>]*)?\/>/g,"");
+          if(isPara(prevEl) && /w:type="page"/.test(prevEl) && !elText(prevEl).trim() && prevEl.indexOf("<w:sectPr")<0) elems[ai-1]="";   // 앞의 쪽 나누기는 구역 나누기가 대신함
+          elems[ai]=prevPara+anchorEl;
+          block=block+'<w:p>'+tiny+own+'</w:pPr></w:p>';
+        } else {
+          block=prevPara+block.replace(/<w:pageBreakBefore\/>/, "")+'<w:p>'+tiny+own+'</w:pPr></w:p>';
+        }
         // 뒤 구역: 첫 쪽 머릿글·쪽번호 다시 시작 방지
         var rest=tSect.replace(/<w:titlePg(?:\s[^>]*)?\/>/g,"").replace(/\s*w:start="\d+"/g,"");
         // 결과서 쪽에 이미 쪽 나누기가 이어지면 구역 나누기로 한 번 더 넘기지 않음(빈 쪽 방지)

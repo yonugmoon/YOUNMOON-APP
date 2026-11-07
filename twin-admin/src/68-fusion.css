@@ -1,0 +1,45 @@
+/* 68-fusion: ADMIN 디지털 트윈 화면 안에 뷰어 도킹 */
+.dt-mode-tabs button.tx-fuse-tab { font-weight: 800; }
+.dt-mode-tabs button.tx-fuse-tab:not(.on) { color: #3e63db; }
+.canvas-panel.tx-fused .dt-floor-stack,
+.canvas-panel.tx-fused .network-key,
+.canvas-panel.tx-fused .canvas-footer,
+.canvas-panel.tx-fused .dt-custom-view,
+.canvas-panel.tx-fused .tx-entry-btn { display: none !important; }
+
+.canvas-panel.tx-fused:not(.tx-fused-side) .drawing-wrap { visibility: hidden; }
+.canvas-panel.tx-fused-side .drawing-wrap { right: auto; bottom: 12px; border-right: 1px solid #dbe3ec; }
+.canvas-panel.tx-fused-side .drawing-wrap .canvas-tools { bottom: 8px; }
+.canvas-panel.tx-fused .drawing-scroll g.equipment.tx-fuse-sel { filter: drop-shadow(0 0 0 #3e63db) drop-shadow(0 0 6px rgba(62, 99, 219, .85)); }
+.tx-dock-host { position: absolute; z-index: 6; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 22px rgba(8, 20, 40, .22); background: #06101f; }
+.tx-root.tx-docked { position: absolute; inset: 0; z-index: 1; }
+.tx-fuse-ctl { display: flex; gap: 4px; margin-right: 6px; flex-shrink: 0; }
+.tx-fuse-ctl button { height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .16); color: #dbe6f5; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.tx-fuse-ctl button:hover { background: rgba(255, 255, 255, .08); }
+.tx-fuse-ctl button.is-on { background: #3e63db; border-color: #3e63db; color: #fff; }
+.tx-root:not(.tx-docked) .tx-fuse-ctl { display: none; }
+/* 도킹 시 컨테이너 너비 기준 반응형 (창 너비 미디어쿼리 대체) */
+.tx-root.tx-cq-m .tx-title b { font-size: 12.5px; }
+.tx-root.tx-cq-m .tx-tbtn-lbl, .tx-root.tx-cq-m .tx-st-hint { display: none; }
+.tx-root.tx-cq-m .tx-tbtn { padding: 0 8px; gap: 3px; }
+.tx-root.tx-cq-m .tx-search { width: 150px; }
+.tx-root.tx-cq-s .tx-title { display: none; }
+.tx-root.tx-cq-s .tx-lbl-full { display: none; }
+.tx-root.tx-cq-s .tx-lbl-short { display: inline; }
+.tx-root.tx-cq-s .tx-seg-btn { padding: 0 9px; }
+.tx-root.tx-cq-s .tx-search-tb { display: none; }
+.tx-root.tx-cq-xs .tx-tb-sep, .tx-root.tx-cq-xs .tx-fs-btn { display: none; }
+.tx-root.tx-cq-xs .tx-seg-btn .tx-ic { display: none; }
+.tx-root.tx-cq-xs .tx-fuse-ctl button { padding: 0 7px; font-size: 11px; }
+.tx-root.tx-cq-xs .tx-legend { display: none; }
+.tx-root.tx-cq-xs .tx-fz-l, .tx-root.tx-cq-xs .tx-caret { display: none; }
+.tx-root.tx-cq-xs .tx-tbtn { padding: 0 6px; }
+.tx-root.tx-cq-xs .tx-toolbar { gap: 6px; padding: 0 8px; }
+/* 나란히: 좌측 토폴로지를 영역 폭에 맞춰 크게 (요약 카드는 뷰어 층 레일·상태바와 중복이라 숨김) */
+main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
+.canvas-panel.tx-fused-side .drawing-scroll { padding: 8px 12px !important; align-items: center !important; justify-content: center; height: 100% !important; }
+.canvas-panel.tx-fused-side .drawing-scroll > svg { width: 100% !important; height: auto !important; max-height: 100%; }
+.panel-heading.tx-entry-compact .tx-entry-btn span:not([aria-hidden]), .panel-heading.tx-entry-compact .tx-entry-btn kbd { display: none; }
+.panel-heading.tx-entry-compact .tx-entry-btn { padding: 0 9px; }
+.dt-mode-tabs.tx-tabs-short button { padding-left: 8px !important; padding-right: 8px !important; }
+.panel-heading.tx-entry-compact span.muted { display: none; }

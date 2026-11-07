@@ -135,3 +135,7 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   `diagrams = {open, riser(), topo()}` (현재 `TwinX.model` 기준 SVG), `report = {open, load, sheets, send}` — 결과서 → 9열 측정 + 트윈연결 + 변환검증,
   `send()`는 ADMIN 「측정 엑셀 등록」의 파일 선택을 가로채 변환 파일을 전달(실패 시 다운로드).
   `TwinX.quick` 추가: `autoDraw(codes, all)`, 초안 설비 필드 `serial`, `plateOk`, 링크 `type: optical|data|power`(수동 층간 연결), 내부 접근점 `TwinX.quick._`.
+- **화면 융합(v1.8)** `TwinX.fusion = {dock, undock, expand, setMode('full'|'side'), docked, mode}` (`src/68-fusion.js`) —
+  ADMIN 「설비 디지털 트윈」 상단 탭에 `[data-dtmode="twin"]` 「4. 입체 트윈」 추가. 선택 시 `#tx-root`를 `.canvas-panel > .tx-dock-host`로 옮겨 `.tx-docked`(position:absolute)로 표시,
+  `side` 모드는 `.drawing-wrap` 폭을 줄여 ADMIN 토폴로지와 나란히. 동기화: `select.floor-select` ↔ `state.floor`, `g.equipment` 클릭 ↔ `TwinX.select`(ADMIN 상세 패널 갱신, 카드 강조 `.tx-fuse-sel`).
+  도킹 중 뷰어 단축키는 뷰어 안에 초점이 있을 때만(20-shell), 뷰어 ✕/ESC → 탭 1 복귀, 「⛶ 크게」 → 기존 전체화면. 너비는 컨테이너 기준 클래스 `tx-cq-m/s/xs`. localStorage `twinx_fusion_mode_v1`.

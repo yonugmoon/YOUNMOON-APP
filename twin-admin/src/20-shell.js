@@ -952,6 +952,8 @@
       return;
     }
     if (!s.open || !built) return;
+    // 68-fusion 도킹 중에는 뷰어 안에 초점이 있을 때만 단축키 처리 (ADMIN 화면 입력 방해 금지)
+    if (R.root.classList.contains('tx-docked') && !R.root.contains(e.target)) return;
     var k = e.key, handled = true;
     if (k === 'Escape') {
       if (isTyping(e.target)) return; // 검색창 자체 처리

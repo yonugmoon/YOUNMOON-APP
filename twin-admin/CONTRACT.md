@@ -139,3 +139,9 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   ADMIN 「설비 디지털 트윈」 상단 탭에 `[data-dtmode="twin"]` 「4. 입체 트윈」 추가. 선택 시 `#tx-root`를 `.canvas-panel > .tx-dock-host`로 옮겨 `.tx-docked`(position:absolute)로 표시,
   `side` 모드는 `.drawing-wrap` 폭을 줄여 ADMIN 토폴로지와 나란히. 동기화: `select.floor-select` ↔ `state.floor`, `g.equipment` 클릭 ↔ `TwinX.select`(ADMIN 상세 패널 갱신, 카드 강조 `.tx-fuse-sel`).
   도킹 중 뷰어 단축키는 뷰어 안에 초점이 있을 때만(20-shell), 뷰어 ✕/ESC → 탭 1 복귀, 「⛶ 크게」 → 기존 전체화면. 너비는 컨테이너 기준 클래스 `tx-cq-m/s/xs`. localStorage `twinx_fusion_mode_v1`.
+- **설비 묶음(v1.9)** 00-core `applyBundles(model)`(setModel 시 자동) — `a.rack.bundle` (랙 입력 `bundle:true`, 간이 현행화 `bundle`) 또는 ADMIN 규격 태그 `[묶음:이름]`·`[묶음:이름:U03-04]` →
+  같은 실·같은 이름이면 `a.bundle = {key,name,lead,ids,n}`. `TwinX.bundleLead(id)`, `TwinX.bundleView(a)`(이름=묶음, 등급=최악, kind=rack, 실측 합산).
+  T3 2D·T4 3D(A·D)는 대표 1개만 배치하고 모듈은 같은 위치로 별칭(선택 링·연결·카메라), 묶음 내부 연결은 생략. 시안 B는 기존 랙 실장으로 모듈 표시. 인스펙터 「묶음 슬롯」.
+  편집 `TwinX.bundleEdit = {open,save,auto,suggestions}` (`src/67-bundle.js`), `TwinX.rack.setMany`.
+- **구조 편집 v2** 클릭 모드는 버튼으로 시작(`tool.active`), 문·라이저는 1회 지정 후 종료, 트레이는 도면 위 바 「✔ 경로 완료 / ↶ 점 취소 / ✖ 취소」, 하단 「✔ 저장됨 시각 · 편집 완료」.
+- **간이 현행화 완료** 단계 ✔ 표시, 「✔ 현행화 완료 · 저장」(점검→엑셀) → 「ADMIN에 등록(적용)하기」(`TwinX.pipe.adminUpload`로 데이터 관리 엑셀 등록에 전달). 초안 `savedAt`, `done{at,file,summary,dirty}`.

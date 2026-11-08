@@ -631,13 +631,18 @@
     if (TX.quick && TX.quick.active()) { if (!confirm('간이 현행화 초안 작업 중입니다. 측정 설비 연결은 ADMIN에 등록된 설비 기준으로 이뤄집니다.\n초안을 먼저 ADMIN에 등록(엑셀 등록 → 전체 교체 적용)했나요?\n\n[확인] 계속 · [취소] 돌아가기')) return; }
     var blob = Q().xlsx(measureSheets()), file = new File([blob], 'ICT_Twin_Measure_' + stamp() + '.xlsx', { type: blob.type });
     closeReport(); if (TX.quick && TX.quick.active()) TX.quick.close(false); if (TX.state.open) TX.close();
-    var nav = Array.prototype.slice.call(document.querySelectorAll('.sidebar nav button, nav button')).find(function (b) { return /측정\s*대시보드/.test(b.textContent); });
-    if (!nav) { U.download(blob, file.name); toast('ADMIN 측정 화면을 찾지 못해 파일로 저장했습니다 · 측정 엑셀 등록으로 올리세요', 'warn'); return; }
+    adminUpload(/측정\s*대시보드/, function () { return Array.prototype.slice.call(document.querySelectorAll('button')).find(function (b) { return b.textContent.trim() === '측정 엑셀 등록'; }); }, file,
+      '측정 엑셀을 ADMIN에 전달했습니다 · 확인창에서 점검일을 고르고 「검증된 측정자료로 교체」를 누르세요');
+  }
+  /** ADMIN 메뉴로 이동 → 등록 버튼의 파일 선택창 대신 준비된 파일을 전달 (실패 시 다운로드) */
+  function adminUpload(navRe, findBtn, file, okMsg) {
+    var nav = Array.prototype.slice.call(document.querySelectorAll('.sidebar nav button, nav button')).find(function (b) { return navRe.test(b.textContent); });
+    if (!nav) { U.download(file, file.name); toast('ADMIN 화면을 찾지 못해 파일로 저장했습니다 · 직접 등록하세요', 'warn'); return; }
     nav.click();
     var tries = 0;
     (function go() {
-      var btn = Array.prototype.slice.call(document.querySelectorAll('button')).find(function (b) { return b.textContent.trim() === '측정 엑셀 등록'; });
-      if (!btn) { if (++tries < 25) return setTimeout(go, 200); U.download(blob, file.name); toast('측정 엑셀 등록 버튼을 찾지 못해 파일로 저장했습니다', 'warn'); return; }
+      var btn = findBtn();
+      if (!btn) { if (++tries < 25) return setTimeout(go, 200); U.download(file, file.name); toast('등록 버튼을 찾지 못해 파일로 저장했습니다', 'warn'); return; }
       var orig = HTMLInputElement.prototype.click, done = false;
       HTMLInputElement.prototype.click = function () {
         if (!done && this.type === 'file') {
@@ -648,8 +653,8 @@
         }
         return orig.apply(this, arguments);
       };
-      try { btn.click(); } finally { setTimeout(function () { if (!done) { HTMLInputElement.prototype.click = orig; U.download(blob, file.name); toast('자동 전달이 되지 않아 파일로 저장했습니다 · 측정 엑셀 등록으로 올리세요', 'warn'); } }, 600); }
-      if (done) toast('측정 엑셀을 ADMIN에 전달했습니다 · 확인창에서 점검일을 고르고 「검증된 측정자료로 교체」를 누르세요', 'success');
+      try { btn.click(); } finally { setTimeout(function () { if (!done) { HTMLInputElement.prototype.click = orig; U.download(file, file.name); toast('자동 전달이 되지 않아 파일로 저장했습니다 · 직접 등록하세요', 'warn'); } }, 600); }
+      if (done) toast(okMsg, 'success');
     })();
   }
 
@@ -672,6 +677,7 @@
     photos: { open: openPhotos, close: closePhotos, count: count, add: addPhotos, all: allPhotos, exportZip: exportZip, reindex: reindex },
     photoSheet: photoSheet, checks: checks,
     diagrams: { open: openDiagrams, riser: riserSVG, topo: topoSVG },
-    report: { open: openReport, load: loadReport, state: function () { return R; }, sheets: measureSheets, send: sendToAdmin }
+    report: { open: openReport, load: loadReport, state: function () { return R; }, sheets: measureSheets, send: sendToAdmin },
+    adminUpload: adminUpload
   };
 })();

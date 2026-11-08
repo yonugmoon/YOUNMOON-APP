@@ -747,9 +747,23 @@
       ['랙 · U', a.rack ? [a.rack.name, a.rack.u].filter(Boolean).join(' · ') : '']];
     h += '<div class="tx-sec"><h4>기본 정보</h4><dl class="tx-dl">' + rows.map(function (r) {
       var edit = r[0] === '랙 · U' && TwinX.rack ? ' <button type="button" class="tx-rack-edit" data-act="rack-edit" data-id="' + esc(a.id) + '">' + (a.rack ? '편집' : '+ 입력') + '</button>' +
-        (a.rack && a.rack.source === 'v14-ASSET_META' ? '<small class="tx-muted"> (시범값)</small>' : a.rack && a.rack.source === 'user' ? '<small class="tx-muted"> (현장 입력)</small>' : '') : '';
+        (a.rack && a.rack.source === 'v14-ASSET_META' ? '<small class="tx-muted"> (시범값)</small>' : a.rack && a.rack.source === 'user' ? '<small class="tx-muted"> (현장 입력)</small>' : '') +
+        (TwinX.bundleEdit && !a.bundle ? ' <button type="button" class="tx-rack-edit" data-act="bundle-edit" data-id="' + esc(a.id) + '" title="같은 위치의 모듈을 1개로 묶어 배치">묶음으로</button>' : '') : '';
       return '<dt>' + r[0] + '</dt><dd' + (r[1] ? '' : ' class="tx-muted"') + '>' + esc(r[1] || '—') + edit + '</dd>';
     }).join('') + '</dl></div>';
+
+    // 설비 묶음: 2D·3D 에는 1개로 표시, 여기서 모듈(슬롯) 전체를 보여 줌
+    if (a.bundle) {
+      var mods = a.bundle.ids.map(function (id) { return TwinX.asset(id); }).filter(Boolean);
+      h += '<div class="tx-sec tx-bundle"><h4>묶음 슬롯 · ' + esc(a.bundle.name) + ' <span class="tx-count">모듈 ' + mods.length + '</span>' +
+        (TwinX.bundleEdit ? '<button type="button" class="tx-rack-edit" data-act="bundle-edit" data-id="' + esc(a.id) + '">묶음 편집</button>' : '') + '</h4>' +
+        '<ol class="tx-slots">' + mods.map(function (x) {
+          var gg = gradeOf(x);
+          return '<li class="' + (x.id === a.id ? 'is-sel' : '') + '"><button type="button" data-select="' + esc(x.id) + '" title="' + esc(x.id) + '">' +
+            '<span class="tx-slot-u">' + esc(x.rack && x.rack.u ? x.rack.u.replace(/U/g, '') : '—') + '</span>' +
+            '<i class="tx-dot" style="background:' + gcss(gg) + '"></i><b>' + esc(x.name) + '</b><small>' + esc(x.model || x.id) + '</small></button></li>';
+        }).join('') + '</ol><p class="tx-src-note">같은 실·같은 묶음 이름의 모듈을 2D·3D에서 1개로 표시합니다 (등급은 모듈 중 가장 나쁜 값)</p></div>';
+    }
 
     // 실측
     var ms = (a.measures || []).slice().sort(function (x, y) { var o = { bad: 0, none: 1, na: 2, good: 3 }; return (o[x.judge] || 1) - (o[y.judge] || 1); });

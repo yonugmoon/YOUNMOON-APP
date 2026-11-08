@@ -338,7 +338,7 @@
       if (!r.name) { delete a.rack; return; }
       var pad = function (n) { return (n < 10 ? '0' : '') + n; };
       a.rack = { name: r.name, u: (r.u0 != null && r.u1 != null) ? pad(r.u0) + 'U~' + pad(r.u1) + 'U' : '', u0: r.u0 != null ? r.u0 : null, u1: r.u1 != null ? r.u1 : null,
-                 size: r.size || 42, face: r.face || '전면', source: 'user', at: r.at || null };
+                 size: r.size || 42, face: r.face || '전면', source: 'user', at: r.at || null, bundle: !!r.bundle };
     });
 
     /* --- 측정 행 → Measure --- */

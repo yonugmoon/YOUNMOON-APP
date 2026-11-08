@@ -324,7 +324,7 @@
     var fault = st.fault && st.fault.active;
     var imp = (fault && TX.fault && TX.fault.impact instanceof Map) ? TX.fault.impact : new Map();
     var src = fault ? (st.fault.source || (TX.fault && TX.fault.source)) : null;
-    var sel = st.selected;
+    var sel = TX.bundleLead ? TX.bundleLead(st.selected) : st.selected; // 묶음 모듈 선택 → 묶음 심볼 강조
     var showTags = st.labels !== false;
     var o = [];
     var boxes = new Boxes();
@@ -501,7 +501,9 @@
 
     /* ---- 설비 위치(px) — 좌표 없는 설비는 실 내부 격자 자동 배치, 겹침은 살짝 분산 ---- */
     var P = {}, autoIdx = {}, symBoxes = new Boxes();
-    var placed = assets.map(function (a) {
+    // 묶음(모듈 묶음)은 대표 1개만 배치하고, 나머지 모듈은 같은 위치로 연결
+    var placeList = assets.filter(function (a) { return !a.bundle || a.bundle.lead === a.id; }).map(function (a) { return a.bundle && TX.bundleView ? TX.bundleView(a) : a; });
+    var placed = placeList.map(function (a) {
       var x, y, rm = roomById[a.room];
       if (fin(a.x) && fin(a.y)) { x = X(clamp(a.x, b.x0, b.x1)); y = Y(clamp(a.y, b.y0, b.y1)); }
       else if (rm) {
@@ -524,6 +526,7 @@
       P[a.id] = { x: x, y: y, kind: kind, e: e, a: a };
       return P[a.id];
     }).filter(Boolean);
+    assets.forEach(function (a) { if (a.bundle && a.bundle.lead !== a.id && P[a.bundle.lead]) P[a.id] = P[a.bundle.lead]; });
 
     /* ---- 트레이 (사다리형) ---- */
     var trays = (fl.trays || []).map(function (t) { return { x1: X(t.a[0]), y1: Y(t.a[1]), x2: X(t.b[0]), y2: Y(t.b[1]), main: !!t.main }; });
@@ -601,6 +604,7 @@
       (M.links || []).forEach(function (lk) {
         var p1 = P[lk.from], p2 = P[lk.to];
         if (!p1 && !p2) return;
+        if (p1 && p1 === p2) return; // 같은 묶음 안의 모듈 간 연결
         var meta = C.LINK[lk.type] || C.LINK.path;
         var onPath = fault && (lk.from === src || imp.has(lk.from)) && imp.has(lk.to);
         var isSel = sel && (lk.from === sel || lk.to === sel);
@@ -750,7 +754,7 @@
         var important = a.id === sel || (fault && (a.id === src || imp.has(a.id))) || a.grade === 'RED' || a.grade === 'ORANGE';
         var must = a.id === sel || (fault && (a.id === src || imp.has(a.id)));
         var sm = (L.measure !== false) ? summarize(a.measures) : (L.ground !== false && gndBad(a.measures) ? summarize((a.measures || []).filter(function (m) { return m.std === 'gnd'; })) : null);
-        var l1 = String(a.id), l1b = a.grade && a.grade !== 'NONE' ? a.grade : '';
+        var l1 = String(a.bundleLabel || a.id), l1b = a.grade && a.grade !== 'NONE' ? a.grade : '';
         var fl2 = fitText(String(a.name || '').replace(/^(지하\d+층|지상\d+층|\d+층)\s*/, ''), 10.5, 150);
         var fl3 = sm ? fitText((sm.bad ? '⚠ ' : sm.warn ? '△ ' : '실측 ') + (sm.est ? '≈' : '') + sm.items.slice(0, 1).map(mText).join(''), 9.5, 150, false) : '';
         if (fault && (a.id === src || imp.has(a.id))) fl3 = a.id === src ? '⚡ 장애 발생원' : (imp.get(a.id).sev === 'outage' ? '✖ 서비스 중단 영향' : '△ 성능 저하 영향');

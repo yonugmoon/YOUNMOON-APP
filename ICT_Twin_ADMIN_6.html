@@ -6433,6 +6433,48 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
   .tx-rp-map { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
+/* ---- 67-bundle.css ---- */
+/* 67-bundle: 설비 묶음 · 구조 편집/간이 현행화 완료 표시 */
+.tx-bd-dlg { width: min(860px, 100%); }
+.tx-bd-tbl { max-height: 48vh; overflow: auto; border: 1px solid var(--tx-border, #e1e7ee); border-radius: 8px; margin-top: 8px; }
+.tx-bd-tbl table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.tx-bd-tbl th { position: sticky; top: 0; background: #f1f5f9; text-align: left; padding: 6px 8px; font-size: 11.5px; color: #475569; }
+.tx-bd-tbl td { padding: 5px 8px; border-top: 1px solid #eef2f7; vertical-align: middle; }
+.tx-bd-tbl td small { display: block; color: #94a3b8; font-size: 10.5px; }
+.tx-bd-tbl tr.is-on td { background: #eef2fd; }
+.tx-bd-tbl input[type="number"] { width: 62px; padding: 4px 6px; border: 1px solid #d5dde7; border-radius: 6px; }
+.tx-bd-tbl input[type="checkbox"] { width: 18px; height: 18px; }
+/* 인스펙터 묶음 슬롯 */
+.tx-sec.tx-bundle h4 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tx-slots { display: flex; flex-direction: column; gap: 3px; margin: 6px 0 4px; padding: 6px; background: #1f2937; border-radius: 8px; counter-reset: none; }
+.tx-slots li button { width: 100%; display: grid; grid-template-columns: 52px 10px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 5px; background: #0f172a; color: #e2e8f0; text-align: left; }
+.tx-slots li button:hover { background: #1e293b; }
+.tx-slots li.is-sel button { outline: 2px solid #22d3ee; background: #0b2a3a; }
+.tx-slots .tx-slot-u { font: 600 10.5px ui-monospace, Consolas, monospace; color: #94a3b8; }
+.tx-slots b { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-slots small { font-size: 10.5px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; }
+.tx-qk-bn { font-style: normal; font-size: 10.5px; font-weight: 700; color: #3e63db; background: #eef2fd; border-radius: 6px; padding: 1px 6px; margin-left: 4px; }
+/* 구조 편집 · 도면 위 진행 바 (터치용 큰 버튼) */
+.tx-wb-btn.tx-wb-on { background: #0f2a4a; border-color: #0f2a4a; color: #fff; }
+.tx-wb-btn:disabled { opacity: .45; cursor: default; }
+.tx-wb-gbar { gap: 8px; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 24px); border-radius: 14px; }
+.tx-wb-gbar button { padding: 7px 14px; font-size: 13px; }
+.tx-wb-gbar button:disabled { opacity: .4; cursor: default; }
+.tx-wb-gbar .tx-wb-gb-pri { background: #3e63db; border-color: #3e63db; }
+.tx-wb-saved, .tx-qk-saved { font-size: 11.5px; font-weight: 700; color: #047857; align-self: center; }
+.tx-qk-saved { display: block; margin-top: 2px; font-size: 10.5px; }
+.tx-wb-geom .tx-qk-ft { align-items: center; }
+/* 간이 현행화 단계 완료 · 최종 완료 */
+.tx-qk-steps button.is-done i { background: #10b981; color: #fff; }
+.tx-qk-fin { display: flex; flex-direction: column; gap: 4px; margin: 12px 0 8px; padding: 12px; border: 2px dashed #3e63db; border-radius: 10px; background: #f5f8ff; }
+.tx-qk-fin .tx-qk-finbtn { margin: 0; height: 42px; font-size: 14.5px; }
+.tx-qk-fin small { color: #475569; font-size: 11.5px; }
+.tx-qk-done { display: flex; flex-direction: column; gap: 4px; margin: 12px 0 8px; padding: 12px; border: 1px solid #10b981; border-radius: 10px; background: #ecfdf5; font-size: 12px; color: #065f46; }
+.tx-qk-done b { font-size: 14px; }
+.tx-qk-done code { font-size: 11px; }
+.tx-qk-done small { color: #047857; }
+.tx-qk-done .tx-wb-acts { margin-top: 6px; }
+
 /* ---- 68-fusion.css ---- */
 /* 68-fusion: ADMIN 디지털 트윈 화면 안에 뷰어 도킹 */
 .dt-mode-tabs button.tx-fuse-tab { font-weight: 800; }
@@ -6608,6 +6650,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
 
     /* ---------- 모델 ---------- */
     setModel: function (m) {
+      applyBundles(m);
       this.model = m;
       var s = this.state;
       if (!s.floor || !m.floors.some(function (f) { return f.code === s.floor; })) s.floor = m.floors.length ? m.floors[0].code : null;
@@ -6750,6 +6793,53 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     var risers = [{ id: 'R-1', name: '주 EPS 라이저', x: 2200, y: 13000, floors: floors.map(function (f) { return f.code; }) }];
     return { source: 'demo', site: { name: '시범 통신센터', building: '시범 통신센터' }, floors: floors, rooms: rooms, assets: assets, links: links, risers: risers, measurements: [], updatedAt: new Date().toISOString() };
   };
+
+  /* ---------------- 설비 묶음 (같은 실 · 같은 랙 이름 · bundle 표시) ----------------
+     랙 입력(twinx_rack_v1 bundle:true) 또는 ADMIN 규격 태그 [묶음:이름] / [묶음:이름:U03-04] 로 지정.
+     2D·3D 에는 대표(lead) 1개로 표시하고, 슬롯(랙 실장) 목록에 모듈 전체를 보여 준다. */
+  var BTAG = /\[묶음\s*:\s*([^\]:]+?)\s*(?::\s*U?\s*(\d+)\s*[-~]\s*U?\s*(\d+)\s*U?)?\s*\]/;
+  var GORD = ['RED', 'ORANGE', 'YELLOW', 'GREEN', 'NONE'];
+  function applyBundles(m) {
+    if (!m || !m.assets) return;
+    var groups = {}, order = [];
+    m.assets.forEach(function (a) {
+      delete a.bundle;
+      if (!a.rack || a.rack.source !== 'user') {
+        var t = BTAG.exec(a.spec || '');
+        if (t) {
+          var u0 = t[2] ? +t[2] : null, u1 = t[3] ? +t[3] : null, p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+          a.rack = { name: t[1].trim(), u: u0 != null ? p2(Math.min(u0, u1)) + 'U~' + p2(Math.max(u0, u1)) + 'U' : '', u0: u0 != null ? Math.min(u0, u1) : null, u1: u1 != null ? Math.max(u0, u1) : null, size: 42, source: 'spec', bundle: true };
+        }
+      }
+      if (!a.rack || !a.rack.bundle || !a.rack.name) return;
+      var key = (a.room || a.floor || '') + '|' + a.rack.name;
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(a);
+    });
+    order.forEach(function (key) {
+      var list = groups[key];
+      var lead = list.slice().sort(function (x, y) { return String(x.id).localeCompare(String(y.id)); })[0];
+      list.sort(function (x, y) { return ((y.rack.u1 || 0) - (x.rack.u1 || 0)) || String(x.id).localeCompare(String(y.id)); });
+      var ids = list.map(function (a) { return a.id; });
+      list.forEach(function (a) {
+        a.bundle = { key: key, name: lead.rack.name, lead: lead.id, ids: ids, n: ids.length };
+        if (a !== lead && typeof lead.x === 'number' && typeof lead.y === 'number') { a.x = lead.x; a.y = lead.y; }
+      });
+    });
+  }
+  /** 묶음 소속이면 대표 설비 ID, 아니면 그대로 */
+  TwinX.bundleLead = function (id) { var a = id && TwinX.asset(id); return a && a.bundle ? a.bundle.lead : id; };
+  /** 2D·3D 표시용 대표 객체: 이름=묶음 이름, 등급=모듈 중 최악, 종류=랙, 실측=모듈 합산 */
+  TwinX.bundleView = function (a) {
+    if (!a || !a.bundle) return a;
+    var ms = a.bundle.ids.map(function (id) { return TwinX.asset(id); }).filter(Boolean);
+    var g = 'NONE'; ms.forEach(function (x) { var i = GORD.indexOf(x.grade || 'NONE'); if (i >= 0 && i < GORD.indexOf(g)) g = GORD[i]; });
+    var d = Object.create(a);
+    d.name = a.bundle.name; d.grade = g; d.kind = 'rack'; d.bundleLabel = '묶음 ×' + ms.length;
+    d.measures = ms.reduce(function (acc, x) { return acc.concat(x.measures || []); }, []);
+    return d;
+  };
+  TwinX.applyBundles = applyBundles;
 })();
 
 </script>
@@ -7095,7 +7185,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       if (!r.name) { delete a.rack; return; }
       var pad = function (n) { return (n < 10 ? '0' : '') + n; };
       a.rack = { name: r.name, u: (r.u0 != null && r.u1 != null) ? pad(r.u0) + 'U~' + pad(r.u1) + 'U' : '', u0: r.u0 != null ? r.u0 : null, u1: r.u1 != null ? r.u1 : null,
-                 size: r.size || 42, face: r.face || '전면', source: 'user', at: r.at || null };
+                 size: r.size || 42, face: r.face || '전면', source: 'user', at: r.at || null, bundle: !!r.bundle };
     });
 
     /* --- 측정 행 → Measure --- */
@@ -8231,9 +8321,23 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       ['랙 · U', a.rack ? [a.rack.name, a.rack.u].filter(Boolean).join(' · ') : '']];
     h += '<div class="tx-sec"><h4>기본 정보</h4><dl class="tx-dl">' + rows.map(function (r) {
       var edit = r[0] === '랙 · U' && TwinX.rack ? ' <button type="button" class="tx-rack-edit" data-act="rack-edit" data-id="' + esc(a.id) + '">' + (a.rack ? '편집' : '+ 입력') + '</button>' +
-        (a.rack && a.rack.source === 'v14-ASSET_META' ? '<small class="tx-muted"> (시범값)</small>' : a.rack && a.rack.source === 'user' ? '<small class="tx-muted"> (현장 입력)</small>' : '') : '';
+        (a.rack && a.rack.source === 'v14-ASSET_META' ? '<small class="tx-muted"> (시범값)</small>' : a.rack && a.rack.source === 'user' ? '<small class="tx-muted"> (현장 입력)</small>' : '') +
+        (TwinX.bundleEdit && !a.bundle ? ' <button type="button" class="tx-rack-edit" data-act="bundle-edit" data-id="' + esc(a.id) + '" title="같은 위치의 모듈을 1개로 묶어 배치">묶음으로</button>' : '') : '';
       return '<dt>' + r[0] + '</dt><dd' + (r[1] ? '' : ' class="tx-muted"') + '>' + esc(r[1] || '—') + edit + '</dd>';
     }).join('') + '</dl></div>';
+
+    // 설비 묶음: 2D·3D 에는 1개로 표시, 여기서 모듈(슬롯) 전체를 보여 줌
+    if (a.bundle) {
+      var mods = a.bundle.ids.map(function (id) { return TwinX.asset(id); }).filter(Boolean);
+      h += '<div class="tx-sec tx-bundle"><h4>묶음 슬롯 · ' + esc(a.bundle.name) + ' <span class="tx-count">모듈 ' + mods.length + '</span>' +
+        (TwinX.bundleEdit ? '<button type="button" class="tx-rack-edit" data-act="bundle-edit" data-id="' + esc(a.id) + '">묶음 편집</button>' : '') + '</h4>' +
+        '<ol class="tx-slots">' + mods.map(function (x) {
+          var gg = gradeOf(x);
+          return '<li class="' + (x.id === a.id ? 'is-sel' : '') + '"><button type="button" data-select="' + esc(x.id) + '" title="' + esc(x.id) + '">' +
+            '<span class="tx-slot-u">' + esc(x.rack && x.rack.u ? x.rack.u.replace(/U/g, '') : '—') + '</span>' +
+            '<i class="tx-dot" style="background:' + gcss(gg) + '"></i><b>' + esc(x.name) + '</b><small>' + esc(x.model || x.id) + '</small></button></li>';
+        }).join('') + '</ol><p class="tx-src-note">같은 실·같은 묶음 이름의 모듈을 2D·3D에서 1개로 표시합니다 (등급은 모듈 중 가장 나쁜 값)</p></div>';
+    }
 
     // 실측
     var ms = (a.measures || []).slice().sort(function (x, y) { var o = { bad: 0, none: 1, na: 2, good: 3 }; return (o[x.judge] || 1) - (o[y.judge] || 1); });
@@ -8895,7 +8999,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     var fault = st.fault && st.fault.active;
     var imp = (fault && TX.fault && TX.fault.impact instanceof Map) ? TX.fault.impact : new Map();
     var src = fault ? (st.fault.source || (TX.fault && TX.fault.source)) : null;
-    var sel = st.selected;
+    var sel = TX.bundleLead ? TX.bundleLead(st.selected) : st.selected; // 묶음 모듈 선택 → 묶음 심볼 강조
     var showTags = st.labels !== false;
     var o = [];
     var boxes = new Boxes();
@@ -9072,7 +9176,9 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
 
     /* ---- 설비 위치(px) — 좌표 없는 설비는 실 내부 격자 자동 배치, 겹침은 살짝 분산 ---- */
     var P = {}, autoIdx = {}, symBoxes = new Boxes();
-    var placed = assets.map(function (a) {
+    // 묶음(모듈 묶음)은 대표 1개만 배치하고, 나머지 모듈은 같은 위치로 연결
+    var placeList = assets.filter(function (a) { return !a.bundle || a.bundle.lead === a.id; }).map(function (a) { return a.bundle && TX.bundleView ? TX.bundleView(a) : a; });
+    var placed = placeList.map(function (a) {
       var x, y, rm = roomById[a.room];
       if (fin(a.x) && fin(a.y)) { x = X(clamp(a.x, b.x0, b.x1)); y = Y(clamp(a.y, b.y0, b.y1)); }
       else if (rm) {
@@ -9095,6 +9201,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       P[a.id] = { x: x, y: y, kind: kind, e: e, a: a };
       return P[a.id];
     }).filter(Boolean);
+    assets.forEach(function (a) { if (a.bundle && a.bundle.lead !== a.id && P[a.bundle.lead]) P[a.id] = P[a.bundle.lead]; });
 
     /* ---- 트레이 (사다리형) ---- */
     var trays = (fl.trays || []).map(function (t) { return { x1: X(t.a[0]), y1: Y(t.a[1]), x2: X(t.b[0]), y2: Y(t.b[1]), main: !!t.main }; });
@@ -9172,6 +9279,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       (M.links || []).forEach(function (lk) {
         var p1 = P[lk.from], p2 = P[lk.to];
         if (!p1 && !p2) return;
+        if (p1 && p1 === p2) return; // 같은 묶음 안의 모듈 간 연결
         var meta = C.LINK[lk.type] || C.LINK.path;
         var onPath = fault && (lk.from === src || imp.has(lk.from)) && imp.has(lk.to);
         var isSel = sel && (lk.from === sel || lk.to === sel);
@@ -9321,7 +9429,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
         var important = a.id === sel || (fault && (a.id === src || imp.has(a.id))) || a.grade === 'RED' || a.grade === 'ORANGE';
         var must = a.id === sel || (fault && (a.id === src || imp.has(a.id)));
         var sm = (L.measure !== false) ? summarize(a.measures) : (L.ground !== false && gndBad(a.measures) ? summarize((a.measures || []).filter(function (m) { return m.std === 'gnd'; })) : null);
-        var l1 = String(a.id), l1b = a.grade && a.grade !== 'NONE' ? a.grade : '';
+        var l1 = String(a.bundleLabel || a.id), l1b = a.grade && a.grade !== 'NONE' ? a.grade : '';
         var fl2 = fitText(String(a.name || '').replace(/^(지하\d+층|지상\d+층|\d+층)\s*/, ''), 10.5, 150);
         var fl3 = sm ? fitText((sm.bad ? '⚠ ' : sm.warn ? '△ ' : '실측 ') + (sm.est ? '≈' : '') + sm.items.slice(0, 1).map(mText).join(''), 9.5, 150, false) : '';
         if (fault && (a.id === src || imp.has(a.id))) fl3 = a.id === src ? '⚡ 장애 발생원' : (imp.get(a.id).sev === 'outage' ? '✖ 서비스 중단 영향' : '△ 성능 저하 영향');
@@ -9784,6 +9892,16 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
   function floorsAll() { return (M() && M().floors) || []; }
   function roomsOf(code) { return TX.roomsOf(code); }
   function assetsOf(code) { return TX.assetsOf(code); }
+  /** 묶음은 대표 1개(표시용 객체)만, 나머지는 그대로 */
+  function drawList(code) { return assetsOf(code).filter(function (a) { return !a.bundle || a.bundle.lead === a.id; }).map(function (a) { return a.bundle && TX.bundleView ? TX.bundleView(a) : a; }); }
+  /** 묶음 모듈 → 대표 위치 공유 (선택 링·연결선·카메라 이동용) */
+  function aliasBundles(code) {
+    assetsOf(code).forEach(function (a) {
+      if (!a.bundle || a.bundle.lead === a.id) return;
+      var L = S.info[a.bundle.lead]; if (!L) return;
+      S.info[a.id] = { a: a, base: L.base, top: L.top, center: L.center, ringR: L.ringR, halo: false, op: L.op, isF: L.isF, heat: null, gnd: false, alias: true };
+    });
+  }
   function linkMeta(t) { return C.LINK[t] || C.LINK.path; }
   function bounds(fl) {
     var b = fl && fl.bounds;
@@ -10178,7 +10296,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     var out = {}, placed = [], m = M();
     var risers = ((m && m.risers) || []).filter(function (r) { return !r.floors || !r.floors.length || r.floors.indexOf(fl.code) >= 0; });
     var fb = bounds(fl);
-    assetsOf(fl.code).forEach(function (a) {
+    drawList(fl.code).forEach(function (a) {
       var rm = TX.room(a.room); if (rm && rm.floor !== fl.code) rm = null;
       var kind = kindOf(a), x = num(a.x), y = num(a.y);
       if (x == null || y == null) { x = rm ? rm.x + rm.w / 2 : (fb.x0 + fb.x1) / 2; y = rm ? rm.y + rm.h / 2 : (fb.y0 + fb.y1) / 2; }
@@ -10211,6 +10329,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       }
       out[a.id] = { x: x, y: y, wx: X(x), wz: Z(y), rm: rm, kind: kind, rot: Math.atan2(fx, fz), cov: rm ? Math.hypot(rm.w, rm.h) / 2000 : 5 };
     });
+    assetsOf(fl.code).forEach(function (a) { if (a.bundle && a.bundle.lead !== a.id && out[a.bundle.lead]) out[a.id] = out[a.bundle.lead]; });
     return out;
   }
 
@@ -10234,7 +10353,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     var score = rk.est ? (scoreMode === 'always' ? '≈' + rk.total : '') : String(Math.round(rk.total));
     var badge = st().layers && st().layers.measure && mc ? '<em>실측 ' + mc + '</em>' : '';
     // 상태 등급(asset.grade)과 위험점수(analysis.risk)는 서로 다른 값 → 점수에 '위험' 명시
-    var html = '<i></i>' + U.esc(a.id) + ' <b>' + g + '</b>' + (score ? ' <small class="tx-s3-rk">위험 ' + score + '</small>' : '') + badge;
+    var html = '<i></i>' + (a.bundleLabel ? U.esc(a.name) + ' <small class="tx-s3-rk">' + U.esc(a.bundleLabel) + '</small>' : U.esc(a.id)) + ' <b>' + g + '</b>' + (score ? ' <small class="tx-s3-rk">위험 ' + score + '</small>' : '') + badge;
     return anchor(pos, html, 'tx-s3-chip tx-g-' + g, pri + (g === 'RED' ? 30 : g === 'ORANGE' ? 20 : g === 'YELLOW' ? 10 : 0), { a: a.id, t: a.name + (rk.est ? ' · 점수 미산출(등급 기반)' : ' · 위험점수 ' + Math.round(rk.total)) }, frag);
   }
   function roomChip(rm, pos, frag) {
@@ -10272,7 +10391,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
         else if (!isF && !s.ghost && TECH[rm.type]) roomChip(rm, new THREE.Vector3(cx, y + wh + 0.3, lz), frag).base -= 25;
       });
       var places = placeAssets(fl);
-      assetsOf(fl.code).forEach(function (a) {
+      drawList(fl.code).forEach(function (a) {
         var p = places[a.id]; if (!p) return;
         var top = addEquipment(bag, g, a, p, y, op, lod);
         if (!interactive) S.picks.pop();
@@ -10281,6 +10400,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
           heat: heatOf(a.measures), gnd: gndBad(a.measures) };
         if (isF || !s.ghost) assetChip(a, new THREE.Vector3(p.wx, y + top + 0.75, p.wz), isF ? 50 : 20, frag);
       });
+      aliasBundles(fl.code);
       if (L.tray !== false) (fl.trays || []).forEach(function (t) { if (t && t.a && t.b) addLadderTray(bag, g, t.a, t.b, y + TRAY_Y, 0xfacc15, op, t.main); });
     });
     if (s.riser !== false) addRisers(bag, g, fls, yMin, yMax, frag);
@@ -10602,7 +10722,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       });
       if (loops.length) g.add(new THREE.LineSegments(bag.keep(new THREE.BufferGeometry().setFromPoints(loops)), mLine(bag, 0x38bdf8, isF ? 0.7 : 0.3)));
       var places = placeAssets(fl);
-      assetsOf(fl.code).forEach(function (a) {
+      drawList(fl.code).forEach(function (a) {
         var p = places[a.id]; if (!p) return;
         var rk = riskOf(a), gc = gHex(gradeOf(a)), h = 0.25 + rk.total / 100 * Hmax;
         var grp = new THREE.Group(); grp.position.set(p.wx, y, p.wz); grp.userData.assetId = a.id; g.add(grp);
@@ -10622,6 +10742,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
         S.info[a.id] = { a: a, base: new THREE.Vector3(p.wx, y, p.wz), top: y + h + 0.05, center: new THREE.Vector3(p.wx, y + h * 0.6, p.wz), ringR: 0.62, halo: false, op: op, isF: isF, heat: ht, gnd: gndBad(a.measures) };
         if (inter) assetChip(a, new THREE.Vector3(p.wx, y + h + 0.45, p.wz), isF ? 50 : 20, frag, 'always');
       });
+      aliasBundles(fl.code);
       if (pts.length) heatPlane(bag, g, fl, y, pts);
     });
     S.heatCount = nHeat;
@@ -10754,7 +10875,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     var links = (M() && M().links) || [], pg = bag.geo('apk', function () { return new THREE.SphereGeometry(1, 12, 10); });
     var faint = {}, ex = explode();
     links.forEach(function (l) {
-      var A = S.info[l.from], B = S.info[l.to]; if (!A || !B || l.from === l.to) return;
+      var A = S.info[l.from], B = S.info[l.to]; if (!A || !B || l.from === l.to || A.base === B.base) return; // 같은 묶음 안 연결 생략
       var onPath = f && (l.from === f.src || f.imp.has(l.from)) && f.imp.has(l.to);
       var touch = l.from === sel || l.to === sel, meta = linkMeta(l.type), col = onPath ? FAULT : meta.hex;
       var p1 = cpt === 'C' ? A.center.clone() : new THREE.Vector3(A.base.x, A.top + 0.05, A.base.z);
@@ -11787,7 +11908,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     var st = rackStore();
     (TX.model && TX.model.assets || []).forEach(function (a) {
       var r = st[a.id]; if (!r) return;
-      if (!r.name) delete a.rack; else a.rack = { name: r.name, u: r.u0 + 'U~' + r.u1 + 'U', u0: r.u0, u1: r.u1, size: r.size, face: r.face, source: 'user' };
+      if (!r.name) delete a.rack; else a.rack = { name: r.name, u: r.u0 != null ? r.u0 + 'U~' + r.u1 + 'U' : '', u0: r.u0, u1: r.u1, size: r.size, face: r.face, source: 'user', bundle: !!r.bundle };
     });
     if (TX.model) TX.setModel(TX.model);
   }
@@ -11797,7 +11918,13 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     get: function (id) { return rackStore()[id] || null; },
     set: function (id, v) {
       var st = rackStore();
-      st[id] = { name: String(v.name || '').trim(), size: +v.size || 42, u0: v.u0 == null ? null : +v.u0, u1: v.u1 == null ? null : +v.u1, face: v.face || '전면', at: new Date().toISOString() };
+      st[id] = { name: String(v.name || '').trim(), size: +v.size || 42, u0: v.u0 == null ? null : +v.u0, u1: v.u1 == null ? null : +v.u1, face: v.face || '전면', at: new Date().toISOString(), bundle: v.bundle != null ? !!v.bundle : !!(st[id] && st[id].bundle) };
+      if (rackSave(st)) reloadModel();
+    },
+    /** 여러 설비를 한 번에 (묶음 만들기·해제) — map: {id: {name,...}|null} */
+    setMany: function (map) {
+      var st = rackStore(), now = new Date().toISOString();
+      Object.keys(map).forEach(function (id) { var v = map[id]; if (!v) delete st[id]; else st[id] = { name: String(v.name || '').trim(), size: +v.size || 42, u0: v.u0 == null ? null : +v.u0, u1: v.u1 == null ? null : +v.u1, face: v.face || '전면', at: now, bundle: !!v.bundle }; });
       if (rackSave(st)) reloadModel();
     },
     remove: function (id) { var st = rackStore(); delete st[id]; if (rackSave(st)) reloadModel(); },
@@ -12165,7 +12292,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
      ========================================================= */
   var GEOM_KEY = 'twinx_geom_v1';
   function geomStore() { try { var g = JSON.parse(localStorage.getItem(GEOM_KEY) || '{}') || {}; g.doors = g.doors || {}; g.trays = g.trays || {}; g.risers = g.risers || []; return g; } catch (e) { return { doors: {}, trays: {}, risers: [] }; } }
-  function geomSave(g) { try { localStorage.setItem(GEOM_KEY, JSON.stringify(g)); reloadModel(); return true; } catch (e) { toast('브라우저 저장공간에 저장하지 못했습니다', 'error'); return false; } }
+  function geomSave(g) { try { localStorage.setItem(GEOM_KEY, JSON.stringify(g)); reloadModel(); if (typeof markSaved === 'function') markSaved(); return true; } catch (e) { toast('브라우저 저장공간에 저장하지 못했습니다', 'error'); return false; } }
   var SIDE_NAME = { N: '북측', S: '남측', E: '동측', W: '서측', none: '문 없음' };
 
   TX.geom = {
@@ -12192,15 +12319,20 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
   };
 
   var gp = null; // 구조 편집 패널
-  var tool = { kind: 'door', pts: [], main: true, doorW: 900, noDoor: false, free: false, cursor: null, selRiser: null };
+  var tool = { kind: 'door', active: null, pts: [], main: true, doorW: 900, noDoor: false, free: false, cursor: null, selRiser: null, savedAt: null };
   function toggleGeom(force) {
     var open = force != null ? force : !gp;
-    if (!open) { if (gp) gp.remove(); gp = null; stopTool(); return; }
+    if (!open) { if (gp) gp.remove(); gp = null; stopTool(); tool.active = null; return; }
     if (panel) togglePanel(false);
     if (TX.state.view === '3d') TX.setState({ view: '2d' });
     if (!gp) { gp = U.el('div', 'tx-wb-panel tx-wb-geom'); root().appendChild(gp); bindGeom(); }
-    startTool(); renderGeom();
+    tool.active = null; renderGeom();
   }
+  /** 도면 클릭 모드: 버튼으로 시작 · 1회(문·라이저) 또는 완료/취소(트레이) 후 자동 종료 → 도면 이동·선택 가능 */
+  function activate(kind) { tool.active = kind; tool.pts = []; startTool(); renderGeom(); }
+  function deactivate() { tool.active = null; tool.pts = []; stopTool(); renderGeom(); }
+  function markSaved() { tool.savedAt = new Date(); var el = gp && gp.querySelector('[data-r="gsaved"]'); if (el) el.textContent = gSavedText(); }
+  function gSavedText() { var d = tool.savedAt; if (!d) return '입력하면 즉시 저장됩니다'; var p = function (n) { return (n < 10 ? '0' : '') + n; }; return '✔ 저장됨 ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); }
   function renderGeom() {
     if (!gp) return;
     var code = curFloor(), g = geomStore(), M = TX.model;
@@ -12210,7 +12342,8 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       '<div class="tx-wb-tabs">' + tabs.map(function (t) { return '<button type="button" data-g="tab" data-k="' + t[0] + '" class="' + (tool.kind === t[0] ? 'is-on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div><div class="tx-wb-body">';
     if (tool.kind === 'door') {
       var ud = rooms.filter(function (r) { return g.doors[r.id]; });
-      h += '<p class="tx-wb-guide">도면에서 <b>실 벽 근처를 클릭</b>하면 가장 가까운 벽에 문이 놓입니다.</p>' +
+      h += '<p class="tx-wb-guide"><b>「문 위치 지정」</b>을 누른 뒤 도면에서 <b>실 벽 근처를 한 번 클릭</b>하면 가장 가까운 벽에 문이 놓이고 지정이 끝납니다. 이미 있는 문도 같은 방법으로 옮깁니다.</p>' +
+        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn ' + (tool.active === 'door' ? 'tx-wb-on' : 'tx-wb-pri') + '" data-g="act" data-k="door">' + (tool.active === 'door' ? '■ 지정 중지' : '✎ 문 위치 지정') + '</button></div>' +
         '<div class="tx-wb-row2"><label>문 폭 (mm)<input type="number" min="500" max="3000" step="50" data-gi="doorW" value="' + tool.doorW + '"></label>' +
         '<label class="tx-wb-chk"><input type="checkbox" data-gi="noDoor"' + (tool.noDoor ? ' checked' : '') + '> 클릭한 실을 「문 없음」으로</label></div>' +
         '<h5>등록된 문 <span class="tx-count">' + ud.length + '</span></h5>' +
@@ -12219,16 +12352,19 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     } else if (tool.kind === 'tray') {
       var ut = g.trays[code] || [], paths = {};
       ut.forEach(function (t) { var p = paths[t.path] = paths[t.path] || { n: 0, len: 0, main: t.main }; p.n++; p.len += Math.hypot(t.b[0] - t.a[0], t.b[1] - t.a[1]); });
-      h += '<p class="tx-wb-guide">도면에서 경로의 꺾이는 점을 차례로 클릭하고 <b>더블클릭 또는 Enter</b>로 완료합니다. 직각으로 자동 정렬되며(Shift: 자유 각도), 기존 경로 끝점에 자동으로 붙습니다. Esc: 그리던 경로 취소.</p>' +
-        '<div class="tx-wb-row2"><label class="tx-wb-chk"><input type="checkbox" data-gi="main"' + (tool.main ? ' checked' : '') + '> 간선(메인) 트레이</label>' +
-        '<span class="tx-wb-pts">' + (tool.pts.length ? '그리는 중 · 점 ' + tool.pts.length + '개 <button type="button" class="tx-wb-link" data-g="tray-done">완료</button>' : '') + '</span></div>' +
+      h += '<p class="tx-wb-guide"><b>「트레이 그리기」</b>를 누르고 경로의 꺾이는 점을 차례로 클릭한 뒤, 도면 위 <b>「✔ 경로 완료」</b>를 누르면 저장되고 그리기가 끝납니다. 직각 자동 정렬(Shift: 자유 각도) · 기존 끝점에 자동 연결.</p>' +
+        '<div class="tx-wb-row2"><label class="tx-wb-chk"><input type="checkbox" data-gi="main"' + (tool.main ? ' checked' : '') + '> 간선(메인) 트레이</label></div>' +
+        '<div class="tx-wb-acts">' + (tool.active === 'tray'
+          ? '<button type="button" class="tx-wb-btn tx-wb-pri" data-g="tray-done"' + (tool.pts.length < 2 ? ' disabled' : '') + '>✔ 경로 완료 (점 ' + tool.pts.length + ')</button><button type="button" class="tx-wb-btn" data-g="tray-undo"' + (tool.pts.length ? '' : ' disabled') + '>↶ 마지막 점</button><button type="button" class="tx-wb-btn" data-g="act-off">✖ 그리기 취소</button>'
+          : '<button type="button" class="tx-wb-btn tx-wb-pri" data-g="act" data-k="tray">✎ 트레이 그리기</button>') + '</div>' +
         '<h5>등록된 경로 <span class="tx-count">' + Object.keys(paths).length + '</span></h5>' +
         (Object.keys(paths).length ? '<ul class="tx-wb-list">' + Object.keys(paths).map(function (k, i) { var p = paths[k]; return '<li><span><b>경로 ' + (i + 1) + (p.main ? ' · 간선' : ' · 지선') + '</b><small>' + p.n + '구간 · ' + (p.len / 1000).toFixed(1) + 'm</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-g="tray-del" data-id="' + k + '">삭제</button></li>'; }).join('') + '</ul>' +
           '<button type="button" class="tx-wb-link tx-wb-danger" data-g="tray-clear">이 층 등록 경로 모두 지우기 (추정 경로로 복귀)</button>'
           : '<p class="tx-wb-empty">아직 없음 · 이 층은 추정 경로로 표시 중 (등록하면 추정 경로를 대체합니다)</p>');
     } else {
       var floorsAll = (M ? M.floors : []);
-      h += '<p class="tx-wb-guide">도면에서 <b>라이저(EPS 샤프트) 위치를 클릭</b>해 추가하고, 관통하는 층을 선택하세요. 등록 라이저가 하나라도 있으면 추정 라이저 대신 등록값을 씁니다.</p>' +
+      h += '<p class="tx-wb-guide"><b>「라이저 위치 지정」</b>을 누르고 도면에서 EPS 샤프트 위치를 한 번 클릭하면 추가됩니다. 아래에서 관통 층을 선택하세요. 등록 라이저가 하나라도 있으면 추정 라이저 대신 등록값을 씁니다.</p>' +
+        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn ' + (tool.active === 'riser' ? 'tx-wb-on' : 'tx-wb-pri') + '" data-g="act" data-k="riser">' + (tool.active === 'riser' ? '■ 지정 중지' : '＋ 라이저 위치 지정') + '</button></div>' +
         '<h5>등록된 라이저 <span class="tx-count">' + g.risers.length + '</span></h5>' +
         (g.risers.length ? '<ul class="tx-wb-list tx-wb-rlist">' + g.risers.map(function (r) {
           var fs = r.floors && r.floors.length ? r.floors : floorsAll.map(function (f) { return f.code; });
@@ -12237,7 +12373,8 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
             '<small>X ' + Math.round(r.x) + ' · Y ' + Math.round(r.y) + ' mm</small></li>';
         }).join('') + '</ul>' : '<p class="tx-wb-empty">아직 없음 · TPS/EPS 실 위치로 추정 중' + (M && M.risers && M.risers.length ? ' (추정 ' + M.risers.length + '개)' : '') + '</p>');
     }
-    h += '<div class="tx-wb-acts tx-wb-acts-2"><button type="button" class="tx-wb-link" data-g="g-export">구조 입력 내보내기</button><button type="button" class="tx-wb-link" data-g="g-import">가져오기</button></div></div>';
+    h += '<div class="tx-wb-acts tx-wb-acts-2"><button type="button" class="tx-wb-link" data-g="g-export">구조 입력 내보내기</button><button type="button" class="tx-wb-link" data-g="g-import">가져오기</button></div></div>' +
+      '<div class="tx-qk-ft"><span class="tx-wb-saved" data-r="gsaved">' + gSavedText() + '</span><button type="button" class="tx-wb-btn tx-wb-pri" data-g="done">✔ 편집 완료</button></div>';
     gp.innerHTML = h;
     void fl;
   }
@@ -12246,7 +12383,14 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       var b = e.target.closest('[data-g]'); if (!b) return;
       var a = b.getAttribute('data-g'), code = curFloor(), id = b.getAttribute('data-id');
       if (a === 'close') toggleGeom(false);
-      else if (a === 'tab') { tool.kind = b.getAttribute('data-k'); tool.pts = []; drawPreview(); renderGeom(); }
+      else if (a === 'tab') { tool.kind = b.getAttribute('data-k'); deactivate(); }
+      else if (a === 'act') { var k = b.getAttribute('data-k'); if (tool.active === k) deactivate(); else activate(k); }
+      else if (a === 'act-off') deactivate();
+      else if (a === 'tray-undo') { tool.pts.pop(); drawPreview(); renderGeom(); }
+      else if (a === 'done') {
+        var g0 = geomStore(), nd = Object.keys(g0.doors).length, nt = Object.keys(g0.trays).reduce(function (s0, k0) { return s0 + g0.trays[k0].length; }, 0);
+        toggleGeom(false); toast('구조 편집 완료 · 저장됨 (문 ' + nd + ' · 트레이 ' + nt + '구간 · 라이저 ' + g0.risers.length + ')', 'success');
+      }
       else if (a === 'door-del') { TX.geom.clearDoor(id); toast('문을 추정 위치로 되돌렸습니다', 'info'); }
       else if (a === 'tray-done') finishTray();
       else if (a === 'tray-del') TX.geom.removeTrayPath(code, id);
@@ -12279,23 +12423,30 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     var host = TX.ui && TX.ui.view2d; if (!host || !TX.cad2d || !TX.cad2d.screenToMm) { toast('2D 도면 모듈이 없어 구조 편집을 할 수 없습니다', 'error'); return; }
     gcap = { host: host, down: null };
     gcap.svg = U.svg('svg', { class: 'tx-wb-gprev' }); host.appendChild(gcap.svg);
+    gcap.bar = U.el('div', 'tx-wb-calbar tx-wb-gbar'); host.appendChild(gcap.bar); paintBar();
+    gcap.bar.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-gb]'); if (!b) return; e.stopPropagation();
+      var k = b.getAttribute('data-gb');
+      if (k === 'done') finishTray(); else if (k === 'undo') { tool.pts.pop(); drawPreview(); renderGeom(); paintBar(); } else deactivate();
+    });
     host.classList.add('tx-wb-calib');
     gcap.onDown = function (e) { gcap.down = { x: e.clientX, y: e.clientY }; };
     gcap.onClick = function (e) {
       if (!gp || (gp.contains && gp.contains(e.target))) return;
       if (e.target.closest && e.target.closest('.tx-wb-calbar,.tx-cad-zoom,button')) return;
+      if (!tool.active) return;
       e.stopPropagation(); e.preventDefault();
       if (gcap.down && Math.abs(e.clientX - gcap.down.x) + Math.abs(e.clientY - gcap.down.y) > 5) return;
       var mm = TX.cad2d.screenToMm(e.clientX, e.clientY); if (!mm) return;
-      if (tool.kind === 'door') placeDoor(mm);
-      else if (tool.kind === 'tray') { if (e.detail >= 2) { finishTray(); return; } addTrayPoint(mm, e.shiftKey); }
-      else placeRiser(mm);
+      if (tool.active === 'door') { if (placeDoor(mm)) deactivate(); }
+      else if (tool.active === 'tray') { if (e.detail >= 2 && e.pointerType !== 'touch') { finishTray(); return; } addTrayPoint(mm, e.shiftKey); paintBar(); }
+      else if (tool.active === 'riser') { placeRiser(mm); deactivate(); }
     };
     gcap.onMove = function (e) { tool.free = e.shiftKey; tool.cursor = TX.cad2d.screenToMm(e.clientX, e.clientY); if (tool.kind === 'tray' && tool.pts.length) drawPreview(); };
     gcap.onKey = function (e) {
       if (!gp || /INPUT|SELECT|TEXTAREA/.test((document.activeElement || {}).tagName || '')) return;
-      if (tool.kind === 'tray' && e.key === 'Enter' && tool.pts.length) { e.preventDefault(); finishTray(); }
-      else if (tool.kind === 'tray' && e.key === 'Escape' && tool.pts.length) { e.preventDefault(); e.stopPropagation(); tool.pts = []; drawPreview(); renderGeom(); }
+      if (tool.active === 'tray' && e.key === 'Enter' && tool.pts.length) { e.preventDefault(); finishTray(); }
+      else if (tool.active && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); deactivate(); }
     };
     host.addEventListener('pointerdown', gcap.onDown, true);
     host.addEventListener('click', gcap.onClick, true);
@@ -12308,7 +12459,15 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     gcap.host.removeEventListener('click', gcap.onClick, true);
     gcap.host.removeEventListener('pointermove', gcap.onMove);
     window.removeEventListener('keydown', gcap.onKey, true);
-    gcap.host.classList.remove('tx-wb-calib'); gcap.svg.remove(); gcap = null; tool.pts = [];
+    gcap.host.classList.remove('tx-wb-calib'); gcap.svg.remove(); if (gcap.bar) gcap.bar.remove(); gcap = null; tool.pts = [];
+  }
+  function paintBar() {
+    if (!gcap || !gcap.bar) return;
+    var t = tool.active === 'door' ? '문 위치 지정: 실 벽 근처를 클릭하세요 (1회)' : tool.active === 'riser' ? '라이저 위치 지정: EPS 샤프트 위치를 클릭하세요 (1회)'
+      : '트레이 그리기 · 점 ' + tool.pts.length + '개' + (tool.pts.length < 2 ? ' · 꺾이는 점을 차례로 클릭' : '');
+    gcap.bar.innerHTML = '<b>' + esc(t) + '</b>' + (tool.active === 'tray'
+      ? '<button type="button" data-gb="done" class="tx-wb-gb-pri"' + (tool.pts.length < 2 ? ' disabled' : '') + '>✔ 경로 완료</button><button type="button" data-gb="undo"' + (tool.pts.length ? '' : ' disabled') + '>↶ 점 취소</button><button type="button" data-gb="off">✖ 취소</button>'
+      : '<button type="button" data-gb="off">■ 중지</button>');
   }
   function snapPt(mm, free) {
     var p = [Math.round(mm.x / 50) * 50, Math.round(mm.y / 50) * 50];
@@ -12333,7 +12492,8 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     var code = curFloor(), n = tool.pts.length - 1;
     TX.geom.addTrayPath(code, tool.pts.slice(), tool.main);
     tool.pts = []; drawPreview();
-    toast('케이블 트레이 경로를 등록했습니다 · ' + n + '구간', 'success');
+    deactivate();
+    toast('케이블 트레이 경로 저장 · ' + n + '구간 (그리기 종료)', 'success');
   }
   function placeDoor(mm) {
     var code = curFloor(), best = null;
@@ -12346,13 +12506,14 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
         if (c[2] && c[1] <= 900 && (!best || c[1] < best.d)) best = { r: r, side: c[0], d: c[1] };
       });
     });
-    if (!best) { toast('실 벽 가까이(0.9m 이내)를 클릭하세요', 'warn'); return; }
+    if (!best) { toast('실 벽 가까이(0.9m 이내)를 클릭하세요', 'warn'); return false; }
     var r = best.r;
-    if (tool.noDoor) { TX.geom.setDoor(r.id, { side: 'none' }); toast(r.name + ' · 문 없음으로 지정', 'success'); return; }
+    if (tool.noDoor) { TX.geom.setDoor(r.id, { side: 'none' }); toast(r.name + ' · 문 없음으로 지정 (저장됨)', 'success'); return true; }
     var along = best.side === 'N' || best.side === 'S', lo = along ? r.x : r.y, len = along ? r.w : r.h, w = Math.min(tool.doorW, len - 200);
     var at = Math.round(U.clamp(along ? mm.x : mm.y, lo + w / 2 + 50, lo + len - w / 2 - 50));
     TX.geom.setDoor(r.id, { side: best.side, at: at, w: Math.round(w) });
-    toast(r.name + ' · ' + SIDE_NAME[best.side] + ' 벽에 문 등록 (폭 ' + Math.round(w) + 'mm)', 'success');
+    toast(r.name + ' · ' + SIDE_NAME[best.side] + ' 벽에 문 저장 (폭 ' + Math.round(w) + 'mm)', 'success');
+    return true;
   }
   function placeRiser(mm) {
     var p = [Math.round(mm.x / 50) * 50, Math.round(mm.y / 50) * 50];
@@ -12644,10 +12805,12 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
   function root() { return (TX.ui && TX.ui.root) || document.body; }
 
   /* ---------------- 초안 저장소 ---------------- */
-  function blank() { return { active: false, site: '', buildings: [], floors: [], rooms: [], assets: [], links: [], autoLinks: true, source: [] }; }
+  function blank() { return { active: false, site: '', buildings: [], floors: [], rooms: [], assets: [], links: [], autoLinks: true, bundleQty: true, source: [], savedAt: null, done: null }; }
   function load() { try { var d = JSON.parse(localStorage.getItem(KEY) || 'null'); return d ? Object.assign(blank(), d) : blank(); } catch (e) { return blank(); } }
   var D = load();
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) { toast('브라우저 저장공간에 저장하지 못했습니다', 'error'); } }
+  function save() { D.savedAt = new Date().toISOString(); if (D.done) D.done.dirty = true; try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) { toast('브라우저 저장공간에 저장하지 못했습니다', 'error'); } paintSaved(); }
+  function paintSaved() { var el = P && P.querySelector('[data-r="saved"]'); if (el) el.textContent = savedText(); }
+  function savedText() { if (!D.savedAt) return ''; var d = new Date(D.savedAt), p = function (n) { return (n < 10 ? '0' : '') + n; }; return '✔ 자동 저장 ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); }
 
   var ROOM_TYPES = [['통신실', 'telecom'], ['EPS실', 'telecom'], ['TPS실', 'telecom'], ['MDF실', 'telecom'], ['IDF실', 'telecom'], ['기지국 장비실', 'telecom'], ['서버실', 'server'], ['방재실', 'control'], ['관제실', 'control'], ['UPS실', 'power'], ['전기실', 'elec'], ['기계실', 'mech'], ['복도', 'corr'], ['계단실', 'stair'], ['로비', 'lobby'], ['사무실', 'office'], ['창고', 'store'], ['화장실', 'wc'], ['주차장', 'park'], ['옥상', 'office']];
   var TYPE_OF = {}; ROOM_TYPES.forEach(function (t) { TYPE_OF[t[0]] = t[1]; });
@@ -12704,7 +12867,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
   }
 
   /* ---------------- ① 현행화표 붙여넣기 ---------------- */
-  var COLS = { name: /설비\s*명|장비\s*명|명칭/, model: /규격|모델/, qty: /수량/, maker: /제조/, loc: /설치\s*위치|위치/, year: /설치\s*연도|연도|년도/, note: /비고|관리|소유/ };
+  var COLS = { name: /설비\s*명|장비\s*명|명칭/, model: /규격|모델/, qty: /수량/, maker: /제조/, loc: /설치\s*위치|위치/, year: /설치\s*연도|연도|년도/, note: /비고|관리|소유/, bundle: /묶음|랙\s*명|함체/ };
   function parseTable(text) {
     var lines = String(text || '').split(/\r?\n/).map(function (l) { return l.split('\t'); }).filter(function (c) { return c.some(function (v) { return v.trim(); }); });
     if (!lines.length) return [];
@@ -12718,7 +12881,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     return lines.map(function (c) {
       var g = function (k) { return idx[k] != null ? clean(c[idx[k]]) : ''; };
       var q = parseInt(String(c[idx.qty] || '1').replace(/[^\d]/g, ''), 10);
-      return { name: g('name'), model: g('model'), qty: q > 0 ? Math.min(q, 200) : 1, maker: g('maker'), loc: String(c[idx.loc] || '').trim(), year: g('year'), note: g('note') };
+      return { name: g('name'), model: g('model'), qty: q > 0 ? Math.min(q, 200) : 1, maker: g('maker'), loc: String(c[idx.loc] || '').trim(), year: g('year'), note: g('note'), bundle: g('bundle') };
     }).filter(function (r) { return r.name; });
   }
   function importTable(rows) {
@@ -12728,8 +12891,11 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       var tag = tagOf(r), n = D.assets.filter(function (a) { return a.floor === f.code && a.tag === tag; }).length;
       for (var i = 0; i < r.qty; i++) {
         n++;
-        D.assets.push({ id: f.code + '-' + tag + '-' + pad(n, 3), tag: tag, name: r.qty > 1 ? r.name + ' #' + (i + 1) : r.name, model: r.model, maker: r.maker, year: r.year, note: r.note,
-          floor: f.code, roomHint: L.room, room: null, x: null, y: null, status: '정상', category: categoryOf(r), srcLoc: r.loc });
+        var na = { id: f.code + '-' + tag + '-' + pad(n, 3), tag: tag, name: r.qty > 1 ? r.name + ' #' + (i + 1) : r.name, model: r.model, maker: r.maker, year: r.year, note: r.note,
+          floor: f.code, roomHint: L.room, room: null, x: null, y: null, status: '정상', category: categoryOf(r), srcLoc: r.loc };
+        // 같은 위치·같은 장비 여러 대 = 모듈 묶음 (2D·3D에는 1개로 배치)
+        if (r.bundle) na.bundle = r.bundle; else if (r.qty > 1 && D.bundleQty !== false) na.bundle = r.name;
+        D.assets.push(na);
         made++;
       }
       D.source.push(r);
@@ -12765,7 +12931,8 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     });
     var rooms = D.rooms.map(function (r) { var f = D.floors.find(function (q) { return q.code === r.floor; }); return { id: r.id, floor: r.floor, building: f ? f.building : '', name: r.name, type: TYPE_OF[r.kind] || 'office', x: r.x, y: r.y, w: r.w, h: r.h, measures: [], raw: { 실유형: r.kind } }; });
     var assets = D.assets.filter(function (a) { return a.room; }).map(function (a) {
-      return { id: a.id, room: a.room, floor: a.floor, name: a.name, category: a.category, kind: kindOf(a), model: a.model, maker: a.maker, spec: '', x: a.x, y: a.y, status: a.status, grade: a.status === '이상' ? 'RED' : a.status === '주의' ? 'ORANGE' : 'GREEN', measures: [], raw: a };
+      var rk = a.bundle ? { name: a.bundle, u: a.u0 != null ? pad(a.u0, 2) + 'U~' + pad(a.u1 != null ? a.u1 : a.u0, 2) + 'U' : '', u0: a.u0 != null ? a.u0 : null, u1: a.u0 != null ? (a.u1 != null ? a.u1 : a.u0) : null, size: 42, source: 'quick', bundle: true } : undefined;
+      return { id: a.id, room: a.room, floor: a.floor, name: a.name, category: a.category, kind: kindOf(a), model: a.model, maker: a.maker, spec: '', x: a.x, y: a.y, status: a.status, grade: a.status === '이상' ? 'RED' : a.status === '주의' ? 'ORANGE' : 'GREEN', measures: [], rack: rk, raw: a };
     });
     var ids = {}; assets.forEach(function (a) { ids[a.id] = 1; });
     var links = D.links.filter(function (l) { return ids[l.from] && ids[l.to]; }).map(function (l) { return { id: l.id, from: l.from, to: l.to, type: l.type, label: l.auto ? '기본 규칙' : '', cable: '' }; });
@@ -12778,7 +12945,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     var rooms = [['실코드', '건물코드', '건물명', '층코드', '층명', '실명', '실유형', 'X', 'Y', 'W', 'H']];
     D.rooms.forEach(function (r) { var f = D.floors.find(function (q) { return q.code === r.floor; }); rooms.push([r.id, f.bcode, f.building, f.code, f.name, r.name, r.kind, Math.round(r.x), Math.round(r.y), Math.round(r.w), Math.round(r.h)]); });
     var assets = [['설비ID', '소속실', '설비명', '설비구분', '모델명', '제조사', '규격', '사진URL', 'X', 'Y', '상태', '설치일', '교체주기(개월)']];
-    D.assets.filter(function (a) { return a.room; }).forEach(function (a) { assets.push([a.id, a.room, a.name, a.category, a.model, a.maker, [a.year ? '설치연도 ' + a.year : '', a.serial ? 'S/N ' + a.serial : ''].filter(Boolean).join(' · '), '', Math.round(a.x), Math.round(a.y), a.status, '', '']); });
+    D.assets.filter(function (a) { return a.room; }).forEach(function (a) { assets.push([a.id, a.room, a.name, a.category, a.model, a.maker, [a.bundle ? '[묶음:' + a.bundle + (a.u0 != null ? ':U' + pad(a.u0, 2) + '-' + pad(a.u1 != null ? a.u1 : a.u0, 2) : '') + ']' : '', a.year ? '설치연도 ' + a.year : '', a.serial ? 'S/N ' + a.serial : ''].filter(Boolean).join(' · '), '', Math.round(a.x), Math.round(a.y), a.status, '', '']); });
     var ids = {}; D.assets.forEach(function (a) { if (a.room) ids[a.id] = 1; });
     var links = [['연결ID', '출발설비ID', '도착설비ID', '연결유형', '케이블번호', '출발단자', '도착단자', '연결상태']];
     D.links.filter(function (l) { return ids[l.from] && ids[l.to]; }).forEach(function (l) { links.push([l.id, l.from, l.to, { optical: '광', data: 'UTP', power: '전원' }[l.type] || '광', '', '', '', '정상']); });
@@ -12838,12 +13005,13 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     sh.forEach(function (s, i) { files.push({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', text: sheetXML(s[1]) }); });
     return zip(files);
   }
-  function exportXlsx() {
+  function exportXlsx(silent) {
     var unplaced = D.assets.filter(function (a) { return !a.room; }).length;
-    if (!D.rooms.length) { toast('실이 없습니다. ③ 실 그리기를 먼저 진행하세요', 'warn'); return; }
-    var d = new Date(), stamp = d.getFullYear() + pad(d.getMonth() + 1, 2) + pad(d.getDate(), 2);
-    U.download(buildXlsx(), 'ICT_Twin_Quick_' + stamp + '.xlsx');
-    toast('ADMIN 등록용 엑셀을 내보냈습니다' + (unplaced ? ' · 미배치 설비 ' + unplaced + '대는 제외됨' : ''), unplaced ? 'warn' : 'success');
+    if (!D.rooms.length) { toast('실이 없습니다. ③ 실 그리기를 먼저 진행하세요', 'warn'); return null; }
+    var d = new Date(), stamp = d.getFullYear() + pad(d.getMonth() + 1, 2) + pad(d.getDate(), 2), name = 'ICT_Twin_Quick_' + stamp + '.xlsx';
+    U.download(buildXlsx(), name);
+    if (!silent) toast('ADMIN 등록용 엑셀을 내보냈습니다' + (unplaced ? ' · 미배치 설비 ' + unplaced + '대는 제외됨' : ''), unplaced ? 'warn' : 'success');
+    return name;
   }
 
   /* ---------------- 도면이 없을 때: 현행화표 기반 자동 작도 ---------------- */
@@ -12857,6 +13025,8 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       var un = D.assets.filter(function (a) { return a.floor === code && !a.room; });
       var have = D.rooms.filter(function (r) { return r.floor === code; });
       var groups = {}, order = [];
+      var mates = {};
+      un = un.filter(function (a) { if (!a.bundle) return true; if (mates[a.bundle]) { mates[a.bundle].push(a); return false; } mates[a.bundle] = [a]; return true; });
       un.forEach(function (a) { var g = (a.roomHint || '').trim() || '통신실'; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(a); });
       var CELL = 1500, x = 2000, Y0 = 2000, maxH = 4200, newRooms = [];
       if (!have.length) {
@@ -12882,7 +13052,10 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       newRooms.forEach(function (r) {
         var n = r.list.length; if (!n) return;
         var cols = Math.max(1, Math.floor((r.w - 600) / CELL)), sx = r.x + 600 + CELL / 2 - CELL / 2, sy = r.y + 600;
-        r.list.forEach(function (a, i) { a.room = r.id; a.x = Math.round(Math.min(r.x + r.w - 300, sx + (i % cols) * CELL + 300)); a.y = Math.round(Math.min(r.y + r.h - 300, sy + Math.floor(i / cols) * CELL + 300)); made.assets++; });
+        r.list.forEach(function (a, i) {
+          a.room = r.id; a.x = Math.round(Math.min(r.x + r.w - 300, sx + (i % cols) * CELL + 300)); a.y = Math.round(Math.min(r.y + r.h - 300, sy + Math.floor(i / cols) * CELL + 300)); made.assets++;
+          if (a.bundle && mates[a.bundle]) mates[a.bundle].forEach(function (m) { m.room = a.room; m.x = a.x; m.y = a.y; });
+        });
       });
     });
     autoLink(); save(); apply();
@@ -12922,8 +13095,8 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     if (!P) return;
     var f = fl(), code = f && f.code;
     var placed = D.assets.filter(function (a) { return a.room; }).length;
-    var h = '<div class="tx-wb-hd"><div><small>간이 현행화 모드 · 초안 (ADMIN 등록 전)</small><b>' + esc(D.site || '사업장 미정') + '</b></div><button type="button" class="tx-wb-x" data-q="close" aria-label="닫기">✕</button></div>' +
-      '<div class="tx-qk-steps">' + STEPS.map(function (s, i) { return '<button type="button" data-q="step" data-k="' + (i + 1) + '" class="' + (step === i + 1 ? 'is-on' : '') + '"><i>' + (i + 1) + '</i>' + s + '</button>'; }).join('') + '</div>' +
+    var h = '<div class="tx-wb-hd"><div><small>간이 현행화 모드 · 초안 (ADMIN 등록 전)</small><b>' + esc(D.site || '사업장 미정') + '</b><span class="tx-qk-saved" data-r="saved">' + savedText() + '</span></div><button type="button" class="tx-wb-x" data-q="close" aria-label="닫기">✕</button></div>' +
+      '<div class="tx-qk-steps">' + STEPS.map(function (s, i) { var dn = stepDone(i + 1); return '<button type="button" data-q="step" data-k="' + (i + 1) + '" class="' + (step === i + 1 ? 'is-on' : '') + (dn ? ' is-done' : '') + '"><i>' + (dn ? '✔' : i + 1) + '</i>' + s + '</button>'; }).join('') + '</div>' +
       '<div class="tx-qk-sum">건물 ' + D.buildings.length + ' · 층 ' + D.floors.length + ' · 실 ' + D.rooms.length + ' · 설비 ' + placed + '/' + D.assets.length + ' 배치 · 연결 ' + D.links.length + '</div>' +
       (D.floors.length && step > 1 ? '<label class="tx-qk-floor">작업 층<select data-q="floor">' + D.floors.map(function (x) { return '<option value="' + esc(x.code) + '"' + (x.code === code ? ' selected' : '') + '>' + esc(x.building + ' ' + x.name) + ' (' + esc(x.code) + ')</option>'; }).join('') + '</select></label>' : '') +
       '<div class="tx-wb-body">';
@@ -12931,9 +13104,10 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       h += '<p class="tx-wb-guide">설비 현행화표(설비명·규격·수량·제조사·설치 위치·설치연도·비고)를 <b>엑셀·한글 표에서 복사해 붙여넣으세요</b>. 수량만큼 설비가 만들어지고, 설치 위치(예: 「본관 7층」)로 건물·층이 자동 생성됩니다. 「확인불가」는 빈 값으로 처리합니다. 설비마다 <b>📷 사진</b>(전경·명판·모듈)을 붙이고 명판의 모델명·S/N을 옮겨 적으면 「확인불가」가 채워집니다.</p>' +
         '<label class="tx-qk-lbl">사업장 이름<input type="text" data-q="site" value="' + esc(D.site) + '" placeholder="예: ○○청사"></label>' +
         '<textarea data-q="paste" class="tx-qk-paste" placeholder="설비명\t규격(모델명)\t수량\t제조사\t설치 위치\t설치연도\t비고\nLTE 광중계기\tKELIS(R640)\t2\t에프알텍\t본관 7층\t확인불가\tkt"></textarea>' +
+        '<label class="tx-wb-chk"><input type="checkbox" data-q="bundleQty"' + (D.bundleQty !== false ? ' checked' : '') + '> 수량 2대 이상(같은 위치·같은 장비)은 <b>묶음 1개</b>로 배치 · 모듈은 슬롯에 표시</label>' +
         '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="import">표 불러오기</button><button type="button" class="tx-wb-btn" data-q="addfloor">층 직접 추가</button></div>' +
         (D.assets.length ? '<h5>생성된 설비 <span class="tx-count">' + D.assets.length + '</span></h5><ul class="tx-wb-list tx-qk-alist">' + D.assets.map(function (a) {
-          return '<li><span><b>' + esc(a.name) + '</b><small>' + esc(a.id) + ' · ' + esc((D.floors.find(function (x) { return x.code === a.floor; }) || {}).building || '') + ' ' + esc((D.floors.find(function (x) { return x.code === a.floor; }) || {}).name || '') + (a.model ? ' · ' + esc(a.model) : '') + '</small></span>' + photoBtn(a) + '<button type="button" class="tx-wb-link tx-wb-danger" data-q="adel" data-id="' + esc(a.id) + '">삭제</button></li>';
+          return '<li><span><b>' + esc(a.name) + (a.bundle ? ' <em class="tx-qk-bn" title="묶음: 도면에는 1개로 배치">▣ ' + esc(a.bundle) + '</em>' : '') + '</b><small>' + esc(a.id) + ' · ' + esc((D.floors.find(function (x) { return x.code === a.floor; }) || {}).building || '') + ' ' + esc((D.floors.find(function (x) { return x.code === a.floor; }) || {}).name || '') + (a.model ? ' · ' + esc(a.model) : '') + '</small></span>' + photoBtn(a) + '<button type="button" class="tx-wb-link tx-wb-danger" data-q="adel" data-id="' + esc(a.id) + '">삭제</button></li>';
         }).join('') + '</ul>' : '');
     } else if (step === 2) {
       var ul = code && TX.underlay && TX.underlay.get(code);
@@ -12955,11 +13129,11 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
         '<h5>이 층의 실 <span class="tx-count">' + rs.length + '</span></h5>' +
         (rs.length ? '<ul class="tx-wb-list">' + rs.map(function (r) { return '<li><span><input type="text" class="tx-qk-rin" data-q="rren" data-id="' + esc(r.id) + '" value="' + esc(r.name) + '"><small>' + esc(r.kind) + ' · ' + (r.w / 1000).toFixed(1) + '×' + (r.h / 1000).toFixed(1) + 'm · ' + esc(r.id) + '</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-q="rdel" data-id="' + esc(r.id) + '">삭제</button></li>'; }).join('') + '</ul>' : '<p class="tx-wb-empty">아직 없음 · 통신실·EPS·복도·계단 위주로 그리면 충분합니다</p>');
     } else if (step === 4) {
-      var as = D.assets.filter(function (a) { return a.floor === code; });
+      var seenB = {}, as = D.assets.filter(function (a) { if (a.floor !== code) return false; if (!a.bundle) return true; if (seenB[a.bundle]) { seenB[a.bundle]++; return false; } seenB[a.bundle] = 1; return true; });
       h += '<p class="tx-wb-guide">목록에서 설비를 고른 뒤 <b>도면의 설치 위치를 클릭</b>하세요(실 안). 배치하면 다음 미배치 설비가 자동 선택됩니다.</p>' +
         (as.length ? '<ul class="tx-wb-list tx-qk-alist">' + as.map(function (a) {
           var r = a.room && D.rooms.find(function (q) { return q.id === a.room; });
-          return '<li class="' + (tool.placeId === a.id ? 'is-sel' : '') + '"><span><b>' + esc(a.name) + '</b><small>' + (r ? '📍 ' + esc(r.name) : '<em class="tx-qk-un">미배치</em>') + (a.roomHint ? ' · 표기: ' + esc(a.roomHint) : '') + (a.model ? ' · ' + esc(a.model) : '') + '</small></span>' +
+          return '<li class="' + (tool.placeId === a.id ? 'is-sel' : '') + '"><span><b>' + (a.bundle ? '▣ ' + esc(a.bundle) + ' <em class="tx-qk-bn">모듈 ' + seenB[a.bundle] + '</em>' : esc(a.name)) + '</b><small>' + (r ? '📍 ' + esc(r.name) : '<em class="tx-qk-un">미배치</em>') + (a.roomHint ? ' · 표기: ' + esc(a.roomHint) : '') + (a.model ? ' · ' + esc(a.model) : '') + '</small></span>' +
             photoBtn(a) + '<button type="button" class="tx-wb-link" data-q="pick" data-id="' + esc(a.id) + '">' + (tool.placeId === a.id ? '클릭 대기' : r ? '다시 배치' : '배치') + '</button></li>';
         }).join('') + '</ul>' : '<p class="tx-wb-empty">이 층의 설비가 없습니다 (① 현행화표에서 생성)</p>');
     } else {
@@ -12969,13 +13143,59 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
         (D.links.length ? '<ul class="tx-wb-list">' + D.links.map(function (l) { var a = D.assets.find(function (x) { return x.id === l.from; }), b = D.assets.find(function (x) { return x.id === l.to; }); return '<li><span><b>' + esc(a ? a.name : l.from) + ' → ' + esc(b ? b.name : l.to) + '</b><small>' + ({ optical: '광', data: 'UTP', power: '전원' }[l.type] || '광') + ' · ' + (l.auto ? '기본 규칙' : '수동') + (a && b && a.floor !== b.floor ? ' · 층간(라이저)' : '') + '</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-q="ldel" data-id="' + esc(l.id) + '">삭제</button></li>'; }).join('') + '</ul>' : '<p class="tx-wb-empty">연결 없음 (같은 층에 OFD가 없으면 규칙이 적용되지 않습니다)</p>') +
         '<div class="tx-qk-check">' + checks().map(function (c) { return '<div class="' + (c[1] ? 'ok' : 'ng') + '">' + (c[1] ? '✔ ' : '✖ ') + esc(c[0]) + '</div>'; }).join('') + '</div>' +
         '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn" data-q="diag">라이저도·개통도 자동 작도</button>' + (TX.pipe ? '<button type="button" class="tx-wb-btn" data-q="phzip">현장 사진 ZIP</button>' : '') + '</div>' +
-        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="export">ADMIN 등록용 엑셀 내보내기</button>' + (TX.pipe ? '<button type="button" class="tx-wb-btn" data-q="report">점검 결과서 변환</button>' : '') + '</div>' +
+        finishCard() +
+        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn" data-q="export">엑셀만 내보내기</button>' + (TX.pipe ? '<button type="button" class="tx-wb-btn" data-q="report">점검 결과서 변환</button>' : '') + '</div>' +
         '<p class="tx-wb-help">내보낸 파일 → ADMIN <b>데이터 관리 → 엑셀 등록 → 「전체 교체 적용」</b>. 이후 점검 결과서는 <b>측정 대시보드 → 측정 엑셀 등록</b>으로 올리고 「측정 매칭 확인」에서 연결하세요. 「현행화표_원본」 시트에 설치연도·비고 원문이 보존됩니다.</p>' +
         '<div class="tx-wb-acts tx-wb-acts-2"><button type="button" class="tx-wb-link" data-q="jexport">초안 백업(JSON)</button><button type="button" class="tx-wb-link" data-q="jimport">초안 불러오기</button><button type="button" class="tx-wb-link tx-wb-danger" data-q="reset">초안 전체 삭제</button></div>';
     }
     h += '</div><div class="tx-qk-ft"><button type="button" class="tx-wb-btn" data-q="prev"' + (step === 1 ? ' disabled' : '') + '>← 이전</button><button type="button" class="tx-wb-btn tx-wb-pri" data-q="next"' + (step === 5 ? ' disabled' : '') + '>다음 →</button></div>';
     P.innerHTML = h;
     var st = cap && cap.bar; if (st) updateBar();
+  }
+  /* ---------------- 단계 완료 표시 · 최종 완료(저장·적용) ---------------- */
+  function stepDone(n) {
+    var used = D.floors.filter(function (f) { return D.assets.some(function (a) { return a.floor === f.code; }); });
+    if (n === 1) return D.assets.length > 0;
+    if (n === 2) return used.length > 0 && used.every(function (f) { return f.auto || (TX.underlay && TX.underlay.get(f.code)) || D.rooms.some(function (r) { return r.floor === f.code; }); });
+    if (n === 3) return used.length > 0 && used.every(function (f) { return D.rooms.some(function (r) { return r.floor === f.code; }); });
+    if (n === 4) return D.assets.length > 0 && D.assets.every(function (a) { return a.room; });
+    return !!(D.done && !D.done.dirty);
+  }
+  function finishCard() {
+    var dd = D.done;
+    if (dd && !dd.dirty) {
+      return '<div class="tx-qk-done"><b>✔ 현행화 완료 · ' + esc(fmtTime(dd.at)) + '</b><span>' + esc(dd.summary) + '</span><span>엑셀 저장: <code>' + esc(dd.file) + '</code></span>' +
+        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="toadmin">ADMIN에 등록(적용)하기</button><button type="button" class="tx-wb-btn" data-q="finish">다시 저장</button></div>' +
+        '<small>ADMIN 확인창의 「검증 완료」 → 「전체 교체 적용」을 누르면 정식 자료로 반영되고 이 초안 모드는 종료됩니다.</small></div>';
+    }
+    return '<div class="tx-qk-fin"><button type="button" class="tx-wb-btn tx-wb-pri tx-qk-finbtn" data-q="finish">✔ 현행화 완료 · 저장</button>' +
+      '<small>' + (dd && dd.dirty ? '완료 후 수정된 내용이 있습니다 · 다시 완료하세요' : '점검 후 엑셀을 만들고, ADMIN 등록(적용) 단계로 안내합니다') + '</small></div>';
+  }
+  function fmtTime(iso) { var d = new Date(iso), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function finish() {
+    var cs = checks(), must = cs.slice(0, 3).filter(function (c) { return !c[1]; }), warn = cs.slice(3).filter(function (c) { return !c[1]; });
+    if (must.length) { toast('완료할 수 없습니다: ' + must.map(function (c) { return c[0]; }).join(' / '), 'warn'); return; }
+    if (warn.length && !confirm('아래 항목이 아직 남아 있습니다. 이대로 완료할까요?\n\n' + warn.map(function (c) { return '· ' + c[0]; }).join('\n'))) return;
+    var nb = {}; D.assets.forEach(function (a) { if (a.bundle) nb[a.floor + '|' + a.bundle] = 1; });
+    var file = exportXlsx(true);
+    if (!file) return;
+    save();
+    D.done = { at: new Date().toISOString(), dirty: false, file: file,
+      summary: '건물 ' + D.buildings.length + ' · 층 ' + D.floors.length + ' · 실 ' + D.rooms.length + ' · 설비 ' + D.assets.length + '대 (묶음 ' + Object.keys(nb).length + ') · 연결 ' + D.links.length };
+    try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) { }
+    renderPanel();
+    toast('현행화 완료 · 엑셀 저장됨 → 「ADMIN에 등록(적용)하기」를 누르세요', 'success');
+  }
+  /** ADMIN 데이터 관리 → 엑셀 등록 에 완료 엑셀을 그대로 전달 (ADMIN 검증·적용 창 사용) */
+  function toAdmin() {
+    if (!confirm('ADMIN 「전체 교체 적용」은 기존 ADMIN 자료 6개 시트를 이 현행화 자료로 바꿉니다.\n기존 자료가 필요하면 먼저 ADMIN에서 내보내기 하세요.\n\n계속할까요?')) return;
+    var blob = buildXlsx(), file = new File([blob], D.done && D.done.file || 'ICT_Twin_Quick.xlsx', { type: blob.type });
+    var up = TX.pipe && TX.pipe.adminUpload;
+    if (!up) { U.download(blob, file.name); toast('데이터 관리 → 엑셀 등록으로 올려 주세요', 'info'); return; }
+    D.done.sent = new Date().toISOString(); try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) { }
+    close(false); if (TX.state.open) TX.close();
+    up(/데이터\s*관리/, function () { return Array.prototype.slice.call(document.querySelectorAll('.data-action button, button')).find(function (b) { return /엑셀\s*등록/.test(b.textContent) && !/측정/.test(b.textContent); }); }, file,
+      'ADMIN에 전달했습니다 · 「검증 완료」 확인 후 「전체 교체 적용」을 누르면 반영됩니다');
   }
   function checks() {
     var placed = D.assets.filter(function (a) { return a.room; });
@@ -13008,6 +13228,8 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       else if (a === 'pick') { tool.placeId = id; startTool('place'); renderPanel(); }
       else if (a === 'ldel') { D.links = D.links.filter(function (l) { return l.id !== id; }); save(); apply(); }
       else if (a === 'export') exportXlsx();
+      else if (a === 'finish') finish();
+      else if (a === 'toadmin') toAdmin();
       else if (a === 'ph') { if (TX.pipe) TX.pipe.photos.open(id); }
       else if (a === 'autodraw' || a === 'autodrawall') { var nn = autoDraw(a === 'autodraw' ? [curFloor()] : D.floors.map(function (x) { return x.code; }), a === 'autodrawall'); toast('자동 작도: 실 ' + nn.rooms + '개 · 설비 ' + nn.assets + '대 배치' + (nn.skipped ? ' · 도면이 있는 ' + nn.skipped + '개 층은 건너뜀(도면 위에 직접 그리기)' : ''), 'success'); }
       else if (a === 'ladd') { var fr = P.querySelector('[data-q="lfrom"]').value, to = P.querySelector('[data-q="lto"]').value, ty = P.querySelector('[data-q="ltype"]').value; if (fr === to) { toast('출발과 도착 설비가 같습니다', 'warn'); return; } if (D.links.some(function (l) { return l.from === fr && l.to === to; })) { toast('이미 있는 연결입니다', 'warn'); return; } var k = 1; while (D.links.some(function (l) { return l.id === 'L' + pad(k, 3); })) k++; D.links.push({ id: 'L' + pad(k, 3), from: fr, to: to, type: ty, auto: false }); save(); apply(); }
@@ -13027,6 +13249,7 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
       else if (a === 'rren') { var r = D.rooms.find(function (q) { return q.id === t.getAttribute('data-id'); }); if (r) { r.name = t.value.trim() || r.name; save(); apply(); } }
       else if (a === 'dist') tool.dist = parseFloat(t.value) || null;
       else if (a === 'auto') { D.autoLinks = t.checked; autoLink(); save(); apply(); }
+      else if (a === 'bundleQty') { D.bundleQty = t.checked; save(); }
     });
     P.addEventListener('input', function (e) { var t = e.target; if (t.getAttribute('data-q') === 'op') { TX.underlay.update(curFloor(), { opacity: +t.value / 100 }); var o = t.parentNode.querySelector('output'); if (o) o.textContent = t.value + '%'; } });
     P.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); if (cap && cap.mode) { stopTool(); renderPanel(); } else close(true); } });
@@ -13156,7 +13379,10 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     var code = curFloor(), r = D.rooms.find(function (q) { return q.floor === code && mm.x >= q.x && mm.x <= q.x + q.w && mm.y >= q.y && mm.y <= q.y + q.h; });
     if (!r) { toast('실 안을 클릭하세요 (실이 없으면 ③ 실 그리기 먼저)', 'warn'); return; }
     var a = D.assets.find(function (q) { return q.id === tool.placeId; }); if (!a) return;
-    a.room = r.id; a.x = Math.round(mm.x); a.y = Math.round(mm.y); save();
+    a.room = r.id; a.x = Math.round(mm.x); a.y = Math.round(mm.y);
+    // 묶음: 모듈 전체를 같은 자리에 (도면에는 1개)
+    if (a.bundle) D.assets.forEach(function (q) { if (q.floor === a.floor && q.bundle === a.bundle) { q.room = a.room; q.x = a.x; q.y = a.y; } });
+    save();
     var next = D.assets.find(function (q) { return q.floor === code && !q.room; });
     tool.placeId = next ? next.id : null;
     autoLink(); save(); apply();
@@ -13818,13 +14044,18 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     if (TX.quick && TX.quick.active()) { if (!confirm('간이 현행화 초안 작업 중입니다. 측정 설비 연결은 ADMIN에 등록된 설비 기준으로 이뤄집니다.\n초안을 먼저 ADMIN에 등록(엑셀 등록 → 전체 교체 적용)했나요?\n\n[확인] 계속 · [취소] 돌아가기')) return; }
     var blob = Q().xlsx(measureSheets()), file = new File([blob], 'ICT_Twin_Measure_' + stamp() + '.xlsx', { type: blob.type });
     closeReport(); if (TX.quick && TX.quick.active()) TX.quick.close(false); if (TX.state.open) TX.close();
-    var nav = Array.prototype.slice.call(document.querySelectorAll('.sidebar nav button, nav button')).find(function (b) { return /측정\s*대시보드/.test(b.textContent); });
-    if (!nav) { U.download(blob, file.name); toast('ADMIN 측정 화면을 찾지 못해 파일로 저장했습니다 · 측정 엑셀 등록으로 올리세요', 'warn'); return; }
+    adminUpload(/측정\s*대시보드/, function () { return Array.prototype.slice.call(document.querySelectorAll('button')).find(function (b) { return b.textContent.trim() === '측정 엑셀 등록'; }); }, file,
+      '측정 엑셀을 ADMIN에 전달했습니다 · 확인창에서 점검일을 고르고 「검증된 측정자료로 교체」를 누르세요');
+  }
+  /** ADMIN 메뉴로 이동 → 등록 버튼의 파일 선택창 대신 준비된 파일을 전달 (실패 시 다운로드) */
+  function adminUpload(navRe, findBtn, file, okMsg) {
+    var nav = Array.prototype.slice.call(document.querySelectorAll('.sidebar nav button, nav button')).find(function (b) { return navRe.test(b.textContent); });
+    if (!nav) { U.download(file, file.name); toast('ADMIN 화면을 찾지 못해 파일로 저장했습니다 · 직접 등록하세요', 'warn'); return; }
     nav.click();
     var tries = 0;
     (function go() {
-      var btn = Array.prototype.slice.call(document.querySelectorAll('button')).find(function (b) { return b.textContent.trim() === '측정 엑셀 등록'; });
-      if (!btn) { if (++tries < 25) return setTimeout(go, 200); U.download(blob, file.name); toast('측정 엑셀 등록 버튼을 찾지 못해 파일로 저장했습니다', 'warn'); return; }
+      var btn = findBtn();
+      if (!btn) { if (++tries < 25) return setTimeout(go, 200); U.download(file, file.name); toast('등록 버튼을 찾지 못해 파일로 저장했습니다', 'warn'); return; }
       var orig = HTMLInputElement.prototype.click, done = false;
       HTMLInputElement.prototype.click = function () {
         if (!done && this.type === 'file') {
@@ -13835,8 +14066,8 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
         }
         return orig.apply(this, arguments);
       };
-      try { btn.click(); } finally { setTimeout(function () { if (!done) { HTMLInputElement.prototype.click = orig; U.download(blob, file.name); toast('자동 전달이 되지 않아 파일로 저장했습니다 · 측정 엑셀 등록으로 올리세요', 'warn'); } }, 600); }
-      if (done) toast('측정 엑셀을 ADMIN에 전달했습니다 · 확인창에서 점검일을 고르고 「검증된 측정자료로 교체」를 누르세요', 'success');
+      try { btn.click(); } finally { setTimeout(function () { if (!done) { HTMLInputElement.prototype.click = orig; U.download(file, file.name); toast('자동 전달이 되지 않아 파일로 저장했습니다 · 직접 등록하세요', 'warn'); } }, 600); }
+      if (done) toast(okMsg, 'success');
     })();
   }
 
@@ -13859,8 +14090,144 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
     photos: { open: openPhotos, close: closePhotos, count: count, add: addPhotos, all: allPhotos, exportZip: exportZip, reindex: reindex },
     photoSheet: photoSheet, checks: checks,
     diagrams: { open: openDiagrams, riser: riserSVG, topo: topoSVG },
-    report: { open: openReport, load: loadReport, state: function () { return R; }, sheets: measureSheets, send: sendToAdmin }
+    report: { open: openReport, load: loadReport, state: function () { return R; }, sheets: measureSheets, send: sendToAdmin },
+    adminUpload: adminUpload
   };
+})();
+
+</script>
+<script id="twinx-67-bundle">
+/* ---- 67-bundle.js ---- */
+/* ============================================================
+   TwinX 67-bundle (통합 리드) — 설비 묶음 편집
+   같은 층·같은 위치에 같은 장비가 모듈만 여러 개인 경우(예: PA SYSTEM 랙의 앰프 8대)
+   → 하나의 묶음(랙)으로 지정해 2D·3D 공간에는 1개로 배치하고, 슬롯 목록에서 모듈을 본다.
+   저장: ADMIN 자료는 랙 입력(twinx_rack_v1, bundle:true) · 간이 현행화 초안은 초안 설비의 bundle 필드
+   ADMIN 규격 칸의 [묶음:이름] / [묶음:이름:U03-04] 태그도 같은 묶음으로 인식 (00-core applyBundles)
+   ============================================================ */
+(function () {
+  'use strict';
+  var TX = window.TwinX;
+  if (!TX || TX.bundleEdit) return;
+  var U = TX.util, esc = U.esc;
+  function toast(m, k) { TX.emit('toast', { msg: m, kind: k || 'info' }); }
+  function root() { return (TX.ui && TX.ui.root) || document.body; }
+  function quick() { return TX.quick && TX.quick.active && TX.quick.active() ? TX.quick : null; }
+  function baseName(s) { return String(s || '').replace(/\s*#\s*\d+\s*$/, '').replace(/\s*\(\d+\)\s*$/, '').trim(); }
+
+  /** 같은 실에서 이름(번호 제외)이 같은 설비 2대 이상 = 묶음 후보 */
+  function suggestions(floor) {
+    var M = TX.model; if (!M) return [];
+    var g = {};
+    M.assets.forEach(function (a) {
+      if (floor && a.floor !== floor) return;
+      if (a.bundle) return;
+      var k = (a.room || a.floor) + '|' + baseName(a.name);
+      (g[k] = g[k] || []).push(a);
+    });
+    return Object.keys(g).filter(function (k) { return g[k].length >= 2; }).map(function (k) { var l = g[k]; return { room: l[0].room, floor: l[0].floor, name: baseName(l[0].name), ids: l.map(function (a) { return a.id; }) }; });
+  }
+
+  /** 저장: ids → 묶음 이름 / 모듈별 U (null 허용) */
+  function save(name, size, mods, removed) {
+    var q = quick();
+    if (q) {
+      var D = q.draft();
+      mods.forEach(function (m) { var a = D.assets.find(function (x) { return x.id === m.id; }); if (a) { a.bundle = name; a.u0 = m.u0; a.u1 = m.u1; } });
+      (removed || []).forEach(function (id) { var a = D.assets.find(function (x) { return x.id === id; }); if (a) { delete a.bundle; delete a.u0; delete a.u1; } });
+      // 묶음은 한 자리: 대표(첫 모듈)가 배치돼 있으면 나머지도 같은 실·좌표로
+      var ms = mods.map(function (m) { return D.assets.find(function (x) { return x.id === m.id; }); }).filter(Boolean), lead = ms.slice().sort(function (x, y) { return x.id.localeCompare(y.id); }).find(function (x) { return x.room; }) || null;
+      if (lead) ms.forEach(function (a) { a.room = lead.room; a.x = lead.x; a.y = lead.y; });
+      q._.save(); q._.apply();
+      return;
+    }
+    var map = {};
+    mods.forEach(function (m) { map[m.id] = { name: name, size: size, u0: m.u0, u1: m.u1, face: '전면', bundle: true }; });
+    (removed || []).forEach(function (id) { map[id] = null; });
+    TX.rack.setMany(map);
+  }
+
+  var md = null, ctx = null;
+  function close() { if (md) { md.remove(); md = null; } }
+  /** id: 기준 설비 (묶음 소속이면 그 묶음 편집, 아니면 새 묶음) */
+  function open(id) {
+    var M = TX.model, a = TX.asset(id); if (!M || !a) return;
+    var pool = M.assets.filter(function (x) { return a.room ? x.room === a.room : x.floor === a.floor; });
+    var cur = a.bundle ? a.bundle.ids.slice() : pool.filter(function (x) { return !x.bundle && baseName(x.name) === baseName(a.name); }).map(function (x) { return x.id; });
+    if (cur.indexOf(a.id) < 0) cur.unshift(a.id);
+    ctx = { id: id, room: a.room, pool: pool, sel: cur, was: a.bundle ? a.bundle.ids.slice() : [], name: a.bundle ? a.bundle.name : baseName(a.name), size: (a.rack && a.rack.size) || 42 };
+    if (!md) { md = U.el('div', 'tx-wb-modal tx-bd'); root().appendChild(md); bind(); }
+    render();
+  }
+  function uOf(x) { return x.rack && x.rack.bundle ? [x.rack.u0, x.rack.u1] : quick() ? (function () { var d = TX.quick.draft().assets.find(function (q) { return q.id === x.id; }); return d ? [d.u0, d.u1] : [null, null]; })() : [null, null]; }
+  function render() {
+    var rm = ctx.room && TX.room(ctx.room);
+    var h = '<div class="tx-wb-dlg tx-bd-dlg" role="dialog" aria-modal="true" aria-label="설비 묶음 편집">' +
+      '<div class="tx-wb-hd"><div><small>설비 묶음 · 같은 위치의 모듈을 1개로 배치</small><b>' + esc(rm ? rm.name : '같은 층') + ' · 설비 ' + ctx.pool.length + '대</b></div><button type="button" class="tx-wb-x" data-b="close" aria-label="닫기">✕</button></div>' +
+      '<div class="tx-wb-body">' +
+      '<p class="tx-wb-guide">한 랙(함체)에 들어 있는 모듈을 체크하고 <b>묶음 이름</b>을 정하세요. 2D·3D에는 랙 1개로 표시되고, 설비 상세의 <b>묶음 슬롯</b>에서 모듈별 상태·측정값을 봅니다. U 위치는 알 때만 입력하세요.</p>' +
+      '<div class="tx-wb-row2"><label>묶음(랙) 이름<input type="text" data-f="name" value="' + esc(ctx.name) + '" placeholder="예: PA SYSTEM"></label>' +
+      '<label>랙 규격<select data-f="size">' + [42, 45, 47, 36, 24, 12].map(function (n) { return '<option value="' + n + '"' + (ctx.size === n ? ' selected' : '') + '>' + n + 'U</option>'; }).join('') + '</select></label></div>' +
+      '<div class="tx-bd-tbl"><table><thead><tr><th></th><th>설비</th><th>모델</th><th>U 시작</th><th>U 끝</th></tr></thead><tbody>' +
+      ctx.pool.map(function (x) {
+        var on = ctx.sel.indexOf(x.id) >= 0, u = uOf(x), other = x.bundle && ctx.was.indexOf(x.id) < 0;
+        return '<tr class="' + (on ? 'is-on' : '') + '"><td><input type="checkbox" data-b="pick" data-id="' + esc(x.id) + '"' + (on ? ' checked' : '') + '></td>' +
+          '<td><b>' + esc(x.name) + '</b><small>' + esc(x.id) + (other ? ' · 다른 묶음 「' + esc(x.bundle.name) + '」' : '') + '</small></td><td>' + esc(x.model || '—') + '</td>' +
+          '<td><input type="number" min="1" max="47" data-u="0" data-id="' + esc(x.id) + '" value="' + (u[0] == null ? '' : u[0]) + '"></td><td><input type="number" min="1" max="47" data-u="1" data-id="' + esc(x.id) + '" value="' + (u[1] == null ? '' : u[1]) + '"></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="tx-wb-msg" data-r="msg"></p></div>' +
+      '<div class="tx-wb-ft"><div class="tx-wb-ft-l">' + (ctx.was.length ? '<button type="button" class="tx-wb-link tx-wb-danger" data-b="unbundle">묶음 해제</button>' : '') + '</div>' +
+      '<div><button type="button" class="tx-wb-btn" data-b="close">취소</button><button type="button" class="tx-wb-btn tx-wb-pri" data-b="save">묶음 저장</button></div></div></div>';
+    md.innerHTML = h;
+  }
+  function bind() {
+    md.addEventListener('click', function (e) {
+      if (e.target === md) { close(); return; }
+      var b = e.target.closest('[data-b]'); if (!b) return;
+      var a = b.getAttribute('data-b');
+      if (a === 'close') close();
+      else if (a === 'pick') { var id = b.getAttribute('data-id'), i = ctx.sel.indexOf(id); if (b.checked && i < 0) ctx.sel.push(id); else if (!b.checked && i >= 0) ctx.sel.splice(i, 1); b.closest('tr').classList.toggle('is-on', b.checked); }
+      else if (a === 'unbundle') { if (!confirm('「' + ctx.name + '」 묶음을 해제할까요? 모듈은 각각 따로 표시됩니다.')) return; save(ctx.name, ctx.size, [], ctx.was); close(); toast('묶음을 해제했습니다', 'info'); }
+      else if (a === 'save') doSave();
+    });
+    md.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } });
+  }
+  function doSave() {
+    var name = md.querySelector('[data-f="name"]').value.trim(), size = +md.querySelector('[data-f="size"]').value || 42, msg = md.querySelector('[data-r="msg"]');
+    if (!name) { msg.textContent = '묶음 이름을 입력하세요'; return; }
+    if (ctx.sel.length < 2) { msg.textContent = '모듈을 2개 이상 체크하세요'; return; }
+    var mods = ctx.sel.map(function (id) {
+      var g = function (k) { var i = md.querySelector('[data-u="' + k + '"][data-id="' + CSS.escape(id) + '"]'); var v = i && i.value !== '' ? parseInt(i.value, 10) : null; return v; };
+      var u0 = g(0), u1 = g(1); if (u0 != null && u1 == null) u1 = u0; if (u0 != null && u1 != null && u0 > u1) { var t = u0; u0 = u1; u1 = t; }
+      return { id: id, u0: u0, u1: u1 };
+    });
+    var bad = mods.filter(function (m) { return m.u0 != null && (m.u0 < 1 || m.u1 > size); });
+    if (bad.length) { msg.textContent = 'U 위치가 랙 규격(' + size + 'U)을 벗어난 모듈이 있습니다'; return; }
+    var removed = ctx.was.filter(function (id) { return ctx.sel.indexOf(id) < 0; });
+    save(name, size, mods, removed);
+    close();
+    toast('「' + name + '」 묶음 저장 · 모듈 ' + mods.length + '개 → 도면에는 1개로 표시', 'success');
+    var lead = mods.map(function (m) { return m.id; }).sort()[0];
+    setTimeout(function () { if (TX.asset(lead)) TX.select(lead); }, 120);
+  }
+
+  /** 이 층 자동 묶기 제안 → 한 번에 저장 */
+  function autoBundle(floor) {
+    var sg = suggestions(floor);
+    if (!sg.length) { toast('이 층에는 묶을 후보(같은 실 · 같은 이름 2대 이상)가 없습니다', 'info'); return 0; }
+    if (!confirm('같은 실에 같은 이름의 설비가 여러 대인 ' + sg.length + '개 그룹을 묶음으로 만들까요?\n\n' + sg.map(function (g) { return '· ' + g.name + ' (' + g.ids.length + '개)'; }).join('\n'))) return 0;
+    sg.forEach(function (g) { save(g.name, 42, g.ids.map(function (id) { return { id: id, u0: null, u1: null }; }), []); });
+    toast('묶음 ' + sg.length + '개를 만들었습니다', 'success');
+    return sg.length;
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-act="bundle-edit"]');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation(); open(b.getAttribute('data-id'));
+  }, true);
+
+  TX.bundleEdit = { open: open, close: close, suggestions: suggestions, auto: autoBundle, save: save };
 })();
 
 </script>

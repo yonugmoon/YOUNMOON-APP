@@ -46,6 +46,16 @@
   function floorsAll() { return (M() && M().floors) || []; }
   function roomsOf(code) { return TX.roomsOf(code); }
   function assetsOf(code) { return TX.assetsOf(code); }
+  /** 묶음은 대표 1개(표시용 객체)만, 나머지는 그대로 */
+  function drawList(code) { return assetsOf(code).filter(function (a) { return !a.bundle || a.bundle.lead === a.id; }).map(function (a) { return a.bundle && TX.bundleView ? TX.bundleView(a) : a; }); }
+  /** 묶음 모듈 → 대표 위치 공유 (선택 링·연결선·카메라 이동용) */
+  function aliasBundles(code) {
+    assetsOf(code).forEach(function (a) {
+      if (!a.bundle || a.bundle.lead === a.id) return;
+      var L = S.info[a.bundle.lead]; if (!L) return;
+      S.info[a.id] = { a: a, base: L.base, top: L.top, center: L.center, ringR: L.ringR, halo: false, op: L.op, isF: L.isF, heat: null, gnd: false, alias: true };
+    });
+  }
   function linkMeta(t) { return C.LINK[t] || C.LINK.path; }
   function bounds(fl) {
     var b = fl && fl.bounds;
@@ -440,7 +450,7 @@
     var out = {}, placed = [], m = M();
     var risers = ((m && m.risers) || []).filter(function (r) { return !r.floors || !r.floors.length || r.floors.indexOf(fl.code) >= 0; });
     var fb = bounds(fl);
-    assetsOf(fl.code).forEach(function (a) {
+    drawList(fl.code).forEach(function (a) {
       var rm = TX.room(a.room); if (rm && rm.floor !== fl.code) rm = null;
       var kind = kindOf(a), x = num(a.x), y = num(a.y);
       if (x == null || y == null) { x = rm ? rm.x + rm.w / 2 : (fb.x0 + fb.x1) / 2; y = rm ? rm.y + rm.h / 2 : (fb.y0 + fb.y1) / 2; }
@@ -473,6 +483,7 @@
       }
       out[a.id] = { x: x, y: y, wx: X(x), wz: Z(y), rm: rm, kind: kind, rot: Math.atan2(fx, fz), cov: rm ? Math.hypot(rm.w, rm.h) / 2000 : 5 };
     });
+    assetsOf(fl.code).forEach(function (a) { if (a.bundle && a.bundle.lead !== a.id && out[a.bundle.lead]) out[a.id] = out[a.bundle.lead]; });
     return out;
   }
 
@@ -496,7 +507,7 @@
     var score = rk.est ? (scoreMode === 'always' ? '≈' + rk.total : '') : String(Math.round(rk.total));
     var badge = st().layers && st().layers.measure && mc ? '<em>실측 ' + mc + '</em>' : '';
     // 상태 등급(asset.grade)과 위험점수(analysis.risk)는 서로 다른 값 → 점수에 '위험' 명시
-    var html = '<i></i>' + U.esc(a.id) + ' <b>' + g + '</b>' + (score ? ' <small class="tx-s3-rk">위험 ' + score + '</small>' : '') + badge;
+    var html = '<i></i>' + (a.bundleLabel ? U.esc(a.name) + ' <small class="tx-s3-rk">' + U.esc(a.bundleLabel) + '</small>' : U.esc(a.id)) + ' <b>' + g + '</b>' + (score ? ' <small class="tx-s3-rk">위험 ' + score + '</small>' : '') + badge;
     return anchor(pos, html, 'tx-s3-chip tx-g-' + g, pri + (g === 'RED' ? 30 : g === 'ORANGE' ? 20 : g === 'YELLOW' ? 10 : 0), { a: a.id, t: a.name + (rk.est ? ' · 점수 미산출(등급 기반)' : ' · 위험점수 ' + Math.round(rk.total)) }, frag);
   }
   function roomChip(rm, pos, frag) {
@@ -534,7 +545,7 @@
         else if (!isF && !s.ghost && TECH[rm.type]) roomChip(rm, new THREE.Vector3(cx, y + wh + 0.3, lz), frag).base -= 25;
       });
       var places = placeAssets(fl);
-      assetsOf(fl.code).forEach(function (a) {
+      drawList(fl.code).forEach(function (a) {
         var p = places[a.id]; if (!p) return;
         var top = addEquipment(bag, g, a, p, y, op, lod);
         if (!interactive) S.picks.pop();
@@ -543,6 +554,7 @@
           heat: heatOf(a.measures), gnd: gndBad(a.measures) };
         if (isF || !s.ghost) assetChip(a, new THREE.Vector3(p.wx, y + top + 0.75, p.wz), isF ? 50 : 20, frag);
       });
+      aliasBundles(fl.code);
       if (L.tray !== false) (fl.trays || []).forEach(function (t) { if (t && t.a && t.b) addLadderTray(bag, g, t.a, t.b, y + TRAY_Y, 0xfacc15, op, t.main); });
     });
     if (s.riser !== false) addRisers(bag, g, fls, yMin, yMax, frag);
@@ -864,7 +876,7 @@
       });
       if (loops.length) g.add(new THREE.LineSegments(bag.keep(new THREE.BufferGeometry().setFromPoints(loops)), mLine(bag, 0x38bdf8, isF ? 0.7 : 0.3)));
       var places = placeAssets(fl);
-      assetsOf(fl.code).forEach(function (a) {
+      drawList(fl.code).forEach(function (a) {
         var p = places[a.id]; if (!p) return;
         var rk = riskOf(a), gc = gHex(gradeOf(a)), h = 0.25 + rk.total / 100 * Hmax;
         var grp = new THREE.Group(); grp.position.set(p.wx, y, p.wz); grp.userData.assetId = a.id; g.add(grp);
@@ -884,6 +896,7 @@
         S.info[a.id] = { a: a, base: new THREE.Vector3(p.wx, y, p.wz), top: y + h + 0.05, center: new THREE.Vector3(p.wx, y + h * 0.6, p.wz), ringR: 0.62, halo: false, op: op, isF: isF, heat: ht, gnd: gndBad(a.measures) };
         if (inter) assetChip(a, new THREE.Vector3(p.wx, y + h + 0.45, p.wz), isF ? 50 : 20, frag, 'always');
       });
+      aliasBundles(fl.code);
       if (pts.length) heatPlane(bag, g, fl, y, pts);
     });
     S.heatCount = nHeat;
@@ -1016,7 +1029,7 @@
     var links = (M() && M().links) || [], pg = bag.geo('apk', function () { return new THREE.SphereGeometry(1, 12, 10); });
     var faint = {}, ex = explode();
     links.forEach(function (l) {
-      var A = S.info[l.from], B = S.info[l.to]; if (!A || !B || l.from === l.to) return;
+      var A = S.info[l.from], B = S.info[l.to]; if (!A || !B || l.from === l.to || A.base === B.base) return; // 같은 묶음 안 연결 생략
       var onPath = f && (l.from === f.src || f.imp.has(l.from)) && f.imp.has(l.to);
       var touch = l.from === sel || l.to === sel, meta = linkMeta(l.type), col = onPath ? FAULT : meta.hex;
       var p1 = cpt === 'C' ? A.center.clone() : new THREE.Vector3(A.base.x, A.top + 0.05, A.base.z);

@@ -69,6 +69,7 @@
 
     /* ---------- 모델 ---------- */
     setModel: function (m) {
+      applyBundles(m);
       this.model = m;
       var s = this.state;
       if (!s.floor || !m.floors.some(function (f) { return f.code === s.floor; })) s.floor = m.floors.length ? m.floors[0].code : null;
@@ -211,4 +212,51 @@
     var risers = [{ id: 'R-1', name: '주 EPS 라이저', x: 2200, y: 13000, floors: floors.map(function (f) { return f.code; }) }];
     return { source: 'demo', site: { name: '시범 통신센터', building: '시범 통신센터' }, floors: floors, rooms: rooms, assets: assets, links: links, risers: risers, measurements: [], updatedAt: new Date().toISOString() };
   };
+
+  /* ---------------- 설비 묶음 (같은 실 · 같은 랙 이름 · bundle 표시) ----------------
+     랙 입력(twinx_rack_v1 bundle:true) 또는 ADMIN 규격 태그 [묶음:이름] / [묶음:이름:U03-04] 로 지정.
+     2D·3D 에는 대표(lead) 1개로 표시하고, 슬롯(랙 실장) 목록에 모듈 전체를 보여 준다. */
+  var BTAG = /\[묶음\s*:\s*([^\]:]+?)\s*(?::\s*U?\s*(\d+)\s*[-~]\s*U?\s*(\d+)\s*U?)?\s*\]/;
+  var GORD = ['RED', 'ORANGE', 'YELLOW', 'GREEN', 'NONE'];
+  function applyBundles(m) {
+    if (!m || !m.assets) return;
+    var groups = {}, order = [];
+    m.assets.forEach(function (a) {
+      delete a.bundle;
+      if (!a.rack || a.rack.source !== 'user') {
+        var t = BTAG.exec(a.spec || '');
+        if (t) {
+          var u0 = t[2] ? +t[2] : null, u1 = t[3] ? +t[3] : null, p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+          a.rack = { name: t[1].trim(), u: u0 != null ? p2(Math.min(u0, u1)) + 'U~' + p2(Math.max(u0, u1)) + 'U' : '', u0: u0 != null ? Math.min(u0, u1) : null, u1: u1 != null ? Math.max(u0, u1) : null, size: 42, source: 'spec', bundle: true };
+        }
+      }
+      if (!a.rack || !a.rack.bundle || !a.rack.name) return;
+      var key = (a.room || a.floor || '') + '|' + a.rack.name;
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(a);
+    });
+    order.forEach(function (key) {
+      var list = groups[key];
+      var lead = list.slice().sort(function (x, y) { return String(x.id).localeCompare(String(y.id)); })[0];
+      list.sort(function (x, y) { return ((y.rack.u1 || 0) - (x.rack.u1 || 0)) || String(x.id).localeCompare(String(y.id)); });
+      var ids = list.map(function (a) { return a.id; });
+      list.forEach(function (a) {
+        a.bundle = { key: key, name: lead.rack.name, lead: lead.id, ids: ids, n: ids.length };
+        if (a !== lead && typeof lead.x === 'number' && typeof lead.y === 'number') { a.x = lead.x; a.y = lead.y; }
+      });
+    });
+  }
+  /** 묶음 소속이면 대표 설비 ID, 아니면 그대로 */
+  TwinX.bundleLead = function (id) { var a = id && TwinX.asset(id); return a && a.bundle ? a.bundle.lead : id; };
+  /** 2D·3D 표시용 대표 객체: 이름=묶음 이름, 등급=모듈 중 최악, 종류=랙, 실측=모듈 합산 */
+  TwinX.bundleView = function (a) {
+    if (!a || !a.bundle) return a;
+    var ms = a.bundle.ids.map(function (id) { return TwinX.asset(id); }).filter(Boolean);
+    var g = 'NONE'; ms.forEach(function (x) { var i = GORD.indexOf(x.grade || 'NONE'); if (i >= 0 && i < GORD.indexOf(g)) g = GORD[i]; });
+    var d = Object.create(a);
+    d.name = a.bundle.name; d.grade = g; d.kind = 'rack'; d.bundleLabel = '묶음 ×' + ms.length;
+    d.measures = ms.reduce(function (acc, x) { return acc.concat(x.measures || []); }, []);
+    return d;
+  };
+  TwinX.applyBundles = applyBundles;
 })();

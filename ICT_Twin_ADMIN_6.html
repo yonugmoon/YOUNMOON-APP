@@ -6474,6 +6474,10 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
 .tx-qk-done code { font-size: 11px; }
 .tx-qk-done small { color: #047857; }
 .tx-qk-done .tx-wb-acts { margin-top: 6px; }
+.tx-wb-gedit { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 25; pointer-events: none; }
+.tx-wb-gedit circle { pointer-events: all; cursor: grab; touch-action: none; }
+.tx-wb-geom .tx-wb-list li { flex-wrap: wrap; }
+.tx-wb-geom .tx-wb-list li.is-sel { outline: 2px solid #22d3ee; border-radius: 8px; }
 
 /* ---- 68-fusion.css ---- */
 /* 68-fusion: ADMIN 디지털 트윈 화면 안에 뷰어 도킹 */
@@ -11931,6 +11935,8 @@ tr.tx-dr-low td:first-child { color: #64748b; }
   function rackStore() { try { return JSON.parse(localStorage.getItem(RACK_KEY) || '{}') || {}; } catch (e) { return {}; } }
   function rackSave(o) { try { localStorage.setItem(RACK_KEY, JSON.stringify(o)); return true; } catch (e) { toast('브라우저 저장공간에 저장하지 못했습니다', 'error'); return false; } }
   function reloadModel() {
+    // 간이 현행화 초안 작업 중에는 ADMIN 자료 대신 초안 모델을 다시 만들어 즉시 반영
+    if (TX.quick && TX.quick.active && TX.quick.active() && TX.quick._) { TX.quick._.apply(); return; }
     if (TX.data && TX.data.refresh) { TX.data.refresh(true); return; }
     // 데이터 모듈이 없는 시험 환경: 현재 모델에 직접 반영
     var st = rackStore();
@@ -12332,6 +12338,14 @@ tr.tx-dr-low td:first-child { color: #64748b; }
       for (var i = 1; i < pts.length; i++) list.push({ a: pts[i - 1], b: pts[i], main: !!main, path: path });
       geomSave(g); return path;
     },
+    pathPoints: function (floor, path) { var segs = (geomStore().trays[floor] || []).filter(function (t) { return t.path === path; }); if (!segs.length) return []; return [segs[0].a].concat(segs.map(function (t) { return t.b; })); },
+    updateTrayPath: function (floor, path, pts, main) {
+      var g = geomStore(), list = g.trays[floor] = g.trays[floor] || [], old = list.filter(function (t) { return t.path === path; }), mn = main != null ? !!main : !!(old[0] && old[0].main);
+      var at = list.indexOf(old[0]); if (at < 0) at = list.length;
+      var rest = list.filter(function (t) { return t.path !== path; }), segs = [];
+      for (var i = 1; i < pts.length; i++) segs.push({ a: [Math.round(pts[i - 1][0]), Math.round(pts[i - 1][1])], b: [Math.round(pts[i][0]), Math.round(pts[i][1])], main: mn, path: path });
+      rest.splice(Math.min(at, rest.length), 0, ...segs); g.trays[floor] = rest; geomSave(g);
+    },
     removeTrayPath: function (floor, path) { var g = geomStore(); g.trays[floor] = (g.trays[floor] || []).filter(function (t) { return t.path !== path; }); if (!g.trays[floor].length) delete g.trays[floor]; geomSave(g); },
     clearTrays: function (floor) { var g = geomStore(); delete g.trays[floor]; geomSave(g); },
     addRiser: function (r) { var g = geomStore(); r.id = 'RU-' + Date.now().toString(36); g.risers.push(r); geomSave(g); return r.id; },
@@ -12350,14 +12364,14 @@ tr.tx-dr-low td:first-child { color: #64748b; }
   var tool = { kind: 'door', active: null, pts: [], main: true, doorW: 900, noDoor: false, free: false, cursor: null, selRiser: null, savedAt: null };
   function toggleGeom(force) {
     var open = force != null ? force : !gp;
-    if (!open) { if (gp) gp.remove(); gp = null; stopTool(); tool.active = null; return; }
+    if (!open) { if (gp) gp.remove(); gp = null; stopTool(); tool.active = null; editPath(null); return; }
     if (panel) togglePanel(false);
     if (TX.state.view === '3d') TX.setState({ view: '2d' });
     if (!gp) { gp = U.el('div', 'tx-wb-panel tx-wb-geom'); root().appendChild(gp); bindGeom(); }
     tool.active = null; renderGeom();
   }
   /** 도면 클릭 모드: 버튼으로 시작 · 1회(문·라이저) 또는 완료/취소(트레이) 후 자동 종료 → 도면 이동·선택 가능 */
-  function activate(kind) { tool.active = kind; tool.pts = []; startTool(); renderGeom(); }
+  function activate(kind) { editPath(null); tool.active = kind; tool.pts = []; startTool(); renderGeom(); }
   function deactivate() { tool.active = null; tool.pts = []; stopTool(); renderGeom(); }
   function markSaved() { tool.savedAt = new Date(); var el = gp && gp.querySelector('[data-r="gsaved"]'); if (el) el.textContent = gSavedText(); }
   function gSavedText() { var d = tool.savedAt; if (!d) return '입력하면 즉시 저장됩니다'; var p = function (n) { return (n < 10 ? '0' : '') + n; }; return '✔ 저장됨 ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); }
@@ -12386,7 +12400,8 @@ tr.tx-dr-low td:first-child { color: #64748b; }
           ? '<button type="button" class="tx-wb-btn tx-wb-pri" data-g="tray-done"' + (tool.pts.length < 2 ? ' disabled' : '') + '>✔ 경로 완료 (점 ' + tool.pts.length + ')</button><button type="button" class="tx-wb-btn" data-g="tray-undo"' + (tool.pts.length ? '' : ' disabled') + '>↶ 마지막 점</button><button type="button" class="tx-wb-btn" data-g="act-off">✖ 그리기 취소</button>'
           : '<button type="button" class="tx-wb-btn tx-wb-pri" data-g="act" data-k="tray">✎ 트레이 그리기</button>') + '</div>' +
         '<h5>등록된 경로 <span class="tx-count">' + Object.keys(paths).length + '</span></h5>' +
-        (Object.keys(paths).length ? '<ul class="tx-wb-list">' + Object.keys(paths).map(function (k, i) { var p = paths[k]; return '<li><span><b>경로 ' + (i + 1) + (p.main ? ' · 간선' : ' · 지선') + '</b><small>' + p.n + '구간 · ' + (p.len / 1000).toFixed(1) + 'm</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-g="tray-del" data-id="' + k + '">삭제</button></li>'; }).join('') + '</ul>' +
+        (Object.keys(paths).length ? '<p class="tx-wb-help">등록한 경로는 바로 도면(2D·3D)에 표시됩니다. <b>「수정」</b>을 누르면 도면에 꼭짓점이 나타나고, 끌어서 옮길 수 있습니다.</p><ul class="tx-wb-list">' + Object.keys(paths).map(function (k, i) { var p = paths[k], on = tool.selPath === k; return '<li class="' + (on ? 'is-sel' : '') + '"><span><b>경로 ' + (i + 1) + (p.main ? ' · 간선' : ' · 지선') + '</b><small>' + p.n + '구간 · ' + (p.len / 1000).toFixed(1) + 'm</small></span>' +
+          '<button type="button" class="tx-wb-link" data-g="tray-edit" data-id="' + k + '">' + (on ? '수정 끝' : '수정') + '</button><button type="button" class="tx-wb-link" data-g="tray-main" data-id="' + k + '">' + (p.main ? '지선으로' : '간선으로') + '</button><button type="button" class="tx-wb-link tx-wb-danger" data-g="tray-del" data-id="' + k + '">삭제</button></li>'; }).join('') + '</ul>' +
           '<button type="button" class="tx-wb-link tx-wb-danger" data-g="tray-clear">이 층 등록 경로 모두 지우기 (추정 경로로 복귀)</button>'
           : '<p class="tx-wb-empty">아직 없음 · 이 층은 추정 경로로 표시 중 (등록하면 추정 경로를 대체합니다)</p>');
     } else {
@@ -12411,7 +12426,7 @@ tr.tx-dr-low td:first-child { color: #64748b; }
       var b = e.target.closest('[data-g]'); if (!b) return;
       var a = b.getAttribute('data-g'), code = curFloor(), id = b.getAttribute('data-id');
       if (a === 'close') toggleGeom(false);
-      else if (a === 'tab') { tool.kind = b.getAttribute('data-k'); deactivate(); }
+      else if (a === 'tab') { tool.kind = b.getAttribute('data-k'); editPath(null); deactivate(); }
       else if (a === 'act') { var k = b.getAttribute('data-k'); if (tool.active === k) deactivate(); else activate(k); }
       else if (a === 'act-off') deactivate();
       else if (a === 'tray-undo') { tool.pts.pop(); drawPreview(); renderGeom(); }
@@ -12421,7 +12436,9 @@ tr.tx-dr-low td:first-child { color: #64748b; }
       }
       else if (a === 'door-del') { TX.geom.clearDoor(id); toast('문을 추정 위치로 되돌렸습니다', 'info'); }
       else if (a === 'tray-done') finishTray();
-      else if (a === 'tray-del') TX.geom.removeTrayPath(code, id);
+      else if (a === 'tray-del') { if (tool.selPath === id) editPath(null); TX.geom.removeTrayPath(code, id); }
+      else if (a === 'tray-edit') { editPath(tool.selPath === id ? null : id); renderGeom(); }
+      else if (a === 'tray-main') { var pp = TX.geom.pathPoints(code, id), seg = (geomStore().trays[code] || []).find(function (t) { return t.path === id; }); TX.geom.updateTrayPath(code, id, pp, !(seg && seg.main)); renderGeom(); }
       else if (a === 'tray-clear') { if (confirm(floorName(code) + ' 등록 트레이 경로를 모두 지울까요?')) TX.geom.clearTrays(code); }
       else if (a === 'riser-del') { TX.geom.removeRiser(id); }
       else if (a === 'riser-floor') {
@@ -12565,6 +12582,62 @@ tr.tx-dr-low td:first-child { color: #64748b; }
       (sc.length > 1 ? '<text x="' + (sc[sc.length - 1][0] + 10).toFixed(1) + '" y="' + (sc[sc.length - 1][1] - 10).toFixed(1) + '" fill="#fde68a" font-size="12" font-weight="700" style="paint-order:stroke;stroke:#0b1220;stroke-width:3px">' + (len / 1000).toFixed(2) + ' m</text>' : '');
   }
   TX.on('resize', function () { drawPreview(); });
+
+  /* ---- 등록 트레이 경로 수정: 꼭짓점 끌기 · 점 삭제 · 되돌리기 ---- */
+  var ed = null;
+  function editPath(path) {
+    if (ed) { cancelAnimationFrame(ed.raf); ed.svg.remove(); ed.bar.remove(); ed = null; }
+    tool.selPath = path || null;
+    if (!path) return;
+    var host = TX.ui && TX.ui.view2d; if (!host || !TX.cad2d || !TX.cad2d.mmToScreen) return;
+    if (TX.state.view === '3d') TX.setState({ view: '2d' });
+    var code = curFloor();
+    ed = { host: host, code: code, path: path, pts: TX.geom.pathPoints(code, path), undo: [], sel: -1, drag: -1, key: '' };
+    ed.svg = U.svg('svg', { class: 'tx-wb-gedit' }); host.appendChild(ed.svg);
+    ed.bar = U.el('div', 'tx-wb-calbar tx-wb-gbar'); host.appendChild(ed.bar);
+    ed.bar.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-ge]'); if (!b) return; e.stopPropagation();
+      var k = b.getAttribute('data-ge');
+      if (k === 'done') { editPath(null); renderGeom(); toast('트레이 경로 수정 완료 (저장됨)', 'success'); }
+      else if (k === 'undo' && ed.undo.length) { ed.pts = ed.undo.pop(); commit(false); }
+      else if (k === 'del' && ed.sel >= 0 && ed.pts.length > 2) { ed.undo.push(ed.pts.map(function (p) { return p.slice(); })); ed.pts.splice(ed.sel, 1); ed.sel = -1; commit(false); }
+    });
+    ed.svg.addEventListener('pointerdown', function (e) {
+      var h = e.target.closest('[data-i]'); if (!h) return;
+      e.stopPropagation(); e.preventDefault();
+      ed.drag = +h.getAttribute('data-i'); ed.sel = ed.drag; ed.undo.push(ed.pts.map(function (p) { return p.slice(); }));
+      ed.svg.setPointerCapture(e.pointerId);
+    });
+    ed.svg.addEventListener('pointermove', function (e) {
+      if (ed.drag < 0) return; e.stopPropagation();
+      var mm = TX.cad2d.screenToMm(e.clientX, e.clientY); if (!mm) return;
+      var p = [Math.round(mm.x / 50) * 50, Math.round(mm.y / 50) * 50];
+      if (!e.shiftKey) { // 이웃 점과 직각 맞춤 (가까운 축으로)
+        [ed.pts[ed.drag - 1], ed.pts[ed.drag + 1]].forEach(function (q) { if (!q) return; if (Math.abs(p[0] - q[0]) < 250) p[0] = q[0]; if (Math.abs(p[1] - q[1]) < 250) p[1] = q[1]; });
+      }
+      ed.pts[ed.drag] = p; ed.key = ''; draw();
+    });
+    ed.svg.addEventListener('pointerup', function (e) { if (ed.drag < 0) return; e.stopPropagation(); ed.drag = -1; commit(true); });
+    ed.svg.addEventListener('click', function (e) { e.stopPropagation(); });
+    function commit(moved) { TX.geom.updateTrayPath(ed.code, ed.path, ed.pts); ed.key = ''; paint(); draw(); if (moved) toast('꼭짓점 이동 · 저장됨', 'success'); }
+    function paint() {
+      ed.bar.innerHTML = '<b>경로 수정 · 꼭짓점 ' + ed.pts.length + '개 · 점을 끌어 이동 (Shift: 자유)</b>' +
+        '<button type="button" data-ge="del"' + (ed.sel >= 0 && ed.pts.length > 2 ? '' : ' disabled') + '>선택 점 삭제</button><button type="button" data-ge="undo"' + (ed.undo.length ? '' : ' disabled') + '>↶ 되돌리기</button><button type="button" data-ge="done" class="tx-wb-gb-pri">✔ 수정 완료</button>';
+    }
+    function draw() {
+      if (!ed) return;
+      var hr = ed.host.getBoundingClientRect();
+      var sc = ed.pts.map(function (p) { var q = TX.cad2d.mmToScreen(p[0], p[1]); return q ? [q.x - hr.left, q.y - hr.top] : [0, 0]; });
+      var key = sc.map(function (q) { return q[0].toFixed(0) + ',' + q[1].toFixed(0); }).join(' ') + '|' + ed.sel;
+      if (key === ed.key) return; ed.key = key;
+      var line = sc.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ');
+      ed.svg.innerHTML = '<polyline points="' + line + '" fill="none" stroke="#22d3ee" stroke-width="7" stroke-opacity="0.25"/><polyline points="' + line + '" fill="none" stroke="#22d3ee" stroke-width="2"/>' +
+        sc.map(function (q, i) { return '<circle data-i="' + i + '" cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="' + (i === ed.sel ? 9 : 7) + '" fill="' + (i === ed.sel ? '#22d3ee' : '#0b1220') + '" stroke="#22d3ee" stroke-width="2.5"/>'; }).join('');
+    }
+    (function loop() { if (!ed) return; draw(); ed.raf = requestAnimationFrame(loop); })();
+    paint();
+  }
+  TX.on('state', function (p) { var ch = (p && p.changed) || []; if (ed && ch.indexOf('floor') >= 0) { editPath(null); if (gp) renderGeom(); } });
 
   /* =========================================================
      4. 측정 매칭 확인: 업로드된 측정 행 ↔ 설비ID/실 자동 매칭 결과 검토·수동 지정
@@ -12964,7 +13037,29 @@ tr.tx-dr-low td:first-child { color: #64748b; }
     });
     var ids = {}; assets.forEach(function (a) { ids[a.id] = 1; });
     var links = D.links.filter(function (l) { return ids[l.from] && ids[l.to]; }).map(function (l) { return { id: l.id, from: l.from, to: l.to, type: l.type, label: l.auto ? '기본 규칙' : '', cable: '' }; });
-    return { source: 'quick', site: { name: (D.site || '간이 현행화') + ' (초안)', building: D.buildings[0] ? D.buildings[0].name : '' }, floors: floors, rooms: rooms, assets: assets, links: links, risers: [], measurements: [], updatedAt: new Date().toISOString() };
+    var m = { source: 'quick', site: { name: (D.site || '간이 현행화') + ' (초안)', building: D.buildings[0] ? D.buildings[0].name : '' }, floors: floors, rooms: rooms, assets: assets, links: links, risers: [], measurements: [], updatedAt: new Date().toISOString() };
+    applyGeom(m);
+    return m;
+  }
+  /* 구조 편집(문·트레이·라이저, localStorage 'twinx_geom_v1')을 초안 모델에도 반영 — ADMIN 자료(10-data)와 같은 규칙 */
+  function applyGeom(m) {
+    var g = null; try { g = JSON.parse(localStorage.getItem('twinx_geom_v1') || 'null'); } catch (e) { }
+    // 랙·U 입력(twinx_rack_v1)도 초안 설비에 반영 (묶음 설비는 초안 값 우선)
+    var rk = null; try { rk = JSON.parse(localStorage.getItem('twinx_rack_v1') || 'null'); } catch (e) { }
+    if (rk) m.assets.forEach(function (a) { var r = rk[a.id]; if (!r || a.rack) return; if (r.name) a.rack = { name: r.name, u: r.u0 != null ? pad(r.u0, 2) + 'U~' + pad(r.u1 != null ? r.u1 : r.u0, 2) + 'U' : '', u0: r.u0, u1: r.u1, size: r.size || 42, face: r.face, source: 'user', bundle: !!r.bundle }; });
+    if (!g) return;
+    var codes = m.floors.map(function (f) { return f.code; });
+    Object.keys(g.doors || {}).forEach(function (rid) {
+      var r = m.rooms.find(function (q) { return q.id === rid; }), d = g.doors[rid]; if (!r || !d) return;
+      r.door = d.side; r.doorAt = d.side === 'none' ? null : (d.at != null ? +d.at : null); r.doorW = d.w ? +d.w : null; r.doorSrc = 'user';
+    });
+    m.floors.forEach(function (f) {
+      var ut = g.trays && g.trays[f.code];
+      if (ut && ut.length) f.trays = ut.map(function (t) { return { a: [+t.a[0], +t.a[1]], b: [+t.b[0], +t.b[1]], main: !!t.main, kind: 'user', path: t.path || null, source: 'user' }; });
+    });
+    if (g.risers && g.risers.length) m.risers = g.risers.map(function (r, i) {
+      return { id: r.id || ('RU-' + (i + 1)), name: r.name || ('EPS 라이저 ' + (i + 1)), x: Math.round(+r.x), y: Math.round(+r.y), floors: (r.floors && r.floors.length ? r.floors : codes).filter(function (c) { return codes.indexOf(c) >= 0; }), rooms: [], estimated: false, source: 'user' };
+    }).filter(function (r) { return isFinite(r.x) && isFinite(r.y) && r.floors.length; });
   }
   function apply() { if (D.active && D.floors.length) TX.setModel(toModel()); renderPanel(); }
 

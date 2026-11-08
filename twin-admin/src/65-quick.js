@@ -149,7 +149,29 @@
     });
     var ids = {}; assets.forEach(function (a) { ids[a.id] = 1; });
     var links = D.links.filter(function (l) { return ids[l.from] && ids[l.to]; }).map(function (l) { return { id: l.id, from: l.from, to: l.to, type: l.type, label: l.auto ? '기본 규칙' : '', cable: '' }; });
-    return { source: 'quick', site: { name: (D.site || '간이 현행화') + ' (초안)', building: D.buildings[0] ? D.buildings[0].name : '' }, floors: floors, rooms: rooms, assets: assets, links: links, risers: [], measurements: [], updatedAt: new Date().toISOString() };
+    var m = { source: 'quick', site: { name: (D.site || '간이 현행화') + ' (초안)', building: D.buildings[0] ? D.buildings[0].name : '' }, floors: floors, rooms: rooms, assets: assets, links: links, risers: [], measurements: [], updatedAt: new Date().toISOString() };
+    applyGeom(m);
+    return m;
+  }
+  /* 구조 편집(문·트레이·라이저, localStorage 'twinx_geom_v1')을 초안 모델에도 반영 — ADMIN 자료(10-data)와 같은 규칙 */
+  function applyGeom(m) {
+    var g = null; try { g = JSON.parse(localStorage.getItem('twinx_geom_v1') || 'null'); } catch (e) { }
+    // 랙·U 입력(twinx_rack_v1)도 초안 설비에 반영 (묶음 설비는 초안 값 우선)
+    var rk = null; try { rk = JSON.parse(localStorage.getItem('twinx_rack_v1') || 'null'); } catch (e) { }
+    if (rk) m.assets.forEach(function (a) { var r = rk[a.id]; if (!r || a.rack) return; if (r.name) a.rack = { name: r.name, u: r.u0 != null ? pad(r.u0, 2) + 'U~' + pad(r.u1 != null ? r.u1 : r.u0, 2) + 'U' : '', u0: r.u0, u1: r.u1, size: r.size || 42, face: r.face, source: 'user', bundle: !!r.bundle }; });
+    if (!g) return;
+    var codes = m.floors.map(function (f) { return f.code; });
+    Object.keys(g.doors || {}).forEach(function (rid) {
+      var r = m.rooms.find(function (q) { return q.id === rid; }), d = g.doors[rid]; if (!r || !d) return;
+      r.door = d.side; r.doorAt = d.side === 'none' ? null : (d.at != null ? +d.at : null); r.doorW = d.w ? +d.w : null; r.doorSrc = 'user';
+    });
+    m.floors.forEach(function (f) {
+      var ut = g.trays && g.trays[f.code];
+      if (ut && ut.length) f.trays = ut.map(function (t) { return { a: [+t.a[0], +t.a[1]], b: [+t.b[0], +t.b[1]], main: !!t.main, kind: 'user', path: t.path || null, source: 'user' }; });
+    });
+    if (g.risers && g.risers.length) m.risers = g.risers.map(function (r, i) {
+      return { id: r.id || ('RU-' + (i + 1)), name: r.name || ('EPS 라이저 ' + (i + 1)), x: Math.round(+r.x), y: Math.round(+r.y), floors: (r.floors && r.floors.length ? r.floors : codes).filter(function (c) { return codes.indexOf(c) >= 0; }), rooms: [], estimated: false, source: 'user' };
+    }).filter(function (r) { return isFinite(r.x) && isFinite(r.y) && r.floors.length; });
   }
   function apply() { if (D.active && D.floors.length) TX.setModel(toModel()); renderPanel(); }
 

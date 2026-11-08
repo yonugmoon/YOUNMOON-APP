@@ -145,3 +145,7 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   편집 `TwinX.bundleEdit = {open,save,auto,suggestions}` (`src/67-bundle.js`), `TwinX.rack.setMany`.
 - **구조 편집 v2** 클릭 모드는 버튼으로 시작(`tool.active`), 문·라이저는 1회 지정 후 종료, 트레이는 도면 위 바 「✔ 경로 완료 / ↶ 점 취소 / ✖ 취소」, 하단 「✔ 저장됨 시각 · 편집 완료」.
 - **간이 현행화 완료** 단계 ✔ 표시, 「✔ 현행화 완료 · 저장」(점검→엑셀) → 「ADMIN에 등록(적용)하기」(`TwinX.pipe.adminUpload`로 데이터 관리 엑셀 등록에 전달). 초안 `savedAt`, `done{at,file,summary,dirty}`.
+- **꿈꾸기 현행화 점검(v2.0)** `TwinX.dream = {run, open, last, calibrate, cases, memory}` (`src/69-dream.js`) — 4층 기억 구조:
+  1층 원본(측정 행·설비 원본, 수정 없음) · 2층 변경 노트(`twinx_dream_v1.notes`, 설비당 20건) · 3층 토폴로지 점검(끊긴 연결·고립 설비·랙 U 중복) · 4층 MEMORY.md(≤200줄/25KB).
+  자료 변경 시(디바운스 2.5s, demo 제외) 자동 실행 → 스냅샷 대조로 변경 노트, 불일치 `fixes[{id,lv,t,d,act}]`(자동 수정 없음), 중요도(Salience) 기반 승격/해소. 이벤트 `dream`.
+  위험도 국소 보정: `TwinX.analysis.WEIGHTS` 중 1개만 ±5/10 변경해 놓침(불량인데 <40)·과대(양호인데 ≥60) 최소화 → 승인 시 `twinx_riskw_v1` 저장.

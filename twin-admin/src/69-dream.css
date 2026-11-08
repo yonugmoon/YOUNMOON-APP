@@ -1,0 +1,26 @@
+/* 69-dream: 꿈꾸기 현행화 점검 */
+.tx-dr-dlg { width: min(1180px, 100%); height: min(860px, calc(100vh - 32px)); display: flex; flex-direction: column; }
+.tx-dr-body { flex: 1; min-height: 0; overflow: auto; }
+.tx-dr-pre { white-space: pre-wrap; font: 12.5px/1.6 ui-monospace, Consolas, "Noto Sans KR", monospace; background: #0f172a; color: #e2e8f0; padding: 14px 16px; border-radius: 10px; margin: 0; }
+.tx-dr-body .tx-rp-tbl { max-height: none; }
+.tx-dr-body .tx-rp-tbl td { white-space: normal; max-width: 360px; }
+.tx-dr-body .tx-rp-tbl td small { display: block; color: #94a3b8; font-size: 10.5px; }
+tr.tx-dr-high td:first-child { color: #be123c; font-weight: 800; }
+tr.tx-dr-mid td:first-child { color: #b45309; font-weight: 700; }
+tr.tx-dr-low td:first-child { color: #64748b; }
+.tx-dr-notes { list-style: none; margin: 6px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tx-dr-notes li { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; padding: 5px 8px; border-radius: 6px; background: #f8fafc; border-left: 3px solid #cbd5e1; }
+.tx-dr-notes li.tx-dr-high { border-left-color: #f43f5e; background: #fff1f2; }
+.tx-dr-notes li.tx-dr-mid { border-left-color: #f59e0b; }
+.tx-dr-notes time { font: 11px ui-monospace, Consolas, monospace; color: #64748b; white-space: nowrap; }
+.tx-dr-notes .tx-wb-link { white-space: nowrap; }
+.tx-dr-layers { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.tx-dr-layers div { display: grid; grid-template-columns: 150px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; background: #f1f5f9; border: 1px solid #e2e8f0; }
+.tx-dr-layers div:first-child { background: #eef2fd; border-color: #3e63db; }
+.tx-dr-layers b { font-size: 13px; } .tx-dr-layers span { font-size: 12px; color: #475569; } .tx-dr-layers em { font-style: normal; font-size: 12px; font-weight: 700; color: #0f2a4a; }
+.tx-dr-w { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+.tx-dr-w span { font-size: 12px; padding: 5px 10px; border-radius: 8px; background: #f1f5f9; }
+.tx-dr-w b { margin-right: 6px; } .tx-dr-w em { font-style: normal; color: #3e63db; font-weight: 800; }
+.tx-dr-cmp { border-collapse: collapse; font-size: 12.5px; margin-bottom: 10px; }
+.tx-dr-cmp th, .tx-dr-cmp td { border: 1px solid #e2e8f0; padding: 6px 12px; text-align: center; } .tx-dr-cmp td:first-child { text-align: left; }
+@media (max-width: 760px) { .tx-dr-layers div { grid-template-columns: 1fr; } }

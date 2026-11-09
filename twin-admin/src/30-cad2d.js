@@ -529,7 +529,8 @@
     assets.forEach(function (a) { if (a.bundle && a.bundle.lead !== a.id && P[a.bundle.lead]) P[a.id] = P[a.bundle.lead]; });
 
     /* ---- 트레이 (사다리형) ---- */
-    var trays = (fl.trays || []).map(function (t) { return { x1: X(t.a[0]), y1: Y(t.a[1]), x2: X(t.b[0]), y2: Y(t.b[1]), main: !!t.main }; });
+    var trays = (fl.trays || []).map(function (t) { return { x1: X(t.a[0]), y1: Y(t.a[1]), x2: X(t.b[0]), y2: Y(t.b[1]), main: !!t.main, user: t.source === 'user' }; });
+    var trayUser = trays.some(function (t) { return t.user; });
     trays.forEach(function (t) { t.h = Math.abs(t.x2 - t.x1) >= Math.abs(t.y2 - t.y1); t.len = Math.hypot(t.x2 - t.x1, t.y2 - t.y1); });
     if (L.tray !== false && trays.length) {
       var tcol = fault ? '#f43f5e' : '#facc15', tq = [];
@@ -544,7 +545,7 @@
       });
       var mt = trays.filter(function (t) { return t.main; }).sort(function (a, c) { return c.len - a.len; })[0] || trays[0];
       if (mt && mt.len > 160) {
-        var lbl = '케이블트레이 ' + (mt.main ? '(간선)' : '') + ' · 추정 경로';
+        var lbl = '케이블트레이 ' + (mt.main ? '(간선)' : '') + (mt.user ? ' · 등록 경로' : ' · 추정 경로');
         if (mt.h) { var lx0 = Math.min(mt.x1, mt.x2) + 40, ly0 = (mt.y1 + mt.y2) / 2 - 10 * Math.max(0.75, k) - 3; tq.push('<text x="' + n(lx0) + '" y="' + n(ly0) + '" class="tx-c-sm tx-c-halo" fill="#fde047">' + lbl + '</text>'); boxes.add(lx0, ly0 - 10, tw(lbl, 10), 12); }
         else { var lx1 = (mt.x1 + mt.x2) / 2 + 10 * Math.max(0.75, k) + 3, ly1 = Math.min(mt.y1, mt.y2) + 40; tq.push('<text x="' + n(lx1) + '" y="' + n(ly1) + '" class="tx-c-sm tx-c-halo" fill="#fde047" transform="rotate(90 ' + n(lx1) + ' ' + n(ly1) + ')">' + lbl + '</text>'); boxes.add(lx1 - 12, ly1, 12, tw(lbl, 10)); }
       }
@@ -821,7 +822,7 @@
       lg.push(sym(kd, 44, ly, '#cbd5e1', kd === 'tray' ? 0.62 : 0.8, -90 + 90) + '<text x="86" y="' + (ly + 4) + '" class="tx-c-tb">' + KIND_LABEL[kd] + '</text>'); ly += ROWH;
     });
     lg.push('<g transform="translate(44,' + ly + ')"><rect x="-10" y="-10" width="20" height="20" fill="#082f49" stroke="#38bdf8" stroke-width="2"/><path d="M-10 -10L10 10M-10 10L10 -10" stroke="#38bdf8"/></g><text x="86" y="' + (ly + 4) + '" class="tx-c-tb">EPS/TPS 수직 라이저</text>'); ly += ROWH;
-    lg.push('<line x1="24" y1="' + (ly - 5) + '" x2="64" y2="' + (ly - 5) + '" stroke="#facc15"/><line x1="24" y1="' + (ly + 5) + '" x2="64" y2="' + (ly + 5) + '" stroke="#facc15"/><line x1="24" y1="' + ly + '" x2="64" y2="' + ly + '" stroke="#facc15" stroke-width="10" stroke-dasharray="1.1 6"/><text x="86" y="' + (ly + 4) + '" class="tx-c-tb">케이블 트레이 (추정)</text>'); ly += ROWH - 4;
+    lg.push('<line x1="24" y1="' + (ly - 5) + '" x2="64" y2="' + (ly - 5) + '" stroke="#facc15"/><line x1="24" y1="' + (ly + 5) + '" x2="64" y2="' + (ly + 5) + '" stroke="#facc15"/><line x1="24" y1="' + ly + '" x2="64" y2="' + ly + '" stroke="#facc15" stroke-width="10" stroke-dasharray="1.1 6"/><text x="86" y="' + (ly + 4) + '" class="tx-c-tb">케이블 트레이 ' + (trayUser ? '(등록)' : '(추정)') + '</text>'); ly += ROWH - 4;
     ly += 6;
     lg.push('<text x="14" y="' + ly + '" class="tx-c-tbh">결선 LINK</text>'); ly += 14;
     Object.keys(C.LINK).forEach(function (lk) {

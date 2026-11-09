@@ -468,14 +468,16 @@
   var tool = { kind: 'door', active: null, pts: [], main: true, doorW: 900, noDoor: false, free: false, cursor: null, selRiser: null, savedAt: null };
   function toggleGeom(force) {
     var open = force != null ? force : !gp;
-    if (!open) { if (gp) gp.remove(); gp = null; stopTool(); tool.active = null; editPath(null); return; }
+    if (!open) { flushTray(); if (gp) gp.remove(); gp = null; stopTool(); tool.active = null; editPath(null); return; }
     if (panel) togglePanel(false);
     if (TX.state.view === '3d') TX.setState({ view: '2d' });
     if (!gp) { gp = U.el('div', 'tx-wb-panel tx-wb-geom'); root().appendChild(gp); bindGeom(); }
     tool.active = null; renderGeom();
   }
   /** 도면 클릭 모드: 버튼으로 시작 · 1회(문·라이저) 또는 완료/취소(트레이) 후 자동 종료 → 도면 이동·선택 가능 */
-  function activate(kind) { editPath(null); tool.active = kind; tool.pts = []; startTool(); renderGeom(); }
+  function activate(kind) { flushTray(); editPath(null); tool.active = kind; tool.pts = []; startTool(); renderGeom(); }
+  /** 그리던 트레이(점 2개 이상)는 패널을 닫거나 다른 작업으로 넘어갈 때 버리지 않고 저장 */
+  function flushTray() { if (tool.active === 'tray' && tool.pts.length >= 2) finishTray(); }
   function deactivate() { tool.active = null; tool.pts = []; stopTool(); renderGeom(); }
   function markSaved() { tool.savedAt = new Date(); var el = gp && gp.querySelector('[data-r="gsaved"]'); if (el) el.textContent = gSavedText(); }
   function gSavedText() { var d = tool.savedAt; if (!d) return '입력하면 즉시 저장됩니다'; var p = function (n) { return (n < 10 ? '0' : '') + n; }; return '✔ 저장됨 ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); }
@@ -530,11 +532,12 @@
       var b = e.target.closest('[data-g]'); if (!b) return;
       var a = b.getAttribute('data-g'), code = curFloor(), id = b.getAttribute('data-id');
       if (a === 'close') toggleGeom(false);
-      else if (a === 'tab') { tool.kind = b.getAttribute('data-k'); editPath(null); deactivate(); }
+      else if (a === 'tab') { flushTray(); tool.kind = b.getAttribute('data-k'); editPath(null); deactivate(); }
       else if (a === 'act') { var k = b.getAttribute('data-k'); if (tool.active === k) deactivate(); else activate(k); }
       else if (a === 'act-off') deactivate();
       else if (a === 'tray-undo') { tool.pts.pop(); drawPreview(); renderGeom(); }
       else if (a === 'done') {
+        flushTray();
         var g0 = geomStore(), nd = Object.keys(g0.doors).length, nt = Object.keys(g0.trays).reduce(function (s0, k0) { return s0 + g0.trays[k0].length; }, 0);
         toggleGeom(false); toast('구조 편집 완료 · 저장됨 (문 ' + nd + ' · 트레이 ' + nt + '구간 · 라이저 ' + g0.risers.length + ')', 'success');
       }

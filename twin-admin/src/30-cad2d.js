@@ -502,7 +502,7 @@
     /* ---- 설비 위치(px) — 좌표 없는 설비는 실 내부 격자 자동 배치, 겹침은 살짝 분산 ---- */
     var P = {}, autoIdx = {}, symBoxes = new Boxes();
     // 묶음(모듈 묶음)은 대표 1개만 배치하고, 나머지 모듈은 같은 위치로 연결
-    var placeList = assets.filter(function (a) { return !a.bundle || a.bundle.lead === a.id; }).map(function (a) { return a.bundle && TX.bundleView ? TX.bundleView(a) : a; });
+    var placeList = assets.filter(function (a) { return !a.unplaced && (!a.bundle || a.bundle.lead === a.id); }).map(function (a) { return a.bundle && TX.bundleView ? TX.bundleView(a) : a; });
     var placed = placeList.map(function (a) {
       var x, y, rm = roomById[a.room];
       if (fin(a.x) && fin(a.y)) { x = X(clamp(a.x, b.x0, b.x1)); y = Y(clamp(a.y, b.y0, b.y1)); }
@@ -780,7 +780,9 @@
           best.ok = best.ov <= best.w * best.h * 0.06;
           return best;
         }
-        var best = (dense && !important) ? null : place(false);
+        // 기본은 간단 라벨(ID·등급)만 — 선택·장애 설비 또는 「설비 상세 라벨」 켬일 때 이름·실측까지
+        var detail = L.tagDetail === true;
+        var best = must ? place(false) : !detail ? place(true) : (dense && !important) ? null : place(false);
         if (!best || !best.ok) {
           var cb = place(true);
           if (cb.ok) best = cb;

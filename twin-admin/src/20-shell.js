@@ -150,6 +150,7 @@
       '<button type="button" class="tx-seg-btn" data-set="view:2d" title="2D CAD 도면 (1)">' + ic('map', 16) + '<span class="tx-lbl-full">2D CAD</span><span class="tx-lbl-short">2D</span></button>' +
       '<button type="button" class="tx-seg-btn" data-set="view:3d" title="3D 입체 (2)">' + ic('cube', 16) + '<span>3D</span></button>' +
       '<button type="button" class="tx-seg-btn" data-set="view:split" title="2D+3D 분할 (3)">' + ic('split', 16) + '<span>분할</span></button>' +
+      '<button type="button" class="tx-seg-btn" data-set="view:topo" title="계통도 · 설비 구성과 연결 관계 (4)">' + ic('links', 16) + '<span>계통도</span></button>' +
       '</div>';
   }
   function tbtn(pop, icon, label, title) {
@@ -180,10 +181,10 @@
       '<input type="range" min="1" max="2.4" step="0.05" data-range="explode" aria-label="층간격 배율"><span class="tx-range-ticks"><i>1.0</i><i>1.7</i><i>2.4</i></span></label>';
   }
   function bodyLayers() {
-    var L = [['tray', 'tray', '케이블 트레이', '#94a3b8'], ['links', 'links', '결선', C.LINK.data.css], ['thermal', 'thermo', '열화상', C.GRADE.ORANGE.css], ['ground', 'ground', '접지 경고', C.LINK.ground.css], ['measure', 'clip', '실측 배지', '#3e63db']];
+    var L = [['tray', 'tray', '케이블 트레이', '#94a3b8'], ['links', 'links', '결선', C.LINK.data.css], ['thermal', 'thermo', '열화상', C.GRADE.ORANGE.css], ['ground', 'ground', '접지 경고', C.LINK.ground.css], ['measure', 'clip', '실측 배지', '#3e63db'], ['tagDetail', 'tag', '설비 상세 라벨', '#cbd5e1'], ['gradeAdmin', 'clip', 'ADMIN 상태 기준 색', '#10b981']];
     return '<div class="tx-chips">' + L.map(function (l) {
       return '<button type="button" class="tx-chip" data-layer="' + l[0] + '" style="--tx-chip:' + l[3] + '">' + ic(l[1], 15) + '<span>' + l[2] + '</span></button>';
-    }).join('') + '</div><p class="tx-pop-note">' + ic('info', 13) + '실측 배지는 ADMIN 정기점검 실측 자료 기준입니다 (센서 자동 수집 아님).</p>';
+    }).join('') + '</div><p class="tx-pop-note">' + ic('info', 13) + '실측 배지는 ADMIN 정기점검 실측 자료 기준입니다 (센서 자동 수집 아님). 상태 색 기본값은 <b>측정 판정 반영</b>(주의 측정 → 관찰)이며, 「ADMIN 상태 기준 색」을 켜면 ADMIN 화면과 같은 등록 상태 색만 씁니다.</p>';
   }
   function bodyCamera() {
     var B = [['iso', 'iso', '아이소'], ['front', 'front', '정면'], ['top', 'top', '평면'], ['reset', 'reset', '초기화'], ['focus', 'focus', '선택 설비로']];
@@ -610,7 +611,7 @@
 
   function syncLayout() {
     var s = S(), r = R.root;
-    ['2d', '3d', 'split'].forEach(function (v) { r.classList.toggle('tx-v-' + v, s.view === v); });
+    ['2d', '3d', 'split', 'topo'].forEach(function (v) { r.classList.toggle('tx-v-' + v, s.view === v); });
     r.classList.toggle('tx-insp-open', !!s.panel.inspector);
     r.classList.toggle('tx-rail-closed', !s.panel.floors);
     r.classList.toggle('tx-legend-closed', !s.panel.legend);
@@ -730,6 +731,7 @@
       '<div class="tx-hero-meta"><code>' + esc(a.id) + '</code>' + gradeBadge(g) + (a.status ? '<span class="tx-status-txt">' + esc(a.status) + '</span>' : '') + '</div></div>' +
       '<button type="button" class="tx-ibtn tx-ibtn-sm" data-select="" aria-label="선택 해제" title="선택 해제">' + ic('x', 16) + '</button></div>' +
       '<div class="tx-loc">' + ic('pin', 14) + '<span>' + esc(f ? f.name || floorShort(f) : a.floor) + (rm ? ' · ' + esc(rm.name) : '') + (rm && rm.building ? ' <em>' + esc(rm.building) + '</em>' : '') + '</span></div>' +
+      (a.unplaced ? '<div class="tx-banner">' + ic('info', 15) + '<span><b>미배치 설비</b> · ' + (a.unplaced === 'room' ? '실 미지정' : '도면 좌표 없음') + ' — 2D·3D에는 표시하지 않습니다 (간이 현행화 ④에서 배치)</span></div>' : '') +
       '<div class="tx-actions">' +
         '<button type="button" class="tx-btn" data-act="focus">' + ic('focus', 15) + '설비로 이동</button>' +
         ((s.fault && s.fault.active && s.fault.source === a.id)
@@ -981,6 +983,7 @@
     else if (k === '1') TwinX.setState({ view: '2d' });
     else if (k === '2') TwinX.setState({ view: '3d' });
     else if (k === '3') TwinX.setState({ view: 'split' });
+    else if (k === '4') TwinX.setState({ view: 'topo' });
     else if (k === 'f' || k === 'F') { if (e.shiftKey) return; toggleFullscreen(); }
     else if (k === '[' || k === ']') stepFloor(k === '[' ? -1 : 1);
     else handled = false;

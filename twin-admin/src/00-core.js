@@ -24,7 +24,7 @@
     labels: true,           // 실·설비 라벨
     explode: 1.5,           // 층간격 배율 1.0~2.4
     walk: false,            // 1인칭 워크스루
-    layers: { tray: true, links: true, thermal: false, ground: true, measure: true, underlay: true },
+    layers: { tray: true, links: true, thermal: false, ground: true, measure: true, underlay: true, tagDetail: false, gradeAdmin: (function () { try { return localStorage.getItem('twinx_grade_basis') === 'admin'; } catch (e) { return false; } })() },
     selected: null,         // 선택 설비 ID (model.assets[].id)
     room: null,             // 선택 실 ID (model.rooms[].id)
     fault: { active: false, source: null }, // 장애 파급 시뮬레이션
@@ -69,7 +69,7 @@
 
     /* ---------- 모델 ---------- */
     setModel: function (m) {
-      applyBundles(m);
+      applyBundles(m); applyGradeBasis(m, this.state);
       this.model = m;
       var s = this.state;
       if (!s.floor || !m.floors.some(function (f) { return f.code === s.floor; })) s.floor = m.floors.length ? m.floors[0].code : null;
@@ -259,4 +259,12 @@
     return d;
   };
   TwinX.applyBundles = applyBundles;
+  /* 상태 색 기준: 기본 = 측정 판정 반영(주의 측정 → 관찰/주의), 'ADMIN 상태 기준' 켬 = ADMIN 등록 상태만 (ADMIN 토폴로지 화면과 동일) */
+  function gradeOfStatus(st) { st = String(st || ''); return /이상|불량|고장|장애/.test(st) ? 'RED' : /주의|경고/.test(st) ? 'ORANGE' : /관찰/.test(st) ? 'YELLOW' : /정상|양호/.test(st) ? 'GREEN' : 'NONE'; }
+  function applyGradeBasis(m, s) {
+    if (!m || !m.assets) return;
+    var adminBasis = !!(s && s.layers && s.layers.gradeAdmin);
+    m.assets.forEach(function (a) { if (a.gradeMeas === undefined) a.gradeMeas = a.grade; a.grade = adminBasis ? gradeOfStatus(a.status) : a.gradeMeas; });
+  }
+  TwinX.gradeOfStatus = gradeOfStatus;
 })();

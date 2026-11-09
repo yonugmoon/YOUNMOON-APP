@@ -149,3 +149,12 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   1층 원본(측정 행·설비 원본, 수정 없음) · 2층 변경 노트(`twinx_dream_v1.notes`, 설비당 20건) · 3층 토폴로지 점검(끊긴 연결·고립 설비·랙 U 중복) · 4층 MEMORY.md(≤200줄/25KB).
   자료 변경 시(디바운스 2.5s, demo 제외) 자동 실행 → 스냅샷 대조로 변경 노트, 불일치 `fixes[{id,lv,t,d,act}]`(자동 수정 없음), 중요도(Salience) 기반 승격/해소. 이벤트 `dream`.
   위험도 국소 보정: `TwinX.analysis.WEIGHTS` 중 1개만 ±5/10 변경해 놓침(불량인데 <40)·과대(양호인데 ≥60) 최소화 → 승인 시 `twinx_riskw_v1` 저장.
+- **데이터 관리·계통도·정합(v2.1)**
+  - `src/71-reset.js` `TwinX.adminSync = {raw, sheets, push(t,msg,{keepQuick}), merge(t,draftSheets), plan:{demo,rebuild,unplace,all}, backup, restore}` · `TwinX.dataCenter.open()`.
+    ADMIN 변경은 항상 ADMIN 엑셀 등록 검증·적용 창 경유. 빈 층은 자리표시 실 `<층코드>-UNASSIGNED`(실유형 '미지정') — 10-data 는 그리지 않고 소속 설비를 `unplaced:'room'`.
+    ADMIN 은 설비 X·Y 필수 + 소속 실 범위 검증 → 배치 해제는 자리표시 실로 이동 + 규격 `[원위치:실코드]`.
+  - 10-data: 등록 자료가 비면 빈 모델(`empty:true`, 데모로 대체 안 함), 좌표 없는 설비 `unplaced:'pos'`(임의 격자 배치 안 함), `TwinX.data.raw()`.
+    **ADMIN IndexedDB 를 직접 열지 않음**(동시 접근 시 ADMIN 저장 자료 불러오기 실패 재현) — 기대 실 개수 `twinx_admin_expect_v1` 로 새로고침 직후 시범 자료 오인 방지, 60·66 IndexedDB 초기 읽기 1.5~1.8s 지연.
+  - `src/70-topo.js` 보기 `view:'topo'` (단축키 4) · 노드 배치 `twinx_topo_layout_v1`(설치 좌표와 별개) · 연결 추가/삭제 → 초안 즉시 / ADMIN 대기 후 반영.
+  - 65-quick: `startFloors`, `loadFromAdmin(codes)`(ID 유지), 등록 시 `adminSync.merge` 로 **초안 층만 교체**, 4점 정합(A→A′, B→B′ 이동+축척, 트레이·라이저 동반), 미배치 설비도 대장에 보존.
+  - 표시: 기본 간단 라벨(`layers.tagDetail` 켬 = 상세), 상태 색 기준 `layers.gradeAdmin`(ADMIN 등록 상태만, `twinx_grade_basis`), 원래 값 `asset.gradeMeas`.

@@ -670,7 +670,7 @@
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-act="wb-menu"]')) setTimeout(injectMenu, 0); });
   TX.on('model', function () { if (dg) renderDiagrams(); });
   TX.on('close', function () { if (dg) { dg.remove(); dg = null; } });
-  reindex().then(function () { var q = Q(); if (q) q.refresh(); });
+  setTimeout(function () { reindex().then(function () { var q = Q(); if (q) q.refresh(); }); }, 1800);
 
   TX.pipe = {
     pdfToImage: pdfToImage, pdfTables: pdfTables, readAny: readAny, readXlsx: readXlsx, readDocx: readDocx, unzip: unzip,

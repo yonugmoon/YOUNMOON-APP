@@ -47,7 +47,7 @@
   function roomsOf(code) { return TX.roomsOf(code); }
   function assetsOf(code) { return TX.assetsOf(code); }
   /** 묶음은 대표 1개(표시용 객체)만, 나머지는 그대로 */
-  function drawList(code) { return assetsOf(code).filter(function (a) { return !a.bundle || a.bundle.lead === a.id; }).map(function (a) { return a.bundle && TX.bundleView ? TX.bundleView(a) : a; }); }
+  function drawList(code) { return assetsOf(code).filter(function (a) { return !a.unplaced && (!a.bundle || a.bundle.lead === a.id); }).map(function (a) { return a.bundle && TX.bundleView ? TX.bundleView(a) : a; }); }
   /** 묶음 모듈 → 대표 위치 공유 (선택 링·연결선·카메라 이동용) */
   function aliasBundles(code) {
     assetsOf(code).forEach(function (a) {

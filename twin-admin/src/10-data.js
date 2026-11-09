@@ -189,7 +189,8 @@
   function convert(d) {
     var twin = d.twin, rowsIn = d.rows || [];
     var R = (twin.rooms || []).filter(function (r) { return r && typeof r === 'object' && str(r.실코드); });
-    if (!R.length) return null;
+    // 등록 자료가 비어 있으면(초기화 직후) 시범 자료로 대체하지 않고 빈 모델 유지
+    if (!R.length) return { source: 'admin', empty: true, site: { name: '등록 자료 없음', building: '' }, floors: [], rooms: [], assets: [], links: [], risers: [], measurements: [], meta: { matched: 0 }, updatedAt: new Date().toISOString() };
     var A = (twin.assets || []).filter(function (a) { return a && typeof a === 'object' && str(a.설비ID); });
     var L = (twin.links || []).filter(function (l) { return l && typeof l === 'object'; });
     var H = (twin.history || []).filter(function (h) { return h && typeof h === 'object'; });
@@ -224,6 +225,8 @@
         door: null, measures: [], raw: copy(r)
       };
       if (roomById[room.id]) return; // 실코드 중복 → 첫 행 사용
+      // 「실 미지정」 자리표시 실(71-reset): 층은 유지하되 도면에는 그리지 않음, 소속 설비는 미배치
+      if (/미지정/.test(str(r.실유형)) || /-UNASSIGNED$/.test(room.id)) { room.placeholder = true; roomById[room.id] = room; if (!floorMap[code].placeholder) floorMap[code].placeholder = room.id; return; }
       roomById[room.id] = room; rooms.push(room); floorMap[code].rooms.push(room);
     });
     // 좌표 없는 실 → 같은 층 외곽 오른쪽에 4m×4m 로 나열(추정)
@@ -242,6 +245,11 @@
 
     var floors = floorOrder.map(function (c) {
       var f = floorMap[c], rs = f.rooms;
+      if (!rs.length) { // 실이 없는 층(새로 작성 대기): 도면매핑 크기 또는 기본 40×25m
+        var mp = (twin.maps || []).find(function (q) { return str(q.층코드) === c; }), sc = mp ? (+mp.축척 || 10) : 10;
+        var bw = mp && +mp.도면너비 ? +mp.도면너비 * sc : 40000, bh = mp && +mp.도면높이 ? +mp.도면높이 * sc : 25000, bx = mp ? +mp.기준점X || 0 : 0, by = mp ? +mp.기준점Y || 0 : 0;
+        rs = [{ x: bx, y: by, w: bw, h: bh }];
+      }
       var x0 = Math.min.apply(null, rs.map(function (r) { return r.x; })), y0 = Math.min.apply(null, rs.map(function (r) { return r.y; }));
       var x1 = Math.max.apply(null, rs.map(function (r) { return r.x + r.w; })), y1 = Math.max.apply(null, rs.map(function (r) { return r.y + r.h; }));
       return {
@@ -290,6 +298,11 @@
       var id = str(a.설비ID);
       if (assetById[id]) { dropped.assets++; return; }
       var x = numOrNull(a.X), y = numOrNull(a.Y);
+      if (room.placeholder) {
+        var ua = { id: id, room: null, floor: room.floor, name: str(a.설비명) || id, category: str(a.설비구분), kind: kindOf(a.설비명, a.설비구분), model: str(a.모델명), maker: str(a.제조사), spec: str(a.규격),
+          x: null, y: null, status: str(a.상태), grade: 'NONE', measures: [], raw: copy(a), unplaced: 'room' };
+        assets.push(ua); assetById[id] = ua; return;
+      }
       var asset = {
         id: id, room: room.id, floor: room.floor, name: str(a.설비명) || id, category: str(a.설비구분),
         kind: kindOf(a.설비명, a.설비구분), model: str(a.모델명), maker: str(a.제조사), spec: str(a.규격),
@@ -305,6 +318,8 @@
       var fix = [];
       list.forEach(function (a) {
         if (inside(r, a.x, a.y)) return;
+        // 좌표 없음 또는 미배치 표시(X·Y = -1, ADMIN은 X·Y 필수라 -1 로 저장) → 임의 위치에 두지 않고 「미배치」
+        if (a.x == null || a.y == null || (a.x < 0 && a.y < 0)) { a.unplaced = 'pos'; a.x = null; a.y = null; return; }
         if (a.x != null && a.y != null && inside(r, r.x + a.x, r.y + a.y)) { a.x = r.x + a.x; a.y = r.y + a.y; a.posAdjusted = 'relative'; return; }
         fix.push(a);
       });
@@ -436,7 +451,7 @@
         judge: jv.judge, date: str(h.점검일) || null, assetId: a.id, roomId: a.room, raw: copy(h), id: str(h.점검ID), source: 'history', match: 'explicit' };
       if (jv.warn) m.warn = true;
       applyRules(m);
-      a.measures.push(m); roomById[a.room].measures.push(m); measurements.push(m);
+      a.measures.push(m); if (roomById[a.room]) roomById[a.room].measures.push(m); measurements.push(m);
     });
     // 최근 점검일 · 이력 상태
     var lastHist = {};
@@ -454,7 +469,7 @@
         var m = { std: V14_ITEMS[k][0], item: V14_ITEMS[k][1], value: v, unit: unit, judge: jv.judge, date: '2026-08-10',
           assetId: a.id, roomId: a.room, raw: { source: 'v14-ASSET_META', text: txt }, id: 'V14-' + a.id + '-' + k, source: 'v14-snapshot', match: 'v14' };
         if (jv.warn) m.warn = true;
-        a.measures.push(m); roomById[a.room].measures.push(m); measurements.push(m);
+        a.measures.push(m); if (roomById[a.room]) roomById[a.room].measures.push(m); measurements.push(m);
       });
     });
 
@@ -464,7 +479,7 @@
       var bad = ms.some(function (m) { return m.judge === 'bad'; });
       var warn = ms.some(function (m) { return m.warn; });
       var good = ms.some(function (m) { return m.judge === 'good'; });
-      var roomBad = roomById[a.room].measures.some(function (m) { return !m.assetId && (m.judge === 'bad' || m.warn); });
+      var roomBad = !!roomById[a.room] && roomById[a.room].measures.some(function (m) { return !m.assetId && (m.judge === 'bad' || m.warn); });
       var g, why;
       if (sg === 'RED' || bad) { g = 'RED'; why = sg === 'RED' ? '상태 ' + a.status : '실측 불량'; }
       else if (sg === 'ORANGE') { g = 'ORANGE'; why = '상태 ' + a.status; }
@@ -652,14 +667,42 @@
     if (TwinX.state.open || TwinX.ui) { demoShown = true; pendingToast = false; TwinX.emit('toast', { msg: 'ADMIN 트윈 데이터를 찾지 못해 시범 데이터로 표시합니다.', kind: 'warn' }); }
     else pendingToast = true;
   }
+  /* ADMIN 은 첫 화면에 기본 시범 자료(FS)를 먼저 그린 뒤 저장소(IndexedDB '/api/state')를 비동기로 읽어 바꾼다.
+     그 사이 시범 자료를 트윈에 올리면 초기화한 자료가 '다시 생긴 것'처럼 보이므로, 저장소의 실 개수와 같아질 때까지 기다린다. */
+  // ADMIN 저장소(IndexedDB)는 직접 열지 않는다 (ADMIN 의 불러오기와 경합해 자료를 못 읽는 문제 확인됨).
+  // 대신 마지막으로 확인한 ADMIN 실 개수를 localStorage 에 기억해 두고, 새로고침 직후 그 값과 같아질 때까지 기다린다.
+  var EXP_KEY = 'twinx_admin_expect_v1', storedAt = Date.now(), noticeShown = false, ready = false;
+  function expected() { try { var v = JSON.parse(localStorage.getItem(EXP_KEY) || 'null'); return v && typeof v.rooms === 'number' ? v.rooms : null; } catch (e) { return null; } }
+  function remember(n) { try { localStorage.setItem(EXP_KEY, JSON.stringify({ rooms: n, at: new Date().toISOString() })); } catch (e) { } }
+  TwinX.data_expect = remember; // 71-reset 이 ADMIN 에 보낼 때 기대값 기록
+  function looksPristineSample(t) { return t.rooms.length > 0 && t.rooms.every(function (r) { return /^DEMO$/i.test(str(r.건물코드)); }); }
+  function adminReady() {
+    if (ready) return true;
+    var d = null; try { d = walk(); } catch (e) { }
+    if (!d || !d.twin || !Array.isArray(d.twin.rooms)) return false;
+    var exp = expected(), n = d.twin.rooms.length, waited = Date.now() - storedAt;
+    if (exp == null || n === exp || !looksPristineSample(d.twin) || (exp === n)) { ready = true; return true; }
+    // 저장해 둔 자료와 다르게 ADMIN 화면이 아직 기본 시범 자료 → 시범 자료를 트윈에 올리지 않고 기다림
+    if (waited > 6000 && !noticeShown) { noticeShown = true; staleNotice(); }
+    return false;
+  }
+  function staleNotice() {
+    var n = document.createElement('div');
+    n.className = 'tx-wb-notice tx-stale-notice';
+    n.innerHTML = '<div><b>저장된 ADMIN 자료를 아직 불러오지 못했습니다</b><small>브라우저 저장소 응답이 늦어 기본 시범 자료가 보이고 있습니다. 저장된 자료는 그대로 있습니다.</small></div><button type="button" class="tx-wb-btn tx-wb-pri">다시 불러오기</button>';
+    n.querySelector('button').onclick = function () { location.reload(); };
+    document.body.appendChild(n);
+  }
   function refresh(force) {
     // 간이 현행화 모드(65-quick) 작업 중에는 초안 모델을 유지 (ADMIN 자료로 덮어쓰지 않음)
     if (TwinX.quick && TwinX.quick.active && TwinX.quick.active()) return { changed: false, source: 'quick' };
+    if (!adminReady()) return { changed: false, source: 'wait' };
     var m = read(force);
     if (m) {
       var sig = walkCache.v && walkCache.v.sig;
       if (sig !== lastSig || !TwinX.model || TwinX.model.source !== 'admin') {
         lastSig = sig;
+        try { var dd = walk(); if (dd && dd.twin && Array.isArray(dd.twin.rooms)) remember(dd.twin.rooms.length); } catch (e) { }
         TwinX.setModel(m);
         return { changed: true, source: 'admin' };
       }
@@ -711,6 +754,8 @@
 
   TwinX.data = {
     read: function () { return read(false); },
+    /** ADMIN 원본 표 (읽기 전용 참조) — 68/70 모듈의 초기화·백업용 */
+    raw: function () { try { return walk(); } catch (e) { return null; } },
     refresh: refresh,
     stats: stats,
     signature: function () { return lastSig; },

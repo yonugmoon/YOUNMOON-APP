@@ -208,12 +208,14 @@
     mem[rec.key] = rec;
     return rec;
   }
-  dbAll().then(function (list) { list.forEach(hydrate); if (list.length) TX.emit('underlay', { floor: null }); });
+  // ADMIN 이 첫 화면에서 자기 저장소를 읽는 동안에는 IndexedDB 를 건드리지 않도록 잠시 늦춰 읽음 (동시 접근 시 ADMIN 자료 불러오기 실패 관찰)
+  setTimeout(function () { dbAll().then(function (list) { list.forEach(hydrate); if (list.length) TX.emit('underlay', { floor: null }); }); }, 1500);
 
   TX.underlay = {
     get: function (code) { return code ? mem[keyOf(code)] || null : null; },
     image: function (code) { var r = this.get(code); return r && r.img ? r.img : null; },
     list: function () { return Object.keys(mem).map(function (k) { return mem[k]; }); },
+    clearAll: function () { Object.keys(mem).forEach(function (k) { if (mem[k].url) URL.revokeObjectURL(mem[k].url); dbDel(k); delete mem[k]; }); TX.emit('underlay', { floor: null }); },
     update: function (code, patch) {
       var r = this.get(code); if (!r) return;
       Object.keys(patch).forEach(function (k) { r[k] = k === 'tf' ? Object.assign({}, r.tf, patch.tf) : patch[k]; });

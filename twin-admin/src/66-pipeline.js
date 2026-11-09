@@ -505,7 +505,8 @@
         var L = TX.quick.parseLoc(o['점검 위치']); o['건물'] = L.building || o['건물']; o['층'] = L.floorName; o['점검 위치'] = L.room || o['점검 위치'];
       }
       // 병합 셀(빈칸) → 위 행 값 이어받기 (문서 표에서 흔함)
-      ['건물', '층', '점검 위치', '설비'].forEach(function (k) { if (!o[k] && last[k]) o[k] = last[k]; last[k] = o[k]; });
+      // 설비는 이어받지 않음 (비어 있으면 실 단위 측정) — 워드 세로 병합은 readDocx 에서 이미 채움
+      ['건물', '층', '점검 위치'].forEach(function (k) { if (!o[k] && last[k]) o[k] = last[k]; last[k] = o[k]; });
       o['측정 항목'] = g('측정 항목');
       var raw = g('측정값'), num = U.num(raw), unit = g('단위');
       if (!unit && raw && num != null) unit = raw.replace(/,/g, '').replace(/-?\d+(\.\d+)?/, '').replace(/^\s+|\s+$/g, '').slice(0, 8);
@@ -527,7 +528,9 @@
     var key = [o['건물'], o['층'], o['점검 위치'], o['설비']].join('|');
     if (R.match[key] !== undefined) return R.match[key];
     var lv = (TX.quick && TX.quick.parseLoc) ? TX.quick.parseLoc(o['건물'] + ' ' + o['층']).level : null;
-    var et = tokens(o['설비'] + ' ' + o['점검 위치']), best = null, bs = 0;
+    // 설비 칸이 비어 있으면 설비가 아니라 실 단위 측정 (실내온도·조도 등) → 설비에 억지로 붙이지 않음
+    if (!String(o['설비'] || '').trim()) { R.match[key] = null; return null; }
+    var et = tokens(o['설비']), best = null, bs = 0, hit = false;
     M.assets.forEach(function (a) {
       var f = M.floors.find(function (q) { return q.code === a.floor; }) || {}, r = M.rooms.find(function (q) { return q.id === a.room; }) || {};
       var sc = 0;
@@ -535,7 +538,8 @@
       if (lv != null && f.level === lv) sc += 2;
       if (r.name && o['점검 위치'] && (r.name.indexOf(o['점검 위치']) >= 0 || o['점검 위치'].indexOf(r.name) >= 0)) sc += 2;
       var at = tokens(a.name + ' ' + (a.model || '') + ' ' + (a.category || ''));
-      et.forEach(function (t) { if (at.some(function (x) { return x.indexOf(t) >= 0 || t.indexOf(x) >= 0; })) sc += 3; });
+      var th = 0; et.forEach(function (t) { if (at.some(function (x) { return x.indexOf(t) >= 0 || t.indexOf(x) >= 0; })) { sc += 3; th++; } });
+      if (!th) return; // 장비 이름이 하나도 맞지 않으면 후보 아님
       var no = /#\s*(\d+)/.exec(o['설비'] || ''), an = /#\s*(\d+)/.exec(a.name || '');
       if (no && an) sc += no[1] === an[1] ? 2 : -2;
       if (o['설비'] && a.name === o['설비']) sc += 3;
@@ -589,7 +593,7 @@
         '<p class="tx-wb-help">추정값을 채우지 않습니다: 숫자가 아닌 측정값·측정 항목이 없는 행은 제외되고 「변환검증」 시트에 사유가 남습니다. 판정이 비어 있으면 「해당없음」으로 등록됩니다.</p>';
     }
     h += '</div><div class="tx-wb-ft"><div class="tx-wb-ft-l"><small>ADMIN 측정 엑셀 등록은 기존 측정자료를 교체합니다 (등록 전 확인창에서 점검일 선택)</small></div><div>' +
-      '<button type="button" class="tx-wb-btn" data-r="xlsx"' + (ok ? '' : ' disabled') + '>측정 엑셀 저장</button><button type="button" class="tx-wb-btn tx-wb-pri" data-r="admin"' + (ok ? '' : ' disabled') + '>ADMIN 측정 등록으로 보내기</button></div></div></div>';
+      '<button type="button" class="tx-wb-btn" data-r="xlsx"' + (ok ? '' : ' disabled') + '>측정 엑셀 저장</button>' + (window.TWINX_STANDALONE ? '<button type="button" class="tx-wb-btn tx-wb-pri" data-r="twin"' + (ok ? '' : ' disabled') + '>트윈에 결과 적용</button>' : '<button type="button" class="tx-wb-btn tx-wb-pri" data-r="admin"' + (ok ? '' : ' disabled') + '>ADMIN 측정 등록으로 보내기</button>') + '</div></div></div>';
     rp.innerHTML = h;
   }
   function colLetter(i) { var s = ''; i++; while (i) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
@@ -615,6 +619,7 @@
       else if (a === 'file') pickFile('.xlsx,.xlsm,.csv,.tsv,.docx,.pdf,.xls,.hwp,.doc', loadReport);
       else if (a === 'xlsx') U.download(Q() ? Q().xlsx(measureSheets()) : null, 'ICT_Twin_Measure_' + stamp() + '.xlsx');
       else if (a === 'admin') sendToAdmin();
+      else if (a === 'twin') applyToTwin();
     });
     rp.addEventListener('change', function (e) {
       var t = e.target, a = t.getAttribute('data-r'), k = t.getAttribute('data-k');
@@ -625,6 +630,24 @@
       else if (a === 'asset') { var o = R.rows[+t.getAttribute('data-i')]; R.match[[o['건물'], o['층'], o['점검 위치'], o['설비']].join('|')] = t.value || null; convert(); renderReport(); }
     });
     rp.addEventListener('keydown', function (e) { if (e.key === 'Escape' && e.target.tagName !== 'SELECT') { e.stopPropagation(); closeReport(); } });
+  }
+  /** 단독 운영판: 변환한 결과서를 바로 트윈 설비·실에 연결해 저장 (상태 색 · 설비 상세 · 꿈꾸기 점검에 반영) */
+  function applyToTwin() {
+    var M = TX.model, ok = R.rows.filter(function (o) { return o.ok; }); if (!ok.length || !TX.quick || !TX.quick.setMeasurements) return;
+    var stdOf = TX.data && TX.data._util && TX.data._util.stdOf;
+    var date = prompt('점검일을 입력하세요 (YYYY-MM-DD)', U.today()); if (date === null) return;
+    var list = ok.map(function (o, i) {
+      var j = o['판정'], room = null;
+      if (!o.asset && M) { var loc = String(o['점검 위치'] || '').replace(/\s+/g, ''); room = M.rooms.find(function (r) { var n = String(r.name).replace(/\s+/g, ''); return loc && (n.indexOf(loc) >= 0 || loc.indexOf(n) >= 0); }); }
+      return { id: 'MS-' + Date.now().toString(36) + '-' + i, assetId: o.asset || null, roomId: o.asset ? (TX.asset(o.asset) || {}).room || null : room ? room.id : null, item: o['측정 항목'], value: o['측정값'], unit: o['단위'], crit: o['기준'],
+        judge: j === '불량' ? 'bad' : j === '해당없음' ? 'na' : 'good', warn: j === '주의', std: stdOf ? stdOf(o['측정 항목'], o['기준']) : null, date: date || U.today(), raw: MCOLS.map(function (k) { return o[k]; }), file: R.file && R.file.name };
+    });
+    var had = (TX.quick.draft().measurements || []).length, mode = 'replace';
+    if (had) mode = confirm('기존 측정 ' + had + '건이 있습니다.\n[확인] 이번 결과로 교체 · [취소] 기존에 추가') ? 'replace' : 'append';
+    var n = TX.quick.setMeasurements(list, mode);
+    var linked = list.filter(function (m) { return m.assetId; }).length, rooms = list.filter(function (m) { return !m.assetId && m.roomId; }).length;
+    closeReport();
+    toast('측정 ' + list.length + '건 적용 · 설비 연결 ' + linked + ' · 실 연결 ' + rooms + ' · 미연결 ' + (list.length - linked - rooms) + ' (총 ' + n + '건)', 'success');
   }
   /** ADMIN 「측정 대시보드 → 측정 엑셀 등록」에 변환 파일을 그대로 넘김 (ADMIN 검증·교체 확인창은 그대로 사용) */
   function sendToAdmin() {

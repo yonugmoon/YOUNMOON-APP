@@ -652,6 +652,7 @@
     var src = r.querySelector('[data-r="src"]');
     if (!m) src.innerHTML = '<i class="tx-dot" style="background:#94a3b8"></i>데이터 대기';
     else if (m.source === 'admin') src.innerHTML = '<i class="tx-dot" style="background:#10b981"></i>ADMIN 실데이터';
+    else if (window.TWINX_STANDALONE) src.innerHTML = '<i class="tx-dot" style="background:#10b981"></i>단독 운영 자료 (이 PC)';
     else src.innerHTML = '<i class="tx-dot" style="background:#eab308"></i>시범 데이터';
     src.title = m && m.updatedAt ? '갱신 ' + String(m.updatedAt).replace('T', ' ').slice(0, 16) : '';
     r.querySelector('[data-r="loc"]').textContent = m ? ((m.site && m.site.name) || '') + ' · ' + (s.stack ? '전층' : floorName(s.floor)) : '—';

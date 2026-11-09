@@ -1,0 +1,5 @@
+/* 단독 운영판: 앱 전체가 뷰어 */
+html, body { margin: 0; height: 100%; background: #06101f; }
+.tx-root .tx-close-btn { display: none !important; }
+/* ADMIN 측정 업로드 알림은 단독 운영판에서 쓰지 않음 */
+.tx-wb-notice:not(.tx-stale-notice) { display: none !important; }

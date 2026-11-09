@@ -5238,6 +5238,22 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
   }
 
   // 위치명 작성 안내 (위치 추가·위치명 입력칸 아래)
+  // 위치명 정리: 밑줄(_)을 띄어쓰기로, 연속 공백은 하나로
+  function normLocName(v){ return String(v||"").replace(/[_＿]+/g," ").replace(/\s+/g," ").trim(); }
+  // 입력 중 밑줄 경고 표시 (입력칸 바로 아래)
+  function attachLocUnderscoreWarn(inp){
+    const w = document.createElement("div");
+    w.className = "loc-name-warn";
+    w.style.cssText = "display:none;font-size:12px;font-weight:700;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:5px 9px;margin:6px 2px 0;";
+    const upd = ()=>{
+      if(/[_＿]/.test(inp.value)){
+        w.textContent = "⚠️ 밑줄(_)은 쓰지 마세요. 등록할 때 띄어쓰기로 바뀝니다 → " + normLocName(inp.value);
+        w.style.display = "block";
+      } else w.style.display = "none";
+    };
+    inp.addEventListener("input", upd); upd();
+    return w;
+  }
   var LOC_NAME_GUIDE_HTML = `<div class="loc-name-guide" style="font-size:11.5px;line-height:1.55;color:var(--text-sub,#5b6478);margin:6px 2px 2px;">작성 순서: <b>건물(동) → 층 → 세부위치 → 실 이름</b> (띄어쓰기로 구분)<br><span style="color:#15803d;">✅ 바른 예: 제1공장 본관동 지하2층 TPS실 · 본관동 3층 서문 TPS실</span><br><span style="color:#b91c1c;">❌ 틀린 예: 본관동_3층_TPS실 (밑줄 사용) · 본관동 서문3층 TPS실 (층보다 세부위치를 먼저 씀)</span></div>`;
 
   // 위치명에서 실 유형 추출
@@ -8798,7 +8814,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       const confirmBtn = document.createElement("button");
       confirmBtn.textContent = "확인";
       const doConfirm = async ()=>{
-        const v = inp.value.trim();
+        const raw = inp.value.trim();
+        const v = normLocName(raw);
+        if(v && v !== raw) showToast("밑줄(_)을 띄어쓰기로 바꿔 등록했습니다: " + v);
         if(v){
           const oldName = activeLoc.name || "";
           const changed = oldName !== v;
@@ -8847,6 +8865,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       body.appendChild(nameEdit);
       const nmGuide = document.createElement("div");
       nmGuide.innerHTML = LOC_NAME_GUIDE_HTML;
+      body.appendChild(attachLocUnderscoreWarn(inp));
       body.appendChild(nmGuide.firstChild);
       setTimeout(()=>{ if(!activeLoc.name) inp.focus(); }, 50);
     } else {
@@ -8920,11 +8939,14 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       `;
       setTimeout(()=>{
         const inp2 = addForm.querySelector("#nl-name");
+        inp2.after(attachLocUnderscoreWarn(inp2));
         inp2.focus();
         addForm.querySelector("#nl-cancel").onclick = ()=>{ addingLocationFor=null; rerenderCategoryBody(cat); };
         addForm.querySelector("#nl-add").onclick = ()=>{
-          const name = inp2.value.trim();
+          const rawName = inp2.value.trim();
+          const name = normLocName(rawName);
           if(!name){ inp2.focus(); return; }
+          if(name !== rawName) showToast("밑줄(_)을 띄어쓰기로 바꿔 등록했습니다: " + name);
           if(cat.locations.length===1 && !cat.locations[0].name) cat.locations[0].name = "기본위치";
           const baseItems = cat.locations[0]?.items || [];
           const newLoc = {

@@ -211,6 +211,21 @@
   // ADMIN 이 첫 화면에서 자기 저장소를 읽는 동안에는 IndexedDB 를 건드리지 않도록 잠시 늦춰 읽음 (동시 접근 시 ADMIN 자료 불러오기 실패 관찰)
   setTimeout(function () { dbAll().then(function (list) { list.forEach(hydrate); if (list.length) TX.emit('underlay', { floor: null }); }); }, 1500);
 
+  /* 층 범위 = 원래 범위 ∪ 도면 배경 범위 (실이 일부만 있어도 2D·3D 가 도면 전체를 보여 줌) */
+  (TX.modelHooks = TX.modelHooks || []).push(function (m) {
+    (m.floors || []).forEach(function (f) {
+      if (!f._b0 && f.bounds) f._b0 = Object.assign({}, f.bounds);
+      var b = f._b0 ? Object.assign({}, f._b0) : f.bounds; if (!b) return;
+      var r = mem[((f.building) || (m.site && m.site.name) || '') + '|' + f.code];
+      if (r && r.tf && r.show !== false) {
+        var t = r.tf, c = Math.cos(t.rot || 0), s = Math.sin(t.rot || 0);
+        [[0, 0], [r.w, 0], [0, r.h], [r.w, r.h]].forEach(function (p) { var x = t.tx + t.s * (c * p[0] - s * p[1]), y = t.ty + t.s * (s * p[0] + c * p[1]); b.x0 = Math.min(b.x0, x); b.y0 = Math.min(b.y0, y); b.x1 = Math.max(b.x1, x); b.y1 = Math.max(b.y1, y); });
+      }
+      f.bounds = b;
+    });
+  });
+  var ulRefit = U.debounce(function () { if (TX.model) TX.setModel(TX.model); }, 300);
+  TX.on('underlay', function () { ulRefit(); });
   TX.underlay = {
     get: function (code) { return code ? mem[keyOf(code)] || null : null; },
     image: function (code) { var r = this.get(code); return r && r.img ? r.img : null; },

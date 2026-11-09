@@ -70,6 +70,7 @@
     /* ---------- 모델 ---------- */
     setModel: function (m) {
       applyBundles(m); applyGradeBasis(m, this.state);
+      (TwinX.modelHooks || []).forEach(function (fn) { try { fn(m); } catch (e) { console.warn('[TwinX] model hook', e); } });
       this.model = m;
       var s = this.state;
       if (!s.floor || !m.floors.some(function (f) { return f.code === s.floor; })) s.floor = m.floors.length ? m.floors[0].code : null;

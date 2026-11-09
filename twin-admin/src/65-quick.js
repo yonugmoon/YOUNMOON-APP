@@ -190,14 +190,31 @@
     var phFloors = {};
     D.assets.filter(function (a) { return !a.room; }).forEach(function (a) { phFloors[a.floor] = 1; });
     D.assets.forEach(function (a) { if (a.room && a.x == null) phFloors[a.floor] = 1; });
-    D.assets.forEach(function (a) { var u = !a.room || a.x == null; assets.push([a.id, u ? a.floor + '-UNASSIGNED' : a.room, a.name, a.category, a.model, a.maker, [a.bundle ? '[묶음:' + a.bundle + (a.u0 != null ? ':U' + pad(a.u0, 2) + '-' + pad(a.u1 != null ? a.u1 : a.u0, 2) : '') + ']' : '', a.spec || '', a.year ? '설치연도 ' + a.year : '', a.serial ? 'S/N ' + a.serial : ''].filter(Boolean).join(' · '), a.photo || '', u ? 60 : Math.round(a.x), u ? 60 : Math.round(a.y), a.status, a.installed || '', a.cycle || '']); });
+    // ADMIN 은 묶음을 모르므로, 묶음 모듈은 ADMIN 화면에서 겹치지 않게 실 안에 격자로 펼쳐 저장 (트윈은 대표 1개로 표시)
+    var spread = {}, bgrp = {};
+    D.assets.forEach(function (a) { if (a.bundle && a.room && a.x != null) (bgrp[a.room + '|' + a.bundle] = bgrp[a.room + '|' + a.bundle] || []).push(a); });
+    Object.keys(bgrp).forEach(function (k) {
+      var l = bgrp[k], r = D.rooms.find(function (q) { return q.id === l[0].room; }); if (!r || l.length < 2) return;
+      var cols = Math.ceil(Math.sqrt(l.length * r.w / Math.max(1, r.h))), rows = Math.ceil(l.length / cols), cw = (r.w - 400) / cols, ch = (r.h - 400) / rows;
+      l.forEach(function (a, i) { spread[a.id] = [Math.round(r.x + 200 + cw * ((i % cols) + 0.5)), Math.round(r.y + 200 + ch * (Math.floor(i / cols) + 0.5))]; });
+    });
+    D.assets.forEach(function (a) { var u = !a.room || a.x == null, sp = spread[a.id]; if (sp && !u) { a = Object.assign({}, a, { x: sp[0], y: sp[1] }); } assets.push([a.id, u ? a.floor + '-UNASSIGNED' : a.room, a.name, a.category, a.model, a.maker, [a.bundle ? '[묶음:' + a.bundle + (a.u0 != null ? ':U' + pad(a.u0, 2) + '-' + pad(a.u1 != null ? a.u1 : a.u0, 2) : '') + ']' : '', a.spec || '', a.year ? '설치연도 ' + a.year : '', a.serial ? 'S/N ' + a.serial : ''].filter(Boolean).join(' · '), a.photo || '', u ? 60 : Math.round(a.x), u ? 60 : Math.round(a.y), a.status, a.installed || '', a.cycle || '']); });
     Object.keys(phFloors).forEach(function (c) { var f = D.floors.find(function (q) { return q.code === c; }); if (f) rooms.push([c + '-UNASSIGNED', f.bcode, f.building, f.code, f.name, '실 미지정', '미지정', 10, 10, 100, 100]); });
     var ids = {}; D.assets.forEach(function (a) { ids[a.id] = 1; });
     var links = [['연결ID', '출발설비ID', '도착설비ID', '연결유형', '케이블번호', '출발단자', '도착단자', '연결상태']];
     D.links.filter(function (l) { return ids[l.from] && ids[l.to]; }).forEach(function (l) { links.push([l.id, l.from, l.to, l.rawType || { optical: '광', data: 'UTP', power: '전원' }[l.type] || '광', l.cable || '', l.p1 || '', l.p2 || '', l.lstatus || '정상']); });
     var hist = [['점검ID', '설비ID', '점검일', '점검자', '상태', '측정항목', '측정값', '단위', '비고', '작업구분']];
     var maps = [['층코드', '도면파일경로', '축척', '기준점X', '기준점Y', '도면너비', '도면높이']];
-    toModel().floors.forEach(function (f) { if (D.rooms.some(function (r) { return r.floor === f.code; }) || phFloors[f.code]) maps.push([f.code, '', 10, 0, 0, Math.ceil(f.bounds.x1 / 10) + 10, Math.ceil(f.bounds.y1 / 10) + 10]); });
+    // 05_도면매핑 = 실 범위 + 여유 2m (ADMIN 토폴로지 화면이 실 위주로 보이게). 도면 배경 전체 크기는 트윈이 따로 반영
+    D.floors.forEach(function (f) {
+      var rs = D.rooms.filter(function (r) { return r.floor === f.code; }).map(function (r) { return [r.x, r.y, r.x + r.w, r.y + r.h]; });
+      if (phFloors[f.code]) rs.push([10, 10, 110, 110]);
+      if (!rs.length) return;
+      var x0 = Math.max(0, Math.min.apply(null, rs.map(function (q) { return q[0]; })) - 2000), y0 = Math.max(0, Math.min.apply(null, rs.map(function (q) { return q[1]; })) - 2000);
+      var x1 = Math.max.apply(null, rs.map(function (q) { return q[2]; })) + 2000, y1 = Math.max.apply(null, rs.map(function (q) { return q[3]; })) + 2000;
+      x0 = Math.floor(x0 / 10) * 10; y0 = Math.floor(y0 / 10) * 10;
+      maps.push([f.code, '', 10, x0, y0, Math.ceil((x1 - x0) / 10), Math.ceil((y1 - y0) / 10)]);
+    });
     var rules = [['규칙ID', '상태코드', '색상코드', '측정항목', '연산자', '임계값', '단위'], ['R01', '이상', '#f43f5e', '접지저항', '>', 10, 'Ω'], ['R02', '주의', '#f59e0b', '온도', '>=', 35, '℃']];
     var src = [['설비명', '규격(모델명)', '수량', '제조사', '설치 위치', '설치연도', '비고']];
     D.source.forEach(function (r) { src.push([r.name, r.model, r.qty, r.maker, r.loc, r.year || '확인불가', r.note]); });

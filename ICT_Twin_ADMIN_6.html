@@ -7189,6 +7189,12 @@ tr.tx-dr-low td:first-child { color: #64748b; }
       }
       var x0 = Math.min.apply(null, rs.map(function (r) { return r.x; })), y0 = Math.min.apply(null, rs.map(function (r) { return r.y; }));
       var x1 = Math.max.apply(null, rs.map(function (r) { return r.x + r.w; })), y1 = Math.max.apply(null, rs.map(function (r) { return r.y + r.h; }));
+      // 층 범위 = 실 범위 ∪ 05_도면매핑 범위 (실이 일부만 그려져도 층·도면 크기 유지 — 실 하나 크기로 줄어들지 않게)
+      var fm = (twin.maps || []).find(function (q) { return str(q.층코드) === c; });
+      if (fm && +fm.도면너비 > 0 && +fm.도면높이 > 0) {
+        var fsc = +fm.축척 || 10, fx = +fm.기준점X || 0, fy = +fm.기준점Y || 0;
+        x0 = Math.min(x0, fx); y0 = Math.min(y0, fy); x1 = Math.max(x1, fx + +fm.도면너비 * fsc); y1 = Math.max(y1, fy + +fm.도면높이 * fsc);
+      }
       return {
         code: c, name: f.name, building: f.building, level: f.level,
         // 계약 예시(demoModel)와 동일: 지상 (level-1)×4.2m, 지하 level×4.2m
@@ -13266,7 +13272,10 @@ tr.tx-dr-low td:first-child { color: #64748b; }
       if (D.floors.some(function (x) { return x.code === f.code; })) return;
       var b = D.buildings.find(function (x) { return x.name === f.building; });
       if (!b) { b = { code: f.bcode || 'BD' + pad(D.buildings.length + 1, 2), name: f.building || '본관' }; D.buildings.push(b); }
-      D.floors.push({ code: f.code, building: b.name, bcode: b.code, name: f.name, level: f.level, w: f.w || 40000, h: f.h || 25000 });
+      // 등록된 도면 배경이 있으면 층 크기 = 도면 크기 (실 하나 크기로 줄지 않게)
+      var ul = TX.underlay && TX.underlay.get && TX.underlay.get(f.code), uw = 0, uh = 0;
+      if (ul && ul.tf) { uw = Math.round(ul.tf.tx + ul.w * ul.tf.s); uh = Math.round(ul.tf.ty + ul.h * ul.tf.s); }
+      D.floors.push({ code: f.code, building: b.name, bcode: b.code, name: f.name, level: f.level, w: Math.max(f.w || 40000, uw), h: Math.max(f.h || 25000, uh) });
     });
     if (!D.site && D.buildings[0]) D.site = D.buildings[0].name;
     save();

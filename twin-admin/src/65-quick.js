@@ -268,7 +268,10 @@
       if (D.floors.some(function (x) { return x.code === f.code; })) return;
       var b = D.buildings.find(function (x) { return x.name === f.building; });
       if (!b) { b = { code: f.bcode || 'BD' + pad(D.buildings.length + 1, 2), name: f.building || '본관' }; D.buildings.push(b); }
-      D.floors.push({ code: f.code, building: b.name, bcode: b.code, name: f.name, level: f.level, w: f.w || 40000, h: f.h || 25000 });
+      // 등록된 도면 배경이 있으면 층 크기 = 도면 크기 (실 하나 크기로 줄지 않게)
+      var ul = TX.underlay && TX.underlay.get && TX.underlay.get(f.code), uw = 0, uh = 0;
+      if (ul && ul.tf) { uw = Math.round(ul.tf.tx + ul.w * ul.tf.s); uh = Math.round(ul.tf.ty + ul.h * ul.tf.s); }
+      D.floors.push({ code: f.code, building: b.name, bcode: b.code, name: f.name, level: f.level, w: Math.max(f.w || 40000, uw), h: Math.max(f.h || 25000, uh) });
     });
     if (!D.site && D.buildings[0]) D.site = D.buildings[0].name;
     save();

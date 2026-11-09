@@ -252,6 +252,12 @@
       }
       var x0 = Math.min.apply(null, rs.map(function (r) { return r.x; })), y0 = Math.min.apply(null, rs.map(function (r) { return r.y; }));
       var x1 = Math.max.apply(null, rs.map(function (r) { return r.x + r.w; })), y1 = Math.max.apply(null, rs.map(function (r) { return r.y + r.h; }));
+      // 층 범위 = 실 범위 ∪ 05_도면매핑 범위 (실이 일부만 그려져도 층·도면 크기 유지 — 실 하나 크기로 줄어들지 않게)
+      var fm = (twin.maps || []).find(function (q) { return str(q.층코드) === c; });
+      if (fm && +fm.도면너비 > 0 && +fm.도면높이 > 0) {
+        var fsc = +fm.축척 || 10, fx = +fm.기준점X || 0, fy = +fm.기준점Y || 0;
+        x0 = Math.min(x0, fx); y0 = Math.min(y0, fy); x1 = Math.max(x1, fx + +fm.도면너비 * fsc); y1 = Math.max(y1, fy + +fm.도면높이 * fsc);
+      }
       return {
         code: c, name: f.name, building: f.building, level: f.level,
         // 계약 예시(demoModel)와 동일: 지상 (level-1)×4.2m, 지하 level×4.2m

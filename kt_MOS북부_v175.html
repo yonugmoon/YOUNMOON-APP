@@ -5237,6 +5237,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     return null;
   }
 
+  // 위치명 작성 안내 (위치 추가·위치명 입력칸 아래)
+  var LOC_NAME_GUIDE_HTML = `<div class="loc-name-guide" style="font-size:11.5px;line-height:1.55;color:var(--text-sub,#5b6478);margin:6px 2px 2px;">작성 순서: <b>건물(동) → 층 → 세부위치 → 실 이름</b> (띄어쓰기로 구분)<br><span style="color:#15803d;">✅ 바른 예: 제1공장 본관동 지하2층 TPS실 · 본관동 3층 서문 TPS실</span><br><span style="color:#b91c1c;">❌ 틀린 예: 본관동_3층_TPS실 (밑줄 사용) · 본관동 서문3층 TPS실 (층보다 세부위치를 먼저 씀)</span></div>`;
+
   // 위치명에서 실 유형 추출
   function extractRoomType(name){
     if(!name) return name;
@@ -8790,7 +8793,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       nameEdit.className = "loc-name-edit";
       const inp = document.createElement("input");
       inp.className = "text-input";
-      inp.placeholder = "위치명 입력 (예: TPS실, MDF실, 1층 로비)";
+      inp.placeholder = "위치명 입력 (예: 제1공장 본관동 지하2층 TPS실)";
       inp.value = activeLoc.name || "";
       const confirmBtn = document.createElement("button");
       confirmBtn.textContent = "확인";
@@ -8842,6 +8845,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         nameEdit.appendChild(delBtn);
       }
       body.appendChild(nameEdit);
+      const nmGuide = document.createElement("div");
+      nmGuide.innerHTML = LOC_NAME_GUIDE_HTML;
+      body.appendChild(nmGuide.firstChild);
       setTimeout(()=>{ if(!activeLoc.name) inp.focus(); }, 50);
     } else {
       // Name is set — show small edit/delete bar
@@ -8905,7 +8911,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       addForm.className = "add-item-form";
       addForm.style.borderTop = "1px solid var(--border)";
       addForm.innerHTML = `
-        <input class="text-input" id="nl-name" placeholder="새 위치명 * (예: MDF실, EPS실, 방재실)">
+        <input class="text-input" id="nl-name" placeholder="새 위치명 * (예: 제1공장 본관동 지하2층 TPS실)">
+        ${LOC_NAME_GUIDE_HTML}
         <div class="mini-form-btns">
           <button id="nl-cancel">취소</button>
           <button class="go" id="nl-add">추가</button>

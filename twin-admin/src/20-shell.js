@@ -759,10 +759,10 @@
       var mods = a.bundle.ids.map(function (id) { return TwinX.asset(id); }).filter(Boolean);
       h += '<div class="tx-sec tx-bundle"><h4>묶음 슬롯 · ' + esc(a.bundle.name) + ' <span class="tx-count">모듈 ' + mods.length + '</span>' +
         (TwinX.bundleEdit ? '<button type="button" class="tx-rack-edit" data-act="bundle-edit" data-id="' + esc(a.id) + '">묶음 편집</button>' : '') + '</h4>' +
-        '<ol class="tx-slots">' + mods.map(function (x) {
+        '<ol class="tx-slots">' + mods.map(function (x, si) {
           var gg = gradeOf(x);
           return '<li class="' + (x.id === a.id ? 'is-sel' : '') + '"><button type="button" data-select="' + esc(x.id) + '" title="' + esc(x.id) + '">' +
-            '<span class="tx-slot-u">' + esc(x.rack && x.rack.u ? x.rack.u.replace(/U/g, '') : '—') + '</span>' +
+            '<span class="tx-slot-u">' + esc(x.rack && x.rack.u ? x.rack.u.replace(/U/g, '') : '슬롯 ' + (si + 1)) + '</span>' +
             '<i class="tx-dot" style="background:' + gcss(gg) + '"></i><b>' + esc(x.name) + '</b><small>' + esc(x.model || x.id) + '</small></button></li>';
         }).join('') + '</ol><p class="tx-src-note">같은 실·같은 묶음 이름의 모듈을 2D·3D에서 1개로 표시합니다 (등급은 모듈 중 가장 나쁜 값)</p></div>';
     }

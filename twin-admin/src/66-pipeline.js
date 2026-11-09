@@ -635,7 +635,8 @@
       '측정 엑셀을 ADMIN에 전달했습니다 · 확인창에서 점검일을 고르고 「검증된 측정자료로 교체」를 누르세요');
   }
   /** ADMIN 메뉴로 이동 → 등록 버튼의 파일 선택창 대신 준비된 파일을 전달 (실패 시 다운로드) */
-  function adminUpload(navRe, findBtn, file, okMsg) {
+  /** o.autoApply: ADMIN 검증이 「검증 완료」면 「전체 교체 적용」까지 자동 진행, o.onDone(ok, 메시지) */
+  function adminUpload(navRe, findBtn, file, okMsg, o) {
     var nav = Array.prototype.slice.call(document.querySelectorAll('.sidebar nav button, nav button')).find(function (b) { return navRe.test(b.textContent); });
     if (!nav) { U.download(file, file.name); toast('ADMIN 화면을 찾지 못해 파일로 저장했습니다 · 직접 등록하세요', 'warn'); return; }
     nav.click();
@@ -655,6 +656,25 @@
       };
       try { btn.click(); } finally { setTimeout(function () { if (!done) { HTMLInputElement.prototype.click = orig; U.download(file, file.name); toast('자동 전달이 되지 않아 파일로 저장했습니다 · 직접 등록하세요', 'warn'); } }, 600); }
       if (done) toast(okMsg, 'success');
+      if (done && o && o.autoApply) waitApply(o);
+    })();
+  }
+  function waitApply(o) {
+    var n = 0;
+    (function poll() {
+      var m = document.querySelector('.modal-overlay');
+      var txt = m ? m.innerText.replace(/\s+/g, ' ') : '';
+      if (m && /검증 완료/.test(txt)) {
+        var b = m.querySelector('.modal-footer .btn.primary');
+        if (b && !b.disabled) {
+          b.click();
+          var k = 0;
+          (function after() { var still = document.querySelector('.modal-overlay'); if (still && k++ < 20) return setTimeout(after, 150); if (o.onDone) o.onDone(true); })();
+          return;
+        }
+      }
+      if (m && /반영 불가|오류\s*\d+건/.test(txt)) { if (o.onDone) o.onDone(false, txt.replace(/^.*?(오류)/, '$1').slice(0, 300)); return; }
+      if (++n < 60) setTimeout(poll, 200); else if (o.onDone) o.onDone(false, 'ADMIN 확인창이 열리지 않았습니다');
     })();
   }
 

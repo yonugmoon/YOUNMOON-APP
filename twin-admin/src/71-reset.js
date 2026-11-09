@@ -45,7 +45,7 @@
     if (!(o && o.keepQuick) && TX.quick.active && TX.quick.active()) TX.quick.close(false);
     if (TX.state.open) TX.close();
     TX.pipe.adminUpload(/데이터\s*관리/, function () { return Array.prototype.slice.call(document.querySelectorAll('.data-action button, button')).find(function (b) { return /엑셀\s*등록/.test(b.textContent) && !/측정/.test(b.textContent); }); }, file,
-      msg || 'ADMIN에 전달했습니다 · 「검증 완료」 확인 후 「전체 교체 적용」을 누르면 반영됩니다');
+      msg || 'ADMIN에 전달했습니다 · 「검증 완료」 확인 후 「전체 교체 적용」을 누르면 반영됩니다', o);
   }
   /** 층 자리표시 실 */
   function placeholder(t, code, info) {

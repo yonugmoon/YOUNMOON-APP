@@ -42,3 +42,10 @@
 .tx-wb-gedit circle { pointer-events: all; cursor: grab; touch-action: none; }
 .tx-wb-geom .tx-wb-list li { flex-wrap: wrap; }
 .tx-wb-geom .tx-wb-list li.is-sel { outline: 2px solid #22d3ee; border-radius: 8px; }
+.tx-qk-pv { margin: 10px 0; padding: 12px; border: 2px solid #3e63db; border-radius: 10px; background: #f5f8ff; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }
+.tx-qk-pv h5 { margin: 6px 0 0; font-size: 13px; }
+.tx-qk-pv .tx-wb-chk { align-items: flex-start; line-height: 1.45; }
+.tx-qk-pvt { max-height: 190px; overflow: auto; border: 1px solid #d5dde7; border-radius: 8px; background: #fff; }
+.tx-qk-pvt table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.tx-qk-pvt th { position: sticky; top: 0; background: #0f2a4a; color: #fff; padding: 4px 6px; text-align: left; }
+.tx-qk-pvt td { padding: 3px 6px; border-top: 1px solid #eef2f7; }

@@ -158,3 +158,6 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   - `src/70-topo.js` 보기 `view:'topo'` (단축키 4) · 노드 배치 `twinx_topo_layout_v1`(설치 좌표와 별개) · 연결 추가/삭제 → 초안 즉시 / ADMIN 대기 후 반영.
   - 65-quick: `startFloors`, `loadFromAdmin(codes)`(ID 유지), 등록 시 `adminSync.merge` 로 **초안 층만 교체**, 4점 정합(A→A′, B→B′ 이동+축척, 트레이·라이저 동반), 미배치 설비도 대장에 보존.
   - 표시: 기본 간단 라벨(`layers.tagDetail` 켬 = 상세), 상태 색 기준 `layers.gradeAdmin`(ADMIN 등록 상태만, `twinx_grade_basis`), 원래 값 `asset.gradeMeas`.
+- **설비 표 등록 · 한 번에 저장(v2.2)** 65-quick ①: 표 붙여넣기 → 미리보기(`tool.pv`) — 「이 장비들은 같은 랙 설비인가요?」 하나의 랙(묶음)/같은 장비끼리/묶지 않음,
+  설치 위치 열이 없으면 층·실 선택(실 선택 시 바로 배치). `importTable(rows, {loc, floor, room, group, bname})`.
+  ⑤ 「✔ 검증 후 ADMIN에 저장」 = 점검 → 백업 → 층 단위 병합 → `adminUpload(..., {autoApply, onDone})` 가 ADMIN 「검증 완료」 시 「전체 교체 적용」 자동 → 뷰어 재열기.

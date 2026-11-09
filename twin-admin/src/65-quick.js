@@ -91,23 +91,29 @@
       Object.keys(COLS).forEach(function (k) { var i = h.findIndex(function (v) { return COLS[k].test(v); }); if (i >= 0) idx[k] = i; });
       lines = lines.slice(hi + 1);
     }
+    parseTable.hasLoc = idx.loc != null;
     return lines.map(function (c) {
       var g = function (k) { return idx[k] != null ? clean(c[idx[k]]) : ''; };
       var q = parseInt(String(c[idx.qty] || '1').replace(/[^\d]/g, ''), 10);
       return { name: g('name'), model: g('model'), qty: q > 0 ? Math.min(q, 200) : 1, maker: g('maker'), loc: String(c[idx.loc] || '').trim(), year: g('year'), note: g('note'), bundle: g('bundle') };
     }).filter(function (r) { return r.name; });
   }
-  function importTable(rows) {
-    var made = 0;
+  /** opts: {loc: '본관 3층 통신실'(모든 행 공통 위치), room: 실ID, group: 'one'|'perRow'|'none', bname} */
+  function importTable(rows, opts) {
+    var made = 0; opts = opts || {};
+    var fixedRoom = opts.room ? D.rooms.find(function (q) { return q.id === opts.room; }) : null;
     rows.forEach(function (r) {
-      var L = parseLoc(r.loc), f = ensureFloor(L.building, L.floorName, L.level);
+      var loc = opts.loc || r.loc;
+      var L = parseLoc(loc), f = fixedRoom ? D.floors.find(function (q) { return q.code === fixedRoom.floor; }) : (opts.floor ? D.floors.find(function (q) { return q.code === opts.floor; }) : null) || ensureFloor(L.building, L.floorName, L.level);
       var tag = tagOf(r), n = D.assets.filter(function (a) { return a.floor === f.code && a.tag === tag; }).length;
       for (var i = 0; i < r.qty; i++) {
         n++;
         var na = { id: f.code + '-' + tag + '-' + pad(n, 3), tag: tag, name: r.qty > 1 ? r.name + ' #' + (i + 1) : r.name, model: r.model, maker: r.maker, year: r.year, note: r.note,
           floor: f.code, roomHint: L.room, room: null, x: null, y: null, status: '정상', category: categoryOf(r), srcLoc: r.loc };
-        // 같은 위치·같은 장비 여러 대 = 모듈 묶음 (2D·3D에는 1개로 배치)
-        if (r.bundle) na.bundle = r.bundle; else if (r.qty > 1 && D.bundleQty !== false) na.bundle = r.name;
+        // 묶음: 표의 「묶음」 열 > 등록 창에서 고른 방식(하나의 랙 / 같은 장비끼리 / 묶지 않음)
+        var grp = opts.group || (D.bundleQty !== false ? 'perRow' : 'none');
+        if (r.bundle) na.bundle = r.bundle; else if (grp === 'one') na.bundle = opts.bname || '랙 1'; else if (grp === 'perRow' && r.qty > 1) na.bundle = r.name;
+        if (fixedRoom) { na.room = fixedRoom.id; na.roomHint = fixedRoom.name; na.x = Math.round(fixedRoom.x + fixedRoom.w / 2); na.y = Math.round(fixedRoom.y + fixedRoom.h / 2); }
         D.assets.push(na);
         made++;
       }
@@ -382,7 +388,8 @@
     if (step === 1) {
       h += '<p class="tx-wb-guide">설비 현행화표(설비명·규격·수량·제조사·설치 위치·설치연도·비고)를 <b>엑셀·한글 표에서 복사해 붙여넣으세요</b>. 수량만큼 설비가 만들어지고, 설치 위치(예: 「본관 7층」)로 건물·층이 자동 생성됩니다. 「확인불가」는 빈 값으로 처리합니다. 설비마다 <b>📷 사진</b>(전경·명판·모듈)을 붙이고 명판의 모델명·S/N을 옮겨 적으면 「확인불가」가 채워집니다.</p>' +
         '<label class="tx-qk-lbl">사업장 이름<input type="text" data-q="site" value="' + esc(D.site) + '" placeholder="예: ○○청사"></label>' +
-        '<textarea data-q="paste" class="tx-qk-paste" placeholder="설비명\t규격(모델명)\t수량\t제조사\t설치 위치\t설치연도\t비고\nLTE 광중계기\tKELIS(R640)\t2\t에프알텍\t본관 7층\t확인불가\tkt"></textarea>' +
+        '<textarea data-q="paste" class="tx-qk-paste" placeholder="장비명(설비명)\t모델명\t제조사\t수량\t(설치 위치)\nDivider\tSKC-DV508\tMplus\t1\n8VSB Remodulator\tSKRM-510\tMplus\t5"></textarea>' +
+        pvHTML() +
         '<label class="tx-wb-chk"><input type="checkbox" data-q="bundleQty"' + (D.bundleQty !== false ? ' checked' : '') + '> 수량 2대 이상(같은 위치·같은 장비)은 <b>묶음 1개</b>로 배치 · 모듈은 슬롯에 표시</label>' +
         '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="import">표 불러오기</button><button type="button" class="tx-wb-btn" data-q="addfloor">층 직접 추가</button><button type="button" class="tx-wb-btn" data-q="fromadmin">ADMIN 층 불러와 편집</button></div>' +
         (D.assets.length ? '<h5>생성된 설비 <span class="tx-count">' + D.assets.length + '</span></h5><ul class="tx-wb-list tx-qk-alist">' + D.assets.map(function (a) {
@@ -446,15 +453,53 @@
     if (n === 4) return D.assets.length > 0 && D.assets.every(function (a) { return a.room; });
     return !!(D.done && !D.done.dirty);
   }
+  /* 붙여넣은 표 미리보기 · 설치 위치 · 랙(묶음) 지정 */
+  function pvHTML() {
+    var pv = tool.pv; if (!pv) return '';
+    var units = pv.rows.reduce(function (n, r) { return n + r.qty; }, 0);
+    var needLoc = !pv.hasLoc || pv.forceLoc, fr = D.rooms.filter(function (r) { return r.floor === pv.floor; });
+    return '<div class="tx-qk-pv"><b>등록 미리보기 · ' + pv.rows.length + '종 ' + units + '대</b>' +
+      '<div class="tx-qk-pvt"><table><thead><tr><th>장비명</th><th>모델명</th><th>제조사</th><th>수량</th>' + (pv.hasLoc ? '<th>위치</th>' : '') + '</tr></thead><tbody>' +
+      pv.rows.map(function (r) { return '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.model) + '</td><td>' + esc(r.maker) + '</td><td>' + r.qty + '</td>' + (pv.hasLoc ? '<td>' + esc(r.loc) + '</td>' : '') + '</tr>'; }).join('') + '</tbody></table></div>' +
+      '<h5>이 장비들은 같은 랙 설비인가요?</h5>' +
+      '<label class="tx-wb-chk"><input type="radio" name="pvg" data-q="pvgroup" value="one"' + (pv.group === 'one' ? ' checked' : '') + '> <b>예, 하나의 랙(묶음)</b> — 도면에는 설비 1개, 선택하면 모듈 ' + units + '개를 슬롯별로 표시</label>' +
+      (pv.group === 'one' ? '<label class="tx-qk-lbl">랙(묶음) 이름<input type="text" data-q="pvbname" value="' + esc(pv.bname) + '" placeholder="예: UHD 방송 랙 #1"></label>' : '') +
+      '<label class="tx-wb-chk"><input type="radio" name="pvg" data-q="pvgroup" value="perRow"' + (pv.group === 'perRow' ? ' checked' : '') + '> 같은 장비(수량 2대 이상)끼리만 묶기</label>' +
+      '<label class="tx-wb-chk"><input type="radio" name="pvg" data-q="pvgroup" value="none"' + (pv.group === 'none' ? ' checked' : '') + '> 묶지 않기 (1대씩 따로 배치)</label>' +
+      (pv.hasLoc ? '<label class="tx-wb-chk"><input type="checkbox" data-q="pvforce"' + (pv.forceLoc ? ' checked' : '') + '> 표의 위치 대신 아래 위치로 모두 등록</label>' : '<p class="tx-wb-help">표에 설치 위치 열이 없어 아래에서 위치를 고릅니다.</p>') +
+      (needLoc ? '<div class="tx-wb-row2"><label>설치 층<select data-q="pvfloor">' + D.floors.map(function (f) { return '<option value="' + esc(f.code) + '"' + (f.code === pv.floor ? ' selected' : '') + '>' + esc(f.building + ' ' + f.name) + '</option>'; }).join('') + '<option value="__new"' + (pv.floor === '__new' || !D.floors.length ? ' selected' : '') + '>새 위치 입력…</option></select></label>' +
+        (pv.floor === '__new' || !D.floors.length ? '<label>건물·층·실<input type="text" data-q="pvnew" value="' + esc(pv.newLoc) + '" placeholder="예: 본관 3층 통신실"></label>' : '<label>실 (선택 시 바로 배치)<select data-q="pvroom"><option value="">나중에 배치</option>' + fr.map(function (r) { return '<option value="' + esc(r.id) + '"' + (r.id === pv.room ? ' selected' : '') + '>' + esc(r.name) + '</option>'; }).join('') + '</select></label>') + '</div>' : '') +
+      '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="pvok">등록</button><button type="button" class="tx-wb-btn" data-q="pvcancel">취소</button></div></div>';
+  }
+  /** 한 번에: 점검 → (층 단위 병합) → ADMIN 검증·적용 자동 진행 → 결과 확인 */
+  function saveAdmin() {
+    var cs = checks(), must = [cs[0], cs[2]].filter(function (c) { return !c[1]; });
+    if (must.length) { toast('저장할 수 없습니다: ' + must.map(function (c) { return c[0]; }).join(' / '), 'warn'); return; }
+    var sync = TX.adminSync; if (!sync) { toast('저장 모듈이 없습니다', 'error'); return; }
+    var rawT = sync.raw(), codes = D.floors.map(function (f) { return f.building + ' ' + f.name; }).join(', ');
+    var unpl = D.assets.filter(function (a) { return !a.room || a.x == null; }).length;
+    if (!confirm('ADMIN에 저장합니다.\n\n· 대상 층: ' + codes + ' (이 층만 교체, 다른 층은 유지)\n· 설비 ' + D.assets.length + '대' + (unpl ? ' (미배치 ' + unpl + '대는 「미배치」로 저장)' : '') + ' · 실 ' + D.rooms.length + ' · 연결 ' + D.links.length + '\n· 실행 전 복원용 백업을 저장합니다\n\n계속할까요?')) return;
+    var t = rawT && rawT.rooms.length ? sync.merge(rawT, sheetsData()) : null;
+    if (!t) { t = { rooms: [], assets: [], links: [], history: [], maps: [], rules: (rawT && rawT.rules) || [] }; t = sync.merge(t, sheetsData()); if (!t.rules.length) t.rules = [{ 규칙ID: 'R01', 상태코드: '이상', 색상코드: '#f43f5e', 측정항목: '접지저항', 연산자: '>', 임계값: 10, 단위: 'Ω' }]; }
+    var nb = {}; D.assets.forEach(function (a) { if (a.bundle) nb[a.floor + '|' + a.bundle] = 1; });
+    D.done = { at: new Date().toISOString(), dirty: false, file: '(ADMIN 직접 저장)', summary: '건물 ' + D.buildings.length + ' · 층 ' + D.floors.length + ' · 실 ' + D.rooms.length + ' · 설비 ' + D.assets.length + '대 (묶음 ' + Object.keys(nb).length + ') · 연결 ' + D.links.length, sent: new Date().toISOString() };
+    try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) { }
+    var firstFloor = D.floors[0] && D.floors[0].code;
+    sync.backup('ADMIN 저장 전').then(function () {
+      sync.push(t, '검증 중…', { autoApply: true, onDone: function (ok, msg) {
+        if (!ok) { alert('ADMIN 검증에서 오류가 있어 저장하지 못했습니다.\n\n' + (msg || '') + '\n\nADMIN 확인창의 오류 내용을 확인하세요.'); return; }
+        setTimeout(function () { if (TX.data) TX.data.refresh(true); TX.open({ view: '2d', floor: firstFloor }); setTimeout(function () { toast('ADMIN에 저장되었습니다 · 설비 목록·2D·3D에 반영됨', 'success'); }, 600); }, 900);
+      } });
+    });
+  }
   function finishCard() {
     var dd = D.done;
     if (dd && !dd.dirty) {
       return '<div class="tx-qk-done"><b>✔ 현행화 완료 · ' + esc(fmtTime(dd.at)) + '</b><span>' + esc(dd.summary) + '</span><span>엑셀 저장: <code>' + esc(dd.file) + '</code></span>' +
-        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="toadmin">ADMIN에 등록(적용)하기</button><button type="button" class="tx-wb-btn" data-q="finish">다시 저장</button></div>' +
-        '<small>ADMIN 확인창의 「검증 완료」 → 「전체 교체 적용」을 누르면 정식 자료로 반영되고 이 초안 모드는 종료됩니다.</small></div>';
+        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="saveadmin">ADMIN에 다시 저장</button></div></div>';
     }
-    return '<div class="tx-qk-fin"><button type="button" class="tx-wb-btn tx-wb-pri tx-qk-finbtn" data-q="finish">✔ 현행화 완료 · 저장</button>' +
-      '<small>' + (dd && dd.dirty ? '완료 후 수정된 내용이 있습니다 · 다시 완료하세요' : '점검 후 엑셀을 만들고, ADMIN 등록(적용) 단계로 안내합니다') + '</small></div>';
+    return '<div class="tx-qk-fin"><button type="button" class="tx-wb-btn tx-wb-pri tx-qk-finbtn" data-q="saveadmin">✔ 검증 후 ADMIN에 저장</button>' +
+      '<small>' + (dd && dd.dirty ? '저장 후 수정된 내용이 있습니다 · 다시 저장하세요' : 'ADMIN 검증을 통과하면 바로 저장되어 설비 목록·2D·3D에 나타납니다 (이 층만 교체 · 실행 전 백업 저장)') + '</small></div>';
   }
   function fmtTime(iso) { var d = new Date(iso), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
   function finish() {
@@ -508,9 +553,26 @@
       else if (a === 'next') { step = Math.min(5, step + 1); startTool(); renderPanel(); }
       else if (a === 'import') {
         var rows = parseTable(P.querySelector('[data-q="paste"]').value);
-        if (!rows.length) { toast('붙여넣은 표에서 설비를 찾지 못했습니다 (설비명 열 필요)', 'warn'); return; }
-        var n = importTable(rows); TX.setState({ floor: D.floors[0].code }); toast('설비 ' + n + '대 · 층 ' + D.floors.length + '개를 만들었습니다', 'success');
-      } else if (a === 'addfloor') {
+        if (!rows.length) { toast('붙여넣은 표에서 설비를 찾지 못했습니다 (설비명·장비명 열 필요)', 'warn'); return; }
+        var makers = {}; rows.forEach(function (r) { if (r.maker) makers[r.maker.replace(/\(.*\)/, '').trim()] = 1; });
+        var mk = Object.keys(makers);
+        tool.pv = { rows: rows, hasLoc: parseTable.hasLoc, group: parseTable.hasLoc ? 'perRow' : 'one', bname: (mk.length === 1 ? mk[0] + ' ' : '') + '랙 #1', floor: (D.floors.find(function (x) { return x.code === curFloor(); }) || D.floors[0] || {}).code || '', newLoc: '', room: '' };
+        renderPanel();
+      }
+      else if (a === 'pvcancel') { tool.pv = null; renderPanel(); }
+      else if (a === 'pvok') {
+        var pv = tool.pv; if (!pv) return;
+        var opts = { group: pv.group, bname: pv.bname };
+        if (!pv.hasLoc || pv.forceLoc) {
+          if (pv.floor === '__new') { if (!pv.newLoc) { toast('설치 위치(건물·층)를 입력하세요 (예: 본관 3층 통신실)', 'warn'); return; } opts.loc = pv.newLoc; }
+          else if (pv.floor) { opts.floor = pv.floor; if (pv.room) opts.room = pv.room; }
+          else { toast('설치할 층을 고르거나 입력하세요', 'warn'); return; }
+        }
+        tool.pv = null; var n = importTable(pv.rows, opts); renderPanel();
+        TX.setState({ floor: (opts.room && D.rooms.find(function (q) { return q.id === opts.room; }).floor) || opts.floor || D.floors[D.floors.length - 1].code });
+        toast('설비 ' + n + '대 등록' + (opts.group === 'one' ? ' · 「' + opts.bname + '」 1개 랙(묶음)으로' : '') + (opts.room ? ' · 실에 바로 배치' : ''), 'success');
+      }
+      else if (a === 'saveadmin') saveAdmin(); else if (a === 'addfloor') {
         var s = prompt('건물과 층을 입력하세요 (예: 본관 7층)'); if (!s) return;
         var L = parseLoc(s); var f = ensureFloor(L.building, L.floorName, L.level); save(); apply(); TX.setState({ floor: f.code });
       } else if (a === 'adel') { D.assets = D.assets.filter(function (x) { return x.id !== id; }); D.links = D.links.filter(function (l) { return l.from !== id && l.to !== id; }); save(); apply(); }
@@ -556,6 +618,12 @@
       else if (a === 'dist') tool.dist = parseFloat(t.value) || null;
       else if (a === 'auto') { D.autoLinks = t.checked; autoLink(); save(); apply(); }
       else if (a === 'bundleQty') { D.bundleQty = t.checked; save(); }
+      else if (a === 'pvgroup') { tool.pv.group = t.value; renderPanel(); }
+      else if (a === 'pvbname') tool.pv.bname = t.value.trim();
+      else if (a === 'pvfloor') { tool.pv.floor = t.value; tool.pv.room = ''; renderPanel(); }
+      else if (a === 'pvnew') tool.pv.newLoc = t.value.trim();
+      else if (a === 'pvroom') tool.pv.room = t.value;
+      else if (a === 'pvforce') { tool.pv.forceLoc = t.checked; renderPanel(); }
     });
     P.addEventListener('input', function (e) { var t = e.target; if (t.getAttribute('data-q') === 'op') { TX.underlay.update(curFloor(), { opacity: +t.value / 100 }); var o = t.parentNode.querySelector('output'); if (o) o.textContent = t.value + '%'; } });
     P.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); if (cap && cap.mode) { stopTool(); renderPanel(); } else close(true); } });

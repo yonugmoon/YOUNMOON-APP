@@ -43,3 +43,5 @@ main:has(.canvas-panel.tx-fused-side) section.metrics { display: none; }
 .panel-heading.tx-entry-compact .tx-entry-btn { padding: 0 9px; }
 .dt-mode-tabs.tx-tabs-short button { padding-left: 8px !important; padding-right: 8px !important; }
 .panel-heading.tx-entry-compact span.muted { display: none; }
+/* 시범 고정 화면(전층 수직 간선 계통도 · 시스템 랙·슬롯 실장도) 제거 — 실제 자료와 무관한 예시 내용 */
+.dt-mode-tabs button[data-dtmode="riser"], .dt-mode-tabs button[data-dtmode="shelf"], #dt-view-riser, #dt-view-shelf { display: none !important; }

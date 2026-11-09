@@ -1,6 +1,6 @@
 /* ============================================================
    TwinX 68-fusion (통합 리드) — ADMIN 「설비 디지털 트윈」 화면 ↔ 2D·3D 뷰어 융합
-   · 상단 탭에 「4. 입체 트윈」 추가 → 뷰어를 별도 전체화면이 아니라 ADMIN 도면 자리에 붙여(도킹) 표시
+   · 상단 탭에 「2. 입체 트윈」 추가 (시범 고정 화면인 수직 계통도·랙 실장도 탭은 숨김) → 뷰어를 별도 전체화면이 아니라 ADMIN 도면 자리에 붙여(도킹) 표시
    · 「토폴로지 나란히」: 왼쪽 ADMIN 토폴로지 + 오른쪽 2D/3D 를 한 화면에
    · 동기화: 층 선택(ADMIN select ↔ 뷰어 층) · 설비 선택(ADMIN 설비 카드 ↔ 뷰어 선택 · ADMIN 우측 상세 패널)
    · 「크게 보기」: 도킹을 풀고 기존 전체화면 뷰어로 전환
@@ -29,7 +29,7 @@
       var b = document.createElement('button');
       b.type = 'button'; b.setAttribute('data-dtmode', 'twin'); b.className = 'tx-fuse-tab' + (docked ? ' on' : '');
       b.title = '2D CAD · 3D 입체 · 분할 뷰어를 이 화면 안에서 보기 (층·설비 선택 연동)';
-      b.textContent = '🧊 4. 입체 트윈';
+      b.textContent = '🧊 2. 입체 트윈';
       tabs.appendChild(b);
     }
     fitTabs(h, tabs);
@@ -40,7 +40,7 @@
     }
   }
   /** 우측 상세 패널에 탭이 가려지면 짧은 이름으로 (전체 이름은 툴팁) */
-  var SHORT = { cad: '🗺️ 1. 토폴로지', riser: '🏢 2. 라이저', shelf: '🗄️ 3. 랙 실장', twin: '🧊 4. 입체 트윈' };
+  var SHORT = { cad: '🗺️ 1. 토폴로지', riser: '🏢 2. 라이저', shelf: '🗄️ 3. 랙 실장', twin: '🧊 2. 입체 트윈' };
   function rightLimit() {
     var d = document.querySelector('.work-area > .detail'), h = heading(); if (!h) return 0;
     var hr = h.getBoundingClientRect(), lim = hr.right;

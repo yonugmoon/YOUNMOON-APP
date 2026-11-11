@@ -1,0 +1,73 @@
+/* 72-dash: 관제 대시보드 */
+.tx-root { --tx-dash-w: min(46%, 720px); }
+.tx-root.tx-dash .tx-pane-3d { margin-right: var(--tx-dash-w); }
+.tx-root.tx-dash .tx-rail, .tx-root.tx-dash .tx-legend, .tx-root.tx-dash .tx-insp-tab, .tx-root.tx-dash .tx-s3-hud, .tx-root.tx-dash .tx-s3-mini { display: none !important; }
+.tx-root.tx-dash:not(.tx-insp-open) .tx-insp { display: none; }
+.tx-tbtn.tx-dash-btn.tx-on { background: #22d3ee; color: #06202c; }
+.tx-ds-col { position: absolute; top: 0; right: 0; bottom: 0; width: var(--tx-dash-w); z-index: 4; overflow: auto; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px;
+  background: linear-gradient(180deg, #071426, #06101f); border-left: 1px solid #12304f; color: #dbeafe; font-family: var(--tx-font, Arial, "Noto Sans KR", sans-serif); }
+.tx-ds-col header, .tx-ds-col footer { position: static; height: auto; padding: 0; margin: 0; background: none; border: 0; box-shadow: none; }
+.tx-ds-col header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.tx-ds-col header b { display: block; font-size: 16px; letter-spacing: .02em; color: #f0f9ff; }
+.tx-ds-col header small { color: #7dd3fc; font-size: 11.5px; }
+.tx-ds-src { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #fde68a; border: 1px solid #5b4a12; background: #1f1a08; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+.tx-ds-src i { width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; }
+.tx-ds-card { border: 1px solid #12304f; background: rgba(9, 26, 46, .78); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.tx-ds-card h4 { margin: 0 0 8px; font-size: 12.5px; font-weight: 700; color: #bae6fd; display: flex; justify-content: space-between; align-items: center; }
+.tx-ds-card h4 small { font-weight: 400; color: #7b93b0; font-size: 10.5px; display: inline-flex; align-items: center; gap: 4px; }
+.tx-ds-card h4 small i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-left: 6px; }
+.tx-ds-card h4 small i.c1 { background: #22d3ee; } .tx-ds-card h4 small i.c2 { background: #f43f5e; }
+.tx-ds-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tx-ds-top { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; }
+.tx-ds-donut { width: 104px; height: 104px; display: block; filter: drop-shadow(0 0 10px rgba(34, 211, 238, .25)); }
+.tx-ds-dn { fill: #f0f9ff; font: 700 17px var(--tx-font, Arial, sans-serif); } .tx-ds-du { fill: #7dd3fc; font: 9px var(--tx-font, Arial, sans-serif); }
+.tx-ds-top dl { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+.tx-ds-top dt { font-size: 10.5px; color: #7b93b0; } .tx-ds-top dd { margin: 0; font-size: 21px; font-weight: 700; color: #e0f2fe; }
+.tx-ds-top dd u { text-decoration: none; font-size: 11px; font-weight: 400; color: #7dd3fc; margin-left: 3px; } .tx-ds-top dd.bad { color: #fb7185; }
+.tx-ds-chart { width: 100%; height: auto; display: block; }
+.tx-ds-ax { fill: #7b93b0; font: 9px ui-monospace, Consolas, monospace; }
+.tx-ds-bar { cursor: pointer; } .tx-ds-bar:hover rect:first-child { fill: #67e8f9; }
+.tx-ds-empty { margin: 6px 0; font-size: 11.5px; color: #7b93b0; }
+.tx-ds-hb { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tx-ds-hb li { display: grid; grid-template-columns: 92px 1fr auto; gap: 8px; align-items: center; font-size: 11.5px; }
+.tx-ds-hb span { color: #cbd5e1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-ds-hb i { height: 7px; border-radius: 4px; background: #12304f; overflow: hidden; } .tx-ds-hb i b { display: block; height: 100%; border-radius: 4px; }
+.tx-ds-hb em { font-style: normal; color: #7dd3fc; font-size: 10.5px; white-space: nowrap; }
+.tx-ds-top5 { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tx-ds-top5 button { width: 100%; display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; text-align: left; padding: 5px 7px; border: 0; border-radius: 7px; background: #0b2238; color: #e2e8f0; cursor: pointer; font: inherit; }
+.tx-ds-top5 button:hover { background: #12304f; }
+.tx-ds-top5 i { width: 8px; height: 8px; border-radius: 50%; } .tx-ds-top5 span { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-ds-top5 small { display: block; font-size: 10px; color: #7b93b0; } .tx-ds-top5 b { font-size: 14px; color: #fde68a; }
+.tx-ds-col footer { margin-top: auto; font-size: 11px; color: #7b93b0; text-align: right; }
+/* 3D 위 지표 카드 · 연결선 */
+.tx-ds-kpis { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.tx-ds-kl, .tx-ds-kr { position: absolute; top: 58px; display: flex; flex-direction: column; gap: 14px; width: 190px; }
+.tx-ds-kl { left: 14px; } .tx-ds-kr { right: 14px; }
+.tx-ds-kpi { pointer-events: auto; cursor: pointer; display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 10px 11px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, .35); background: rgba(7, 20, 38, .82); color: #e0f2fe; backdrop-filter: blur(4px); box-shadow: 0 0 18px rgba(34, 211, 238, .12); }
+.tx-ds-kpi:hover { border-color: #38bdf8; }
+.tx-ds-kpi > i { font-style: normal; font-size: 18px; line-height: 1.2; color: #38bdf8; }
+.tx-ds-kpi small { display: block; font-size: 10.5px; color: #7dd3fc; } .tx-ds-kpi b { display: block; font-size: 21px; font-weight: 700; line-height: 1.25; }
+.tx-ds-kpi b u { text-decoration: none; font-size: 11px; font-weight: 400; margin-left: 3px; color: #7dd3fc; }
+.tx-ds-kpi span { display: block; font-size: 10.5px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-ds-kpi.bad { border-color: rgba(244, 63, 94, .6); box-shadow: 0 0 18px rgba(244, 63, 94, .2); } .tx-ds-kpi.bad b { color: #fb7185; }
+.tx-ds-kpi.warn { border-color: rgba(245, 158, 11, .6); } .tx-ds-kpi.warn b { color: #fbbf24; }
+.tx-ds-kpi.ok b { color: #34d399; }
+.tx-ds-lead { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+.tx-ds-lead path { fill: none; stroke: #38bdf8; stroke-width: 1.2; stroke-opacity: .8; stroke-dasharray: 4 3; }
+.tx-ds-lead circle { fill: #7dd3fc; } .tx-ds-lead circle.halo { fill: none; stroke: #38bdf8; stroke-opacity: .5; animation: tx-ds-pulse 1.8s ease-out infinite; }
+@keyframes tx-ds-pulse { from { r: 4; stroke-opacity: .8; } to { r: 14; stroke-opacity: 0; } }
+.tx-ds-mode { position: absolute; z-index: 4; top: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 999px; background: rgba(7, 20, 38, .85); border: 1px solid #12304f; color: #bae6fd; font-size: 11.5px; }
+.tx-ds-mode b { margin: 0 6px 0 4px; font-size: 11px; color: #7b93b0; }
+.tx-ds-mode button { height: 26px; padding: 0 12px; border-radius: 999px; border: 0; background: transparent; color: #bae6fd; font: 600 11.5px var(--tx-font, Arial, sans-serif); cursor: pointer; }
+.tx-ds-mode button.is-on { background: #22d3ee; color: #06202c; }
+.tx-ds-strip { position: absolute; z-index: 4; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 0; border: 1px solid #12304f; border-radius: 12px; background: rgba(7, 20, 38, .85); overflow: hidden; max-width: calc(100% - 24px); }
+.tx-ds-strip button { height: 38px; padding: 0 16px; border: 0; border-right: 1px solid #12304f; background: transparent; color: #bae6fd; font: 600 11.5px var(--tx-font, Arial, sans-serif); letter-spacing: .04em; cursor: pointer; white-space: nowrap; }
+.tx-ds-strip button:last-child { border-right: 0; } .tx-ds-strip button:hover { background: #0b2238; color: #fff; }
+@media (max-width: 1100px) {
+  .tx-root { --tx-dash-w: 100%; }
+  .tx-root.tx-dash .tx-pane-3d { margin-right: 0; margin-bottom: 46vh; }
+  .tx-ds-col { top: auto; height: 46vh; width: 100%; border-left: 0; border-top: 1px solid #12304f; }
+  .tx-ds-kl, .tx-ds-kr { width: 150px; gap: 8px; } .tx-ds-kpi b { font-size: 16px; }
+  .tx-ds-strip { display: none; }
+}
+@media (max-width: 640px) { .tx-ds-row { grid-template-columns: 1fr; } .tx-ds-kr { display: none; } }

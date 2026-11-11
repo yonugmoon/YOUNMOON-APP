@@ -838,11 +838,17 @@
   }
 
   /* ---------------- 시안 D: 열화상·위험기둥 ---------------- */
-  function heatPlane(bag, g, fl, y, pts) {
+  function heatPlane(bag, g, fl, y, pts, baseRooms) {
     var b = bounds(fl), x0 = b.x0 - SLAB_M, y0 = b.y0 - SLAB_M, wmm = b.x1 - b.x0 + 2 * SLAB_M, hmm = b.y1 - b.y0 + 2 * SLAB_M;
     var ppm = Math.min(24, 512 / (Math.max(wmm, hmm) / 1000)), cv = document.createElement('canvas');
     cv.width = Math.max(32, Math.round(wmm / 1000 * ppm)); cv.height = Math.max(32, Math.round(hmm / 1000 * ppm));
     var cg = cv.getContext('2d');
+    // 관제 대시보드: 실 바닥을 차가운 색(정상)으로 깔고, 위험·열화상 지점을 따뜻한 색으로 덮음
+    (baseRooms || []).forEach(function (r) {
+      var bx = (r.x - x0) / 1000 * ppm, by = (r.y - y0) / 1000 * ppm, bw = r.w / 1000 * ppm, bh = r.h / 1000 * ppm;
+      var lg = cg.createLinearGradient(bx, by, bx + bw, by + bh); lg.addColorStop(0, 'rgba(29,78,216,0.85)'); lg.addColorStop(1, 'rgba(8,145,178,0.75)');
+      cg.fillStyle = lg; cg.fillRect(bx, by, bw, bh);
+    });
     pts.forEach(function (p) {
       var px = (p.x - x0) / 1000 * ppm, py = (p.y - y0) / 1000 * ppm, r = (1.5 + p.sev * 4) * ppm;
       var grd = cg.createRadialGradient(px, py, 0, px, py, r);
@@ -865,7 +871,7 @@
     fls.forEach(function (fl) {
       var y = floorY(fl.code), isF = fl.code === focus.code, op = (!stack || isF) ? 1 : (s.ghost ? 0.3 : 0.9), inter = isF || !s.ghost;
       yMin = Math.min(yMin, y); yMax = Math.max(yMax, y);
-      addSlab(bag, g, fl, y, op, isF, 0x4b5563);
+      addSlab(bag, g, fl, y, op, isF, s.dash ? 0x0c1c30 : 0x4b5563);
       var pts = [], loops = [];
       roomsOf(fl.code).forEach(function (rm) {
         var x0 = X(rm.x), x1 = X(rm.x + rm.w), z0 = Z(rm.y), z1 = Z(rm.y + rm.h), yy = y + 0.02;
@@ -879,6 +885,7 @@
       drawList(fl.code).forEach(function (a) {
         var p = places[a.id]; if (!p) return;
         var rk = riskOf(a), gc = gHex(gradeOf(a)), h = 0.25 + rk.total / 100 * Hmax;
+        if (s.dash && (rk.total >= 20 || gradeOf(a) === 'RED' || gradeOf(a) === 'ORANGE')) pts.push({ x: p.x, y: p.y, sev: Math.max(gradeOf(a) === 'RED' ? 0.8 : gradeOf(a) === 'ORANGE' ? 0.5 : 0.25, Math.min(1, rk.total / 80)) });
         var grp = new THREE.Group(); grp.position.set(p.wx, y, p.wz); grp.userData.assetId = a.id; g.add(grp);
         var pil = mesh(grp, pillarG, mStd(bag, gc, op * 0.92, { emissive: gc, emissiveIntensity: 0.38, roughness: 0.35, metalness: 0.2 }), 0, h / 2, 0, op > 0.5);
         pil.scale.y = h;
@@ -894,10 +901,10 @@
           if (ht.sev >= 0.66) pulse(dome, 1.6, 0.08, (ht.sev > 0.5 ? 0.3 : 0.16) * op, 'all');
         }
         S.info[a.id] = { a: a, base: new THREE.Vector3(p.wx, y, p.wz), top: y + h + 0.05, center: new THREE.Vector3(p.wx, y + h * 0.6, p.wz), ringR: 0.62, halo: false, op: op, isF: isF, heat: ht, gnd: gndBad(a.measures) };
-        if (inter) assetChip(a, new THREE.Vector3(p.wx, y + h + 0.45, p.wz), isF ? 50 : 20, frag, 'always');
+        if (inter && (!s.dash || gradeOf(a) === 'RED' || gradeOf(a) === 'ORANGE' || a.id === s.selected)) assetChip(a, new THREE.Vector3(p.wx, y + h + 0.45, p.wz), isF ? 50 : 20, frag, 'always');
       });
       aliasBundles(fl.code);
-      if (pts.length) heatPlane(bag, g, fl, y, pts);
+      if (pts.length || s.dash) heatPlane(bag, g, fl, y, pts, s.dash ? roomsOf(fl.code) : null);
     });
     S.heatCount = nHeat;
     var b = bounds(focus), fw = (b.x1 - b.x0) / 1000 + 2, fd = (b.y1 - b.y0) / 1000 + 2;
@@ -1514,7 +1521,7 @@
   TX.on('camera', function (e) { if (!S.renderer) return; S.pendingPreset = (e && e.preset) || 'reset'; if (!S.raf && S.fitOnce) { preset(S.pendingPreset); S.pendingPreset = null; } });
   TX.on('state', function (e) {
     var ch = (e && e.changed) || [], has = function (k) { return ch.indexOf(k) >= 0; };
-    if (['concept', 'floor', 'stack', 'ghost', 'riser', 'explode'].some(has)) S.need.static = true;
+    if (['concept', 'floor', 'stack', 'ghost', 'riser', 'explode', 'dash'].some(has)) S.need.static = true;
     if (has('concept') || has('stack')) S.need.fit = true;
     if (has('floor') && !st().stack) S.need.fit = true;
     if (has('layers')) {
@@ -1573,7 +1580,18 @@
   }
 
   /* ---------------- 공개 API ---------------- */
+  /** 설비·실의 화면 좌표 (3D 영역 기준 px) — 관제 대시보드 지표 카드 연결선용 */
+  function projectId(id) {
+    if (!S.camera || !S.w) return null;
+    var inf = S.info[id], v = null;
+    if (inf) v = inf.center.clone(); else if (S.roomInfo[id]) { var r = S.roomInfo[id]; v = new THREE.Vector3(r.cx, r.y + 0.3, r.cz); }
+    if (!v) return null;
+    v.project(S.camera);
+    if (v.z > 1) return null;
+    return { x: (v.x + 1) / 2 * S.w, y: (1 - v.y) / 2 * S.h };
+  }
   TX.scene3d = {
+    project: projectId,
     render: function () {
       S.need.static = true;
       if (!S.renderer || S.failed) return;

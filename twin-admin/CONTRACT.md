@@ -161,3 +161,7 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
 - **설비 표 등록 · 한 번에 저장(v2.2)** 65-quick ①: 표 붙여넣기 → 미리보기(`tool.pv`) — 「이 장비들은 같은 랙 설비인가요?」 하나의 랙(묶음)/같은 장비끼리/묶지 않음,
   설치 위치 열이 없으면 층·실 선택(실 선택 시 바로 배치). `importTable(rows, {loc, floor, room, group, bname})`.
   ⑤ 「✔ 검증 후 ADMIN에 저장」 = 점검 → 백업 → 층 단위 병합 → `adminUpload(..., {autoApply, onDone})` 가 ADMIN 「검증 완료」 시 「전체 교체 적용」 자동 → 뷰어 재열기.
+- **관제 대시보드(v2.3)** `TwinX.dash = {open, close, toggle, active, data}` (`src/72-dash.js`) — 툴바 「관제」: `state.dash=true` + view 3d·전층 적층,
+  우측 차트 패널(정상률 도넛·연결 계통·층별 설비·측정 추이·기술기준 적합률·조치 우선 설비), 3D 위 지표 카드 6개(실제 설비·실로 연결선 = `TwinX.scene3d.project(id)`),
+  3D 표현 전환(히트맵 D / 투시 A+ghost / 돌하우스 A / 계통 C), 하단 바로가기. 수치는 등록·점검 자료 기준(실시간 센서 아님 명시).
+  T4: `state.dash` 일 때 시안 D 가 실 바닥 기본색 + 위험도 지점 히트맵, 슬래브 어두운 색, 이상·주의 설비만 라벨.

@@ -874,6 +874,80 @@ tr.tx-dr-low td:first-child { color: #64748b; }
 .tx-wb-dangerbtn { background: #e11d48 !important; border-color: #e11d48 !important; color: #fff !important; }
 @media (max-width: 760px) { .tx-rs-grid { grid-template-columns: 1fr; } }
 
+/* 72-dash: 관제 대시보드 */
+.tx-root { --tx-dash-w: min(46%, 720px); }
+.tx-root.tx-dash .tx-pane-3d { margin-right: var(--tx-dash-w); }
+.tx-root.tx-dash .tx-rail, .tx-root.tx-dash .tx-legend, .tx-root.tx-dash .tx-insp-tab, .tx-root.tx-dash .tx-s3-hud, .tx-root.tx-dash .tx-s3-mini { display: none !important; }
+.tx-root.tx-dash:not(.tx-insp-open) .tx-insp { display: none; }
+.tx-tbtn.tx-dash-btn.tx-on { background: #22d3ee; color: #06202c; }
+.tx-ds-col { position: absolute; top: 0; right: 0; bottom: 0; width: var(--tx-dash-w); z-index: 4; overflow: auto; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px;
+  background: linear-gradient(180deg, #071426, #06101f); border-left: 1px solid #12304f; color: #dbeafe; font-family: var(--tx-font, Arial, "Noto Sans KR", sans-serif); }
+.tx-ds-col header, .tx-ds-col footer { position: static; height: auto; padding: 0; margin: 0; background: none; border: 0; box-shadow: none; }
+.tx-ds-col header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.tx-ds-col header b { display: block; font-size: 16px; letter-spacing: .02em; color: #f0f9ff; }
+.tx-ds-col header small { color: #7dd3fc; font-size: 11.5px; }
+.tx-ds-src { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #fde68a; border: 1px solid #5b4a12; background: #1f1a08; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+.tx-ds-src i { width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; }
+.tx-ds-card { border: 1px solid #12304f; background: rgba(9, 26, 46, .78); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.tx-ds-card h4 { margin: 0 0 8px; font-size: 12.5px; font-weight: 700; color: #bae6fd; display: flex; justify-content: space-between; align-items: center; }
+.tx-ds-card h4 small { font-weight: 400; color: #7b93b0; font-size: 10.5px; display: inline-flex; align-items: center; gap: 4px; }
+.tx-ds-card h4 small i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-left: 6px; }
+.tx-ds-card h4 small i.c1 { background: #22d3ee; } .tx-ds-card h4 small i.c2 { background: #f43f5e; }
+.tx-ds-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tx-ds-top { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; }
+.tx-ds-donut { width: 104px; height: 104px; display: block; filter: drop-shadow(0 0 10px rgba(34, 211, 238, .25)); }
+.tx-ds-dn { fill: #f0f9ff; font: 700 17px var(--tx-font, Arial, sans-serif); } .tx-ds-du { fill: #7dd3fc; font: 9px var(--tx-font, Arial, sans-serif); }
+.tx-ds-top dl { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+.tx-ds-top dt { font-size: 10.5px; color: #7b93b0; } .tx-ds-top dd { margin: 0; font-size: 21px; font-weight: 700; color: #e0f2fe; }
+.tx-ds-top dd u { text-decoration: none; font-size: 11px; font-weight: 400; color: #7dd3fc; margin-left: 3px; } .tx-ds-top dd.bad { color: #fb7185; }
+.tx-ds-chart { width: 100%; height: auto; display: block; }
+.tx-ds-ax { fill: #7b93b0; font: 9px ui-monospace, Consolas, monospace; }
+.tx-ds-bar { cursor: pointer; } .tx-ds-bar:hover rect:first-child { fill: #67e8f9; }
+.tx-ds-empty { margin: 6px 0; font-size: 11.5px; color: #7b93b0; }
+.tx-ds-hb { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tx-ds-hb li { display: grid; grid-template-columns: 92px 1fr auto; gap: 8px; align-items: center; font-size: 11.5px; }
+.tx-ds-hb span { color: #cbd5e1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-ds-hb i { height: 7px; border-radius: 4px; background: #12304f; overflow: hidden; } .tx-ds-hb i b { display: block; height: 100%; border-radius: 4px; }
+.tx-ds-hb em { font-style: normal; color: #7dd3fc; font-size: 10.5px; white-space: nowrap; }
+.tx-ds-top5 { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tx-ds-top5 button { width: 100%; display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; text-align: left; padding: 5px 7px; border: 0; border-radius: 7px; background: #0b2238; color: #e2e8f0; cursor: pointer; font: inherit; }
+.tx-ds-top5 button:hover { background: #12304f; }
+.tx-ds-top5 i { width: 8px; height: 8px; border-radius: 50%; } .tx-ds-top5 span { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-ds-top5 small { display: block; font-size: 10px; color: #7b93b0; } .tx-ds-top5 b { font-size: 14px; color: #fde68a; }
+.tx-ds-col footer { margin-top: auto; font-size: 11px; color: #7b93b0; text-align: right; }
+/* 3D 위 지표 카드 · 연결선 */
+.tx-ds-kpis { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.tx-ds-kl, .tx-ds-kr { position: absolute; top: 58px; display: flex; flex-direction: column; gap: 14px; width: 190px; }
+.tx-ds-kl { left: 14px; } .tx-ds-kr { right: 14px; }
+.tx-ds-kpi { pointer-events: auto; cursor: pointer; display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 10px 11px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, .35); background: rgba(7, 20, 38, .82); color: #e0f2fe; backdrop-filter: blur(4px); box-shadow: 0 0 18px rgba(34, 211, 238, .12); }
+.tx-ds-kpi:hover { border-color: #38bdf8; }
+.tx-ds-kpi > i { font-style: normal; font-size: 18px; line-height: 1.2; color: #38bdf8; }
+.tx-ds-kpi small { display: block; font-size: 10.5px; color: #7dd3fc; } .tx-ds-kpi b { display: block; font-size: 21px; font-weight: 700; line-height: 1.25; }
+.tx-ds-kpi b u { text-decoration: none; font-size: 11px; font-weight: 400; margin-left: 3px; color: #7dd3fc; }
+.tx-ds-kpi span { display: block; font-size: 10.5px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-ds-kpi.bad { border-color: rgba(244, 63, 94, .6); box-shadow: 0 0 18px rgba(244, 63, 94, .2); } .tx-ds-kpi.bad b { color: #fb7185; }
+.tx-ds-kpi.warn { border-color: rgba(245, 158, 11, .6); } .tx-ds-kpi.warn b { color: #fbbf24; }
+.tx-ds-kpi.ok b { color: #34d399; }
+.tx-ds-lead { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+.tx-ds-lead path { fill: none; stroke: #38bdf8; stroke-width: 1.2; stroke-opacity: .8; stroke-dasharray: 4 3; }
+.tx-ds-lead circle { fill: #7dd3fc; } .tx-ds-lead circle.halo { fill: none; stroke: #38bdf8; stroke-opacity: .5; animation: tx-ds-pulse 1.8s ease-out infinite; }
+@keyframes tx-ds-pulse { from { r: 4; stroke-opacity: .8; } to { r: 14; stroke-opacity: 0; } }
+.tx-ds-mode { position: absolute; z-index: 4; top: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 999px; background: rgba(7, 20, 38, .85); border: 1px solid #12304f; color: #bae6fd; font-size: 11.5px; }
+.tx-ds-mode b { margin: 0 6px 0 4px; font-size: 11px; color: #7b93b0; }
+.tx-ds-mode button { height: 26px; padding: 0 12px; border-radius: 999px; border: 0; background: transparent; color: #bae6fd; font: 600 11.5px var(--tx-font, Arial, sans-serif); cursor: pointer; }
+.tx-ds-mode button.is-on { background: #22d3ee; color: #06202c; }
+.tx-ds-strip { position: absolute; z-index: 4; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 0; border: 1px solid #12304f; border-radius: 12px; background: rgba(7, 20, 38, .85); overflow: hidden; max-width: calc(100% - 24px); }
+.tx-ds-strip button { height: 38px; padding: 0 16px; border: 0; border-right: 1px solid #12304f; background: transparent; color: #bae6fd; font: 600 11.5px var(--tx-font, Arial, sans-serif); letter-spacing: .04em; cursor: pointer; white-space: nowrap; }
+.tx-ds-strip button:last-child { border-right: 0; } .tx-ds-strip button:hover { background: #0b2238; color: #fff; }
+@media (max-width: 1100px) {
+  .tx-root { --tx-dash-w: 100%; }
+  .tx-root.tx-dash .tx-pane-3d { margin-right: 0; margin-bottom: 46vh; }
+  .tx-ds-col { top: auto; height: 46vh; width: 100%; border-left: 0; border-top: 1px solid #12304f; }
+  .tx-ds-kl, .tx-ds-kr { width: 150px; gap: 8px; } .tx-ds-kpi b { font-size: 16px; }
+  .tx-ds-strip { display: none; }
+}
+@media (max-width: 640px) { .tx-ds-row { grid-template-columns: 1fr; } .tx-ds-kr { display: none; } }
+
 /* 단독 운영판: 앱 전체가 뷰어 */
 html, body { margin: 0; height: 100%; background: #06101f; }
 .tx-root .tx-close-btn { display: none !important; }
@@ -5108,11 +5182,17 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   }
 
   /* ---------------- 시안 D: 열화상·위험기둥 ---------------- */
-  function heatPlane(bag, g, fl, y, pts) {
+  function heatPlane(bag, g, fl, y, pts, baseRooms) {
     var b = bounds(fl), x0 = b.x0 - SLAB_M, y0 = b.y0 - SLAB_M, wmm = b.x1 - b.x0 + 2 * SLAB_M, hmm = b.y1 - b.y0 + 2 * SLAB_M;
     var ppm = Math.min(24, 512 / (Math.max(wmm, hmm) / 1000)), cv = document.createElement('canvas');
     cv.width = Math.max(32, Math.round(wmm / 1000 * ppm)); cv.height = Math.max(32, Math.round(hmm / 1000 * ppm));
     var cg = cv.getContext('2d');
+    // 관제 대시보드: 실 바닥을 차가운 색(정상)으로 깔고, 위험·열화상 지점을 따뜻한 색으로 덮음
+    (baseRooms || []).forEach(function (r) {
+      var bx = (r.x - x0) / 1000 * ppm, by = (r.y - y0) / 1000 * ppm, bw = r.w / 1000 * ppm, bh = r.h / 1000 * ppm;
+      var lg = cg.createLinearGradient(bx, by, bx + bw, by + bh); lg.addColorStop(0, 'rgba(29,78,216,0.85)'); lg.addColorStop(1, 'rgba(8,145,178,0.75)');
+      cg.fillStyle = lg; cg.fillRect(bx, by, bw, bh);
+    });
     pts.forEach(function (p) {
       var px = (p.x - x0) / 1000 * ppm, py = (p.y - y0) / 1000 * ppm, r = (1.5 + p.sev * 4) * ppm;
       var grd = cg.createRadialGradient(px, py, 0, px, py, r);
@@ -5135,7 +5215,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     fls.forEach(function (fl) {
       var y = floorY(fl.code), isF = fl.code === focus.code, op = (!stack || isF) ? 1 : (s.ghost ? 0.3 : 0.9), inter = isF || !s.ghost;
       yMin = Math.min(yMin, y); yMax = Math.max(yMax, y);
-      addSlab(bag, g, fl, y, op, isF, 0x4b5563);
+      addSlab(bag, g, fl, y, op, isF, s.dash ? 0x0c1c30 : 0x4b5563);
       var pts = [], loops = [];
       roomsOf(fl.code).forEach(function (rm) {
         var x0 = X(rm.x), x1 = X(rm.x + rm.w), z0 = Z(rm.y), z1 = Z(rm.y + rm.h), yy = y + 0.02;
@@ -5149,6 +5229,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
       drawList(fl.code).forEach(function (a) {
         var p = places[a.id]; if (!p) return;
         var rk = riskOf(a), gc = gHex(gradeOf(a)), h = 0.25 + rk.total / 100 * Hmax;
+        if (s.dash && (rk.total >= 20 || gradeOf(a) === 'RED' || gradeOf(a) === 'ORANGE')) pts.push({ x: p.x, y: p.y, sev: Math.max(gradeOf(a) === 'RED' ? 0.8 : gradeOf(a) === 'ORANGE' ? 0.5 : 0.25, Math.min(1, rk.total / 80)) });
         var grp = new THREE.Group(); grp.position.set(p.wx, y, p.wz); grp.userData.assetId = a.id; g.add(grp);
         var pil = mesh(grp, pillarG, mStd(bag, gc, op * 0.92, { emissive: gc, emissiveIntensity: 0.38, roughness: 0.35, metalness: 0.2 }), 0, h / 2, 0, op > 0.5);
         pil.scale.y = h;
@@ -5164,10 +5245,10 @@ html, body { margin: 0; height: 100%; background: #06101f; }
           if (ht.sev >= 0.66) pulse(dome, 1.6, 0.08, (ht.sev > 0.5 ? 0.3 : 0.16) * op, 'all');
         }
         S.info[a.id] = { a: a, base: new THREE.Vector3(p.wx, y, p.wz), top: y + h + 0.05, center: new THREE.Vector3(p.wx, y + h * 0.6, p.wz), ringR: 0.62, halo: false, op: op, isF: isF, heat: ht, gnd: gndBad(a.measures) };
-        if (inter) assetChip(a, new THREE.Vector3(p.wx, y + h + 0.45, p.wz), isF ? 50 : 20, frag, 'always');
+        if (inter && (!s.dash || gradeOf(a) === 'RED' || gradeOf(a) === 'ORANGE' || a.id === s.selected)) assetChip(a, new THREE.Vector3(p.wx, y + h + 0.45, p.wz), isF ? 50 : 20, frag, 'always');
       });
       aliasBundles(fl.code);
-      if (pts.length) heatPlane(bag, g, fl, y, pts);
+      if (pts.length || s.dash) heatPlane(bag, g, fl, y, pts, s.dash ? roomsOf(fl.code) : null);
     });
     S.heatCount = nHeat;
     var b = bounds(focus), fw = (b.x1 - b.x0) / 1000 + 2, fd = (b.y1 - b.y0) / 1000 + 2;
@@ -5784,7 +5865,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   TX.on('camera', function (e) { if (!S.renderer) return; S.pendingPreset = (e && e.preset) || 'reset'; if (!S.raf && S.fitOnce) { preset(S.pendingPreset); S.pendingPreset = null; } });
   TX.on('state', function (e) {
     var ch = (e && e.changed) || [], has = function (k) { return ch.indexOf(k) >= 0; };
-    if (['concept', 'floor', 'stack', 'ghost', 'riser', 'explode'].some(has)) S.need.static = true;
+    if (['concept', 'floor', 'stack', 'ghost', 'riser', 'explode', 'dash'].some(has)) S.need.static = true;
     if (has('concept') || has('stack')) S.need.fit = true;
     if (has('floor') && !st().stack) S.need.fit = true;
     if (has('layers')) {
@@ -5843,7 +5924,18 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   }
 
   /* ---------------- 공개 API ---------------- */
+  /** 설비·실의 화면 좌표 (3D 영역 기준 px) — 관제 대시보드 지표 카드 연결선용 */
+  function projectId(id) {
+    if (!S.camera || !S.w) return null;
+    var inf = S.info[id], v = null;
+    if (inf) v = inf.center.clone(); else if (S.roomInfo[id]) { var r = S.roomInfo[id]; v = new THREE.Vector3(r.cx, r.y + 0.3, r.cz); }
+    if (!v) return null;
+    v.project(S.camera);
+    if (v.z > 1) return null;
+    return { x: (v.x + 1) / 2 * S.w, y: (1 - v.y) / 2 * S.h };
+  }
   TX.scene3d = {
+    project: projectId,
     render: function () {
       S.need.static = true;
       if (!S.renderer || S.failed) return;
@@ -9912,6 +10004,239 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   TX.on('state', function () { var b = !!(TX.state.layers && TX.state.layers.gradeAdmin); if (b === lastBasis) return; lastBasis = b; try { localStorage.setItem('twinx_grade_basis', b ? 'admin' : 'merged'); } catch (e) { } if (TX.model) TX.setModel(TX.model); toast(b ? '상태 색: ADMIN 등록 상태 기준 (ADMIN 화면과 동일)' : '상태 색: 측정 판정 반영 (주의 측정 → 관찰)', 'info'); });
   TX.adminSync = { raw: raw, sheets: sheets, push: push, merge: merge, placeholder: placeholder, analyze: analyze, plan: { demo: planDemo, rebuild: planRebuild, unplace: planUnplace, all: planAll }, backup: backup, restore: restore };
   TX.dataCenter = { open: open, close: close };
+})();
+
+</script>
+<script id="twinx-72-dash">
+/* ---- 72-dash.js ---- */
+/* ============================================================
+   TwinX 72-dash (통합 리드) — 관제 대시보드 (3D 건물 + 지표 카드 + 차트 패널)
+   · 툴바 「관제」: 왼쪽 3D(전층 적층 · 히트맵/계통 와이어/돌하우스), 오른쪽 차트 패널, 3D 위 지표 카드(실제 설비·실로 연결선)
+   · 모든 수치는 등록 자료(설비·연결·점검 결과서 측정) 기준 — 실시간 센서 값이 아님을 화면에 명시
+     (센서 연동 시 TwinX.ingest 로 들어온 값이 같은 측정 자료로 합쳐져 그대로 표시됨)
+   · 외부 라이브러리 없이 SVG 차트
+   ============================================================ */
+(function () {
+  'use strict';
+  var TX = window.TwinX;
+  if (!TX || TX.dash) return;
+  var U = TX.util, esc = U.esc;
+  var GC = { RED: '#f43f5e', ORANGE: '#f59e0b', YELLOW: '#eab308', GREEN: '#10b981', NONE: '#64748b' };
+  var on = false, col = null, kpi = null, lead = null, strip = null, modeBar = null, timer = null, prev = null, links = [];
+
+  function root() { return TX.ui && TX.ui.root; }
+  function pane3d() { var r = root(); return r && r.querySelector('.tx-pane-3d'); }
+  function fmt(n) { return n == null || isNaN(n) ? '—' : (Math.abs(n) >= 100 ? Math.round(n) : Math.round(n * 10) / 10).toLocaleString('en-US'); }
+  function pd(s) { var m = String(s || '').match(/(\d{4})[-./](\d{1,2})(?:[-./](\d{1,2}))?/); return m ? new Date(+m[1], +m[2] - 1, +(m[3] || 1)) : null; }
+
+  /* ---------------- 자료 집계 ---------------- */
+  function collect() {
+    var M = TX.model || { floors: [], rooms: [], assets: [], links: [], measurements: [] };
+    var seen = new Set(), ms = [];
+    var add = function (m, a, r) { if (m && !seen.has(m)) { seen.add(m); ms.push({ m: m, a: a || (m.assetId && TX.asset(m.assetId)) || null, r: r || (m.roomId && TX.room(m.roomId)) || null }); } };
+    M.assets.forEach(function (a) { (a.measures || []).forEach(function (m) { add(m, a, null); }); });
+    M.rooms.forEach(function (r) { (r.measures || []).forEach(function (m) { add(m, null, r); }); });
+    (M.measurements || []).forEach(function (m) { add(m); });
+    var g = { RED: 0, ORANGE: 0, YELLOW: 0, GREEN: 0, NONE: 0 }; M.assets.forEach(function (a) { g[a.grade in g ? a.grade : 'NONE']++; });
+    var n = M.assets.length, okRate = n ? Math.round((g.GREEN) / n * 1000) / 10 : null, checked = n - g.NONE;
+    var bad = ms.filter(function (x) { return x.m.judge === 'bad'; }), warn = ms.filter(function (x) { return x.m.warn; });
+    var lastD = null; ms.forEach(function (x) { var d = pd(x.m.date); if (d && (!lastD || d > lastD)) lastD = d; });
+    // 위험도
+    var risk = M.assets.map(function (a) { var r = TX.analysis && TX.analysis.risk ? TX.analysis.risk(a) : { total: 0, grade: a.grade }; return { a: a, total: r.total, grade: r.grade, bad: r.bad || 0, dep: r.dependents || 0 }; }).sort(function (x, y) { return y.total - x.total; });
+    // 항목별 최악값 (접지·온도)
+    var pick = function (test, worstHigh) {
+      var c = ms.filter(function (x) { return test(x.m) && U.num(x.m.value) != null; });
+      var linked = c.filter(function (x) { return x.a || x.r; }); if (linked.length) c = linked; // 설비·실에 연결된 측정 우선 (카드 연결선)
+      if (!c.length) return null;
+      c.sort(function (x, y) { return (U.num(y.m.value) - U.num(x.m.value)) * (worstHigh ? 1 : -1); });
+      var badFirst = c.filter(function (x) { return x.m.judge === 'bad'; })[0];
+      return badFirst || c[0];
+    };
+    var gnd = pick(function (m) { return m.std === 'gnd' || /접지/.test(m.item || ''); }, true);
+    var temp = pick(function (m) { var u = String(m.unit || ''); if (/%|RH|lx|dB|V|Ω/i.test(u)) return false; return /℃|°C/.test(u) || /온도|열화상|발열/.test(m.item || '') && !/습도\s*$/.test(m.item || ''); }, true);
+    // 층별
+    var floors = M.floors.slice().sort(function (a, b) { return a.level - b.level; }).map(function (f) {
+      var as = M.assets.filter(function (a) { return a.floor === f.code; });
+      return { f: f, n: as.length, red: as.filter(function (a) { return a.grade === 'RED'; }).length, warn: as.filter(function (a) { return a.grade === 'ORANGE' || a.grade === 'YELLOW'; }).length };
+    }).filter(function (x) { return x.n; });
+    // 연결 유형
+    var lt = {}; (M.links || []).forEach(function (l) { lt[l.type] = (lt[l.type] || 0) + 1; });
+    // 측정 추이 (월별)
+    var byMonth = {}; ms.forEach(function (x) { var d = pd(x.m.date); if (!d) return; var k = d.getFullYear() + '-' + (d.getMonth() < 9 ? '0' : '') + (d.getMonth() + 1); var o = byMonth[k] = byMonth[k] || { n: 0, bad: 0 }; o.n++; if (x.m.judge === 'bad') o.bad++; });
+    var months = Object.keys(byMonth).sort().slice(-12).map(function (k) { return { k: k, n: byMonth[k].n, bad: byMonth[k].bad }; });
+    // 기술기준별 적합률
+    var std = [];
+    if (TX.analysis && TX.analysis.summary) { var sm = TX.analysis.summary(); Object.keys(sm.std).forEach(function (k) { var s = sm.std[k]; if (s.total) std.push({ name: s.name, total: s.total, bad: s.bad, rate: s.rate }); }); }
+    else { var by = {}; ms.forEach(function (x) { var k = x.m.item || '기타'; var o = by[k] = by[k] || { name: k, total: 0, bad: 0, good: 0 }; o.total++; if (x.m.judge === 'bad') o.bad++; else if (x.m.judge === 'good') o.good++; }); Object.keys(by).forEach(function (k) { var o = by[k]; o.rate = o.good + o.bad ? Math.round(o.good / (o.good + o.bad) * 1000) / 10 : null; std.push(o); }); }
+    std.sort(function (x, y) { return y.total - x.total; });
+    var fixes = TX.dream && TX.dream.last && TX.dream.last() ? TX.dream.last().fixes : null;
+    return { M: M, n: n, g: g, okRate: okRate, checked: checked, ms: ms, bad: bad, warn: warn, lastD: lastD, risk: risk, gnd: gnd, temp: temp, floors: floors, lt: lt, months: months, std: std.slice(0, 6), fixes: fixes };
+  }
+
+  /* ---------------- SVG 차트 ---------------- */
+  function donut(pct, color) {
+    var r = 34, c = 2 * Math.PI * r, p = pct == null ? 0 : Math.max(0, Math.min(100, pct));
+    return '<svg viewBox="0 0 90 90" class="tx-ds-donut"><circle cx="45" cy="45" r="' + r + '" fill="none" stroke="#12304f" stroke-width="9"/>' +
+      '<circle cx="45" cy="45" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + (c * p / 100).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 45 45)"/>' +
+      '<text x="45" y="43" text-anchor="middle" class="tx-ds-dn">' + (pct == null ? '—' : fmt(pct)) + '</text><text x="45" y="57" text-anchor="middle" class="tx-ds-du">% 정상</text></svg>';
+  }
+  function bars(items, W, H) { // items: [{label, a, b}] a=전체 b=이상
+    if (!items.length) return '<p class="tx-ds-empty">자료 없음</p>';
+    var mx = Math.max.apply(null, items.map(function (i) { return i.a; }).concat([1])), bw = Math.min(34, (W - 30) / items.length - 6), o = ['<svg viewBox="0 0 ' + W + ' ' + H + '" class="tx-ds-chart">'];
+    for (var t = 0; t <= 2; t++) { var y = 8 + (H - 30) * t / 2; o.push('<line x1="26" y1="' + y + '" x2="' + W + '" y2="' + y + '" stroke="#12304f"/><text x="22" y="' + (y + 3) + '" text-anchor="end" class="tx-ds-ax">' + Math.round(mx * (1 - t / 2)) + '</text>'); }
+    items.forEach(function (it, i) {
+      var x = 32 + i * ((W - 36) / items.length), h = (H - 30) * it.a / mx, hb = (H - 30) * it.b / mx;
+      o.push('<g class="tx-ds-bar" data-floor="' + esc(it.code || '') + '"><rect x="' + x + '" y="' + (H - 22 - h) + '" width="' + bw + '" height="' + Math.max(1, h) + '" rx="2" fill="#22d3ee"/>' +
+        (it.b ? '<rect x="' + x + '" y="' + (H - 22 - hb) + '" width="' + bw + '" height="' + hb + '" rx="2" fill="#f43f5e"/>' : '') +
+        '<text x="' + (x + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle" class="tx-ds-ax">' + esc(it.label) + '</text><title>' + esc(it.label + ' · 설비 ' + it.a + ' · 이상 ' + it.b) + '</title></g>');
+    });
+    return o.join('') + '</svg>';
+  }
+  function area(pts, W, H) { // pts: [{k, n, bad}]
+    if (pts.length < 2) return null;
+    var mx = Math.max.apply(null, pts.map(function (p) { return p.n; }).concat([1])), X = function (i) { return 28 + i * (W - 36) / (pts.length - 1); }, Y = function (v) { return 8 + (H - 30) * (1 - v / mx); };
+    var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.n).toFixed(1); }).join(' ');
+    var lineB = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.bad).toFixed(1); }).join(' ');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="tx-ds-chart"><defs><linearGradient id="tx-ds-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".55"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="' + line + ' L' + X(pts.length - 1) + ' ' + (H - 22) + ' L' + X(0) + ' ' + (H - 22) + 'Z" fill="url(#tx-ds-g)"/><path d="' + line + '" fill="none" stroke="#22d3ee" stroke-width="2"/><path d="' + lineB + '" fill="none" stroke="#f43f5e" stroke-width="1.6" stroke-dasharray="4 3"/>' +
+      pts.map(function (p, i) { return (i % Math.ceil(pts.length / 6) === 0 || i === pts.length - 1) ? '<text x="' + X(i) + '" y="' + (H - 8) + '" text-anchor="middle" class="tx-ds-ax">' + esc(p.k.slice(2)) + '</text>' : ''; }).join('') +
+      '<text x="22" y="12" text-anchor="end" class="tx-ds-ax">' + mx + '</text></svg>';
+  }
+  function hbars(items) { // [{name, v, max, color, note}]
+    return '<ul class="tx-ds-hb">' + items.map(function (i) { return '<li><span>' + esc(i.name) + '</span><i><b style="width:' + Math.max(2, Math.min(100, i.max ? i.v / i.max * 100 : 0)) + '%;background:' + i.color + '"></b></i><em>' + esc(i.note) + '</em></li>'; }).join('') + '</ul>';
+  }
+
+  /* ---------------- 화면 ---------------- */
+  var LN = { optical: ['광', '#a78bfa'], data: ['UTP', '#22d3ee'], power: ['전원', '#f43f5e'], ground: ['접지', '#eab308'], path: ['경로', '#94a3b8'] };
+  function render() {
+    if (!on || !col) return;
+    var d = collect(), M = d.M, site = (M.site && M.site.name) || '사업장';
+    var lmax = Math.max.apply(null, Object.keys(d.lt).map(function (k) { return d.lt[k]; }).concat([1]));
+    var trend = area(d.months, 320, 120);
+    var todo = d.fixes ? d.fixes.filter(function (x) { return x.lv === 'high'; }).length : null;
+    col.innerHTML =
+      '<header><div><b>관제 대시보드</b><small>' + esc(site) + ' · ' + U.today() + '</small></div><span class="tx-ds-src" title="센서 연동 전: 등록 자료와 점검 결과서 측정값 기준"><i></i>점검 자료 기준 · 실시간 센서 아님</span></header>' +
+      '<section class="tx-ds-card tx-ds-top"><div>' + donut(d.okRate, d.g.RED ? '#f43f5e' : d.g.ORANGE || d.g.YELLOW ? '#f59e0b' : '#10b981') + '</div>' +
+        '<dl><div><dt>등록 설비</dt><dd>' + d.n + '<u>대</u></dd></div><div><dt>이상 · 주의</dt><dd class="' + (d.g.RED ? 'bad' : '') + '">' + d.g.RED + ' · ' + (d.g.ORANGE + d.g.YELLOW) + '</dd></div>' +
+        '<div><dt>측정 자료</dt><dd>' + d.ms.length + '<u>건</u></dd></div><div><dt>불량 판정</dt><dd class="' + (d.bad.length ? 'bad' : '') + '">' + d.bad.length + '<u>건</u></dd></div></dl></section>' +
+      '<section class="tx-ds-card"><h4>연결 계통 <small>회선 ' + (M.links || []).length + '</small></h4>' +
+        (Object.keys(d.lt).length ? hbars(Object.keys(d.lt).map(function (k) { var x = LN[k] || [k, '#94a3b8']; return { name: x[0], v: d.lt[k], max: lmax, color: x[1], note: d.lt[k] + '회선' }; })) : '<p class="tx-ds-empty">등록된 연결 없음 · 계통도에서 「연결 추가」</p>') + '</section>' +
+      '<div class="tx-ds-row"><section class="tx-ds-card"><h4>층별 설비 <small><i class="c1"></i>설비 <i class="c2"></i>이상</small></h4>' + bars(d.floors.map(function (x) { return { label: x.f.name || x.f.code, code: x.f.code, a: x.n, b: x.red }; }), 300, 130) + '</section>' +
+        '<section class="tx-ds-card"><h4>측정 추이 <small><i class="c1"></i>건수 <i class="c2"></i>불량</small></h4>' + (trend || '<p class="tx-ds-empty">' + (d.months.length ? '점검 ' + d.months[0].k + ' · ' + d.months[0].n + '건 (2회 이상 쌓이면 추이 표시)' : '측정 자료 없음 · 점검 결과서 등록') + '</p>') + '</section></div>' +
+      '<div class="tx-ds-row"><section class="tx-ds-card"><h4>기술기준 적합률</h4>' + (d.std.length ? hbars(d.std.map(function (s) { return { name: s.name, v: s.rate == null ? 0 : s.rate, max: 100, color: s.bad ? '#f59e0b' : '#10b981', note: (s.rate == null ? '—' : s.rate + '%') + ' · ' + s.total + '건' }; })) : '<p class="tx-ds-empty">측정 자료 없음</p>') + '</section>' +
+        '<section class="tx-ds-card"><h4>조치 우선 설비 <small>위험도 순</small></h4><ol class="tx-ds-top5">' + (d.risk.filter(function (r) { return r.total > 0; }).slice(0, 5).map(function (r) {
+          return '<li><button type="button" data-select="' + esc(r.a.id) + '"><i style="background:' + GC[r.a.grade] + '"></i><span>' + esc(TX.bundleView && r.a.bundle ? r.a.name : r.a.name) + '<small>' + esc((TX.floor(r.a.floor) || {}).name || '') + ' · ' + esc((TX.room(r.a.room) || {}).name || '') + '</small></span><b>' + Math.round(r.total) + '</b></button></li>';
+        }).join('') || '<li class="tx-ds-empty">위험 요인이 있는 설비 없음</li>') + '</ol></section></div>' +
+      '<footer>최근 점검 ' + (d.lastD ? d.lastD.getFullYear() + '-' + ('0' + (d.lastD.getMonth() + 1)).slice(-2) + '-' + ('0' + d.lastD.getDate()).slice(-2) : '—') + ' · 점검한 설비 ' + d.checked + '/' + d.n + (todo != null ? ' · 교정 필요(높음) ' + todo : '') + '</footer>';
+    renderKpi(d);
+  }
+  function card(k, icon, title, val, unit, sub, cls, target) {
+    return '<div class="tx-ds-kpi ' + (cls || '') + '" data-k="' + k + '"' + (target ? ' data-t="' + esc(target) + '"' : '') + '><i>' + icon + '</i><div><small>' + title + '</small><b>' + val + (unit ? '<u>' + unit + '</u>' : '') + '</b><span>' + sub + '</span></div></div>';
+  }
+  function renderKpi(d) {
+    if (!kpi) return;
+    var top = d.risk[0] && d.risk[0].total > 0 ? d.risk[0] : null, L = [], R = [];
+    var nameOf = function (x) { return x.a ? x.a.name : x.r ? x.r.name : ''; }, idOf = function (x) { return x.a ? x.a.id : x.r ? x.r.id : ''; };
+    L.push(card('temp', '🌡', '온도 (최근 측정 최고)', d.temp ? fmt(U.num(d.temp.m.value)) : '—', d.temp ? (d.temp.m.unit || '℃') : '', d.temp ? esc(nameOf(d.temp)) + (d.temp.m.judge === 'bad' ? ' · 불량' : d.temp.m.warn ? ' · 주의' : ' · 양호') : '측정 자료 없음', d.temp && d.temp.m.judge === 'bad' ? 'bad' : d.temp && d.temp.m.warn ? 'warn' : '', d.temp && idOf(d.temp)));
+    L.push(card('gnd', '⏚', '접지저항 (최대)', d.gnd ? fmt(U.num(d.gnd.m.value)) : '—', d.gnd ? (d.gnd.m.unit || 'Ω') : '', d.gnd ? esc(nameOf(d.gnd)) + (d.gnd.m.judge === 'bad' ? ' · 불량' : ' · 양호') : '측정 자료 없음', d.gnd && d.gnd.m.judge === 'bad' ? 'bad' : '', d.gnd && idOf(d.gnd)));
+    L.push(card('meas', '📋', '점검 측정', d.ms.length, '건', '불량 ' + d.bad.length + ' · 주의 ' + d.warn.length, d.bad.length ? 'bad' : ''));
+    R.push(card('state', d.g.RED ? '⚠' : '✔', '설비 상태', d.g.RED ? '이상 ' + d.g.RED : d.g.ORANGE + d.g.YELLOW ? '주의 ' + (d.g.ORANGE + d.g.YELLOW) : d.n ? '정상' : '—', '', d.n ? '정상 ' + d.g.GREEN + ' · 미점검 ' + d.g.NONE + ' / ' + d.n + '대' : '등록 설비 없음', d.g.RED ? 'bad' : d.g.ORANGE + d.g.YELLOW ? 'warn' : 'ok'));
+    R.push(card('risk', '◎', '최고 위험 설비', top ? Math.round(top.total) : '—', top ? '점' : '', top ? esc(top.a.name) + ' · ' + esc((TX.room(top.a.room) || {}).name || '') : '위험 요인 없음', top && top.total >= 60 ? 'bad' : top && top.total >= 40 ? 'warn' : '', top && top.a.id));
+    var todo = d.fixes ? d.fixes.length : null;
+    R.push(card('fix', '🛠', '현행화 점검', todo == null ? '—' : todo ? todo : '없음', todo ? '건' : '', todo == null ? '꿈꾸기 점검 전' : todo ? '교정 필요 · 눌러서 확인' : '교정할 항목 없음', todo ? 'warn' : 'ok'));
+    kpi.innerHTML = '<div class="tx-ds-kl">' + L.join('') + '</div><div class="tx-ds-kr">' + R.join('') + '</div>';
+    links = Array.prototype.slice.call(kpi.querySelectorAll('[data-t]')).map(function (el) { return { el: el, id: el.getAttribute('data-t'), right: !!el.closest('.tx-ds-kr') }; });
+    drawLeads();
+  }
+  /** 지표 카드 → 실제 설비·실 위치 연결선 (카메라가 움직이면 따라감) */
+  function drawLeads() {
+    if (!on || !lead) return;
+    var p3 = pane3d(); if (!p3 || !TX.scene3d || !TX.scene3d.project) { lead.innerHTML = ''; return; }
+    var pr = p3.getBoundingClientRect(), o = [];
+    links.forEach(function (l) {
+      var id = TX.bundleLead ? TX.bundleLead(l.id) : l.id, p = TX.scene3d.project(id); if (!p) return;
+      var r = l.el.getBoundingClientRect(), x0 = (l.right ? r.left : r.right) - pr.left, y0 = r.top + r.height / 2 - pr.top, mx = x0 + (l.right ? -26 : 26);
+      if (p.x < 0 || p.y < 0 || p.x > pr.width || p.y > pr.height) return;
+      o.push('<path d="M' + x0.toFixed(1) + ' ' + y0.toFixed(1) + ' H' + mx.toFixed(1) + ' L' + p.x.toFixed(1) + ' ' + p.y.toFixed(1) + '" /><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="4"/><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="9" class="halo"/>');
+    });
+    lead.innerHTML = o.join('');
+  }
+
+  var MODES = [['heat', '히트맵', { concept: 'D', ghost: false }], ['xray', '투시(와이어)', { concept: 'A', ghost: true }], ['doll', '돌하우스', { concept: 'A', ghost: false }], ['topo', '계통', { concept: 'C' }]];
+  function curMode() { var s = TX.state; return s.concept === 'D' ? 'heat' : s.concept === 'C' ? 'topo' : s.concept === 'A' ? (s.ghost ? 'xray' : 'doll') : ''; }
+  function paintMode() {
+    if (!modeBar) return;
+    var cm = curMode();
+    modeBar.innerHTML = '<b>3D 표현</b>' + MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '" class="' + (cm === m[0] ? 'is-on' : '') + '">' + m[1] + '</button>'; }).join('');
+  }
+  function enter() {
+    var r = root(), p3 = pane3d(); if (!r || !p3 || on) return;
+    prev = { view: TX.state.view, stack: TX.state.stack, concept: TX.state.concept, ghost: TX.state.ghost, explode: TX.state.explode, panel: Object.assign({}, TX.state.panel) };
+    on = true; r.classList.add('tx-dash');
+    col = U.el('aside', 'tx-ds-col'); r.querySelector('.tx-viewport').appendChild(col);
+    lead = U.svg('svg', { class: 'tx-ds-lead' }); p3.appendChild(lead);
+    kpi = U.el('div', 'tx-ds-kpis'); p3.appendChild(kpi);
+    modeBar = U.el('div', 'tx-ds-mode'); p3.appendChild(modeBar);
+    strip = U.el('div', 'tx-ds-strip', '<button type="button" data-s="report">📈 점검 자료 연동</button><button type="button" data-s="risk">◔ 위험도 분석</button><button type="button" data-s="fault">⚠ 장애 파급 예측</button><button type="button" data-s="dream">⚙ 현행화 점검</button>'); p3.appendChild(strip);
+    col.addEventListener('click', function (e) {
+      var s = e.target.closest('[data-select]'); if (s) { TX.select(s.getAttribute('data-select')); return; }
+      var b = e.target.closest('[data-floor]'); if (b && b.getAttribute('data-floor')) TX.setState({ floor: b.getAttribute('data-floor') });
+    });
+    kpi.addEventListener('click', function (e) {
+      var c = e.target.closest('.tx-ds-kpi'); if (!c) return;
+      var t = c.getAttribute('data-t'), k = c.getAttribute('data-k');
+      if (k === 'fix' && TX.dream) { TX.dream.open('fix'); return; }
+      if (t && TX.asset(TX.bundleLead ? TX.bundleLead(t) : t)) TX.select(TX.bundleLead ? TX.bundleLead(t) : t);
+      else if (t && TX.room(t)) TX.setState({ room: t, floor: TX.room(t).floor });
+    });
+    modeBar.addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (!b) return; var m = MODES.find(function (x) { return x[0] === b.getAttribute('data-m'); }); if (m) TX.setState(m[2]); });
+    strip.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-s]'); if (!b) return; var k = b.getAttribute('data-s');
+      if (k === 'report' && TX.pipe) TX.pipe.report.open();
+      else if (k === 'dream' && TX.dream) TX.dream.open('mem');
+      else if (k === 'risk' && TX.dream) TX.dream.open('cal');
+      else if (k === 'fault') { var d = collect(), top = d.risk[0]; if (top && top.total > 0) { TX.select(top.a.id); TX.setState({ fault: { active: true, source: top.a.id } }); TX.emit('toast', { msg: '「' + top.a.name + '」 장애 시 파급 범위를 표시합니다 (다시 누르면 해제는 ⚡ 버튼)', kind: 'info' }); } else TX.emit('toast', { msg: '먼저 설비를 선택하고 ⚡ 장애 시뮬레이션을 누르세요', kind: 'info' }); }
+    });
+    TX.setState({ view: '3d', stack: true, ghost: false, concept: 'D', dash: true, explode: Math.max(1.9, TX.state.explode || 1.5), panel: { inspector: false, floors: false, legend: false } });
+    if (TX.dream && TX.dream.run && !(TX.dream.last && TX.dream.last())) { try { TX.dream.run(); } catch (e) { } }
+    paintMode(); render(); paintBtn();
+    timer = setInterval(drawLeads, 120);
+    setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 60);
+  }
+  function leave(keepView) {
+    if (!on) return; on = false;
+    clearInterval(timer);
+    [col, lead, kpi, modeBar, strip].forEach(function (x) { if (x) x.remove(); }); col = lead = kpi = modeBar = strip = null;
+    var r = root(); if (r) r.classList.remove('tx-dash');
+    var back = { dash: false, stack: prev.stack, concept: prev.concept, ghost: prev.ghost, explode: prev.explode, panel: prev.panel }; if (keepView !== true) back.view = prev.view; TX.setState(back);
+    paintBtn();
+    setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 60);
+  }
+  function toggle() { if (on) leave(); else enter(); }
+
+  /* ---------------- 툴바 버튼 ---------------- */
+  function paintBtn() { var b = root() && root().querySelector('.tx-dash-btn'); if (b) { b.classList.toggle('tx-on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); } }
+  function mountBtn() {
+    var r = root(); if (!r || r.querySelector('.tx-dash-btn')) return;
+    var g = r.querySelector('.tx-groups'); if (!g) return;
+    var b = U.el('button', 'tx-tbtn tx-dash-btn', '<svg class="tx-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/><rect x="3" y="15" width="8" height="6" rx="1.5"/></svg><span class="tx-tbtn-lbl">관제</span>');
+    b.type = 'button'; b.title = '관제 대시보드: 3D 건물 + 지표 카드 + 차트 (등록·점검 자료 기준)'; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+    g.insertBefore(b, g.firstChild);
+  }
+  TX.on('ui-ready', mountBtn); TX.on('open', function () { mountBtn(); });
+  TX.on('model', function () { if (on) render(); });
+  TX.on('dream', function () { if (on) render(); });
+  TX.on('state', function (p) {
+    var ch = (p && p.changed) || [];
+    if (!on) return;
+    if (ch.indexOf('concept') >= 0 || ch.indexOf('ghost') >= 0) paintMode();
+    if (ch.indexOf('view') >= 0 && TX.state.view !== '3d') leave(true); // 다른 보기로 가면 관제 종료
+  });
+  TX.on('close', function () { if (on) leave(); });
+  if (root()) mountBtn();
+
+  TX.dash = { open: enter, close: leave, toggle: toggle, active: function () { return on; }, data: collect };
 })();
 
 </script>

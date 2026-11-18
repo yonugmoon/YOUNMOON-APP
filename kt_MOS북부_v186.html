@@ -224,7 +224,7 @@
   #mdash-modal .mdv-btn.view{background:linear-gradient(135deg,#7C3AED,#2563EB);border-color:transparent;color:#fff;}
   #mdash-modal .mdv-btn.vq{background:#FFF7ED;border-color:#FDBA74;color:#9A3412;}
   #mdash-modal .vq-add{width:100%;background:#0F172A;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;}
-  #mdash-modal .vq-del{background:#FEF3F2;color:#B42318;border:1px solid #FECDCA;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;}
+  #mdash-modal .vq-del{white-space:nowrap;flex-shrink:0;background:#FEF3F2;color:#B42318;border:1px solid #FECDCA;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;}
   #mdash-modal .mdv-btn.on{background:#1E3A8A;border-color:#1E3A8A;color:#fff;}
   #mdash-modal .mdv-x{background:#F1F5F9;border:none;color:#334155;width:36px;height:36px;border-radius:10px;font-size:15px;cursor:pointer;flex-shrink:0;}
   #mdash-modal .mdv-body{flex:1;overflow-y:auto;padding:12px 14px 40px;-webkit-overflow-scrolling:touch;}
@@ -433,6 +433,28 @@
   #mdash-modal .vqp-strip{display:flex;height:12px;border-radius:5px;overflow:hidden;background:#2B3F5C;transform-origin:left;animation:mdoGrow 1s ease both;} #mdash-modal .vqp-strip i{display:block;height:100%;}
   #mdash-modal .vqp-keys{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:10.5px;color:#CBD5E1;margin-top:4px;} #mdash-modal .vqp-keys i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;border:1px solid #64748B;vertical-align:-1px;}
   #mdash-modal .vqp-heat{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;} #mdash-modal .vqp-heat span{text-align:center;font-size:11.5px;font-weight:800;padding:5px 0;border-radius:4px;border:1px solid #475569;}
+  #mdash-modal .vq-form .vq-lb{display:block;font-size:12.5px;font-weight:800;color:#0F172A;margin:10px 0 5px;} #mdash-modal .vq-lb span{font-weight:600;color:#64748B;font-size:11px;margin-left:4px;}
+  #mdash-modal .vq-form .vq-lb:first-child{margin-top:0;}
+  #mdash-modal .vq-in{width:100%;box-sizing:border-box;border:1px solid #CBD5E1;border-radius:10px;padding:10px 12px;font-size:14px;background:#fff;color:#0F172A;}
+  #mdash-modal .vq-btns{display:flex;gap:8px;} #mdash-modal .vq-b{flex:1;background:#fff;border:1.5px solid #1E3A8A;color:#1E3A8A;border-radius:10px;padding:10px 6px;font-size:13px;font-weight:800;cursor:pointer;}
+  #mdash-modal .vq-b.ai{background:linear-gradient(135deg,#7C3AED,#2563EB);border-color:transparent;color:#fff;}
+  #mdash-modal .vq-chip{margin-top:8px;font-size:12px;background:#EFF6FF;color:#1D4ED8;border-radius:8px;padding:6px 10px;}
+  #mdash-modal .vq-thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  #mdash-modal .vq-th{position:relative;width:74px;height:96px;border-radius:8px;overflow:hidden;background:#E2E8F0;border:1px solid #CBD5E1;}
+  #mdash-modal .vq-th img{width:100%;height:100%;object-fit:cover;cursor:zoom-in;display:block;}
+  #mdash-modal .vq-th button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(15,23,42,.75);color:#fff;font-size:11px;cursor:pointer;}
+  #mdash-modal .vq-vt{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;max-height:330px;overflow-y:auto;border:1px solid #E2E8F0;border-radius:10px;padding:8px;}
+  @media (max-width:480px){ #mdash-modal .vq-vt{grid-template-columns:1fr;} }
+  #mdash-modal .vq-vr{display:grid;grid-template-columns:1fr 90px 34px;gap:6px;align-items:center;font-size:11.5px;color:#334155;}
+  #mdash-modal .vq-vr input{border:1px solid #CBD5E1;border-radius:7px;padding:5px 7px;font-size:12.5px;width:100%;box-sizing:border-box;text-align:right;}
+  #mdash-modal .vq-vr.empty span{color:#94A3B8;} #mdash-modal .vq-vr em{font-style:normal;font-size:10.5px;color:#64748B;}
+  #mdash-modal .vq-hint{font-size:11px;color:#64748B;margin-top:6px;text-align:center;}
+  #mdash-modal .vq-item{border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+  #mdash-modal .vq-ih{display:flex;justify-content:space-between;gap:8px;align-items:center;} #mdash-modal .vq-ih b{display:block;font-size:13.5px;color:#0F172A;} #mdash-modal .vq-ih span{font-size:11px;color:#64748B;}
+  #mdash-modal .vqp-h b small{display:block;font-size:10.5px;color:#7DD3FC;font-weight:700;}
+  #mdash-modal .vqp .vq-th{border-color:#334155;background:#16263C;}
+  #mdash-modal .vq-viewer{position:absolute;inset:0;z-index:999;background:rgba(2,6,23,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;}
+  #mdash-modal .vq-viewer img{max-width:100%;max-height:82vh;border-radius:8px;} #mdash-modal .vq-viewer button{background:#fff;border:none;border-radius:999px;padding:8px 16px;font-weight:800;cursor:pointer;}
   #mdash-modal .mdv-seg{display:inline-flex;background:#F1F5F9;border-radius:10px;padding:3px;gap:2px;}
   #mdash-modal .mdv-seg button{border:none;background:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:800;color:#475569;cursor:pointer;white-space:nowrap;}
   #mdash-modal .mdv-seg button.on{background:#fff;color:#1E3A8A;box-shadow:0 1px 3px rgba(15,23,42,.15);}
@@ -5339,6 +5361,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
   async function deleteInspection(id){
     const photoKeys = await sList("photo:"+id+":", false);
     for(const k of photoKeys){ await sDelete(k, false); }
+    try{ const vk=await sList("vqimg:"+id+":", false); for(const k of vk){ await sDelete(k, false); } }catch(e){}
     await sDelete("inspection:"+id, false);
     indexList = indexList.filter(e=>e.id!==id);
     await saveIndex();
@@ -6644,7 +6667,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const an=ph.match(/작은 이상색 영역 (\d+)개/); if(an) add('사진 이상색 영역 후보','개',+an[1],'',true);
     return { site:(f.site||'').trim()||fname.replace(/\.json$/i,''), date:o.savedAt?new Date(o.savedAt).toLocaleString('ko-KR'):'', rows:R, file:fname };
   }
-  async function vqImportFiles(files){
+  async function vqImportFiles(files, equip){
     if(!current) throw new Error('점검을 먼저 여세요.');
     const out=[]; const errs=[];
     for(const fl of files){
@@ -6653,7 +6676,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       catch(e){ errs.push(e.message); }
     }
     current.videoQuality = current.videoQuality || [];
-    out.forEach(rec=>{ const i=current.videoQuality.findIndex(x=>x.site===rec.site && x.date===rec.date); rec.id=uid(); if(i>=0) current.videoQuality[i]=rec; else current.videoQuality.push(rec); });
+    out.forEach(rec=>{ const i=current.videoQuality.findIndex(x=>x.site===rec.site && x.date===rec.date); rec.id=uid(); rec.equip=equip||rec.equip||'영상 품질 검수'; rec.images=[]; if(i>=0) current.videoQuality[i]=rec; else current.videoQuality.push(rec); });
     if(out.length) scheduleSave();
     return { added:out.length, errs };
   }
@@ -6665,32 +6688,136 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       rec.rows.forEach(r=>{ const v=vqNum(r.raw); if(v==null) return;
         const zone=r.name.match(/^사진 구역 (\d) 밝기$/);
         const unit = r.unit==='0–255'||r.unit==='지수' ? '' : r.unit;
-        rows.push({ bld, floor:f, floorLabel:mdFloorLabel(f), loc: zone? loc+' · 구역'+zone[1] : loc, catName:'영상 품질 검수', itemName: zone? '사진 구역 밝기 (0–255)' : r.name+(r.unit==='0–255'?' (0–255)':''), unit, value:v, raw:String(r.raw).replace(/,/g,''), std:r.std||'', result:vqRes(r.verdict), vq:true });
+        rows.push({ bld, floor:f, floorLabel:mdFloorLabel(f), loc: zone? loc+' · 구역'+zone[1] : loc, catName:rec.equip||'영상 품질 검수', itemName: zone? '사진 구역 밝기 (0–255)' : r.name+(r.unit==='0–255'?' (0–255)':''), unit, value:v, raw:String(r.raw).replace(/,/g,''), std:r.std||'', result:vqRes(r.verdict), vq:true });
       });
     });
     return rows;
   }
-  /* 대시보드 안 「🎥 영상 품질」 관리 창 */
+  /* ── 영상 품질 등록 창: 설비·설치 위치 입력 → 성적서/백업/이미지 첨부 → (이미지면) 수치 읽기·확인 → 등록 ── */
+  const VQ_TEMPLATE = [
+    ['영상 해상도','px'],['프레임당 총 픽셀 수','px'],['브라우저 표시 프레임률','fps'],['영상 평균 밝기','0–255'],
+    ['사진 해상도','px'],['사진 평균 밝기','0–255'],
+    ...['흰색','검정','빨강','초록','파랑','기타'].map(c=>['영상 '+c+' 픽셀 비율','%']),
+    ...['흰색','검정','빨강','초록','파랑','기타'].map(c=>['사진 '+c+' 픽셀 비율','%']),
+    ...[1,2,3,4,5,6,7,8,9].map(n=>['사진 구역 '+n+' 밝기','0–255'])
+  ];
+  let vqDraft = null;
+  function vqNewDraft(){ const cats=(current&&current.categories)||[]; const g=cats.find(c=>/CCTV|영상|사이니지|방송|감시/.test(c.name));
+    return { equip:(g||cats[0]||{}).name||'', site:'', files:[], images:[], rows:null, src:'', busy:'' }; }
+  /* 성적서 화면을 찍은 이미지 글자 → 값 (OCR 결과 문장 해석) */
+  function vqParseText(text){
+    const t=String(text||'').replace(/[，]/g,',').replace(/[xX＊*]/g,'×'); const L=s=>s.split('').map(ch=>ch===' '?'\\s*':ch.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*').join('');
+    const out={}; const num=re=>{ const m=t.match(re); return m?m[1].replace(/,/g,''):null; };
+    const res=(lab)=>{ const m=t.match(new RegExp(L(lab)+'[^\\d]{0,6}(\\d{3,5})\\s*×\\s*(\\d{3,5})')); return m?m[1]+' × '+m[2]:null; };
+    // 요약 카드: 「라벨 줄」 다음 줄에 값들이 같은 순서로 나오는 배치(성적서 화면 그대로)와, 라벨 바로 옆에 값이 붙은 배치 모두 처리
+    const KL=[['영상 해상도','영상 해상도'],['영상 픽셀','프레임당 총 픽셀 수'],['총 픽셀','프레임당 총 픽셀 수'],['프레임률','브라우저 표시 프레임률'],['영상 밝기','영상 평균 밝기'],['사진 해상도','사진 해상도'],['사진 밝기','사진 평균 밝기']];
+    const lines=t.split(/\n/).map(x=>x.trim()).filter(Boolean);
+    const valRe=/(\d{2,5}\s*×\s*\d{2,5})|(-?\d[\d,]*(?:\.\d+)?)/g;
+    lines.forEach((ln,li)=>{
+      const hits=KL.map(([lab,key])=>{ const m=ln.match(new RegExp(L(lab))); return m?{key,pos:m.index,lab}:null; }).filter(Boolean).filter((h,k,arr)=>arr.findIndex(x=>x.key===h.key)===k).sort((a,b)=>a.pos-b.pos);
+      if(!hits.length || /9\s*구\s*역|색\s*상/.test(ln)) return;
+      const inline=[...ln.matchAll(valRe)];
+      if(hits.length===1 && inline.length){ const h=hits[0]; const after=ln.slice(h.pos); const m=[...after.matchAll(valRe)][0]; if(m && out[h.key]==null) out[h.key]=(m[1]||m[2]).replace(/\s*×\s*/,' × ').replace(/,/g,''); return; }
+      if(inline.length) return;
+      const nx=lines[li+1]||''; const vs=[...nx.matchAll(valRe)].map(m=>(m[1]||m[2]).replace(/\s*×\s*/,' × ').replace(/,/g,''));
+      hits.forEach((h,k)=>{ if(vs[k]!=null && out[h.key]==null) out[h.key]=vs[k]; });
+    });
+    const cut=t.search(new RegExp(L('사진 색상'))); const vPart=cut>0?t.slice(0,cut):t, pPart=cut>0?t.slice(cut):'';
+    ['흰색','검정','빨강','초록','파랑','기타'].forEach(c=>{ const re=new RegExp(L(c)+'[^\\d]{0,4}([\\d.]+)\\s*%'); const a=vPart.match(re), b=pPart.match(re); if(a) out['영상 '+c+' 픽셀 비율']=a[1]; if(b) out['사진 '+c+' 픽셀 비율']=b[1]; });
+    const z=t.search(new RegExp(L('9구역'))); if(z>=0){ const ns=(t.slice(z+3).match(/\d{1,3}\.\d/g)||[]).slice(0,9); if(ns.length===9) ns.forEach((v,i)=>out['사진 구역 '+(i+1)+' 밝기']=v); }
+    return out;
+  }
+  async function vqReadImage(dataUrl, onMsg){
+    const key = await sGet("gemini_api_key");
+    if(key){
+      onMsg('🤖 AI(Gemini)가 이미지의 수치를 읽는 중…');
+      const prompt='이 이미지는 "영상 품질 검수 성적서/품질 대시보드" 화면입니다. 보이는 수치만 읽어 아래 키의 JSON 하나로만 답하세요. 없는 값은 null. 숫자는 쉼표 없이. 해상도는 "가로 × 세로" 문자열.\n키: '+VQ_TEMPLATE.map(x=>x[0]).join(', ');
+      const resp=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+GEMINI_MEETING_MODEL+":generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},
+        body:JSON.stringify({contents:[{parts:[{text:prompt},{inline_data:{mime_type:"image/jpeg",data:dataUrl.split(',')[1]}}]}]})});
+      if(!resp.ok) throw new Error('AI 오류('+resp.status+')');
+      const d=await resp.json(); let txt=((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(p=>p.text||'').join('').replace(/```json|```/gi,'');
+      const m=txt.match(/\{[\s\S]*\}/); if(!m) throw new Error('AI 응답을 해석하지 못했습니다.'); return JSON.parse(m[0]);
+    }
+    if(typeof Tesseract==='undefined') throw new Error('글자 인식 기능을 불러오지 못했습니다(인터넷 연결 필요). 아래 표에 직접 입력하세요.');
+    onMsg('🔍 이미지 글자 인식 중… (처음 한 번은 1분 정도 걸릴 수 있음)');
+    const r=await Tesseract.recognize(dataUrl,'kor+eng'); return vqParseText(r.data.text);
+  }
+  const VQ_STD = {'프레임당 총 픽셀 수':'2073600 이상','브라우저 표시 프레임률':'25 이상'};   // 영상 품질 검수 프로그램 예시 기준
+  function vqRowsFromMap(map){ return VQ_TEMPLATE.map(([name,unit])=>({name,unit,raw:map&&map[name]!=null&&map[name]!==''?String(map[name]).replace(/,/g,''):'',std:VQ_STD[name]||'',verdict:''})); }
+  function vqVerdict(r){ const v=vqNum(r.raw); const m=String(r.std||'').match(/^(-?[\d.]+)\s*(이상|이하)/); if(v==null||!m) return ''; return (m[2]==='이상'? v>=+m[1] : v<=+m[1]) ? '충족':'미달'; }
+
   function vqOpenPanel(){
     const wrap=document.getElementById('md-dwrap'); if(!wrap||!current) return;
-    const list=current.videoQuality||[];
+    if(!vqDraft) vqDraft=vqNewDraft();
+    const D=vqDraft, list=current.videoQuality||[], cats=current.categories||[];
+    const locs=((cats.find(c=>c.name===D.equip)||{}).locations||[]).map(l=>l.name).filter(Boolean);
+    const filled=D.rows?D.rows.filter(r=>vqNum(r.raw)!=null||/×/.test(r.raw)).length:0;
     wrap.innerHTML=`<div class="mdd-bg"></div><div class="mdd">
-      <div class="mdd-h"><div><div class="mdd-t">🎥 영상 품질 검수 결과</div><div class="mdd-s">영상 품질 검수 프로그램의 <b>HTML 성적서</b> 또는 <b>점검 기록 백업(JSON)</b>을 불러오면 측정값이 대시보드에 함께 표시됩니다.</div></div><button class="mdv-x light" id="mdd-x">✕</button></div>
+      <div class="mdd-h"><div><div class="mdd-t">🎥 영상 품질 검수 결과 등록</div><div class="mdd-s">설비·설치 위치를 정하고 성적서(HTML)·백업(JSON) 파일이나 성적서 화면 <b>이미지</b>를 첨부하세요.</div></div><button class="mdv-x light" id="mdd-x">✕</button></div>
       <div class="mdd-body">
-        <button class="vq-add" id="vq-add">📂 성적서·백업 파일 선택 (여러 개 가능)</button><input type="file" id="vq-file" accept=".html,.htm,.json,text/html,application/json" multiple style="display:none">
-        <div class="mdd-note i" style="margin-top:10px"><i>i</i><span>파일마다 <b>설치 위치</b>가 하나의 측정 위치가 됩니다(예: 「본관 1층 출입구」). 같은 설치 위치·같은 시각의 파일을 다시 불러오면 새 값으로 바뀝니다. 「≥ 25」 같은 기준은 「25 이상」으로 판정합니다.</span></div>
-        ${list.length?`<div class="mdd-card" style="padding:0;margin-top:10px;"><table class="mdd-tbl"><thead><tr><th>설치 위치</th><th>측정 시각</th><th>값</th><th></th></tr></thead><tbody>${list.map(r=>`<tr><td><b>${escapeHtml(r.site)}</b><br><small style="color:#94A3B8">${escapeHtml(r.file||'')}</small></td><td>${escapeHtml(r.date||'-')}</td><td>${r.rows.filter(x=>vqNum(x.raw)!=null).length}개</td><td><button class="vq-del" data-del="${r.id}">삭제</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="mdv-empty" style="margin-top:10px">불러온 영상 품질 결과가 없습니다.</div>'}
+        <div class="mdd-card vq-form">
+          <label class="vq-lb">① 설비</label>
+          <select class="vq-in" id="vq-equip">${cats.map(c=>`<option ${c.name===D.equip?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}<option value="영상 품질 검수" ${D.equip==='영상 품질 검수'?'selected':''}>설비 지정 안 함 (영상 품질 검수)</option></select>
+          <label class="vq-lb">② 설치 위치</label>
+          <input class="vq-in" id="vq-site" list="vq-locs" placeholder="예) 본관 1층 출입구" value="${escapeHtml(D.site)}"><datalist id="vq-locs">${locs.map(l=>`<option value="${escapeHtml(l)}">`).join('')}</datalist>
+          <label class="vq-lb">③ 첨부</label>
+          <div class="vq-btns"><button class="vq-b" id="vq-pick-file">📄 성적서·백업 파일</button><button class="vq-b" id="vq-pick-img">🖼 이미지 첨부</button></div>
+          <input type="file" id="vq-file" accept=".html,.htm,.json,text/html,application/json" multiple style="display:none"><input type="file" id="vq-img" accept="image/*" multiple style="display:none">
+          ${D.files.length?`<div class="vq-chip">📄 ${D.files.map(f=>escapeHtml(f)).join(', ')}</div>`:''}
+          ${D.images.length?`<div class="vq-thumbs">${D.images.map((u,i)=>`<div class="vq-th"><img src="${u}" data-view="${i}"><button data-rmimg="${i}">✕</button></div>`).join('')}</div>`:''}
+          ${D.images.length && !D.files.length ? `<div class="vq-btns" style="margin-top:8px"><button class="vq-b ai" id="vq-ocr">🔍 이미지에서 수치 읽기</button><button class="vq-b" id="vq-manual">✏️ 직접 입력</button></div>`:''}
+          ${D.busy?`<div class="mdd-note i" style="margin-top:8px"><i>i</i><span>${escapeHtml(D.busy)}</span></div>`:''}
+          ${D.rows?`<label class="vq-lb">④ 수치 확인·수정 <span>${D.src?escapeHtml(D.src)+' · ':''}${filled}개 입력됨 · 비운 칸은 빠집니다</span></label>
+            <div class="vq-vt">${D.rows.map((r,i)=>`<div class="vq-vr ${r.raw===''?'empty':''}"><span>${escapeHtml(r.name)}</span><input data-ri="${i}" value="${escapeHtml(r.raw)}" inputmode="decimal" placeholder="-"><em>${escapeHtml(r.unit==='0–255'||r.unit==='지수'?'':r.unit)}</em></div>`).join('')}</div>`:''}
+          <button class="vq-add" id="vq-save" style="margin-top:12px">✅ 등록</button>
+          <div class="vq-hint">여러 성적서 파일을 한꺼번에 고르면 파일마다 적힌 설치 위치로 각각 등록됩니다.</div>
+        </div>
+        <div class="mdd-ct" style="margin-top:14px">등록된 결과 ${list.length}건</div>
+        ${list.length?list.map(r=>`<div class="vq-item"><div class="vq-ih"><div><b>${escapeHtml(r.site)}</b><span>${escapeHtml(r.equip||'영상 품질 검수')} · ${escapeHtml(r.date||'-')} · 값 ${r.rows.filter(x=>vqNum(x.raw)!=null).length}개${r.file?' · '+escapeHtml(r.file):''}</span></div><button class="vq-del" data-del="${r.id}">삭제</button></div>${(r.images||[]).length?`<div class="vq-thumbs" data-rec="${r.id}">${r.images.map((k,i)=>`<div class="vq-th"><img data-imgkey="${k}" alt="첨부 이미지"></div>`).join('')}</div>`:''}</div>`).join(''):'<div class="mdv-empty">등록된 영상 품질 결과가 없습니다.</div>'}
       </div><div class="mdd-f"><button class="mdd-close" id="mdd-close">닫기</button></div></div>`;
     wrap.classList.add('show');
+    const re=()=>{ const y=wrap.querySelector('.mdd-body').scrollTop; vqOpenPanel(); const b=wrap.querySelector('.mdd-body'); if(b) b.scrollTop=y; };
     const close=()=>{ wrap.classList.remove('show'); setTimeout(()=>{ if(!wrap.classList.contains('show')) wrap.innerHTML=''; },260); };
     wrap.querySelector('#mdd-x').onclick=close; wrap.querySelector('#mdd-close').onclick=close; wrap.querySelector('.mdd-bg').onclick=close;
-    const fi=wrap.querySelector('#vq-file'); wrap.querySelector('#vq-add').onclick=()=>fi.click();
-    fi.onchange=async()=>{ const fs=[...fi.files]; if(!fs.length) return;
-      try{ const r=await vqImportFiles(fs); if(r.errs.length) alert('일부 파일을 읽지 못했습니다.\n'+r.errs.join('\n'));
-        if(r.added){ showToast(`영상 품질 결과 ${r.added}건을 불러왔습니다.`); showMeasureDashboard(mdRowsFromInspection(current)); setTimeout(vqOpenPanel,50); } }
+    wrap.querySelector('#vq-equip').onchange=e=>{ D.equip=e.target.value; re(); };
+    wrap.querySelector('#vq-site').oninput=e=>{ D.site=e.target.value; };
+    wrap.querySelectorAll('[data-ri]').forEach(inp=>inp.oninput=()=>{ D.rows[+inp.dataset.ri].raw=inp.value.trim(); });
+    // 저장된 이미지 썸네일 불러오기
+    wrap.querySelectorAll('img[data-imgkey]').forEach(async im=>{ try{ const u=await sGet(im.dataset.imgkey,false); if(u){ im.src=u; im.onclick=()=>vqViewImage(u); } }catch(e){} });
+    wrap.querySelectorAll('img[data-view]').forEach(im=>im.onclick=()=>vqViewImage(D.images[+im.dataset.view]));
+    wrap.querySelectorAll('[data-rmimg]').forEach(b=>b.onclick=()=>{ D.images.splice(+b.dataset.rmimg,1); if(!D.images.length && !D.files.length){ D.rows=null; D.src=''; } re(); });
+    const ff=wrap.querySelector('#vq-file'), fi=wrap.querySelector('#vq-img');
+    wrap.querySelector('#vq-pick-file').onclick=()=>ff.click(); wrap.querySelector('#vq-pick-img').onclick=()=>fi.click();
+    ff.onchange=async()=>{ const fs=[...ff.files]; if(!fs.length) return;
+      if(fs.length>1){ try{ const r=await vqImportFiles(fs, D.equip); if(r.errs.length) alert('일부 파일을 읽지 못했습니다.\n'+r.errs.join('\n')); if(r.added){ showToast(`성적서 ${r.added}건을 「${D.equip}」로 등록했습니다.`); vqDraft=null; showMeasureDashboard(mdRowsFromInspection(current)); setTimeout(vqOpenPanel,50); } }catch(e){ alert(e.message); } return; }
+      try{ const fl=fs[0], t=await fl.text(); const rec=/\.json$/i.test(fl.name)||/^\s*\{/.test(t)?vqParseJSON(JSON.parse(t),fl.name):vqParseHTML(t,fl.name);
+        D.files=[fl.name]; D.rows=rec.rows; D.src='파일에서 읽음'; D.date=rec.date; if(!D.site) D.site=rec.site; re(); }
       catch(e){ alert(e.message); } };
-    wrap.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ if(!confirm('이 영상 품질 결과를 삭제할까요?')) return; current.videoQuality=(current.videoQuality||[]).filter(x=>x.id!==b.dataset.del); scheduleSave(); showMeasureDashboard(mdRowsFromInspection(current)); setTimeout(vqOpenPanel,50); });
+    fi.onchange=async()=>{ const fs=[...fi.files]; if(!fs.length) return;
+      for(const f of fs){ try{ D.images.push(await compressImage(f,1400,0.85)); }catch(e){} } re(); };
+    const ob=wrap.querySelector('#vq-ocr'); if(ob) ob.onclick=async()=>{ D.busy='준비 중…'; re();
+      try{ const map=await vqReadImage(D.images[0], m=>{ D.busy=m; const n=wrap.querySelector('.mdd-note span'); if(n) n.textContent=m; });
+        D.rows=vqRowsFromMap(map); D.src='이미지에서 읽음 — 원본과 꼭 대조하세요'; D.busy=''; }
+      catch(e){ D.busy=''; D.rows=D.rows||vqRowsFromMap(null); D.src='자동 읽기 실패: '+e.message; }
+      re(); };
+    const mb=wrap.querySelector('#vq-manual'); if(mb) mb.onclick=()=>{ D.rows=D.rows||vqRowsFromMap(null); D.src='직접 입력'; re(); };
+    wrap.querySelector('#vq-save').onclick=async()=>{
+      D.site=(wrap.querySelector('#vq-site').value||'').trim();
+      if(!D.site){ alert('설치 위치를 입력하세요.'); return; }
+      const rows=(D.rows||[]).filter(r=>r.raw!==''&&r.raw!=null).map(r=>Object.assign({},r,{raw:String(r.raw).replace(/,/g,''),verdict:r.verdict||vqVerdict(r)}));
+      if(!rows.length && !D.images.length){ alert('성적서·백업 파일이나 이미지를 첨부하세요.'); return; }
+      if(!rows.some(r=>vqNum(r.raw)!=null) && D.images.length && !confirm('입력된 수치가 없습니다. 이미지만 증빙으로 등록할까요?')) return;
+      const id=uid(); const keys=[];
+      for(let i=0;i<D.images.length;i++){ const k='vqimg:'+current.id+':'+id+':'+i; await sSet(k,D.images[i],false); keys.push(k); }
+      current.videoQuality=current.videoQuality||[];
+      current.videoQuality.push({ id, site:D.site, equip:D.equip, date:D.date||new Date().toLocaleString('ko-KR'), file:D.files.join(', '), rows, images:keys });
+      scheduleSave(); vqDraft=null; showToast('영상 품질 결과를 등록했습니다.');
+      showMeasureDashboard(mdRowsFromInspection(current)); setTimeout(vqOpenPanel,50); };
+    wrap.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{ if(!confirm('이 영상 품질 결과를 삭제할까요?')) return;
+      const rec=(current.videoQuality||[]).find(x=>x.id===b.dataset.del); for(const k of (rec&&rec.images)||[]){ try{ await sDelete(k,false); }catch(e){} }
+      current.videoQuality=(current.videoQuality||[]).filter(x=>x.id!==b.dataset.del); scheduleSave(); showMeasureDashboard(mdRowsFromInspection(current)); setTimeout(vqOpenPanel,50); });
   }
+  function vqViewImage(u){ if(!u) return; const v=document.createElement('div'); v.className='vq-viewer'; v.innerHTML=`<img src="${u}"><button>✕ 닫기</button>`; v.onclick=()=>v.remove(); document.getElementById('mdash-modal').appendChild(v); }
   /* ── 📈 한눈에 보기 (첫 화면): 도넛 · 게이지 · 스파크라인 표 · 막대 · 꺾은선 ── */
   function mdDonutSVG(segs, center, sub, size){
     const tot=segs.reduce((s,x)=>s+x.v,0), C=2*Math.PI*42; let off=0; size=size||150;
@@ -6759,9 +6886,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         return `<div class="vqp-l">사진 밝기 9구역 (0–255)</div><div class="vqp-heat">${z.map(v=>{ const c=Math.round(v); return `<span style="background:rgb(${c},${c},${c});color:${c>140?'#0F172A':'#fff'}">${mdFmt(v,1)}</span>`; }).join('')}</div>`; };
       const kpi=(rec,nm,lab,unit)=>{ const r=find(rec,nm); if(!r||r.raw==='—') return ''; const bad=r.verdict==='미달', ok=r.verdict==='충족'; return `<div class="vqp-k ${bad?'bad':ok?'ok':''}"><span>${lab}</span><b>${escapeHtml((()=>{ const n=vqNum(r.raw); return n==null?String(r.raw):Math.abs(n)>=10000?n.toLocaleString('ko-KR'):String(+n.toFixed(2)); })())}${unit}</b>${r.std?`<small>기준 ${escapeHtml(r.std.replace(/^(\d{5,})/,m=>(+m).toLocaleString('ko-KR')))}${bad?' · 미달':ok?' · 충족':''}</small>`:''}</div>`; };
       h+=`<div class="mdo-p s12"><div class="mdo-t">🎥 영상 품질 검수 <span>${vqList.length}개 설치 위치 · 🎥 영상 품질 버튼으로 추가·삭제</span></div><div class="vqp-grid">${vqList.map(rec=>{ const res=find(rec,'영상 해상도');
-        return `<div class="vqp"><div class="vqp-h"><b>${escapeHtml(rec.site)}</b><span>${escapeHtml(rec.date||'')}</span></div>
+        return `<div class="vqp"><div class="vqp-h"><b>${escapeHtml(rec.site)}<small>${escapeHtml(rec.equip||'영상 품질 검수')}</small></b><span>${escapeHtml(rec.date||'')}</span></div>
           <div class="vqp-ks">${res&&res.raw!=='—'?`<div class="vqp-k"><span>영상 해상도</span><b>${escapeHtml(res.raw)}</b></div>`:''}${kpi(rec,'프레임당 총 픽셀 수','총 픽셀','')}${kpi(rec,'브라우저 표시 프레임률','프레임률',' fps')}${kpi(rec,'실측 프레임률','프레임률',' fps')}${kpi(rec,'화면 정지 후보','정지 후보','건')}${kpi(rec,'영상 평균 밝기','영상 밝기','')}${kpi(rec,'흰색 패턴 상대 균일도','흰색 균일도','%')}${kpi(rec,'사진 평균 밝기','사진 밝기','')}</div>
-          ${strip(rec,'영상')}${strip(rec,'사진')}${heat(rec)}</div>`; }).join('')}</div></div>`;
+          ${strip(rec,'영상')}${strip(rec,'사진')}${heat(rec)}${(rec.images||[]).length?`<div class="vqp-l">첨부 이미지 ${rec.images.length}장</div><div class="vq-thumbs">${rec.images.map(k=>`<div class="vq-th"><img data-imgkey="${k}" alt="첨부 이미지"></div>`).join('')}</div>`:''}</div>`; }).join('')}</div></div>`;
     }
     // ⑦ 설비별 적합율 (가로 누적 막대)
     if(judgedCats.length) h+=`<div class="mdo-p s12"><div class="mdo-t">설비별 점검 결과 <span>판정된 ${judgedCats.length}종</span></div><div class="mdo-cs">${judgedCats.map((r,i)=>{ const t=r.good+r.bad+r.na||1; const p=Math.round(r.good/(r.good+r.bad)*100);
@@ -6935,6 +7062,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     ov.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>mdOpenDetail(b.dataset.open, items[b.dataset.open], A[b.dataset.open]));
     const bs=ov.querySelector('#md-bld'); if(bs) bs.onchange=()=>{ mdBld=bs.value; showMeasureDashboard(); };
     const vqb=ov.querySelector('#md-vq'); if(vqb) vqb.onclick=vqOpenPanel;
+    ov.querySelectorAll('.mdv-body img[data-imgkey]').forEach(async im=>{ try{ const u=await sGet(im.dataset.imgkey,false); if(u){ im.src=u; im.onclick=()=>vqViewImage(u); } }catch(e){} });
     const curBtn=ov.querySelector('#md-cur'); if(curBtn) curBtn.onclick=()=>{ showMeasureDashboard(mdRowsFromInspection(current)); };
     const expBtn=ov.querySelector('#md-export'); if(expBtn) expBtn.onclick=()=>exportDashboardExcel();
     const fi=ov.querySelector('#md-file'); ov.querySelector('#md-xlsx').onclick=()=>fi.click();

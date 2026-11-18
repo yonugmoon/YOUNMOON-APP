@@ -3254,7 +3254,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         const vendorOk = vendor && !/확인불가|미상|해당없음|없음/.test(vendor);
         locations.push({
           id: uid(),
-          name: xlClean(locName) + (vendorOk ? " / " + xlClean(vendor) : ""),
+          name: normLocName(xlClean(locName)) + (vendorOk ? " / " + xlClean(vendor) : ""),
           memo: memo, photos: [], selectedPhotos: [], items: items,
           _block: bi, _imgIds: []
         });
@@ -3419,7 +3419,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
                        result: res, value: val, vals: {}, note: nt, photos: [] });
         }
         if(!items.length){ return; }
-        locations.push({ id: uid(), name: xlClean(locName), memo:"", photos: [], selectedPhotos: [],
+        locations.push({ id: uid(), name: normLocName(xlClean(locName)), memo:"", photos: [], selectedPhotos: [],
                          items: items, _block: bi, _imgIds: [], _real: real });
       });
 
@@ -3865,7 +3865,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       if(!items.length){ skipped.push(cn); return; }
 
       const imgIds = blipIds(D.tbl);
-      const loc = { id: uid(), name: locName || headLoc || "(위치 미상)", memo: memoParts.join("\n"),
+      const loc = { id: uid(), name: normLocName(locName || headLoc) || "(위치 미상)", memo: memoParts.join("\n"),
                     photos: [], selectedPhotos: [], items: items, _imgIds: imgIds, _real: real };
       if(!catMap[catId]){ catMap[catId] = { id: catId, name: catName, locations: [] }; order.push(catId); }
       catMap[catId].locations.push(loc);
@@ -5203,6 +5203,14 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     // 저장된 차수 비교 기준 복원 (있으면)
     cmpBase = null;
     try{ const cb = await sGet("cmpbase:"+current.id, false); if(cb) cmpBase = JSON.parse(cb); }catch(e){}
+    // 층 표기 통일(v178): 기존 위치명 14F·１３Ｆ → 14층, 비교 기준 키도 같은 규칙으로 다시 맞춘다
+    { let ch = false;
+      (current.categories||[]).forEach(c=>(c.locations||[]).forEach(l=>{ if(l.name){ const nn = normLocName(l.name); if(nn && nn!==l.name){ l.name = nn; ch = true; } } }));
+      if(ch) scheduleSave();
+      if(cmpBase && cmpBase.idx){ const ni = {};
+        for(const k in cmpBase.idx){ const ps = k.split('¦'); const v = cmpBase.idx[k];
+          ni[ps.length>=3 ? cmpKey(ps[0], v.loc!=null?v.loc:ps[1], ps.slice(2).join('¦')) : k] = v; }
+        cmpBase.idx = ni; } }
     openCategoryIds = new Set();
     openGroupKeys = new Set();
     activeCatId = null;
@@ -5224,6 +5232,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
   // 위치명에서 층 번호 추출
   function extractFloor(name){
     if(!name) return null;
+    name = normFloorText(name);
     const m = name.match(/(?:지하|B)(\d+)층?/i);
     if(m) return -parseInt(m[1]);
     // 1F, 3F 형식 추가
@@ -5240,7 +5249,19 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
 
   // 위치명 작성 안내 (위치 추가·위치명 입력칸 아래)
   // 위치명 정리: 밑줄(_)을 띄어쓰기로, 연속 공백은 하나로
-  function normLocName(v){ return String(v||"").replace(/[_＿]+/g," ").replace(/\s+/g," ").trim(); }
+  function normLocName(v){ return normFloorText(String(v||"").replace(/[_＿]+/g," ")).replace(/\s+/g," ").trim(); }
+  /* 층 표기 통일 — 전각 숫자·영문(１３Ｆ)은 반각으로, 14F·14 F·14 층 → 14층, B2F·B2·지하 2F → 지하2층
+     (결과서마다 F/층 표기가 달라도 같은 위치로 묶이고 같은 모양으로 보이게 한다) */
+  function normFloorText(v){
+    let t = String(v==null?"":v)
+      .replace(/[\uFF01-\uFF5E]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+      .replace(/\u3000/g," ");
+    t = t.replace(/(^|[\s(（가-힣])B\s*(\d{1,3})\s*(?:F|층)?(?![A-Za-z0-9])/gi, (m,p,n)=>p+(/[가-힣]/.test(p)?" ":"")+"지하"+n+"층");
+    t = t.replace(/지하\s*(\d{1,3})\s*(?:F|층)(?![A-Za-z])/gi, "지하$1층");
+    t = t.replace(/(^|[\s(（가-힣])(\d{1,3})\s*F(?![A-Za-z0-9])/gi, (m,p,n)=>p+(/[가-힣]/.test(p)?" ":"")+n+"층");
+    t = t.replace(/(\d)\s+층/g, "$1층");
+    return t;
+  }
   // 입력 중 밑줄 경고 표시 (입력칸 바로 아래)
   function attachLocUnderscoreWarn(inp){
     const w = document.createElement("div");
@@ -6831,7 +6852,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
 
 
   // ══════════ 차수 비교 (이전 점검 대비 개선/반복/신규 도출) ══════════
-  function cmpNorm(s){ return (s||'').replace(/\s+/g,'').trim(); }
+  function cmpNorm(s){ return normFloorText(s||'').replace(/\s+/g,'').trim(); }
   function cmpKey(catId, locName, itemName){ return catId + '¦' + cmpNorm(locName) + '¦' + (itemName||''); }
 
   // 이전 점검 객체 → 경량 인덱스(사진 제외) 생성
@@ -6942,7 +6963,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
      (예: "제2공장 본관 4층(EPS-1실)" ↔ "제2공장본관4층(EPS-1실)" → 같은 위치)
      단, EPS-1실 / EPS-2실 처럼 숫자가 다르면 다른 위치로 남는다. */
   function locKey(s){
-    return String(s==null?'':s)
+    return normFloorText(s==null?'':s)
       .replace(/[\s 　]/g,'')
       .replace(/[()\[\]{}（）【】<>·ㆍ・.,:;'"“”‘’_\/\\|~!@#$%^&*+=?＆]/g,'')
       .replace(/[-−–—‐]/g,'')
@@ -7023,9 +7044,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         /* 이름이 비어 있고 입력된 것도 전혀 없는 위치에만 이름을 채운다.
            (값·사진·비고가 하나라도 있으면 그 위치는 그대로 두고 새 위치를 만든다) */
         const blank = (cat.locations||[]).find(l=>!locKey(l.name) && !locHasData(l));
-        if(blank){ blank.name = w.name; blank.pending = true; blank.fromPrev = true; res.filled++; }
+        if(blank){ blank.name = normLocName(w.name); blank.pending = true; blank.fromPrev = true; res.filled++; }
         else {
-          const nl = makeLocationFrom(cat, w.name);
+          const nl = makeLocationFrom(cat, normLocName(w.name));
           nl.pending = true;
           nl.fromPrev = true;      // 이전 차수에서 가져온 위치 → 활성화 후에도 대기로 되돌릴 수 있다
           cat.locations.push(nl); res.added++;

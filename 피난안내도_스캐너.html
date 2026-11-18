@@ -114,13 +114,30 @@ main{flex:1;position:relative;overflow:hidden}
 .modal h3{margin:0 0 12px;font-size:17px}
 .modal label{display:block;font-size:12px;color:var(--ink-dim);margin:10px 0 5px}
 .modal input[type=text]{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#0a111f;color:var(--ink)}
-.toast{position:fixed;left:50%;bottom:calc(110px + var(--safe-b));transform:translateX(-50%) translateY(20px);background:#1d2a44;border:1px solid #2c3d61;color:var(--ink);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:60;pointer-events:none;max-width:90vw;text-align:center}
+.toast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%) translateY(-20px);background:#1d2a44;border:1px solid #2c3d61;color:var(--ink);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:60;pointer-events:none;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .busy{position:fixed;inset:0;background:rgba(5,8,15,.6);display:none;place-items:center;z-index:70}
 .busy.on{display:grid}
 .spin{width:44px;height:44px;border-radius:50%;border:4px solid #23324f;border-top-color:var(--brand);animation:sp 0.8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .hidden{display:none!important}
+.grp{margin-bottom:18px}
+.grp-t{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;margin:0 2px 8px}
+.grp-t span{font-weight:500;font-size:12px;color:var(--ink-faint)}
+.grp-t .btn{margin-left:auto}
+.card .fl{position:absolute;top:6px;left:6px;background:#e11d48;color:#fff;font-weight:800;font-size:12px;padding:3px 8px;border-radius:7px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.card .cp{position:absolute;top:6px;right:40px;height:28px;padding:0 8px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:700}
+.card .same{font-size:11px;color:var(--brand)}
+.floorbar{position:absolute;left:10px;right:60px;bottom:10px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.floorbar::-webkit-scrollbar{display:none}
+.floorbar button{flex:0 0 auto;padding:7px 11px;border-radius:9px;background:rgba(17,26,46,.92);border:1px solid var(--line);font-weight:700;font-size:13px;color:var(--ink-dim)}
+.floorbar button.on{background:#e11d48;border-color:#e11d48;color:#fff}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-dim);margin-top:10px}
+.chk input{width:18px;height:18px;accent-color:var(--brand)}
+.mhelp{font-size:12px;color:var(--ink-faint);margin-top:5px}
+.prev{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.prev span{background:var(--chip);border:1px solid var(--line);border-radius:7px;padding:3px 8px;font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 110px;gap:8px}
 </style>
 </head>
 <body>
@@ -147,8 +164,8 @@ main{flex:1;position:relative;overflow:hidden}
         <div><b>수평·수직</b>기울기 자동 측정 및 보정</div>
         <div><b>위치 표시</b>현위치·비상구·경로 표시 후 공유</div>
       </div>
-      <div class="sec-t"><span>저장된 안내도</span><span id="savedCnt"></span></div>
-      <div class="saved" id="savedList"></div>
+      <div class="sec-t"><span>저장된 안내도 (건물·층별)</span><span id="savedCnt"></span></div>
+      <div id="savedList"></div>
     </section>
 
     <!-- CAMERA -->
@@ -195,6 +212,7 @@ main{flex:1;position:relative;overflow:hidden}
       <div class="stage" id="markStage">
         <canvas id="markCanvas"></canvas>
         <div class="hint" id="markHint">지도를 탭해 현재 위치를 표시하세요</div>
+        <div class="floorbar hidden" id="floorBar"></div>
         <div class="floatbtns">
           <button class="iconbtn" id="btnUndo" title="실행취소">↶</button>
           <button class="iconbtn" id="btnFit" title="화면맞춤">⤢</button>
@@ -226,6 +244,7 @@ main{flex:1;position:relative;overflow:hidden}
         </div>
         <div class="row" style="margin-top:10px">
           <button class="btn grow" id="btnSave">💾 저장</button>
+          <button class="btn grow" id="btnSame">🏢 동일층</button>
           <button class="btn primary grow" id="btnExport">📤 이미지 공유</button>
         </div>
       </div>
@@ -236,11 +255,34 @@ main{flex:1;position:relative;overflow:hidden}
 <div class="modal" id="saveModal">
   <div class="box">
     <h3>안내도 저장</h3>
-    <label>이름</label>
-    <input type="text" id="saveName" placeholder="예: ○○빌딩 2층">
+    <div class="grid2">
+      <div><label>건물명</label><input type="text" id="saveBldg" placeholder="예: ○○빌딩" list="bldgList"></div>
+      <div><label>층</label><input type="text" id="saveFloor" placeholder="2층"></div>
+    </div>
+    <datalist id="bldgList"></datalist>
+    <label>동일층 추가 (같은 평면인 층 · 선택)</label>
+    <input type="text" id="saveSame" placeholder="예: 3-7, 9, B1">
+    <div class="mhelp">입력한 층마다 같은 안내도·표시가 복사됩니다. 범위(3-7), 지하(B1, 지하2) 사용 가능</div>
+    <div class="prev" id="saveSamePrev"></div>
+    <label class="chk"><input type="checkbox" id="saveSameHere"> 현위치 표시도 함께 복사 (보통 층마다 다름)</label>
     <div class="row" style="margin-top:16px">
       <button class="btn grow" id="saveCancel">취소</button>
       <button class="btn primary grow" id="saveOk">저장</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="sameModal">
+  <div class="box">
+    <h3>🏢 동일층 추가</h3>
+    <div class="info" id="sameSrc" style="margin:0 0 4px"></div>
+    <label>같은 평면인 층</label>
+    <input type="text" id="sameFloors" placeholder="예: 3-7, 9, B1">
+    <div class="mhelp">범위(3-7), 쉼표 구분, 지하(B1 / 지하1) 입력 가능 · 이미 있는 층은 건너뜁니다</div>
+    <div class="prev" id="samePrev"></div>
+    <label class="chk"><input type="checkbox" id="sameHere"> 현위치 표시도 함께 복사</label>
+    <div class="row" style="margin-top:16px">
+      <button class="btn grow" id="sameCancel">취소</button>
+      <button class="btn primary grow" id="sameOk">추가</button>
     </div>
   </div>
 </div>
@@ -637,7 +679,7 @@ const S = {
   tool: 'here',
   sel: null,
   savedId: null,
-  name: '',
+  name: '', building: '', floor: '', sameAs: null,
 };
 const TOOLS = [
   { id: 'select', name: '✋ 이동' },
@@ -672,7 +714,7 @@ function go(name) {
   if (name !== 'cam') Cam.stop();
   if (name === 'home') renderSaved();
   if (name === 'adj') requestAnimationFrame(Adj.fit);
-  if (name === 'mark') requestAnimationFrame(() => { Mark.resize(); Mark.fit(); });
+  if (name === 'mark') { updateTitle(); renderFloorBar(); requestAnimationFrame(() => { Mark.resize(); Mark.fit(); }); }
 }
 $('#btnBack').onclick = () => {
   if (S.screen === 'mark') go(S.src ? 'adj' : 'home');
@@ -700,7 +742,7 @@ async function setSource(img, w, h, opts = {}) {
   const s = Math.min(1, MAX_SRC / Math.max(w, h));
   const c = mkCanvas(w * s, h * s);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-  S.src = c; S.mapping = null; S.fine = 0; S.markers = []; S.history = []; S.sel = null; S.savedId = null; S.name = '';
+  S.src = c; S.mapping = null; S.fine = 0; S.markers = []; S.history = []; S.sel = null; S.savedId = null; S.name = ''; S.sameAs = null; S.floor = '';
   S.mode = 'crop';
   await nextFrame();
   if (opts.quad) S.quad = opts.quad.map(p => [p[0] * s, p[1] * s]);
@@ -1018,10 +1060,10 @@ function buildWarp(autoLevel) {
  *  12. 위치 표시 화면
  * ===================================================================== */
 function showHint(t) { const h = $('#markHint'); h.textContent = t; h.style.opacity = 1; clearTimeout(showHint._t); showHint._t = setTimeout(() => h.style.opacity = 0, 3500); }
-const unitOf = (m) => Math.max(S.view.width, S.view.height) * 0.045 * (m.size || 1);
+const unitOf = (m, W = S.view.width, H = S.view.height) => Math.max(W, H) * 0.045 * (m.size || 1);
 function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function drawMarker(ctx, m, opt = {}) {
-  const W = S.view.width, H = S.view.height, u = unitOf(m), x = m.x * W, y = m.y * H;
+  const W = opt.W || S.view.width, H = opt.H || S.view.height, u = unitOf(m, W, H), x = m.x * W, y = m.y * H;
   const t = TOOL[m.type] || TOOL.note;
   ctx.save();
   ctx.font = `800 ${u * 0.5}px ${getComputedStyle(document.body).fontFamily}`;
@@ -1157,7 +1199,7 @@ requestAnimationFrame(Mark.loop);
   let g = null; // 현재 제스처
   const rel = e => { const r = st.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   st.addEventListener('pointerdown', e => {
-    if (!S.view) return;
+    if (!S.view || e.target.closest('button, .floorbar, .floatbtns')) return; // 오버레이 버튼은 지도 조작 제외
     st.setPointerCapture(e.pointerId);
     P.set(e.pointerId, rel(e));
     if (P.size === 2) { // 핀치 시작
@@ -1280,26 +1322,36 @@ $('#btnReCrop').onclick = () => go('adj');
 /* =====================================================================
  *  13. 내보내기 / 공유
  * ===================================================================== */
-function composeExport() {
-  const W = S.view.width, H = S.view.height, foot = Math.round(Math.max(W, H) * 0.045);
+const titleOf = (b, f) => [b, f].filter(Boolean).join(' ');
+function composeImage(view, markers, info = {}) {
+  const W = view.width, H = view.height, foot = Math.round(Math.max(W, H) * 0.045);
   const c = mkCanvas(W, H + foot), ctx = c.getContext('2d');
-  ctx.drawImage(S.view, 0, 0);
-  for (const m of S.markers) drawMarker(ctx, m, { pulse: 0.35 });
+  ctx.drawImage(view, 0, 0);
+  for (const m of markers) drawMarker(ctx, m, { pulse: 0.35, W, H });
   ctx.fillStyle = '#0b1220'; ctx.fillRect(0, H, W, foot);
-  ctx.fillStyle = '#fff'; ctx.font = `700 ${foot * 0.42}px ${getComputedStyle(document.body).fontFamily}`; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${foot * 0.42}px ${getComputedStyle(document.body).fontFamily}`; ctx.textBaseline = 'middle';
   const d = new Date(), ds = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  const here = S.markers.find(m => m.type === 'here');
-  ctx.textAlign = 'left'; ctx.fillText(`피난안내도${S.name ? ' · ' + S.name : ''}${here && here.label ? ' · 현위치: ' + here.label : ''}`, foot * 0.4, H + foot / 2);
+  let x = foot * 0.4;
+  if (info.floor) { // 층 배지
+    const fw = ctx.measureText(info.floor).width + foot * 0.5;
+    roundRect(ctx, x, H + foot * 0.15, fw, foot * 0.7, foot * 0.15); ctx.fillStyle = '#e11d48'; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(info.floor, x + fw / 2, H + foot / 2); x += fw + foot * 0.3;
+  }
+  const here = markers.find(m => m.type === 'here');
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+  ctx.fillText(`피난안내도${info.building ? ' · ' + info.building : ''}${here && here.label ? ' · 현위치: ' + here.label : ''}`, x, H + foot / 2);
   ctx.textAlign = 'right'; ctx.fillStyle = '#9fb0cc'; ctx.fillText(ds, W - foot * 0.4, H + foot / 2);
   return c;
 }
+const composeExport = () => composeImage(S.view, S.markers, { building: S.building, floor: S.floor });
+function thumbOf(canvas) { const s = 360 / Math.max(canvas.width, canvas.height), t = mkCanvas(canvas.width * s, canvas.height * s); t.getContext('2d').drawImage(canvas, 0, 0, t.width, t.height); return t.toDataURL('image/jpeg', 0.75); }
 $('#btnExport').onclick = async () => {
   if (!S.view) return;
   busy(true);
   try {
     const c = composeExport();
     const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
-    const fname = `피난안내도_${(S.name || 'map').replace(/[\\/:*?"<>|\s]+/g, '_')}_${Date.now()}.jpg`;
+    const fname = `피난안내도_${(titleOf(S.building, S.floor) || 'map').replace(/[\\/:*?"<>|\s]+/g, '_')}_${Date.now()}.jpg`;
     const file = new File([blob], fname, { type: 'image/jpeg' });
     busy(false);
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1335,53 +1387,196 @@ const DB = {
   del: id => DB.tx('readwrite', s => s.delete(id)),
 };
 const toBlob = (c, type = 'image/jpeg', q = 0.9) => new Promise(r => c.toBlob(r, type, q));
-$('#btnSave').onclick = () => { $('#saveName').value = S.name || ''; $('#saveModal').classList.add('on'); setTimeout(() => $('#saveName').focus(), 50); };
+/* ---------- 층 표기 ---------- */
+const floorLabel = n => n < 0 ? `B${-n}층` : `${n}층`;
+function floorNum(tok) {
+  const m = String(tok).trim().match(/^(B|b|지하)?\s*(\d+)\s*(층|F|f)?$/);
+  return m ? (m[1] ? -1 : 1) * +m[2] : null;
+}
+function parseFloors(str) {
+  const out = [];
+  const src = String(str || '').replace(/\s*[-~]\s*/g, '-');
+  for (const tok of src.split(/[,，、\s]+/).filter(Boolean)) {
+    const r = tok.split('-');
+    if (r.length === 2) {
+      const a = floorNum(r[0]), b = floorNum(r[1]);
+      if (a != null && b != null) {
+        const lo = Math.min(a, b), hi = Math.max(a, b);
+        if (hi - lo <= 200) for (let n = lo; n <= hi; n++) if (n) out.push(floorLabel(n));
+        continue;
+      }
+    }
+    const n = floorNum(tok);
+    out.push(n != null && n ? floorLabel(n) : tok);
+  }
+  return [...new Set(out)];
+}
+const normFloor = f => { const t = String(f || '').trim(); if (!t) return ''; const n = floorNum(t); return n ? floorLabel(n) : t; };
+function floorKey(f) { const n = floorNum(f); if (n != null) return n; if (/옥탑|RF|PH/i.test(f)) return 9000; return 9999; }
+const bldgOf = r => r.building || r.name || '미분류';
+
+/* ---------- 저장 ---------- */
+async function currentRecord() {
+  return {
+    id: S.savedId || ('m' + Date.now()), building: S.building, floor: S.floor, name: titleOf(S.building, S.floor), ts: Date.now(),
+    thumb: thumbOf(composeExport()),
+    view: await toBlob(S.view),
+    src: S.src ? await toBlob(S.src, 'image/jpeg', 0.92) : null,
+    quad: S.quad, mode: S.mode, fine: S.fine, filter: S.filter,
+    markers: S.markers.map(stripM), sameAs: S.sameAs || null,
+  };
+}
+// 동일층 복사: 이미지·보정값 공유, 현위치는 선택적으로 제외
+async function copyToFloors(rec, floors, copyHere) {
+  const all = (await DB.all()) || [], b = bldgOf(rec);
+  const exist = new Set(all.filter(r => bldgOf(r) === b).map(r => r.floor));
+  const added = [], skipped = [];
+  let thumb = rec.thumb;
+  const markers = (rec.markers || []).filter(m => copyHere || m.type !== 'here');
+  if (rec.view) { try { const v = await blobToCanvas(rec.view); thumb = null; rec._v = v; } catch (e) { } }
+  for (const f of floors) {
+    if (f === rec.floor) continue;
+    if (exist.has(f)) { skipped.push(f); continue; }
+    const c = { ...rec, id: 'm' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), floor: f, building: b, name: titleOf(b, f), ts: Date.now(), markers: markers.map(m => ({ ...m })), sameAs: rec.sameAs || rec.id };
+    delete c._v;
+    c.thumb = rec._v ? thumbOf(composeImage(rec._v, c.markers, { building: b, floor: f })) : thumb;
+    await DB.put(c); added.push(f);
+  }
+  delete rec._v;
+  return { added, skipped };
+}
+function showPrev(inputSel, prevSel, exclude) {
+  const fl = parseFloors($(inputSel).value).filter(f => f !== exclude);
+  $(prevSel).innerHTML = fl.length ? fl.map(f => `<span>${escapeHtml(f)}</span>`).join('') + `<span style="border-color:var(--brand);color:var(--brand)">총 ${fl.length}개 층</span>` : '';
+  return fl;
+}
+async function fillBldgList() {
+  try { const all = (await DB.all()) || []; $('#bldgList').innerHTML = [...new Set(all.map(bldgOf))].map(b => `<option value="${escapeHtml(b)}">`).join(''); } catch (e) { }
+}
+function openSave(focusSame) {
+  $('#saveBldg').value = S.building || ''; $('#saveFloor').value = S.floor || '';
+  $('#saveSame').value = ''; $('#saveSamePrev').innerHTML = ''; $('#saveSameHere').checked = false;
+  fillBldgList();
+  $('#saveModal').classList.add('on');
+  setTimeout(() => $(focusSame ? '#saveSame' : (S.building ? '#saveFloor' : '#saveBldg')).focus(), 50);
+}
+$('#btnSave').onclick = () => openSave(false);
+$('#saveSame').oninput = () => showPrev('#saveSame', '#saveSamePrev', normFloor($('#saveFloor').value));
 $('#saveCancel').onclick = () => $('#saveModal').classList.remove('on');
 $('#saveOk').onclick = async () => {
+  const b = $('#saveBldg').value.trim(), f = normFloor($('#saveFloor').value);
+  if (!f) { toast('층을 입력하세요 (예: 2층)'); $('#saveFloor').focus(); return; }
   $('#saveModal').classList.remove('on');
-  S.name = $('#saveName').value.trim() || `안내도 ${new Date().toLocaleDateString('ko-KR')}`;
+  S.building = b || '미분류'; S.floor = f;
+  const same = parseFloors($('#saveSame').value).filter(x => x !== f);
   busy(true);
   try {
-    const thumbC = (() => { const ex = composeExport(), s = 360 / Math.max(ex.width, ex.height), t = mkCanvas(ex.width * s, ex.height * s); t.getContext('2d').drawImage(ex, 0, 0, t.width, t.height); return t; })();
-    const rec = {
-      id: S.savedId || ('m' + Date.now()), name: S.name, ts: Date.now(),
-      thumb: thumbC.toDataURL('image/jpeg', 0.75),
-      view: await toBlob(S.view),
-      src: S.src ? await toBlob(S.src, 'image/jpeg', 0.92) : null,
-      quad: S.quad, mode: S.mode, fine: S.fine, filter: S.filter,
-      markers: S.markers.map(stripM),
-    };
+    const rec = await currentRecord();
     await DB.put(rec); S.savedId = rec.id;
-    toast('저장했습니다');
+    let msg = `${titleOf(S.building, S.floor)} 저장 완료`;
+    if (same.length) {
+      const r = await copyToFloors(rec, same, $('#saveSameHere').checked);
+      msg += ` · 동일층 ${r.added.length}개 추가` + (r.skipped.length ? ` (${r.skipped.join(', ')} 이미 있음)` : '');
+    }
+    toast(msg, 3000); updateTitle(); renderFloorBar();
   } catch (e) { console.error(e); toast('저장 실패: 저장공간을 확인하세요'); }
   busy(false);
 };
+// 위치표시 화면의 [동일층] 버튼
+$('#btnSame').onclick = () => {
+  if (!S.savedId) { toast('먼저 건물·층을 입력하고 동일층을 지정하세요'); openSave(true); return; }
+  openSameModal({ id: S.savedId, building: S.building, floor: S.floor, live: true });
+};
+let sameTarget = null;
+function openSameModal(t) {
+  sameTarget = t;
+  $('#sameSrc').innerHTML = `기준: <b>${escapeHtml(titleOf(t.building, t.floor))}</b> 의 안내도와 표시를 복사합니다.`;
+  $('#sameFloors').value = ''; $('#samePrev').innerHTML = ''; $('#sameHere').checked = false;
+  $('#sameModal').classList.add('on'); setTimeout(() => $('#sameFloors').focus(), 50);
+}
+$('#sameFloors').oninput = () => showPrev('#sameFloors', '#samePrev', sameTarget && sameTarget.floor);
+$('#sameCancel').onclick = () => $('#sameModal').classList.remove('on');
+$('#sameOk').onclick = async () => {
+  const fl = parseFloors($('#sameFloors').value).filter(f => f !== sameTarget.floor);
+  if (!fl.length) { toast('추가할 층을 입력하세요'); return; }
+  $('#sameModal').classList.remove('on'); busy(true);
+  try {
+    let rec;
+    if (sameTarget.live) { rec = await currentRecord(); await DB.put(rec); } // 현재 수정 내용 먼저 저장
+    else rec = await DB.get(sameTarget.id);
+    const r = await copyToFloors(rec, fl, $('#sameHere').checked);
+    toast(`동일층 ${r.added.length}개 추가` + (r.skipped.length ? ` · ${r.skipped.join(', ')} 이미 있어 건너뜀` : ''), 3200);
+    if (S.screen === 'home') renderSaved(); else renderFloorBar();
+  } catch (e) { console.error(e); toast('동일층 추가 실패'); }
+  busy(false);
+};
+
+/* ---------- 목록 (건물별 · 층순) ---------- */
 async function renderSaved() {
   let list = [];
   try { list = (await DB.all()) || []; } catch (e) { }
-  list.sort((a, b) => b.ts - a.ts);
   $('#savedCnt').textContent = list.length ? `${list.length}개` : '';
   const el = $('#savedList');
-  if (!list.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1">아직 저장된 안내도가 없습니다.<br>촬영 후 위치를 표시하고 저장해보세요.</div>'; return; }
-  el.innerHTML = list.map(r => `<div class="card" data-id="${r.id}"><img src="${r.thumb}" alt=""><div class="meta"><b>${escapeHtml(r.name)}</b><span>${new Date(r.ts).toLocaleString('ko-KR')}</span></div><button class="del" data-del="${r.id}">✕</button></div>`).join('');
+  if (!list.length) { el.innerHTML = '<div class="empty">아직 저장된 안내도가 없습니다.<br>촬영 후 위치를 표시하고 저장해보세요.</div>'; return; }
+  const groups = new Map();
+  for (const r of list) { const b = bldgOf(r); if (!groups.has(b)) groups.set(b, []); groups.get(b).push(r); }
+  const gs = [...groups.entries()].sort((a, b) => Math.max(...b[1].map(r => r.ts)) - Math.max(...a[1].map(r => r.ts)));
+  el.innerHTML = gs.map(([b, rs]) => {
+    rs.sort((x, y) => floorKey(x.floor) - floorKey(y.floor) || y.ts - x.ts);
+    return `<div class="grp"><div class="grp-t">🏢 ${escapeHtml(b)} <span>${rs.length}개 층</span></div><div class="saved">` +
+      rs.map(r => `<div class="card" data-id="${r.id}"><img src="${r.thumb}" alt="">${r.floor ? `<span class="fl">${escapeHtml(r.floor)}</span>` : ''}<button class="cp" data-cp="${r.id}">+동일층</button><button class="del" data-del="${r.id}">✕</button><div class="meta"><b>${escapeHtml(r.floor || r.name)}</b><span>${new Date(r.ts).toLocaleDateString('ko-KR')}</span>${r.sameAs ? ' <span class="same">· 동일층</span>' : ''}${(r.markers || []).some(m => m.type === 'here') ? '' : ' <span class="same" style="color:var(--warn)">· 현위치 미지정</span>'}</div></div>`).join('') +
+      `</div></div>`;
+  }).join('');
 }
 const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const blobToCanvas = async b => { const bmp = await createImageBitmap(b); const c = mkCanvas(bmp.width, bmp.height); c.getContext('2d').drawImage(bmp, 0, 0); return c; };
+async function openRecord(id) {
+  const r = await DB.get(id);
+  S.src = r.src ? await blobToCanvas(r.src) : null;
+  S.quad = r.quad; S.mode = r.mode || 'crop'; S.fine = r.fine || 0; S.filter = r.filter || 'color';
+  S.markers = r.markers || []; S.history = []; S.sel = null; S.savedId = r.id; S.mapping = null;
+  S.building = bldgOf(r); S.floor = r.floor || ''; S.sameAs = r.sameAs || null;
+  if (S.src && S.quad) buildWarp(false);
+  else { S.warped = await blobToCanvas(r.view); S.view = S.warped; }
+  syncModeSeg(); Mark.select(null);
+  const hasHere = S.markers.some(m => m.type === 'here');
+  S.tool = hasHere ? 'select' : 'here'; Mark.syncTools(); Mark.setTab('mark');
+  if (S.screen !== 'mark') go('mark'); else Mark.fit();
+  updateTitle(); renderFloorBar();
+  if (!hasHere) showHint(`${S.floor || ''} 현위치를 탭해 표시하세요`);
+}
 $('#savedList').onclick = async e => {
   const del = e.target.closest('[data-del]');
   if (del) { e.stopPropagation(); if (confirm('이 안내도를 삭제할까요?')) { await DB.del(del.dataset.del); renderSaved(); } return; }
+  const cp = e.target.closest('[data-cp]');
+  if (cp) { e.stopPropagation(); const r = await DB.get(cp.dataset.cp); openSameModal({ id: r.id, building: bldgOf(r), floor: r.floor || r.name }); return; }
   const card = e.target.closest('.card'); if (!card) return;
   busy(true);
+  try { await openRecord(card.dataset.id); } catch (err) { console.error(err); toast('불러오기 실패'); }
+  busy(false);
+};
+
+/* ---------- 같은 건물 층 전환 바 ---------- */
+function updateTitle() { if (S.screen === 'mark') $('#title').textContent = S.floor ? `위치 표시 · ${titleOf(S.building, S.floor)}` : '위치 표시'; }
+async function renderFloorBar() {
+  const bar = $('#floorBar');
+  if (!S.savedId) { bar.classList.add('hidden'); return; }
+  let rs = [];
+  try { rs = ((await DB.all()) || []).filter(r => bldgOf(r) === S.building); } catch (e) { }
+  if (rs.length < 2) { bar.classList.add('hidden'); return; }
+  rs.sort((a, b) => floorKey(a.floor) - floorKey(b.floor));
+  bar.innerHTML = rs.map(r => `<button data-fid="${r.id}" class="${r.id === S.savedId ? 'on' : ''}">${escapeHtml(r.floor || r.name)}${(r.markers || []).some(m => m.type === 'here') ? '' : ' ·'}</button>`).join('');
+  bar.classList.remove('hidden');
+  const on = bar.querySelector('.on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
+}
+$('#floorBar').onclick = async e => {
+  const b = e.target.closest('[data-fid]'); if (!b || b.dataset.fid === S.savedId) return;
+  busy(true);
   try {
-    const r = await DB.get(card.dataset.id);
-    S.src = r.src ? await blobToCanvas(r.src) : null;
-    S.quad = r.quad; S.mode = r.mode || 'crop'; S.fine = r.fine || 0; S.filter = r.filter || 'color';
-    S.markers = r.markers || []; S.history = []; S.sel = null; S.savedId = r.id; S.name = r.name; S.mapping = null;
-    if (S.src && S.quad) buildWarp(false);
-    else { S.warped = await blobToCanvas(r.view); S.view = S.warped; }
-    syncModeSeg(); S.tool = 'select'; Mark.syncTools(); Mark.setTab('mark'); Mark.select(null);
-    go('mark');
-  } catch (err) { console.error(err); toast('불러오기 실패'); }
+    await DB.put(await currentRecord());          // 현재 층 자동 저장 후 이동
+    await openRecord(b.dataset.fid);
+    toast(`${S.floor}으로 이동 (이전 층 자동 저장)`);
+  } catch (err) { console.error(err); toast('층 전환 실패'); }
   busy(false);
 };
 
@@ -1395,7 +1590,7 @@ window.addEventListener('resize', () => {
 Mark.syncTools(); Mark.syncFilters();
 go('home');
 // 디버그/테스트용 노출
-window.EvacApp = { S, detectQuad, estimateSkew, buildWarp, go, setSource };
+window.EvacApp = { S, detectQuad, estimateSkew, buildWarp, go, setSource, parseFloors, DB };
 </script>
 </body>
 </html>

@@ -422,6 +422,7 @@
   #mdash-modal .mdo-cn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#0F172A;}
   #mdash-modal .mdo-ct{display:flex;height:12px;border-radius:6px;overflow:hidden;background:#F1F5F9;transform-origin:left;animation:mdoGrow .9s var(--d,0s) cubic-bezier(.2,.8,.2,1) both;}
   #mdash-modal .mdo-cp{font-weight:900;text-align:right;}
+  #mdash-modal .vqp-note{font-size:11.5px;color:#475569;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:10px;padding:8px 10px;margin-bottom:10px;line-height:1.6;}
   #mdash-modal .vqp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;}
   @media (max-width:640px){ #mdash-modal .vqp-grid{grid-template-columns:minmax(0,1fr);} }
   #mdash-modal .vqp{background:#0F1B2D;color:#E2E8F0;border-radius:14px;padding:12px 14px;}
@@ -6681,14 +6682,43 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     return { added:out.length, errs };
   }
   /* 저장된 영상 품질 기록 → 대시보드 측정값 행 */
+  /* 휴대폰 측정(반사·노출·촬영 거리 영향)을 고려한 완화 참고 기준 — 성적서에 기준이 없을 때만 적용 */
+  const VQ_SOFT = [
+    [/^프레임당 총 픽셀 수$/,'921600 이상'],      // HD(1280×720) 이상
+    [/프레임률$/,'20 이상'],
+    [/^화면 정지 후보$/,'1 이하'],
+    [/^영상 평균 밝기$/,'40~230'],
+    [/^영상 밝기 표준편차/,'15 이상'],
+    [/^영상 선명도/,'20 이상'],
+    [/^흰색 패턴 상대 균일도$/,'70 이상'],
+    [/^사진 평균 밝기$/,'30~235'],
+    [/^사진 밝기 표준편차/,'10 이상'],
+    [/^사진 선명도/,'10 이상'],
+    [/^사진 단색 패턴 일치율$/,'70 이상'],
+    [/^사진 구역 \d 밝기$/,'30~245'],
+    [/^사진 9구역 밝기 균일도$/,'60 이상'],
+    [/간격 변동계수$/,'15 이하'],
+    [/^사진 이상색 영역 후보$/,'3 이하'],
+  ];
+  /* 영상 품질 프로그램의 「예시 기준」을 그대로 둔 값은 현장 기준이 아니므로 완화 기준으로 바꾼다 */
+  const VQ_EXAMPLE = {'프레임당 총 픽셀 수':'2073600 이상','브라우저 표시 프레임률':'25 이상','실측 프레임률':'25 이상','화면 정지 후보':'0 이하','흰색 패턴 상대 균일도':'80 이상'};
+  function vqIsExample(r){ return !!r.std && VQ_EXAMPLE[r.name]===String(r.std).replace(/\s+/g,' ').trim(); }
+  function vqSoftStd(name){ const h=VQ_SOFT.find(([re])=>re.test(name)); return h?h[1]:''; }
+  function vqVerdict(r){ const v=vqNum(r.raw); const s2=String(r.std||''); if(v==null) return '';
+    let m=s2.match(/^(-?[\d.]+)\s*~\s*(-?[\d.]+)/); if(m) return (v>=+m[1]&&v<=+m[2])?'충족':'미달';
+    m=s2.match(/^(-?[\d.]+)\s*(이상|이하)/); if(!m) return ''; return (m[2]==='이상'? v>=+m[1] : v<=+m[1]) ? '충족':'미달'; }
+  /* 9구역 밝기 → 균일도(최소÷최대) 파생값 */
+  function vqWithDerived(rec){ const z=[1,2,3,4,5,6,7,8,9].map(n=>{ const r=rec.rows.find(x=>x.name==='사진 구역 '+n+' 밝기'); return r?vqNum(r.raw):null; });
+    if(z.some(v=>v==null) || rec.rows.some(x=>x.name==='사진 9구역 밝기 균일도')) return rec.rows; const mx=Math.max(...z); if(!mx) return rec.rows;
+    return rec.rows.concat([{name:'사진 9구역 밝기 균일도',unit:'%',raw:String(+(Math.min(...z)/mx*100).toFixed(1)),std:'',verdict:''}]); }
   function vqRows(insp){
     const rows=[];
     (insp.videoQuality||[]).forEach(rec=>{
       const loc=normLocName(rec.site)||'(설치 위치 미입력)'; const bld=extractBuilding(loc)||insp.buildingName||'(건물 미지정)'; const f=extractFloor(loc);
-      rec.rows.forEach(r=>{ const v=vqNum(r.raw); if(v==null) return;
+      vqWithDerived(rec).forEach(r=>{ const v=vqNum(r.raw); if(v==null) return; const soft=!r.std||vqIsExample(r); const std=soft? vqSoftStd(r.name) : r.std;
         const zone=r.name.match(/^사진 구역 (\d) 밝기$/);
         const unit = r.unit==='0–255'||r.unit==='지수' ? '' : r.unit;
-        rows.push({ bld, floor:f, floorLabel:mdFloorLabel(f), loc: zone? loc+' · 구역'+zone[1] : loc, catName:rec.equip||'영상 품질 검수', itemName: zone? '사진 구역 밝기 (0–255)' : r.name+(r.unit==='0–255'?' (0–255)':''), unit, value:v, raw:String(r.raw).replace(/,/g,''), std:r.std||'', result:vqRes(r.verdict), vq:true });
+        rows.push({ bld, floor:f, floorLabel:mdFloorLabel(f), loc: zone? loc+' · 구역'+zone[1] : loc, catName:rec.equip||'영상 품질 검수', itemName: zone? '사진 구역 밝기 (0–255)' : r.name+(r.unit==='0–255'?' (0–255)':''), unit, value:v, raw:String(r.raw).replace(/,/g,''), std, result:vqRes(soft? vqVerdict({raw:r.raw,std}) : (r.verdict||vqVerdict({raw:r.raw,std}))), vq:true, soft:soft&&!!std });
       });
     });
     return rows;
@@ -6742,9 +6772,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     onMsg('🔍 이미지 글자 인식 중… (처음 한 번은 1분 정도 걸릴 수 있음)');
     const r=await Tesseract.recognize(dataUrl,'kor+eng'); return vqParseText(r.data.text);
   }
-  const VQ_STD = {'프레임당 총 픽셀 수':'2073600 이상','브라우저 표시 프레임률':'25 이상'};   // 영상 품질 검수 프로그램 예시 기준
-  function vqRowsFromMap(map){ return VQ_TEMPLATE.map(([name,unit])=>({name,unit,raw:map&&map[name]!=null&&map[name]!==''?String(map[name]).replace(/,/g,''):'',std:VQ_STD[name]||'',verdict:''})); }
-  function vqVerdict(r){ const v=vqNum(r.raw); const m=String(r.std||'').match(/^(-?[\d.]+)\s*(이상|이하)/); if(v==null||!m) return ''; return (m[2]==='이상'? v>=+m[1] : v<=+m[1]) ? '충족':'미달'; }
+  function vqRowsFromMap(map){ return VQ_TEMPLATE.map(([name,unit])=>({name,unit,raw:map&&map[name]!=null&&map[name]!==''?String(map[name]).replace(/,/g,''):'',std:'',verdict:''})); }
 
   function vqOpenPanel(){
     const wrap=document.getElementById('md-dwrap'); if(!wrap||!current) return;
@@ -6804,7 +6832,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     wrap.querySelector('#vq-save').onclick=async()=>{
       D.site=(wrap.querySelector('#vq-site').value||'').trim();
       if(!D.site){ alert('설치 위치를 입력하세요.'); return; }
-      const rows=(D.rows||[]).filter(r=>r.raw!==''&&r.raw!=null).map(r=>Object.assign({},r,{raw:String(r.raw).replace(/,/g,''),verdict:r.verdict||vqVerdict(r)}));
+      const rows=(D.rows||[]).filter(r=>r.raw!==''&&r.raw!=null).map(r=>Object.assign({},r,{raw:String(r.raw).replace(/,/g,'')}));
       if(!rows.length && !D.images.length){ alert('성적서·백업 파일이나 이미지를 첨부하세요.'); return; }
       if(!rows.some(r=>vqNum(r.raw)!=null) && D.images.length && !confirm('입력된 수치가 없습니다. 이미지만 증빙으로 등록할까요?')) return;
       const id=uid(); const keys=[];
@@ -6883,9 +6911,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       const strip=(rec,src)=>{ const es=Object.keys(pal).map(k=>{ const r=find(rec,src+' '+k+' 픽셀 비율'); return r&&vqNum(r.raw)!=null?{k,v:vqNum(r.raw)}:null; }).filter(Boolean); if(!es.length) return '';
         const t=es.reduce((s2,e)=>s2+e.v,0)||1; return `<div class="vqp-l">${src} 색상 분포</div><div class="vqp-strip">${es.map(e=>`<i style="width:${(e.v/t*100).toFixed(2)}%;background:${pal[e.k]}" title="${e.k} ${e.v}%"></i>`).join('')}</div><div class="vqp-keys">${es.map(e=>`<span><i style="background:${pal[e.k]}"></i>${e.k} ${mdFmt(e.v,1)}%</span>`).join('')}</div>`; };
       const heat=rec=>{ const z=[1,2,3,4,5,6,7,8,9].map(n=>{ const r=find(rec,'사진 구역 '+n+' 밝기'); return r?vqNum(r.raw):null; }); if(z.some(v=>v==null)) return '';
-        return `<div class="vqp-l">사진 밝기 9구역 (0–255)</div><div class="vqp-heat">${z.map(v=>{ const c=Math.round(v); return `<span style="background:rgb(${c},${c},${c});color:${c>140?'#0F172A':'#fff'}">${mdFmt(v,1)}</span>`; }).join('')}</div>`; };
-      const kpi=(rec,nm,lab,unit)=>{ const r=find(rec,nm); if(!r||r.raw==='—') return ''; const bad=r.verdict==='미달', ok=r.verdict==='충족'; return `<div class="vqp-k ${bad?'bad':ok?'ok':''}"><span>${lab}</span><b>${escapeHtml((()=>{ const n=vqNum(r.raw); return n==null?String(r.raw):Math.abs(n)>=10000?n.toLocaleString('ko-KR'):String(+n.toFixed(2)); })())}${unit}</b>${r.std?`<small>기준 ${escapeHtml(r.std.replace(/^(\d{5,})/,m=>(+m).toLocaleString('ko-KR')))}${bad?' · 미달':ok?' · 충족':''}</small>`:''}</div>`; };
-      h+=`<div class="mdo-p s12"><div class="mdo-t">🎥 영상 품질 검수 <span>${vqList.length}개 설치 위치 · 🎥 영상 품질 버튼으로 추가·삭제</span></div><div class="vqp-grid">${vqList.map(rec=>{ const res=find(rec,'영상 해상도');
+        const mx=Math.max(...z), un=mx?Math.min(...z)/mx*100:0; return `<div class="vqp-l">사진 밝기 9구역 (0–255) · 균일도 <b style="color:${un>=60?'#86EFAC':'#FCA5A5'}">${mdFmt(un,1)}%</b> <small style="color:#94A3B8;font-weight:600">(기준 60% 이상, 완화)</small></div><div class="vqp-heat">${z.map(v=>{ const c=Math.round(v); return `<span style="background:rgb(${c},${c},${c});color:${c>140?'#0F172A':'#fff'}">${mdFmt(v,1)}</span>`; }).join('')}</div>`; };
+      const kpi=(rec,nm,lab,unit)=>{ const r0=find(rec,nm); if(!r0||r0.raw==='—') return ''; const soft=!r0.std||vqIsExample(r0); const r=Object.assign({},r0,{std:soft? vqSoftStd(nm) : r0.std}); r.verdict = soft? vqVerdict(r) : (r0.verdict||vqVerdict(r)); const bad=r.verdict==='미달', ok=r.verdict==='충족'; return `<div class="vqp-k ${bad?'bad':ok?'ok':''}"><span>${lab}</span><b>${escapeHtml((()=>{ const n=vqNum(r.raw); return n==null?String(r.raw):Math.abs(n)>=10000?n.toLocaleString('ko-KR'):String(+n.toFixed(2)); })())}${unit}</b>${r.std?`<small>기준 ${escapeHtml(r.std.replace(/^(\d{5,})/,m=>(+m).toLocaleString('ko-KR')))}${soft?' (완화)':''}${bad?' · 미달':ok?' · 충족':''}</small>`:''}</div>`; };
+      h+=`<div class="mdo-p s12"><div class="mdo-t">🎥 영상 품질 검수 <span>${vqList.length}개 설치 위치 · 🎥 영상 품질 버튼으로 추가·삭제</span></div><div class="vqp-note">기준: 성적서에 현장 기준을 따로 넣었으면 그 값, 기준이 없거나 프로그램 예시값 그대로면 <b>휴대폰 측정을 고려한 완화 참고 기준</b> — 총 픽셀 921,600 이상(HD) · 프레임률 20fps 이상 · 영상 밝기 40~230 · 대비 15 이상 · 선명도 20 이상 · 흰색 균일도 70% 이상 · 사진 밝기 30~235 · 9구역 균일도 60% 이상 · 단색 일치율 70% 이상 · 격자 변동계수 15% 이하 · 이상색 후보 3개 이하</div><div class="vqp-grid">${vqList.map(rec=>{ const res=find(rec,'영상 해상도');
         return `<div class="vqp"><div class="vqp-h"><b>${escapeHtml(rec.site)}<small>${escapeHtml(rec.equip||'영상 품질 검수')}</small></b><span>${escapeHtml(rec.date||'')}</span></div>
           <div class="vqp-ks">${res&&res.raw!=='—'?`<div class="vqp-k"><span>영상 해상도</span><b>${escapeHtml(res.raw)}</b></div>`:''}${kpi(rec,'프레임당 총 픽셀 수','총 픽셀','')}${kpi(rec,'브라우저 표시 프레임률','프레임률',' fps')}${kpi(rec,'실측 프레임률','프레임률',' fps')}${kpi(rec,'화면 정지 후보','정지 후보','건')}${kpi(rec,'영상 평균 밝기','영상 밝기','')}${kpi(rec,'흰색 패턴 상대 균일도','흰색 균일도','%')}${kpi(rec,'사진 평균 밝기','사진 밝기','')}</div>
           ${strip(rec,'영상')}${strip(rec,'사진')}${heat(rec)}${(rec.images||[]).length?`<div class="vqp-l">첨부 이미지 ${rec.images.length}장</div><div class="vq-thumbs">${rec.images.map(k=>`<div class="vq-th"><img data-imgkey="${k}" alt="첨부 이미지"></div>`).join('')}</div>`:''}</div>`; }).join('')}</div></div>`;
@@ -7079,6 +7107,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     if(!rg) notes.push(['i','관리기준을 숫자로 읽을 수 없는 항목입니다(예: 정격값·설계값 기준). 값의 분포만 표시합니다.']);
     else if(a.out.length) notes.push(['bad',`${a.judged.length}곳 중 <b>${a.out.length}곳</b>이 관리기준(${escapeHtml(mdRangeText(rg,u))})을 벗어났습니다.`]);
     else notes.push(['ok',`${a.judged.length}곳 모두 관리기준(${escapeHtml(mdRangeText(rg,u))}) 이내입니다.${a.margin!=null?` 기준까지 가장 가까운 곳의 여유는 <b>${mdFmt(Math.abs(a.margin))}${escapeHtml(u)}</b>입니다.`:''}`]);
+    if(list[0]&&list[0].vq){ notes.push(['i', list.some(r=>r.soft) ? '영상 품질 검수 값입니다. 성적서에 기준이 없어 <b>휴대폰 측정을 고려한 완화 참고 기준</b>('+escapeHtml(list.find(r=>r.soft).std)+')으로 판정했습니다. 계약·시방서 기준이 있으면 그 값을 우선하세요.' : '영상 품질 검수 프로그램의 성적서 기준으로 판정했습니다.']); }
     if(rg&&rg.ac){ const dc=a.vals.length-a.judged.length; if(dc) notes.push(['i',`${dc}건은 DC 전원 값으로 보고 AC 기준(${escapeHtml(rg.label)}) 판정에서 뺐습니다.`]); }
     if(a.worst) notes.push([a.out.length?'bad':'i',`${a.out.length?'기준을 가장 많이 벗어난 곳':'기준에 가장 가까운 곳'}: <b>${escapeHtml(a.worst.loc)}</b> ${escapeHtml(String(a.worst.raw))}${escapeHtml(u)}${a.worst.catName?` (${escapeHtml(a.worst.catName)})`:''}`]);
     if(st && st.n>=2){ const hiR=a.vals.reduce((x,y)=>y.value>x.value?y:x), loR=a.vals.reduce((x,y)=>y.value<x.value?y:x);

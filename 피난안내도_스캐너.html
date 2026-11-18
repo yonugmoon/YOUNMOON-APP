@@ -1402,11 +1402,17 @@ $('#btnAutoLevel').onclick = () => {
   if (!S.src) return;
   busy(true);
   setTimeout(() => {
-    // 영역 재검출 → 원근 보정 → 잔여 기울기 보정
-    const r = detectQuad(S.src, S.src.width, S.src.height);
-    if (r) { S.quad = r.quad; S.mode = 'level'; syncModeSeg(); }
+    // 사용자가 지정한 영역·모드는 그대로 유지하고 기울기만 다시 측정한다.
+    // (영역을 따로 지정하지 않고 사진 전체인 경우에만 안내도 테두리로 원근 보정)
+    const w = S.src.width, h = S.src.height;
+    const isFull = S.quad.every((p, i) => dist(p, [[0, 0], [w, 0], [w, h], [0, h]][i]) < Math.max(w, h) * 0.06);
+    let usedPaper = false;
+    if (isFull) {
+      const r = detectQuad(S.src, w, h);
+      if (r) { S.quad = r.quad; S.paper = r.quad.map(p => p.slice()); S.mode = 'level'; syncModeSeg(); usedPaper = true; }
+    }
     S.fine = 0; buildWarp(true);
-    toast(r ? `원근·수평 보정 완료 (기울기 ${S.fine.toFixed(1)}°)` : `수평 보정 ${S.fine.toFixed(1)}° (테두리 미검출)`);
+    toast(usedPaper ? `원근·수평 보정 완료 (기울기 ${S.fine.toFixed(1)}°)` : `수평 보정 ${S.fine.toFixed(1)}° · 선택 영역 유지`);
     Mark.fit(); busy(false);
   }, 30);
 };

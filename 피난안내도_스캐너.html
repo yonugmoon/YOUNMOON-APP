@@ -196,11 +196,12 @@ main{flex:1;position:relative;overflow:hidden}
           <button data-mode="crop" class="on">📄 스캔 (영역 자르기)</button>
           <button data-mode="level">📐 수평·수직 보정만</button>
         </div>
-        <div class="info" id="adjInfo">모서리를 끌어 안내도 영역을 맞추세요.</div>
+        <div class="info" id="adjInfo"><b>드래그</b>해서 도면 영역을 선택하세요.</div>
         <div class="row">
           <button class="btn sm" id="adjAuto">✨ 자동검출</button>
           <button class="btn sm" id="adjFull">⬚ 전체</button>
           <button class="btn sm" id="adjRot">⟳ 90°</button>
+          <button class="btn sm" id="adjCorner" title="꼭짓점 4점 조정">◇ 꼭짓점</button>
           <div class="grow"></div>
           <button class="btn primary" id="adjNext">확인 →</button>
         </div>
@@ -714,7 +715,7 @@ function go(name) {
   $('#title').textContent = { home: '피난안내도 스캐너', cam: '안내도 촬영', adj: '영역 · 보정', mark: '위치 표시' }[name];
   if (name !== 'cam') Cam.stop();
   if (name === 'home') renderSaved();
-  if (name === 'adj') requestAnimationFrame(Adj.fit);
+  if (name === 'adj') { Adj.cornerMode = false; $('#adjCorner').classList.remove('primary'); if (S.quad) boxFromQuad(); requestAnimationFrame(Adj.fit); }
   if (name === 'mark') { updateTitle(); renderFloorBar(); requestAnimationFrame(() => { Mark.resize(); Mark.fit(); }); }
 }
 $('#btnBack').onclick = () => {
@@ -760,12 +761,13 @@ function autoDetect(silent) {
   const r = detectQuad(S.src, S.src.width, S.src.height);
   if (r) {
     S.quad = r.quad; S.paper = r.quad.map(p => p.slice());
-    $('#adjInfo').innerHTML = `안내도를 <b>자동 검출</b>했습니다 (신뢰도 ${Math.round(r.conf * 100)}%). <b>빈 곳을 드래그</b>하면 도면 부분만 선택됩니다.`;
+    $('#adjInfo').innerHTML = `안내도 자동 검출됨 (${Math.round(r.conf * 100)}%) · <b>드래그</b>해서 도면 부분만 선택할 수 있습니다`;
   } else {
     S.quad = fullQuad(0.04); S.paper = null;
-    $('#adjInfo').innerHTML = '테두리를 찾지 못했습니다. <b>드래그로 도면 영역을 선택</b>하거나 모서리를 끌어 맞추세요.';
+    $('#adjInfo').innerHTML = '테두리를 찾지 못했습니다 · <b>드래그</b>해서 도면 영역을 선택하세요';
     if (!silent) toast('자동 검출 실패 — 수동으로 맞춰주세요');
   }
+  S.box = null; if (typeof boxFromQuad === 'function') boxFromQuad();
   Adj && Adj.draw && Adj.draw();
   return !!r;
 }
@@ -927,11 +929,29 @@ const Adj = {
       let a = lerp(P[0], P[1], t), b = lerp(P[3], P[2], t); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
       a = lerp(P[0], P[3], t); b = lerp(P[1], P[2], t); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
     }
-    P.forEach((p, i) => {
-      ctx.beginPath(); ctx.arc(p[0], p[1], Adj.drag === i ? 15 : 12, 0, 7);
-      ctx.fillStyle = Adj.drag === i ? 'rgba(59,214,198,.55)' : 'rgba(255,255,255,.25)'; ctx.fill();
-      ctx.lineWidth = 3; ctx.strokeStyle = '#3bd6c6'; ctx.stroke();
-    });
+    if (Adj.cornerMode) { // 꼭짓점(4점) 조정 모드
+      P.forEach((p, i) => {
+        ctx.beginPath(); ctx.arc(p[0], p[1], Adj.drag === i ? 15 : 12, 0, 7);
+        ctx.fillStyle = Adj.drag === i ? 'rgba(59,214,198,.55)' : 'rgba(255,255,255,.25)'; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = '#3bd6c6'; ctx.stroke();
+      });
+      return;
+    }
+    // 드래그 박스 모드: 모서리 L자 + 변 손잡이 (자르기 도구 스타일)
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    const L = 18, unit = (a, b) => { const d = dist(a, b) || 1; return [(b[0] - a[0]) / d, (b[1] - a[1]) / d]; };
+    for (let i = 0; i < 4; i++) {
+      const p = P[i], n1 = unit(p, P[(i + 1) % 4]), n2 = unit(p, P[(i + 3) % 4]);
+      ctx.beginPath(); ctx.moveTo(p[0] + n1[0] * L, p[1] + n1[1] * L); ctx.lineTo(p[0], p[1]); ctx.lineTo(p[0] + n2[0] * L, p[1] + n2[1] * L); ctx.stroke();
+      const a = P[i], b = P[(i + 1) % 4], m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], t = unit(a, b);
+      ctx.beginPath(); ctx.moveTo(m[0] - t[0] * 12, m[1] - t[1] * 12); ctx.lineTo(m[0] + t[0] * 12, m[1] + t[1] * 12); ctx.stroke();
+    }
+    ctx.lineCap = 'butt';
+    // 가운데 이동 손잡이
+    const C = [(P[0][0] + P[1][0] + P[2][0] + P[3][0]) / 4, (P[0][1] + P[1][1] + P[2][1] + P[3][1]) / 4];
+    ctx.beginPath(); ctx.arc(C[0], C[1], 16, 0, 7); ctx.fillStyle = 'rgba(11,18,32,.75)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#3bd6c6'; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = '700 16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('✥', C[0], C[1] + 1);
   },
   loupe(p) {
     const L = $('#loupe'), lc = $('#loupeCanvas'), ctx = lc.getContext('2d');
@@ -945,68 +965,108 @@ const Adj = {
     ctx.beginPath(); ctx.moveTo(120, 90); ctx.lineTo(120, 150); ctx.moveTo(90, 120); ctx.lineTo(150, 120); ctx.stroke();
   },
 };
-// 드래그한 두 점을 대각 꼭짓점으로 하는 사각형.
-// 안내도 테두리(S.paper)가 있으면 그 원근(기울기)에 맞춘 사각형을 만든다.
-function boxQuad(a, b) {
-  const rect = () => { const x0 = Math.min(a[0], b[0]), x1 = Math.max(a[0], b[0]), y0 = Math.min(a[1], b[1]), y1 = Math.max(a[1], b[1]); return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]; };
-  if (!S.paper) return rect();
-  const H = homography(S.paper, [[0, 0], [1, 0], [1, 1], [0, 1]]); if (!H) return rect();
-  const Hi = inv3(H), ua = applyH(H, a[0], a[1]), ub = applyH(H, b[0], b[1]);
-  if (ua[2] <= 0 || ub[2] <= 0) return rect();
-  const u0 = Math.min(ua[0], ub[0]), u1 = Math.max(ua[0], ub[0]), v0 = Math.min(ua[1], ub[1]), v1 = Math.max(ua[1], ub[1]);
-  const q = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]].map(p => { const r = applyH(Hi, p[0], p[1]); return [clamp(r[0], 0, S.src.width), clamp(r[1], 0, S.src.height)]; });
-  return q;
+/* ---- 드래그 선택 박스 ----
+ * 박스는 '선택 공간'에서 축 정렬 사각형(u0,v0,u1,v1)으로 관리한다.
+ * 안내도 테두리(S.paper)가 검출되어 있으면 선택 공간 = 안내도를 반듯하게 편 좌표(0~1),
+ * 없으면 사진 픽셀 좌표. 그래서 박스는 항상 안내도 원근(기울기)에 맞춰 그려진다. */
+function selSpace() {
+  if (S.paper) {
+    const H = homography(S.paper, [[0, 0], [1, 0], [1, 1], [0, 1]]);
+    if (H) { const Hi = inv3(H); return { to: p => applyH(H, p[0], p[1]), from: u => applyH(Hi, u[0], u[1]), lo: [-0.02, -0.02], hi: [1.02, 1.02] }; }
+  }
+  return { to: p => p, from: u => u, lo: [0, 0], hi: [S.src.width, S.src.height] };
+}
+function boxFromQuad() {
+  const sp = selSpace(), U = S.quad.map(sp.to);
+  S.box = [Math.min(...U.map(u => u[0])), Math.min(...U.map(u => u[1])), Math.max(...U.map(u => u[0])), Math.max(...U.map(u => u[1]))];
+}
+function quadFromBox() {
+  const sp = selSpace(), b = S.box;
+  S.quad = [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]].map(u => { const r = sp.from(u); return [clamp(r[0], 0, S.src.width), clamp(r[1], 0, S.src.height)]; });
+}
+function setInfoDrag() {
+  $('#adjInfo').innerHTML = '<b>드래그</b>해서 도면 영역을 선택하세요 · 변·모서리를 끌면 크기 조절, 가운데 ✥ 로 이동';
 }
 (() => {
   const st = $('#adjStage');
-  let pid = null;
+  let pid = null, g = null;
+  const rel = e => { const rc = st.getBoundingClientRect(); return [e.clientX - rc.left, e.clientY - rc.top]; };
+  const inside = (P, x, y) => { let sg = 0; for (let i = 0; i < 4; i++) { const a = P[i], b = P[(i + 1) % 4]; const c = Math.sign((b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0])); if (!sg) sg = c; else if (c && c !== sg) return false; } return true; };
   st.addEventListener('pointerdown', e => {
-    if (!S.quad) return;
-    const rc = st.getBoundingClientRect(), x = e.clientX - rc.left, y = e.clientY - rc.top;
-    let bi = -1, bd = 36;
-    S.quad.forEach((p, i) => { const d = dist(Adj.toScr(p), [x, y]); if (d < bd) { bd = d; bi = i; } });
+    if (!S.quad || pid !== null) return;
+    const [x, y] = rel(e), P = S.quad.map(Adj.toScr);
     pid = e.pointerId; st.setPointerCapture(pid);
-    if (bi < 0) { // 모서리가 아니면 → 드래그로 새 영역 선택
-      const a = Adj.toImg(x, y);
-      Adj.box = { a: [clamp(a[0], 0, S.src.width), clamp(a[1], 0, S.src.height)], s0: [x, y], prev: S.quad.map(p => p.slice()) };
-      return;
+    if (Adj.cornerMode) { // 꼭짓점 4점 조정
+      let bi = 0, bd = Infinity; P.forEach((p, i) => { const d = dist(p, [x, y]); if (d < bd) { bd = d; bi = i; } });
+      if (bd > 80) { pid = null; return; }
+      Adj.drag = bi; g = { type: 'corner', grab: [S.quad[bi][0] - Adj.toImg(x, y)[0], S.quad[bi][1] - Adj.toImg(x, y)[1]] };
+      Adj.loupe(S.quad[bi]); Adj.draw(); return;
     }
-    Adj.drag = bi;
-    Adj.grab = [S.quad[bi][0] - Adj.toImg(x, y)[0], S.quad[bi][1] - Adj.toImg(x, y)[1]];
-    Adj.loupe(S.quad[bi]); Adj.draw();
+    if (!S.box) boxFromQuad();
+    const sp = selSpace(), u = sp.to(Adj.toImg(x, y));
+    g = { start: [x, y], u0: u, box0: S.box.slice(), prevQuad: S.quad.map(p => p.slice()), prevBox: S.box.slice(), moved: false };
+    // 모서리(양쪽 변) → 변 → 안쪽(이동) → 바깥(새 박스)
+    const CORNER = [[0, 1], [2, 1], [2, 3], [0, 3]]; // 각 꼭짓점이 바꾸는 박스 성분
+    let ci = -1, cd = 30; P.forEach((p, i) => { const d = dist(p, [x, y]); if (d < cd) { cd = d; ci = i; } });
+    if (ci >= 0) { g.type = 'resize'; g.keys = CORNER[ci]; return; }
+    const EDGE = [1, 2, 3, 0]; // 위·오른·아래·왼 변이 바꾸는 성분
+    for (let i = 0; i < 4; i++) if (segDist([x, y], P[i], P[(i + 1) % 4]) < 22) { g.type = 'resize'; g.keys = [EDGE[i]]; return; }
+    const C = [(P[0][0] + P[1][0] + P[2][0] + P[3][0]) / 4, (P[0][1] + P[1][1] + P[2][1] + P[3][1]) / 4];
+    g.type = dist(C, [x, y]) < 26 ? 'move' : 'new'; // 가운데 ✥ 손잡이만 이동, 나머지는 새로 드래그
+    void inside;
   });
   st.addEventListener('pointermove', e => {
-    if (e.pointerId !== pid) return;
-    if (Adj.box) {
-      const rc = st.getBoundingClientRect(), x = e.clientX - rc.left, y = e.clientY - rc.top;
-      if (Math.abs(x - Adj.box.s0[0]) < 12 && Math.abs(y - Adj.box.s0[1]) < 12) return;
-      const p = Adj.toImg(x, y), b = [clamp(p[0], 0, S.src.width), clamp(p[1], 0, S.src.height)];
-      S.quad = boxQuad(Adj.box.a, b); Adj.box.moved = true;
-      Adj.loupe(b); Adj.draw(); return;
+    if (e.pointerId !== pid || !g) return;
+    const [x, y] = rel(e);
+    if (g.type === 'corner') {
+      const p = Adj.toImg(x, y);
+      S.quad[Adj.drag] = [clamp(p[0] + g.grab[0], 0, S.src.width), clamp(p[1] + g.grab[1], 0, S.src.height)];
+      Adj.loupe(S.quad[Adj.drag]); Adj.draw(); return;
     }
-    if (Adj.drag < 0) return;
-    const rc = st.getBoundingClientRect(), p = Adj.toImg(e.clientX - rc.left, e.clientY - rc.top);
-    S.quad[Adj.drag] = [clamp(p[0] + Adj.grab[0], 0, S.src.width), clamp(p[1] + Adj.grab[1], 0, S.src.height)];
-    Adj.loupe(S.quad[Adj.drag]); Adj.draw();
+    if (!g.moved && dist([x, y], g.start) < 8) return;
+    g.moved = true;
+    const sp = selSpace(), ip = Adj.toImg(x, y);
+    const u = sp.to([clamp(ip[0], 0, S.src.width), clamp(ip[1], 0, S.src.height)]);
+    const cx = v => clamp(v, sp.lo[0], sp.hi[0]), cy = v => clamp(v, sp.lo[1], sp.hi[1]);
+    let b = g.box0.slice();
+    if (g.type === 'new') b = [Math.min(g.u0[0], u[0]), Math.min(g.u0[1], u[1]), Math.max(g.u0[0], u[0]), Math.max(g.u0[1], u[1])];
+    else if (g.type === 'move') {
+      let dx = u[0] - g.u0[0], dy = u[1] - g.u0[1];
+      dx = clamp(dx, sp.lo[0] - b[0], sp.hi[0] - b[2]); dy = clamp(dy, sp.lo[1] - b[1], sp.hi[1] - b[3]);
+      b = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy];
+    } else for (const k of g.keys) b[k] = k % 2 ? cy(u[1]) : cx(u[0]);
+    if (b[0] > b[2]) [b[0], b[2]] = [b[2], b[0]];
+    if (b[1] > b[3]) [b[1], b[3]] = [b[3], b[1]];
+    S.box = b; quadFromBox();
+    if (g.type !== 'move') Adj.loupe(Adj.toImg(x, y));
+    Adj.draw();
   });
-  const up = () => {
-    if (Adj.box) {
-      const q = S.quad.map(Adj.toScr), w = Math.max(dist(q[0], q[1]), dist(q[3], q[2])), h = Math.max(dist(q[0], q[3]), dist(q[1], q[2]));
-      if (!Adj.box.moved || w < 30 || h < 30) S.quad = Adj.box.prev; // 너무 작으면 취소
-      else $('#adjInfo').innerHTML = `<b>도면 영역을 선택</b>했습니다.${S.paper ? ' 안내도 기울기에 맞춰 원근이 적용됩니다.' : ''} 모서리를 끌어 미세 조정하거나 다시 드래그하세요.`;
-      Adj.box = null;
+  const up = e => {
+    if (e.pointerId !== pid) return;
+    if (g && g.type !== 'corner') {
+      const P = S.quad.map(Adj.toScr), w = Math.max(dist(P[0], P[1]), dist(P[3], P[2])), h = Math.max(dist(P[0], P[3]), dist(P[1], P[2]));
+      if (g.moved && (w < 30 || h < 30)) { S.quad = g.prevQuad; S.box = g.prevBox; toast('영역이 너무 작습니다 — 다시 드래그하세요'); }
+      else if (g.moved) $('#adjInfo').innerHTML = `<b>도면 영역 선택됨</b>${S.paper ? ' (안내도 기울기에 맞춰 원근 보정)' : ''} · 다시 드래그하거나 확인을 누르세요`;
     }
-    Adj.drag = -1; pid = null; $('#loupe').style.display = 'none'; Adj.draw();
+    if (g && g.type === 'corner') S.box = null;
+    g = null; Adj.drag = -1; pid = null; $('#loupe').style.display = 'none'; Adj.draw();
   };
   st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
 })();
+$('#adjCorner').onclick = () => {
+  Adj.cornerMode = !Adj.cornerMode;
+  $('#adjCorner').classList.toggle('primary', Adj.cornerMode);
+  if (Adj.cornerMode) $('#adjInfo').innerHTML = '<b>꼭짓점 조정</b>: 네 모서리를 하나씩 끌어 맞추세요. 다시 누르면 드래그 선택으로 돌아갑니다.';
+  else { boxFromQuad(); quadFromBox(); setInfoDrag(); }
+  Adj.draw();
+};
 function syncModeSeg() { [...$('#modeSeg').children].forEach(b => b.classList.toggle('on', b.dataset.mode === S.mode)); }
 $('#modeSeg').onclick = e => {
   const b = e.target.closest('button'); if (!b) return; S.mode = b.dataset.mode; syncModeSeg();
   toast(S.mode === 'crop' ? '스캔: 지정한 영역만 잘라 반듯하게 폅니다' : '수평·수직 보정: 사진 전체를 유지하며 기울기·원근만 바로잡습니다');
 };
 $('#adjAuto').onclick = () => { busy(true); setTimeout(() => { autoDetect(false); busy(false); }, 30); };
-$('#adjFull').onclick = () => { S.quad = fullQuad(0); S.paper = null; $('#adjInfo').textContent = '사진 전체가 선택되었습니다.'; Adj.draw(); };
+$('#adjFull').onclick = () => { S.quad = fullQuad(0); S.paper = null; boxFromQuad(); $('#adjInfo').textContent = '사진 전체가 선택되었습니다.'; Adj.draw(); };
 $('#adjRot').onclick = () => {
   const s = S.src, c = mkCanvas(s.height, s.width), ctx = c.getContext('2d');
   ctx.translate(c.width, 0); ctx.rotate(Math.PI / 2); ctx.drawImage(s, 0, 0);
@@ -1015,6 +1075,7 @@ $('#adjRot').onclick = () => {
   const q = S.quad.map(p => [h - p[1], p[0]]);
   S.quad = [q[3], q[0], q[1], q[2]];
   if (S.paper) { const r = S.paper.map(p => [h - p[1], p[0]]); S.paper = [r[3], r[0], r[1], r[2]]; }
+  S.box = null;
   S.src = c; S.mapping = null; Adj.fit();
 };
 $('#adjNext').onclick = async () => {

@@ -210,6 +210,77 @@
   .ad-thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
   .ad-thumb{width:60px;height:60px;border-radius:8px;object-fit:cover;border:2px solid var(--bad);background:#f0f0f0;}
   /* 차수 비교 */
+  /* 📊 측정 대시보드 */
+  #mdash-modal .md-wrap{background:var(--bg,#F5F6FA);width:100%;max-width:880px;height:100%;display:flex;flex-direction:column;}
+  #mdash-modal .md-top{display:flex;align-items:center;gap:10px;background:#1A2540;color:#fff;padding:14px 16px 12px;}
+  #mdash-modal .md-title{font-size:17px;font-weight:800;}
+  #mdash-modal .md-src{font-size:12px;opacity:.8;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #mdash-modal .md-x{background:rgba(255,255,255,.12);border:none;color:#fff;width:36px;height:36px;border-radius:10px;font-size:16px;cursor:pointer;flex-shrink:0;}
+  #mdash-modal .md-actions{display:flex;gap:6px;padding:10px 12px;background:#fff;border-bottom:1px solid var(--border,#E3E6EC);flex-wrap:wrap;}
+  #mdash-modal .md-btn{flex:1;min-width:110px;background:#fff;border:1.5px solid var(--accent,#155EEF);color:var(--accent,#155EEF);border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:800;cursor:pointer;}
+  #mdash-modal .md-btn.on{background:var(--accent,#155EEF);color:#fff;}
+  #mdash-modal .md-body{flex:1;overflow-y:auto;padding:12px 12px 40px;-webkit-overflow-scrolling:touch;}
+  #mdash-modal .md-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  @media (max-width:560px){ #mdash-modal .md-kpis{grid-template-columns:repeat(2,1fr);} }
+  #mdash-modal .md-kpi{background:#fff;border:1px solid var(--border,#E3E6EC);border-radius:12px;padding:10px 12px;}
+  #mdash-modal .md-kpi-l{font-size:11.5px;color:var(--muted,#64708A);font-weight:700;}
+  #mdash-modal .md-kpi-v{font-size:22px;font-weight:900;color:#1A2540;margin-top:2px;}
+  #mdash-modal .md-kpi-s{font-size:11px;color:var(--muted,#64708A);}
+  #mdash-modal .md-sec{font-size:13.5px;font-weight:800;color:#1A2540;margin:18px 2px 8px;}
+  #mdash-modal .md-sub{font-size:12px;font-weight:800;color:#3B4660;margin:16px 0 6px;}
+  #mdash-modal .md-chips{display:flex;gap:6px;flex-wrap:wrap;}
+  #mdash-modal .md-chip{background:#fff;border:1px solid var(--border,#D7DCE6);border-radius:999px;padding:7px 11px;font-size:12px;font-weight:700;color:#3B4660;cursor:pointer;}
+  #mdash-modal .md-chip span{color:var(--muted,#8A93A8);font-weight:600;margin-left:2px;}
+  #mdash-modal .md-chip.on{background:#1A2540;border-color:#1A2540;color:#fff;}
+  #mdash-modal .md-chip.on span{color:#BFD0F5;}
+  #mdash-modal .md-chip.sm{padding:4px 9px;font-size:11.5px;}
+  #mdash-modal .md-card{background:#fff;border:1px solid var(--border,#E3E6EC);border-radius:14px;padding:12px 14px;margin-top:10px;}
+  #mdash-modal .md-card-h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:14px;color:#1A2540;}
+  #mdash-modal .md-card-h span{font-size:11.5px;color:var(--bad,#E5484D);font-weight:700;white-space:nowrap;}
+  #mdash-modal .md-stats{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px;}
+  @media (max-width:560px){ #mdash-modal .md-stats{grid-template-columns:repeat(4,1fr);} }
+  #mdash-modal .md-stats div{background:#F6F8FB;border-radius:9px;padding:6px 7px;text-align:center;}
+  #mdash-modal .md-stats span{display:block;font-size:10.5px;color:var(--muted,#64708A);}
+  #mdash-modal .md-stats b{font-size:13px;color:#1A2540;}
+  #mdash-modal .md-vchart{position:relative;height:190px;margin:4px 0 26px;border-bottom:1px solid #C9CFDB;background:repeating-linear-gradient(to bottom,transparent 0,transparent 37px,#EEF0F5 37px,#EEF0F5 38px);}
+  #mdash-modal .md-thr{position:absolute;left:0;right:0;border-top:2px dashed var(--bad,#E5484D);z-index:2;}
+  #mdash-modal .md-thr span{position:absolute;right:0;top:-17px;font-size:10.5px;font-weight:800;color:var(--bad,#E5484D);}
+  #mdash-modal .md-zero{position:absolute;left:0;right:0;border-top:1px solid #8A93A8;}
+  #mdash-modal .md-vbars{position:absolute;inset:0;display:flex;gap:3px;}
+  #mdash-modal .md-vcol{flex:1;position:relative;min-width:0;}
+  #mdash-modal .md-vbar{position:absolute;left:18%;right:18%;background:#1ABDB5;border-radius:4px 4px 0 0;}
+  #mdash-modal .md-vbar.bad{background:var(--bad,#E5484D);}
+  #mdash-modal .md-vval{position:absolute;left:0;right:0;text-align:center;font-size:10px;font-weight:700;color:#3B4660;}
+  #mdash-modal .md-vlab{position:absolute;left:-4px;right:-4px;bottom:-20px;text-align:center;font-size:10.5px;color:var(--muted,#64708A);white-space:nowrap;overflow:hidden;}
+  #mdash-modal .md-hlist{display:flex;flex-direction:column;gap:5px;}
+  #mdash-modal .md-hrow{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:8px;align-items:center;font-size:12px;}
+  #mdash-modal .md-hname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1A2540;font-weight:700;}
+  #mdash-modal .md-hname small{display:block;font-size:10px;color:var(--muted,#8A93A8);font-weight:600;overflow:hidden;text-overflow:ellipsis;}
+  #mdash-modal .md-htrack{position:relative;height:14px;background:#F0F2F6;border-radius:7px;}
+  #mdash-modal .md-hbar{height:100%;background:#1ABDB5;border-radius:7px;}
+  #mdash-modal .md-hbar.bad{background:var(--bad,#E5484D);}
+  #mdash-modal .md-hthr{position:absolute;top:-3px;bottom:-3px;border-left:2px dashed var(--bad,#E5484D);}
+  #mdash-modal .md-hval{font-weight:800;color:#1A2540;min-width:52px;text-align:right;}
+  #mdash-modal .md-hval.bad{color:var(--bad,#E5484D);}
+  #mdash-modal .md-hist{display:flex;gap:6px;height:120px;align-items:flex-end;margin-bottom:28px;border-bottom:1px solid #C9CFDB;}
+  #mdash-modal .md-hcol{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;position:relative;}
+  #mdash-modal .md-hb{background:#2563EB;border-radius:4px 4px 0 0;opacity:.85;}
+  #mdash-modal .md-hb.bad{background:var(--bad,#E5484D);}
+  #mdash-modal .md-hn{text-align:center;font-size:10.5px;font-weight:800;color:#3B4660;}
+  #mdash-modal .md-hl{position:absolute;bottom:-22px;left:-6px;right:-6px;text-align:center;font-size:9.5px;color:var(--muted,#64708A);white-space:nowrap;overflow:hidden;}
+  #mdash-modal .md-tbl-wrap{overflow-x:auto;background:#fff;border:1px solid var(--border,#E3E6EC);border-radius:12px;}
+  #mdash-modal .md-tbl{width:100%;border-collapse:collapse;font-size:12px;min-width:460px;}
+  #mdash-modal .md-tbl th{background:#1A2540;color:#fff;font-weight:700;padding:7px 8px;text-align:left;white-space:nowrap;}
+  #mdash-modal .md-tbl td{padding:6px 8px;border-top:1px solid #EEF0F5;color:#2B3550;}
+  #mdash-modal .md-tbl tr[data-item]{cursor:pointer;}
+  #mdash-modal .md-tbl tr.on td{background:#EEF3FF;font-weight:700;}
+  #mdash-modal .md-srow{display:grid;grid-template-columns:minmax(90px,34%) 1fr 44px;gap:8px;align-items:center;margin:6px 0;font-size:12px;}
+  #mdash-modal .md-sname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#1A2540;}
+  #mdash-modal .md-strack{display:flex;height:14px;border-radius:7px;overflow:hidden;background:#F0F2F6;}
+  #mdash-modal .md-spct{font-weight:900;text-align:right;}
+  #mdash-modal .md-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted,#64708A);margin-top:8px;}
+  #mdash-modal .md-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px;}
+  #mdash-modal .md-empty{background:#fff;border:1px dashed var(--border,#D7DCE6);border-radius:14px;padding:22px 16px;text-align:center;color:var(--muted,#64708A);font-size:13px;line-height:1.7;margin-top:12px;}
   .cmp-banner-btn{width:100%;background:#EEF3FF;border:1px solid #C9DBFF;color:#155EEF;border-radius:12px;padding:11px 14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;-webkit-tap-highlight-color:transparent;}
   .cmp-banner-btn:active{background:#e2ecff;}
   .prev-badge{display:block;font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;margin-top:6px;line-height:1.4;background:var(--bad-weak);color:var(--bad);border:1px solid #F3C2C7;}
@@ -4776,6 +4847,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       `);
     } else if(vmList === 'mobile'){
       html.push('<button class="primary-btn" id="open-new">+ 새 점검 시작</button>');
+      html.push('<button class="cmp-banner-btn" id="mdash-list-btn" style="margin-top:10px;background:#ECFDF8;border-color:#B7EBDD;color:#0B7B74;"><span>📊 측정 대시보드 · 엑셀 불러와 보기</span><span>›</span></button>');
     } else {
       // 작업 큐 헤더 — 제목 + 새 점검 버튼
       const _mi = MODE_INFO[currentMode] || MODE_INFO['성능'];
@@ -4785,6 +4857,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           <p>${_n ? '저장된 점검 '+_n+'건' : '저장된 점검 없음'}</p></div>
         <button class="q-new" id="open-new">+ 새 점검 시작</button>
       </div>`);
+      html.push('<button class="cmp-banner-btn" id="mdash-list-btn" style="margin-top:6px;background:#ECFDF8;border-color:#B7EBDD;color:#0B7B74;"><span>📊 측정 대시보드 · 엑셀 불러와 보기</span><span>›</span></button>');
     }
 
     const modeList = indexList.filter(e=>(e.inspType||'성능')===currentMode);
@@ -4881,6 +4954,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const fbBtn = document.getElementById("fb-setup-btn");
     if(fbBtn) fbBtn.onclick = openFirebaseSettings;
 
+    { const mlb=document.getElementById("mdash-list-btn"); if(mlb) mlb.onclick=()=>showMeasureDashboard({rows:[],catStat:[],title:'앱에서 내보낸 📈 대시보드 엑셀·부적합 엑셀을 불러오세요',date:'',source:'엑셀 미선택'}); }
     const openBtn = document.getElementById("open-new");
     if(openBtn) openBtn.onclick = ()=>{ showNewForm=true; newFormStep=1; newFormData={inspType: currentMode||"성능"}; renderList(); };
     const homeBtn = document.getElementById('home-btn');
@@ -6141,6 +6215,184 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const bin=atob(b64), arr=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
     return arr;
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     📊 측정 대시보드 (앱 화면) — 현재 점검 또는 대시보드/부적합 엑셀을 불러와
+        측정값을 항목별 통계·층별 그래프·위치별 막대·분포·설비별 적합율로 본다
+  ════════════════════════════════════════════════════════════════ */
+  function mdFloorLabel(f){ return f===null||f===undefined?'-':f===999?'옥상':f>0?`${f}층`:`B${Math.abs(f)}층`; }
+  function mdNum(v){ if(v==null) return null; const n=parseFloat(String(v).replace(/[^0-9.\-]/g,'')); return isNaN(n)?null:n; }
+  function mdThreshold(itemName, std){
+    const m=String(std||'').match(/(-?\d+(?:\.\d+)?)/);
+    if(m) return { thr:parseFloat(m[1]), lowerBad:/이상/.test(std) };
+    if(/접지저항/.test(itemName)) return { thr:10, lowerBad:false };
+    return { thr:null, lowerBad:false };
+  }
+  function mdIsOver(r, t){ if(t.thr==null||r.value==null) return false; return t.lowerBad ? r.value<t.thr : r.value>t.thr; }
+  function mdGoodRes(x){ return x==='양호'||x==='적합'||x==='정상'; }
+  /* 현재 점검 → 측정값 행 (엑셀 대시보드와 같은 규칙) */
+  function mdRowsFromInspection(insp){
+    const rows=[];
+    (insp.categories||[]).forEach(cat=>(cat.locations||[]).forEach(loc=>{
+      if(loc.pending) return;
+      const bld = extractBuilding(loc.name)||'(건물 미지정)';
+      const f = extractFloor(loc.name);
+      (loc.items||[]).forEach(it=>{
+        const fds=(Array.isArray(it.fields)&&it.fields.length)?it.fields:null;
+        if(fds){ const vv=it.vals||{};
+          fds.forEach(fd=>{ const raw=String(vv[fd.k]==null?'':vv[fd.k]).trim(); if(!raw) return;
+            rows.push({bld,floor:f,floorLabel:mdFloorLabel(f),loc:loc.name,catName:cat.name,itemName:it.name+' — '+fd.k,unit:fd.u||'',value:mdNum(raw),raw,std:it.std||'',result:it.result||''}); });
+          return; }
+        if(it.hasValue && it.value!=null && String(it.value).trim()!==''){
+          rows.push({bld,floor:f,floorLabel:mdFloorLabel(f),loc:loc.name,catName:cat.name,itemName:it.name,unit:it.unit||'',value:mdNum(it.value),raw:String(it.value),std:it.std||'',result:it.result||''});
+        }
+      });
+    }));
+    const catStat=(insp.categories||[]).map(cat=>{ let good=0,bad=0,na=0;
+      (cat.locations||[]).forEach(loc=>{ if(loc.pending) return; (loc.items||[]).forEach(it=>{ if(mdGoodRes(it.result)) good++; else if(it.result==='불량') bad++; else na++; }); });
+      return {label:cat.name,good,bad,na}; }).filter(r=>r.good+r.bad+r.na>0);
+    return { rows, catStat, title:(insp.siteName||'')+(insp.buildingName?' '+insp.buildingName:''), date:insp.date||'', source:'현재 점검' };
+  }
+  /* 대시보드 엑셀·부적합 엑셀(측정값 데이터 시트) → 측정값 행 */
+  async function mdRowsFromExcel(file){
+    if(typeof ExcelJS==='undefined') throw new Error('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결 후 다시 시도해 주세요.');
+    const wb=new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const txt=v=>{ if(v==null) return ''; if(typeof v==='object'){ if(v.richText) return v.richText.map(x=>x.text).join(''); if(v.text!=null) return String(v.text); if(v.result!=null) return String(v.result); } return String(v).trim(); };
+    let ws=wb.getWorksheet('측정값 데이터'); let hdrRow=1;
+    if(!ws){ wb.eachSheet(s=>{ if(ws) return; for(let r=1;r<=5;r++){ const vals=[]; s.getRow(r).eachCell((c)=>vals.push(txt(c.value))); if(vals.includes('측정값')&&vals.some(v=>/측정\s*항목/.test(v))){ ws=s; hdrRow=r; break; } } }); }
+    if(!ws) throw new Error('「측정값 데이터」 시트를 찾지 못했습니다. 앱에서 내보낸 📈 대시보드 엑셀이나 부적합 엑셀을 선택해 주세요.');
+    const col={}; ws.getRow(hdrRow).eachCell((c,i)=>{ col[txt(c.value).replace(/\s/g,'')]=i; });
+    const g=(row,k)=> col[k]? txt(row.getCell(col[k]).value) : '';
+    const rows=[];
+    for(let r=hdrRow+1;r<=ws.rowCount;r++){
+      const row=ws.getRow(r); const item=g(row,'측정항목'); const raw=g(row,'측정값'); if(!item||raw==='') continue;
+      const loc=g(row,'점검위치'); const fl=g(row,'층');
+      let f=null; if(fl&&fl!=='-'){ f = /옥상/.test(fl)?999 : extractFloor(fl); }
+      if(f===null) f=extractFloor(loc);
+      rows.push({bld:g(row,'건물')||extractBuilding(loc)||'(건물 미지정)',floor:f,floorLabel:mdFloorLabel(f),loc,catName:g(row,'설비'),itemName:item,unit:g(row,'단위'),value:mdNum(raw),raw,std:g(row,'기준'),result:(g(row,'판정')==='-'?'':g(row,'판정'))});
+    }
+    let catStat=[]; const wr=wb.getWorksheet('설비별 적합율');
+    if(wr){ for(let r=2;r<=wr.rowCount;r++){ const row=wr.getRow(r); const lb=txt(row.getCell(1).value); if(!lb) continue;
+      catStat.push({label:lb,good:+txt(row.getCell(2).value)||0,bad:+txt(row.getCell(3).value)||0,na:+txt(row.getCell(4).value)||0}); } }
+    if(!catStat.length){ const by={}; rows.forEach(x=>{ const k=x.catName||'(설비)'; by[k]=by[k]||{label:k,good:0,bad:0,na:0}; if(mdGoodRes(x.result)) by[k].good++; else if(x.result==='불량') by[k].bad++; else by[k].na++; }); catStat=Object.values(by); }
+    let title=''; const wsD=wb.getWorksheet('대시보드'); if(wsD){ title=txt(wsD.getCell(1,2).value).replace(/^📈\s*/,''); }
+    return { rows, catStat, title: title || file.name.replace(/\.xlsx?$/i,''), date:'', source:'엑셀 · '+file.name };
+  }
+  function mdStats(vals){
+    const v=vals.filter(x=>x!=null).sort((a,b)=>a-b); const n=v.length; if(!n) return null;
+    const sum=v.reduce((s,x)=>s+x,0), avg=sum/n; const sd=Math.sqrt(v.reduce((s,x)=>s+(x-avg)*(x-avg),0)/n);
+    const med = n%2? v[(n-1)/2] : (v[n/2-1]+v[n/2])/2;
+    return { n, avg, min:v[0], max:v[n-1], sd, med };
+  }
+  function mdFmt(x, d){ if(x==null||isNaN(x)) return '-'; const a=Math.abs(x); const dd = d!=null?d : a>=100?0 : a>=10?1 : 2; return x.toFixed(dd); }
+
+  let mdData = null, mdItem = null, mdBld = '전체', mdQuery = '';
+  function showMeasureDashboard(data){
+    if(data) { mdData=data; mdItem=null; mdBld='전체'; mdQuery=''; }
+    if(!mdData) mdData = current ? mdRowsFromInspection(current) : { rows:[], catStat:[], title:'', date:'', source:'' };
+    let ov=document.getElementById('mdash-modal');
+    if(!ov){ ov=document.createElement('div'); ov.id='mdash-modal'; ov.className='overlay top-layer'; ov.style.cssText='align-items:stretch;justify-content:center;padding:0;'; document.body.appendChild(ov); }
+    const D=mdData, rows=D.rows;
+    const items={}; rows.forEach(r=>{ (items[r.itemName]=items[r.itemName]||[]).push(r); });
+    const itemNames=Object.keys(items).sort((a,b)=>{ const ga=/접지저항/.test(a)?0:1, gb=/접지저항/.test(b)?0:1; return ga-gb || items[b].length-items[a].length; });
+    if(!mdItem || !items[mdItem]) mdItem=itemNames[0]||null;
+    let overAll=0; rows.forEach(r=>{ if(mdIsOver(r, mdThreshold(r.itemName,r.std))) overAll++; });
+    let cg=0,cb=0,cn=0; D.catStat.forEach(c=>{ cg+=c.good; cb+=c.bad; cn+=c.na; });
+    const passPct = (cg+cb)? Math.round(cg/(cg+cb)*100) : null;
+    const kpi=(lab,val,sub,col)=>`<div class="md-kpi"><div class="md-kpi-l">${lab}</div><div class="md-kpi-v" style="${col?'color:'+col:''}">${val}</div>${sub?`<div class="md-kpi-s">${sub}</div>`:''}</div>`;
+    let body='';
+    body+=`<div class="md-kpis">
+      ${kpi('측정값', rows.length+'건', itemNames.length+'개 항목')}
+      ${kpi('기준 초과', overAll+'건', overAll?'빨간 막대 확인':'모두 기준 이내', overAll?'var(--bad,#E5484D)':'var(--good,#22B573)')}
+      ${kpi('점검 적합율', passPct==null?'-':passPct+'%', `적합 ${cg} · 부적합 ${cb}`, passPct==null?'':passPct>=90?'var(--good,#22B573)':passPct>=70?'#E8A317':'var(--bad,#E5484D)')}
+      ${kpi('미점검', cn+'건', '판정 없는 항목')}
+    </div>`;
+    if(!rows.length){
+      body+=`<div class="md-empty">측정값이 입력된 항목이 없습니다.<br>접지저항·전압·수신감도 등 <b>측정값 칸</b>에 숫자를 넣으면 여기에서 그래프로 볼 수 있습니다.<br>지난 점검은 <b>📂 엑셀 불러오기</b>로 대시보드 엑셀을 열어 보세요.</div>`;
+    } else {
+      body+=`<div class="md-sec">측정 항목 선택</div><div class="md-chips">${itemNames.map(n=>`<button class="md-chip ${n===mdItem?'on':''}" data-item="${escapeHtml(n)}">${escapeHtml(n)} <span>${items[n].length}</span></button>`).join('')}</div>`;
+      const all=items[mdItem]; const t=mdThreshold(mdItem, (all.find(r=>r.std)||{}).std); const unit=(all.find(r=>r.unit)||{}).unit||'';
+      const blds=[...new Set(all.map(r=>r.bld))];
+      if(mdBld!=='전체' && !blds.includes(mdBld)) mdBld='전체';
+      const sel = mdBld==='전체'? all : all.filter(r=>r.bld===mdBld);
+      const st=mdStats(sel.map(r=>r.value)); const over=sel.filter(r=>mdIsOver(r,t)).length;
+      const thrTxt = t.thr==null?'기준 없음':`기준 ${t.thr}${unit} ${t.lowerBad?'이상':'이하'}`;
+      body+=`<div class="md-card"><div class="md-card-h"><b>${escapeHtml(mdItem)}</b><span>${escapeHtml(thrTxt)}</span></div>
+        ${blds.length>1?`<div class="md-chips" style="margin:6px 0 2px;">${['전체',...blds].map(b=>`<button class="md-chip sm ${b===mdBld?'on':''}" data-bld="${escapeHtml(b)}">${escapeHtml(b)}</button>`).join('')}</div>`:''}
+        <div class="md-stats">${[['건수',st?st.n+'건':'-'],['평균',mdFmt(st&&st.avg)+unit],['최소',mdFmt(st&&st.min)+unit],['최대',mdFmt(st&&st.max)+unit],['중앙값',mdFmt(st&&st.med)+unit],['표준편차',mdFmt(st&&st.sd)],['기준 초과',over+'건']].map(([a,b])=>`<div><span>${a}</span><b ${a==='기준 초과'&&over?'style="color:var(--bad,#E5484D)"':''}>${b}</b></div>`).join('')}</div>`;
+      // 층별 평균 (세로 막대)
+      const floors=[...new Set(sel.filter(r=>r.value!=null).map(r=>r.floor===null?-9999:r.floor))].sort((a,b)=>a-b);
+      if(floors.length){
+        const fv=floors.map(f=>{ const m=sel.filter(r=>(r.floor===null?-9999:r.floor)===f && r.value!=null); return {f, avg:m.reduce((s,x)=>s+x.value,0)/m.length, max:Math.max(...m.map(x=>x.value)), n:m.length}; });
+        let hi=Math.max(...fv.map(x=>x.avg), t.thr!=null?t.thr:-Infinity); let lo=Math.min(0,...fv.map(x=>x.avg), t.thr!=null?t.thr:Infinity);
+        if(hi===lo) hi=lo+1; hi = hi>0? hi*1.12 : hi*0.88; const span=hi-lo;
+        const yOf=v=>100-(v-lo)/span*100;
+        body+=`<div class="md-sub">층별 평균 ${unit?'('+escapeHtml(unit)+')':''}</div><div class="md-vchart">
+          ${t.thr!=null?`<div class="md-thr" style="top:${yOf(t.thr)}%"><span>기준 ${t.thr}</span></div>`:''}
+          ${lo<0?`<div class="md-zero" style="top:${yOf(0)}%"></div>`:''}
+          <div class="md-vbars">${fv.map(x=>{ const ov=mdIsOver({value:x.avg},t); const top=Math.min(yOf(x.avg),yOf(0)), h=Math.abs(yOf(x.avg)-yOf(0));
+            return `<div class="md-vcol" title="${mdFloorLabel(x.f===-9999?null:x.f)} 평균 ${mdFmt(x.avg)} (${x.n}곳)"><div class="md-vbar ${ov?'bad':''}" style="top:${top}%;height:${Math.max(h,0.8)}%"></div><div class="md-vval" style="top:calc(${yOf(x.avg)}% - 15px)">${mdFmt(x.avg)}</div><div class="md-vlab">${x.f===-9999?'-':mdFloorLabel(x.f)}</div></div>`; }).join('')}</div></div>`;
+      }
+      // 위치별 측정값 (가로 막대, 층 순)
+      const byLoc=sel.filter(r=>r.value!=null).slice().sort((a,b)=>String(a.bld).localeCompare(String(b.bld),'ko') || ((a.floor??-9999)-(b.floor??-9999)) || String(a.loc).localeCompare(String(b.loc),'ko'));
+      if(byLoc.length){
+        const mx=Math.max(...byLoc.map(r=>Math.abs(r.value)), t.thr!=null?Math.abs(t.thr):0)||1;
+        body+=`<div class="md-sub">위치별 측정값 (${byLoc.length}곳)</div><div class="md-hlist">${byLoc.map(r=>{ const ov=mdIsOver(r,t);
+          return `<div class="md-hrow"><div class="md-hname" title="${escapeHtml(r.loc)} · ${escapeHtml(r.catName||'')}">${escapeHtml(r.loc||'-')}<small>${escapeHtml(r.catName||'')}</small></div><div class="md-htrack">${t.thr!=null?`<i class="md-hthr" style="left:${Math.abs(t.thr)/mx*100}%"></i>`:''}<div class="md-hbar ${ov?'bad':''}" style="width:${Math.max(Math.abs(r.value)/mx*100,1)}%"></div></div><div class="md-hval ${ov?'bad':''}">${escapeHtml(String(r.raw))}${escapeHtml(unit)}</div></div>`; }).join('')}</div>`;
+        // 분포 (히스토그램 6구간)
+        if(byLoc.length>=4 && st && st.max>st.min){
+          const B=6, w=(st.max-st.min)/B, bins=Array(B).fill(0); byLoc.forEach(r=>{ let i=Math.floor((r.value-st.min)/w); if(i>=B) i=B-1; bins[i]++; });
+          const bm=Math.max(...bins);
+          body+=`<div class="md-sub">값 분포</div><div class="md-hist">${bins.map((c,i)=>{ const a=st.min+w*i, b=a+w; const ov=t.thr!=null&&(t.lowerBad? b<t.thr : a>t.thr);
+            return `<div class="md-hcol"><div class="md-hn">${c||''}</div><div class="md-hb ${ov?'bad':''}" style="height:${c/bm*100}%"></div><div class="md-hl">${mdFmt(a)}~${mdFmt(b)}</div></div>`; }).join('')}</div>`;
+        }
+      }
+      body+=`</div>`;
+      // 항목별 요약 표
+      body+=`<div class="md-sec">항목별 통계</div><div class="md-tbl-wrap"><table class="md-tbl"><thead><tr><th>측정 항목</th><th>건수</th><th>평균</th><th>최소</th><th>최대</th><th>초과</th></tr></thead><tbody>${itemNames.map(n=>{ const a=items[n]; const s=mdStats(a.map(r=>r.value)); const tt=mdThreshold(n,(a.find(r=>r.std)||{}).std); const o=a.filter(r=>mdIsOver(r,tt)).length; const u=(a.find(r=>r.unit)||{}).unit||'';
+        return `<tr class="${n===mdItem?'on':''}" data-item="${escapeHtml(n)}"><td>${escapeHtml(n)}</td><td>${a.length}</td><td>${mdFmt(s&&s.avg)}${escapeHtml(u)}</td><td>${mdFmt(s&&s.min)}</td><td>${mdFmt(s&&s.max)}</td><td ${o?'style="color:var(--bad,#E5484D);font-weight:800"':''}>${o}</td></tr>`; }).join('')}</tbody></table></div>`;
+    }
+    // 설비별 적합율
+    if(D.catStat.length){
+      body+=`<div class="md-sec">설비별 적합율</div><div class="md-card">${D.catStat.map(r=>{ const tot=r.good+r.bad+r.na||1; const p=(r.good+r.bad)?Math.round(r.good/(r.good+r.bad)*100):null;
+        return `<div class="md-srow"><div class="md-sname">${escapeHtml(r.label)}</div><div class="md-strack"><i style="width:${r.good/tot*100}%;background:var(--good,#22B573)"></i><i style="width:${r.bad/tot*100}%;background:var(--bad,#E5484D)"></i><i style="width:${r.na/tot*100}%;background:#C4CADB"></i></div><div class="md-spct" style="color:${p==null?'var(--muted)':p>=90?'var(--good,#22B573)':p>=70?'#E8A317':'var(--bad,#E5484D)'}">${p==null?'-':p+'%'}</div></div>`; }).join('')}
+        <div class="md-legend"><span><i style="background:var(--good,#22B573)"></i>적합</span><span><i style="background:var(--bad,#E5484D)"></i>부적합</span><span><i style="background:#C4CADB"></i>미점검</span><span style="margin-left:auto">적합율 = 적합 ÷ (적합+부적합)</span></div></div>`;
+    }
+    // 전체 측정값 표
+    if(rows.length){
+      const q=mdQuery.trim().toLowerCase();
+      const fl=rows.filter(r=>!q || [r.bld,r.floorLabel,r.loc,r.catName,r.itemName,r.raw].join(' ').toLowerCase().includes(q));
+      body+=`<div class="md-sec">전체 측정값 <span style="font-weight:600;color:var(--muted)">${fl.length}/${rows.length}건</span></div>
+        <input class="text-input" id="md-q" placeholder="검색 (위치·설비·항목, 예: 13층, 접지)" value="${escapeHtml(mdQuery)}" style="margin-bottom:8px;">
+        <div class="md-tbl-wrap"><table class="md-tbl"><thead><tr><th>층</th><th>점검 위치</th><th>설비</th><th>측정 항목</th><th>측정값</th><th>판정</th></tr></thead><tbody>${fl.slice(0,400).map(r=>{ const ov=mdIsOver(r,mdThreshold(r.itemName,r.std));
+          return `<tr><td>${escapeHtml(r.floorLabel)}</td><td>${escapeHtml(r.loc||'')}</td><td>${escapeHtml(r.catName||'')}</td><td>${escapeHtml(r.itemName)}</td><td style="${ov?'color:var(--bad,#E5484D);font-weight:800':''}">${escapeHtml(String(r.raw))}${escapeHtml(r.unit||'')}</td><td>${r.result==='불량'?'<b style="color:var(--bad,#E5484D)">부적합</b>':mdGoodRes(r.result)?'적합':escapeHtml(r.result||'-')}</td></tr>`; }).join('')}</tbody></table></div>${fl.length>400?'<div class="md-kpi-s" style="margin-top:6px">앞 400건만 표시 — 검색으로 좁혀 보세요.</div>':''}`;
+    }
+    ov.innerHTML = `<div class="md-wrap">
+      <div class="md-top">
+        <div style="min-width:0;flex:1;"><div class="md-title">📊 측정 대시보드</div><div class="md-src">${escapeHtml(D.title||'')}${D.date?' · '+escapeHtml(D.date):''} — <b>${escapeHtml(D.source||'')}</b></div></div>
+        <button class="md-x" id="md-close" aria-label="닫기">✕</button>
+      </div>
+      <div class="md-actions">
+        ${current?`<button class="md-btn ${D.source==='현재 점검'?'on':''}" id="md-cur">📋 현재 점검</button>`:''}
+        <button class="md-btn" id="md-xlsx">📂 엑셀 불러오기</button>
+        ${current?`<button class="md-btn" id="md-export">📈 대시보드 엑셀 저장</button>`:''}
+        <input type="file" id="md-file" accept=".xlsx" style="display:none">
+      </div>
+      <div class="md-body">${body}</div></div>`;
+    const close=()=>{ ov.remove(); };
+    ov.querySelector('#md-close').onclick=close;
+    ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
+    const scroller=ov.querySelector('.md-body'); const keep=()=>{ const y=scroller.scrollTop; showMeasureDashboard(); const s2=document.querySelector('#mdash-modal .md-body'); if(s2) s2.scrollTop=y; };
+    ov.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>{ mdItem=b.dataset.item; mdBld='전체'; keep(); });
+    ov.querySelectorAll('[data-bld]').forEach(b=>b.onclick=()=>{ mdBld=b.dataset.bld; keep(); });
+    const curBtn=ov.querySelector('#md-cur'); if(curBtn) curBtn.onclick=()=>{ showMeasureDashboard(mdRowsFromInspection(current)); };
+    const expBtn=ov.querySelector('#md-export'); if(expBtn) expBtn.onclick=()=>exportDashboardExcel();
+    const fi=ov.querySelector('#md-file'); ov.querySelector('#md-xlsx').onclick=()=>fi.click();
+    fi.onchange=async ev=>{ const f=ev.target.files[0]; if(!f) return;
+      try{ const d=await mdRowsFromExcel(f); showMeasureDashboard(d); showToast(`엑셀에서 측정값 ${d.rows.length}건을 불러왔습니다.`); }
+      catch(e){ alert('엑셀을 읽지 못했습니다: '+e.message); } };
+    const qi=ov.querySelector('#md-q'); if(qi){ qi.oninput=()=>{ mdQuery=qi.value; const pos=qi.selectionStart; keep(); const n=document.getElementById('md-q'); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(_){} } }; }
   }
 
   async function exportDashboardExcel(){
@@ -8018,10 +8270,12 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         ${cmpSummary && cmpSummary.prevBad
           ? `<button class="cmp-banner-btn" id="prevbad-banner-btn" style="background:#FDEDEC;border-color:#F5C4C2;color:#C02026;"><span>🔴 전회 부적합 ${cmpSummary.prevBad}건 · 위치 보기</span><span>›</span></button>`
           : ''}
+        <button class="cmp-banner-btn" id="mdash-banner-btn" style="background:#ECFDF8;border-color:#B7EBDD;color:#0B7B74;"><span>📊 측정 대시보드 · 측정값 ${(()=>{ try{ return mdRowsFromInspection(current).rows.length; }catch(e){ return 0; } })()}건 통계·그래프 보기</span><span>›</span></button>
         <div id="cat-list"></div>
       </div>
     `);
     app.innerHTML = html.join("");
+    { const mb=document.getElementById("mdash-banner-btn"); if(mb) mb.onclick=()=>showMeasureDashboard(mdRowsFromInspection(current)); }
     document.getElementById("back-btn").onclick = ()=>{
       if(activeCatId){ activeCatId=null; renderDetail(); window.scrollTo({top:0, behavior:"auto"}); return; }
       current=null; cmpBase=null; deleteConfirmId=null; renderList();

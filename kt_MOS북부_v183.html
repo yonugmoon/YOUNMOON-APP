@@ -221,6 +221,7 @@
   #mdash-modal .mdv-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
   #mdash-modal .mdv-sel{border:1px solid #CBD5E1;border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:700;background:#fff;color:#1E293B;}
   #mdash-modal .mdv-btn{background:#fff;border:1px solid #CBD5E1;color:#334155;border-radius:9px;padding:8px 11px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  #mdash-modal .mdv-btn.view{background:linear-gradient(135deg,#7C3AED,#2563EB);border-color:transparent;color:#fff;}
   #mdash-modal .mdv-btn.on{background:#1E3A8A;border-color:#1E3A8A;color:#fff;}
   #mdash-modal .mdv-x{background:#F1F5F9;border:none;color:#334155;width:36px;height:36px;border-radius:10px;font-size:15px;cursor:pointer;flex-shrink:0;}
   #mdash-modal .mdv-body{flex:1;overflow-y:auto;padding:12px 14px 40px;-webkit-overflow-scrolling:touch;}
@@ -349,6 +350,53 @@
   #mdash-modal .mdd-f{display:flex;gap:8px;padding:10px 14px;border-top:1px solid #EEF2F6;}
   #mdash-modal .mdd-close{flex:1;background:#0F172A;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;}
   @media (max-width:640px){ #mdash-modal .mdv-acts{width:100%;} #mdash-modal .mdv-btn{flex:1;padding:8px 4px;font-size:11.5px;} #mdash-modal .mdv-title{font-size:17px;} }
+  /* 🎠 3D 보기 */
+  #mdash-modal .md3-ks4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:6px;}
+  @media (max-width:760px){ #mdash-modal .md3-ks4{grid-template-columns:1fr 1fr;} }
+  #mdash-modal .md3-k{position:relative;overflow:hidden;border-radius:18px;padding:14px 16px;color:#fff;min-height:118px;box-shadow:0 10px 24px rgba(15,23,42,.18);transition:transform .25s ease-out,box-shadow .25s;transform-style:preserve-3d;animation:md3Up .6s ease both;}
+  #mdash-modal .md3-k:nth-child(2){animation-delay:.08s} #mdash-modal .md3-k:nth-child(3){animation-delay:.16s} #mdash-modal .md3-k:nth-child(4){animation-delay:.24s}
+  @keyframes md3Up{from{opacity:0;transform:translateY(18px) rotateX(18deg);}}
+  #mdash-modal .md3-k.c1{background:linear-gradient(135deg,#3B1C9C,#1E3A8A 60%,#0EA5E9);}
+  #mdash-modal .md3-k.c2{background:linear-gradient(135deg,#047857,#0D9488 55%,#2DD4BF);}
+  #mdash-modal .md3-k.c2w{background:linear-gradient(135deg,#B45309,#F59E0B 60%,#FCD34D);}
+  #mdash-modal .md3-k.c3{background:linear-gradient(135deg,#9F1239,#E11D48 55%,#FB7185);}
+  #mdash-modal .md3-k.c3ok{background:linear-gradient(135deg,#334155,#475569 60%,#64748B);}
+  #mdash-modal .md3-k.c4{background:linear-gradient(135deg,#0F172A,#1E293B 55%,#334155);}
+  #mdash-modal .md3-kno{font-size:13px;font-weight:900;opacity:.85;letter-spacing:.04em;}
+  #mdash-modal .md3-kl{font-size:12px;font-weight:700;opacity:.9;margin-top:10px;}
+  #mdash-modal .md3-kv{font-size:32px;font-weight:900;line-height:1.1;} #mdash-modal .md3-kv small{font-size:14px;margin-left:2px;opacity:.85;}
+  #mdash-modal .md3-ks{font-size:11px;opacity:.85;margin-top:2px;}
+  #mdash-modal .md3-shine{position:absolute;inset:0;background:radial-gradient(240px circle at var(--sx,30%) var(--sy,0%),rgba(255,255,255,.28),transparent 60%);pointer-events:none;}
+  #mdash-modal .md3-sec{font-size:14px;font-weight:900;color:#0F172A;margin:18px 2px 6px;}
+  #mdash-modal .md3-sec span{font-size:11.5px;color:#64748B;font-weight:600;margin-left:6px;}
+  #mdash-modal .md3-stage{position:relative;height:400px;perspective:1300px;perspective-origin:50% 35%;overflow:hidden;border-radius:20px;background:radial-gradient(ellipse at 50% 30%,#FFFFFF 0%,#EEF2F7 55%,#DCE3EE 100%);touch-action:pan-y;user-select:none;cursor:grab;}
+  #mdash-modal .md3-stage:active{cursor:grabbing;}
+  #mdash-modal .md3-floor{position:absolute;left:10%;right:10%;bottom:34px;height:46px;border-radius:50%;background:radial-gradient(ellipse,rgba(15,23,42,.18),transparent 70%);filter:blur(6px);}
+  #mdash-modal .md3-ring{position:absolute;left:50%;top:44%;width:0;height:0;transform-style:preserve-3d;}
+  #mdash-modal .md3-card{position:absolute;width:var(--cw,200px);left:calc(var(--cw,200px) / -2);top:-118px;box-sizing:border-box;border-radius:16px;padding:12px 13px 10px;color:#fff;backface-visibility:visible;box-shadow:0 14px 28px rgba(15,23,42,.28);transition:opacity .2s;cursor:pointer;}
+  #mdash-modal .md3-card.ok{background:linear-gradient(150deg,#1E3A8A 0%,#2563EB 45%,#0D9488 100%);}
+  #mdash-modal .md3-card.bad{background:linear-gradient(150deg,#7F1D1D 0%,#DC2626 50%,#F97316 100%);}
+  #mdash-modal .md3-card.none{background:linear-gradient(150deg,#1F2937 0%,#334155 55%,#64748B 100%);}
+  #mdash-modal .md3-card.front{box-shadow:0 22px 40px rgba(15,23,42,.38),0 0 0 2px rgba(255,255,255,.75) inset;}
+  #mdash-modal .md3-no{font-size:12px;font-weight:900;opacity:.75;}
+  #mdash-modal .md3-nm{font-size:12.5px;font-weight:800;line-height:1.3;height:33px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:2px;}
+  #mdash-modal .md3-val{font-size:28px;font-weight:900;margin-top:4px;} #mdash-modal .md3-val small{font-size:12px;margin-left:3px;opacity:.85;}
+  #mdash-modal .md3-rl{font-size:10.5px;opacity:.8;}
+  #mdash-modal .md3-spark{width:100%;height:auto;display:block;margin:6px 0 4px;}
+  #mdash-modal .md3-ft{display:flex;justify-content:space-between;gap:6px;font-size:10px;border-top:1px solid rgba(255,255,255,.25);padding-top:6px;}
+  #mdash-modal .md3-ft span{opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} #mdash-modal .md3-ft b{white-space:nowrap;}
+  #mdash-modal .md3-nav{position:absolute;top:44%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.9);box-shadow:0 4px 12px rgba(15,23,42,.18);font-size:22px;font-weight:700;color:#1E293B;cursor:pointer;z-index:300;}
+  #mdash-modal .md3-nav.l{left:10px;} #mdash-modal .md3-nav.r{right:10px;}
+  #mdash-modal .md3-play{position:absolute;right:12px;bottom:10px;z-index:300;border:none;background:#0F172A;color:#fff;border-radius:999px;padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;opacity:.85;}
+  #mdash-modal .md3-flow{position:relative;height:200px;perspective:1000px;transform-style:preserve-3d;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#B45309,#C2410C 50%,#9A3412);touch-action:pan-y;user-select:none;}
+  #mdash-modal .md3-fc{position:absolute;left:50%;top:22px;width:150px;box-sizing:border-box;border-radius:16px;padding:12px 10px;text-align:center;color:#fff;background:rgba(15,23,42,.88);box-shadow:0 12px 26px rgba(0,0,0,.35);transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s;cursor:pointer;}
+  #mdash-modal .md3-fc.on{background:#fff;color:#0F172A;}
+  #mdash-modal .md3-fc.on .md3-fr circle:nth-child(1){stroke:#E2E8F0;} #mdash-modal .md3-fc.on .md3-fr circle:nth-child(2){stroke:#16A34A;} #mdash-modal .md3-fc.on.y .md3-fr circle:nth-child(2){stroke:#F59E0B;} #mdash-modal .md3-fc.on.r .md3-fr circle:nth-child(2){stroke:#DC2626;} #mdash-modal .md3-fc.on .md3-fr text{fill:#0F172A;}
+  #mdash-modal .md3-fr{width:70px;height:70px;}
+  #mdash-modal .md3-fn{font-size:12.5px;font-weight:800;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #mdash-modal .md3-fs{font-size:10.5px;opacity:.75;margin-top:2px;}
+  #mdash-modal .md3-flow .md3-nav{top:50%;}
+  @media (max-width:520px){ #mdash-modal .md3-stage{height:330px;perspective:900px;} #mdash-modal .md3-card{top:-104px;padding:10px;} #mdash-modal .md3-val{font-size:22px;} #mdash-modal .md3-fc{width:120px;} }
   @media (prefers-reduced-motion:reduce){ #mdash-modal *{animation-duration:.01s !important;transition-duration:.01s !important;} }
   .cmp-banner-btn{width:100%;background:#EEF3FF;border:1px solid #C9DBFF;color:#155EEF;border-radius:12px;padding:11px 14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;-webkit-tap-highlight-color:transparent;}
   .cmp-banner-btn:active{background:#e2ecff;}
@@ -6467,6 +6515,90 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     return { rg, unit, vals, st, judged, out, kind, rep, repLab, worst, margin };
   }
 
+  /* ── 🎠 3D 보기: 번호 그라데이션 카드 · 측정 항목 3D 회전 링 · 설비 적합율 커버플로 ── */
+  let mdView = (()=>{ try{ return localStorage.getItem('md-view')||'3d'; }catch(e){ return '3d'; } })();
+  let md3dRAF = 0;
+  function mdSpark(pts, rg){
+    if(pts.length<2) return '';
+    const vs=pts.map(p=>p.v); let lo=Math.min(...vs), hi=Math.max(...vs); if(rg&&!rg.ac){ if(rg.min!=null) lo=Math.min(lo,rg.min); if(rg.max!=null) hi=Math.max(hi,rg.max); } if(hi===lo){ hi+=1; lo-=1; }
+    const W=180,H=44, X=i=>4+(W-8)*i/(pts.length-1), Y=v=>H-4-(v-lo)/(hi-lo)*(H-8);
+    const lim = rg&&!rg.ac ? [rg.min,rg.max].filter(v=>v!=null).map(v=>`<line x1="0" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(255,255,255,.55)" stroke-dasharray="3 3"/>`).join('') : '';
+    return `<svg viewBox="0 0 ${W} ${H}" class="md3-spark">${lim}<polyline points="${pts.map((p,i)=>X(i).toFixed(1)+','+Y(p.v).toFixed(1)).join(' ')}" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>${pts.filter(p=>p.over).map(p=>`<circle cx="${X(pts.indexOf(p))}" cy="${Y(p.v)}" r="3.2" fill="#FFD166" stroke="#7A1E00"/>`).join('')}</svg>`;
+  }
+  function md3dHTML(names, items, A, ctx){
+    const {judgedN,outN,okPct,prog,cg,cb,rowsN,judgedCats}=ctx;
+    let h='';
+    // 01~04 번호 카드 (마우스/손가락 따라 기울어짐)
+    const k=(no,cls,lab,val,unit,sub)=>`<div class="md3-k ${cls}" data-tilt><div class="md3-kno">${no}</div><div class="md3-kl">${lab}</div><div class="md3-kv"><span data-count="${val}">0</span><small>${unit}</small></div><div class="md3-ks">${sub}</div><i class="md3-shine"></i></div>`;
+    h+=`<div class="md3-ks4">
+      ${k('01','c1','측정 항목',names.length,'종',`측정값 ${rowsN}건`)}
+      ${k('02',okPct===100?'c2':'c2w','관리기준 충족',okPct==null?0:okPct,'%',`${judgedN-outN} / ${judgedN}건 기준 이내`)}
+      ${k('03',outN?'c3':'c3ok','기준 이탈',outN,'건',outN?'카드 링의 빨간 카드 확인':'이상 없음')}
+      ${k('04','c4','점검 진행률',prog==null?0:prog,'%',`판정 ${cg+cb}항목 · 부적합 ${cb}`)}
+    </div>`;
+    // 3D 회전 링
+    h+=`<div class="md3-sec">측정 항목 3D 링 <span>끌어서 돌리기 · 카드를 누르면 앞으로, 앞 카드를 누르면 상세 분석</span></div>
+      <div class="md3-stage" id="md3-stage"><div class="md3-floor"></div><div class="md3-ring" id="md3-ring">${names.map((n,i)=>{ const a=A[n]; const pts=mdSeries(items[n]); const cls=a.out.length?'bad':!a.rg?'none':'ok';
+        return `<div class="md3-card ${cls}" data-i="${i}" data-name="${escapeHtml(n)}"><div class="md3-no">${String(i+1).padStart(2,'0')}</div>
+          <div class="md3-nm">${escapeHtml(mdShort(n))}</div>
+          <div class="md3-val">${mdFmt(a.rep)}<small>${escapeHtml(a.unit)}</small></div>
+          <div class="md3-rl">${a.repLab} · ${a.vals.length}곳</div>
+          ${mdSpark(pts,a.rg)}
+          <div class="md3-ft"><span>${a.rg?'기준 '+escapeHtml(mdRangeText(a.rg,a.unit)):'기준 없음'}</span><b>${a.out.length?'이탈 '+a.out.length:a.rg?'정상':'-'}</b></div></div>`; }).join('')}</div>
+        <button class="md3-nav l" id="md3-prev" aria-label="이전">‹</button><button class="md3-nav r" id="md3-next" aria-label="다음">›</button>
+        <button class="md3-play" id="md3-play">⏸ 자동 회전</button></div>`;
+    // 설비 적합율 커버플로
+    if(judgedCats.length){
+      h+=`<div class="md3-sec">설비별 적합율 <span>좌우로 넘겨 보기</span></div><div class="md3-flow" id="md3-flow">${judgedCats.map((r,i)=>{ const p=Math.round(r.good/(r.good+r.bad)*100); const C=2*Math.PI*30;
+        return `<div class="md3-fc ${p>=90?'g':p>=70?'y':'r'}" data-i="${i}"><svg viewBox="0 0 76 76" class="md3-fr"><circle cx="38" cy="38" r="30" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="8"/><circle cx="38" cy="38" r="30" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(C*p/100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 38 38)"/><text x="38" y="44" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">${p}%</text></svg><div class="md3-fn">${escapeHtml(r.label)}</div><div class="md3-fs">적합 ${r.good} · 부적합 ${r.bad}${r.na?` · 미점검 ${r.na}`:''}</div></div>`; }).join('')}
+        <button class="md3-nav l" id="md3-fprev">‹</button><button class="md3-nav r" id="md3-fnext">›</button></div>`;
+    }
+    return h;
+  }
+  function mdInit3D(ov, names, items, A){
+    cancelAnimationFrame(md3dRAF);
+    // 번호 카드 기울기
+    ov.querySelectorAll('[data-tilt]').forEach(el=>{
+      el.addEventListener('pointermove',e=>{ const r=el.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5;
+        el.style.transform=`perspective(700px) rotateY(${x*16}deg) rotateX(${-y*14}deg) translateY(-4px)`; el.style.setProperty('--sx',(x+.5)*100+'%'); el.style.setProperty('--sy',(y+.5)*100+'%'); });
+      el.addEventListener('pointerleave',()=>{ el.style.transform=''; });
+    });
+    // 3D 링
+    const stage=ov.querySelector('#md3-stage'), ring=ov.querySelector('#md3-ring'); if(!stage||!ring) return;
+    const cards=[...ring.children]; const n=cards.length; const step=360/n;
+    const cw=stage.clientWidth<520?150:200;
+    let R=Math.max(cw*0.9, (cw/2)/Math.tan(Math.PI/Math.max(n,3))*1.08);
+    const narrow=stage.clientWidth<520; if(narrow) R=Math.min(R, 520); const maxR=stage.clientWidth*0.42; const sc=narrow?1:Math.min(1, maxR/R);
+    ring.style.setProperty('--cw',cw+'px');
+    cards.forEach((c,i)=>{ c.style.transform=`rotateY(${i*step}deg) translateZ(${R}px)`; });
+    let ang=0, target=null, auto=true, drag=null, vel=0, last=performance.now();
+    const front=()=>{ const k=Math.round(-ang/step); return ((k%n)+n)%n; };
+    const paint=()=>{ ring.style.transform=`translateZ(${-R*sc}px) scale(${sc}) rotateX(-9deg) rotateY(${ang}deg)`;
+      const f=front(); cards.forEach((c,i)=>{ let rel=((i*step+ang)%360+540)%360-180; const cos=Math.cos(rel*Math.PI/180); c.style.opacity=(0.25+0.75*Math.max(0,(cos+0.35)/1.35)).toFixed(2); c.style.filter=cos<0?'blur(1px) saturate(.7)':''; c.classList.toggle('front', i===f); }); };
+    const tick=t=>{ const dt=Math.min(50,t-last); last=t;
+      if(!document.body.contains(ring)){ return; }
+      if(drag){ } else if(target!=null){ const d=target-ang; if(Math.abs(d)<0.05){ ang=target; target=null; } else ang+=d*Math.min(1,dt/140); }
+      else if(Math.abs(vel)>0.01){ ang+=vel*dt; vel*=0.94; }
+      else if(auto){ ang-=dt*0.012; }
+      paint(); md3dRAF=requestAnimationFrame(tick); };
+    md3dRAF=requestAnimationFrame(tick);
+    const goTo=i=>{ let tgt=-i*step; const d=((tgt-ang)%360+540)%360-180; target=ang+d; };
+    stage.addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; drag={x:e.clientX,a:ang,t:performance.now(),moved:false}; vel=0; target=null; stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener('pointermove',e=>{ if(!drag) return; const dx=e.clientX-drag.x; if(Math.abs(dx)>4) drag.moved=true; const na=drag.a+dx*0.35; const now=performance.now(); vel=(na-ang)/Math.max(8,now-drag.t); drag.t=now; ang=na; });
+    stage.addEventListener('pointerup',e=>{ if(!drag) return; const moved=drag.moved; drag=null;
+      if(!moved){ const el=document.elementFromPoint(e.clientX,e.clientY); const c=el&&el.closest('.md3-card'); if(c){ const i=+c.dataset.i; if(i===front() && Math.abs(vel)<0.05){ const nm=c.dataset.name; mdOpenDetail(nm, items[nm], A[nm]); } else goTo(i); } } });
+    ov.querySelector('#md3-prev').onclick=()=>goTo((front()-1+n)%n);
+    ov.querySelector('#md3-next').onclick=()=>goTo((front()+1)%n);
+    const pb=ov.querySelector('#md3-play'); pb.onclick=()=>{ auto=!auto; pb.textContent=auto?'⏸ 자동 회전':'▶ 자동 회전'; };
+    // 이탈 항목이 있으면 그 카드를 앞으로
+    const bi=names.findIndex(nm=>A[nm].out.length); if(bi>0) setTimeout(()=>goTo(bi), 700);
+    // 커버플로
+    const flow=ov.querySelector('#md3-flow'); if(flow){ const fc=[...flow.querySelectorAll('.md3-fc')]; let c=Math.floor((fc.length-1)/2);
+      const lay=()=>{ const sm=flow.clientWidth<520; fc.forEach((el,i)=>{ const d=i-c, ad=Math.abs(d); el.style.transform=`translateX(calc(-50% + ${d*(sm?92:130)}px)) translateZ(${-ad*(sm?70:90)}px) rotateY(${Math.max(-55,Math.min(55,-d*28))}deg)`; el.style.zIndex=100-ad; el.style.opacity=ad>4?0:1-ad*0.13; el.classList.toggle('on',d===0); }); };
+      lay(); fc.forEach((el,i)=>el.onclick=()=>{ c=i; lay(); });
+      ov.querySelector('#md3-fprev').onclick=()=>{ c=Math.max(0,c-1); lay(); }; ov.querySelector('#md3-fnext').onclick=()=>{ c=Math.min(fc.length-1,c+1); lay(); };
+      let sx=null; flow.addEventListener('pointerdown',e=>{ sx=e.clientX; }); flow.addEventListener('pointerup',e=>{ if(sx==null) return; const dx=e.clientX-sx; sx=null; if(Math.abs(dx)>30){ c=Math.max(0,Math.min(fc.length-1,c+(dx<0?1:-1))); lay(); } }); }
+  }
   let mdData = null, mdBld = '전체', mdDetail = null;
   function showMeasureDashboard(data){
     if(data) { mdData=data; mdBld='전체'; mdDetail=null; }
@@ -6489,6 +6621,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     h+= outItems.length
       ? `<button class="mdv-alert bad" data-open="${escapeHtml(outItems[0])}">⚠️ 확인 필요 · ${outItems.map(n=>`${escapeHtml(mdShort(n))} ${A[n].out.length}건`).slice(0,3).join(' · ')}${outItems.length>3?` 외 ${outItems.length-3}개 항목`:''} <span>상세 ›</span></button>`
       : `<div class="mdv-alert ok">✅ 측정값 ${judgedN}건 모두 관리기준 이내${judgedN<rows.length?` · 기준 없는 값 ${rows.length-judgedN}건`:''}</div>`;
+    const alertH=h;
     // KPI
     const ring=(p,col)=>{ const C=2*Math.PI*30; return `<svg viewBox="0 0 76 76" class="mdv-ring"><circle cx="38" cy="38" r="30" class="mdv-rbg"/><circle cx="38" cy="38" r="30" class="mdv-rfg" style="stroke:${col};--len:${(C*(p||0)/100).toFixed(1)};--c:${C.toFixed(1)}" transform="rotate(-90 38 38)"/><text x="38" y="44" text-anchor="middle" class="mdv-rt">${p==null?'-':p+'%'}</text></svg>`; };
     h+=`<div class="mdv-kpis">
@@ -6521,11 +6654,14 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     if(judgedCats.length){
       h+=`<div class="mdv-sec">설비별 적합율 <span>판정된 ${judgedCats.length}종</span></div><div class="mdv-rings">${judgedCats.map(r=>{ const p=Math.round(r.good/(r.good+r.bad)*100); return `<div class="mdv-rc">${ring(p,p>=90?'#22B573':p>=70?'#F5A524':'#E5484D')}<div class="mdv-rn" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</div><div class="mdv-ks">적합 ${r.good} · 부적합 ${r.bad}</div></div>`; }).join('')}</div>`;
     }
+    if(mdView==='3d' && names.length){ h = alertH + md3dHTML(names, items, A, {judgedN,outN,okPct,prog,cg,cb,rowsN:rows.length,judgedCats}); }
+    cancelAnimationFrame(md3dRAF);
     ov.innerHTML = `<div class="mdv">
       <div class="mdv-top">
         <div class="mdv-brand"><div class="mdv-title">정보통신설비 측정 대시보드</div><div class="mdv-sub">${escapeHtml(D.title||'')}${D.date?' · '+escapeHtml(D.date):''}${D.type?' · '+escapeHtml(D.type):''} — <b>${escapeHtml(D.source||'')}</b></div></div>
         <div class="mdv-acts">
           ${bldAll.length>1?`<select class="mdv-sel" id="md-bld">${['전체',...bldAll].map(b=>`<option ${b===mdBld?'selected':''}>${escapeHtml(b)}</option>`).join('')}</select>`:''}
+          ${names.length?`<button class="mdv-btn view" id="md-view">${mdView==='3d'?'📊 차트 보기':'🎠 3D 보기'}</button>`:''}
           ${current?`<button class="mdv-btn ${D.source==='현재 점검'?'on':''}" id="md-cur">📋 현재 점검</button>`:''}
           <button class="mdv-btn" id="md-xlsx">📂 엑셀 불러오기</button>
           ${current?`<button class="mdv-btn" id="md-export">📈 엑셀 저장</button>`:''}
@@ -6537,7 +6673,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       <div class="mdv-dwrap" id="md-dwrap"></div></div>`;
     mdCountUp(ov.querySelector('.mdv-body'));
     requestAnimationFrame(()=>requestAnimationFrame(()=>ov.querySelector('.mdv')&&ov.querySelector('.mdv').classList.add('go')));
-    ov.querySelector('#md-close').onclick=()=>ov.remove();
+    ov.querySelector('#md-close').onclick=()=>{ cancelAnimationFrame(md3dRAF); ov.remove(); };
+    const vb=ov.querySelector('#md-view'); if(vb) vb.onclick=()=>{ mdView = mdView==='3d'?'chart':'3d'; try{ localStorage.setItem('md-view',mdView); }catch(e){} showMeasureDashboard(); };
+    if(mdView==='3d' && names.length) mdInit3D(ov, names, items, A);
     ov.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>mdOpenDetail(b.dataset.open, items[b.dataset.open], A[b.dataset.open]));
     const bs=ov.querySelector('#md-bld'); if(bs) bs.onchange=()=>{ mdBld=bs.value; showMeasureDashboard(); };
     const curBtn=ov.querySelector('#md-cur'); if(curBtn) curBtn.onclick=()=>{ showMeasureDashboard(mdRowsFromInspection(current)); };

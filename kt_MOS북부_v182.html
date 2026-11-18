@@ -210,112 +210,146 @@
   .ad-thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
   .ad-thumb{width:60px;height:60px;border-radius:8px;object-fit:cover;border:2px solid var(--bad);background:#f0f0f0;}
   /* 차수 비교 */
-  /* 📊 측정 대시보드 (다크 위젯형) */
-  #mdash-modal{background:rgba(3,8,20,.6);}
-  #mdash-modal .mdx{width:100%;max-width:1280px;height:100%;display:flex;flex-direction:column;background:radial-gradient(1200px 500px at 10% -10%,#16306B 0%,transparent 60%),radial-gradient(900px 500px at 110% 0%,#0B4F5C 0%,transparent 55%),#0A1328;color:#E2E8F0;font-family:inherit;}
-  #mdash-modal .mdx-top{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.15);flex-wrap:wrap;}
-  #mdash-modal .mdx-brand{display:flex;align-items:center;gap:10px;flex:1;min-width:220px;}
-  #mdash-modal .mdx-logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#2DD4BF,#2563EB);display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 0 18px rgba(45,212,191,.35);flex-shrink:0;}
-  #mdash-modal .mdx-title{font-size:17px;font-weight:800;letter-spacing:-.01em;color:#fff;}
-  #mdash-modal .mdx-sub{font-size:11.5px;color:#8EA0C2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  #mdash-modal .mdx-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
-  #mdash-modal .mdx-btn{background:rgba(255,255,255,.06);border:1px solid rgba(148,163,184,.25);color:#CBD5E1;border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;}
-  #mdash-modal .mdx-btn.on{background:linear-gradient(135deg,#0EA5A4,#2563EB);border-color:transparent;color:#fff;}
-  #mdash-modal .mdx-x{background:rgba(255,255,255,.08);border:none;color:#fff;width:36px;height:36px;border-radius:10px;font-size:15px;cursor:pointer;}
-  #mdash-modal .mdx-srcbar{font-size:11.5px;color:#8EA0C2;padding:6px 16px;background:rgba(255,255,255,.02);}
-  #mdash-modal .mdx-srcbar b{color:#5EEAD4;}
-  #mdash-modal .mdx-body{flex:1;overflow-y:auto;padding:12px 14px 40px;-webkit-overflow-scrolling:touch;}
-  #mdash-modal .mdx-card{background:linear-gradient(180deg,rgba(30,45,85,.72),rgba(17,28,58,.72));border:1px solid rgba(148,163,184,.14);border-radius:14px;padding:12px 14px;box-shadow:0 6px 18px rgba(0,0,0,.25);}
-  #mdash-modal .mdx-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
-  @media (max-width:900px){ #mdash-modal .mdx-kpis{grid-template-columns:repeat(2,1fr);} #mdash-modal .mdx-kpis>.mdx-kpi:first-child{grid-column:span 2;} }
-  #mdash-modal .mdx-kpi.alert{border-color:rgba(244,63,94,.55);box-shadow:0 0 0 1px rgba(244,63,94,.25),0 6px 18px rgba(0,0,0,.25);}
-  #mdash-modal .mdx-kring{display:flex;align-items:center;gap:10px;}
-  #mdash-modal .mdx-kl{font-size:11.5px;color:#8EA0C2;font-weight:700;}
-  #mdash-modal .mdx-kv{font-size:28px;font-weight:900;color:#fff;line-height:1.15;margin-top:2px;}
-  #mdash-modal .mdx-kv small{font-size:13px;font-weight:700;color:#8EA0C2;margin-left:2px;}
-  #mdash-modal .mdx-ks{font-size:11px;color:#8EA0C2;margin-top:2px;}
-  #mdash-modal .mdx-sec{font-size:14px;font-weight:800;color:#fff;margin:18px 2px 8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
-  #mdash-modal .mdx-sec span{font-size:11.5px;font-weight:600;color:#8EA0C2;}
-  #mdash-modal .mdx-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
-  #mdash-modal .mdx-tile{text-align:left;cursor:pointer;color:inherit;font:inherit;}
-  #mdash-modal .mdx-tile.on{border-color:#2DD4BF;box-shadow:0 0 0 1px #2DD4BF,0 0 22px rgba(45,212,191,.22);}
-  #mdash-modal .mdx-tile.alert{border-color:rgba(244,63,94,.6);}
-  #mdash-modal .mdx-tt{display:flex;justify-content:space-between;gap:6px;align-items:flex-start;font-size:12px;font-weight:700;color:#CBD5E1;}
-  #mdash-modal .mdx-tt>span:first-child{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.35;}
-  #mdash-modal .mdx-chip{font-size:10.5px;font-weight:800;border-radius:999px;padding:2px 8px;white-space:nowrap;}
-  #mdash-modal .mdx-chip.ok{background:rgba(45,212,191,.15);color:#5EEAD4;}
-  #mdash-modal .mdx-chip.bad{background:rgba(244,63,94,.18);color:#FDA4AF;}
-  #mdash-modal .mdx-chip.none{background:rgba(148,163,184,.15);color:#94A3B8;}
-  #mdash-modal .mdx-tv{font-size:24px;font-weight:900;color:#fff;margin:6px 0 8px;}
-  #mdash-modal .mdx-tv small{font-size:11px;color:#8EA0C2;font-weight:600;margin-left:4px;}
-  #mdash-modal .mdx-gauge{position:relative;height:12px;border-radius:6px;background:rgba(148,163,184,.14);}
-  #mdash-modal .mdx-band{position:absolute;top:0;bottom:0;background:rgba(45,212,191,.28);border-left:2px solid rgba(45,212,191,.8);border-right:2px solid rgba(45,212,191,.8);border-radius:3px;}
-  #mdash-modal .mdx-dot{position:absolute;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#E2E8F0;box-shadow:0 0 0 1.5px #0A1328;}
-  #mdash-modal .mdx-dot.bad{background:#F43F5E;width:10px;height:10px;margin:-5px 0 0 -5px;}
-  #mdash-modal .mdx-tf{display:flex;justify-content:space-between;gap:6px;font-size:10.5px;color:#8EA0C2;margin-top:6px;}
-  #mdash-modal .mdx-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
-  #mdash-modal .mdx-pill{background:rgba(255,255,255,.06);border:1px solid rgba(148,163,184,.25);color:#CBD5E1;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;}
-  #mdash-modal .mdx-pill.on{background:#2DD4BF;border-color:#2DD4BF;color:#062A2A;}
-  #mdash-modal .mdx-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;}
-  #mdash-modal .mdx-s12{grid-column:span 12;} #mdash-modal .mdx-s8{grid-column:span 8;} #mdash-modal .mdx-s7{grid-column:span 7;} #mdash-modal .mdx-s5{grid-column:span 5;} #mdash-modal .mdx-s4{grid-column:span 4;}
-  @media (max-width:900px){ #mdash-modal .mdx-grid>.mdx-card{grid-column:span 12;} }
-  #mdash-modal .mdx-ct{font-size:13px;font-weight:800;color:#fff;margin-bottom:10px;display:flex;justify-content:space-between;gap:6px;}
-  #mdash-modal .mdx-ct span{font-size:11px;color:#8EA0C2;font-weight:600;}
-  #mdash-modal .mdx-stats{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
-  @media (max-width:600px){ #mdash-modal .mdx-stats{grid-template-columns:repeat(4,1fr);} }
-  #mdash-modal .mdx-stats div{background:rgba(255,255,255,.04);border-radius:10px;padding:7px 6px;text-align:center;}
-  #mdash-modal .mdx-stats span{display:block;font-size:10.5px;color:#8EA0C2;}
-  #mdash-modal .mdx-stats b{font-size:14px;color:#fff;}
-  #mdash-modal .mdx-scroll{overflow-x:auto;}
-  #mdash-modal .mdx-hm{border-collapse:separate;border-spacing:4px;width:100%;font-size:12px;}
-  #mdash-modal .mdx-hm th{background:rgba(255,255,255,.06);color:#CBD5E1;font-weight:700;padding:6px 8px;border-radius:7px;white-space:nowrap;}
-  #mdash-modal .mdx-hm td{text-align:center;padding:9px 6px;border-radius:7px;font-weight:800;min-width:64px;color:#06202A;}
-  #mdash-modal .mdx-hm td small{display:block;font-size:9px;font-weight:600;opacity:.75;}
-  #mdash-modal .lv-ok{background:#2DD4BF;} #mdash-modal .lv-mid{background:#7DD3A8;} #mdash-modal .lv-near{background:#FBBF24;} #mdash-modal .lv-bad{background:#F43F5E;color:#fff !important;} #mdash-modal .lv-none{background:#64748B;color:#fff !important;} #mdash-modal .lv-blue{background:#60A5FA;}
-  #mdash-modal .lv-e{background:rgba(255,255,255,.03);color:#475569 !important;font-weight:400 !important;}
-  #mdash-modal .mdx-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:#8EA0C2;margin-top:8px;}
-  #mdash-modal .mdx-legend.col{flex-direction:column;gap:7px;font-size:12.5px;}
-  #mdash-modal .mdx-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
-  #mdash-modal .mdx-legend b{color:#fff;margin-left:4px;} #mdash-modal .mdx-legend em{font-style:normal;color:#8EA0C2;margin-left:4px;}
-  #mdash-modal .mdx-svg{width:100%;height:auto;display:block;}
-  #mdash-modal .mdx-hlist{display:flex;flex-direction:column;gap:6px;max-height:360px;overflow-y:auto;padding-right:2px;}
-  #mdash-modal .mdx-hrow{display:grid;grid-template-columns:minmax(96px,36%) 1fr 64px;gap:8px;align-items:center;font-size:12px;}
-  #mdash-modal .mdx-hn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#E2E8F0;font-weight:700;}
-  #mdash-modal .mdx-hn small{display:block;font-size:10px;color:#8EA0C2;font-weight:500;overflow:hidden;text-overflow:ellipsis;}
-  #mdash-modal .mdx-ht{position:relative;height:12px;background:rgba(148,163,184,.12);border-radius:6px;}
-  #mdash-modal .mdx-hb{position:absolute;top:0;bottom:0;border-radius:6px;}
-  #mdash-modal .mdx-hthr{position:absolute;top:-4px;bottom:-4px;border-left:2px dashed #F43F5E;z-index:1;}
-  #mdash-modal .mdx-hv{text-align:right;font-weight:800;color:#fff;}
-  #mdash-modal .mdx-hv small{font-size:9.5px;color:#8EA0C2;margin-left:1px;}
-  #mdash-modal .lv-t-bad{color:#FB7185 !important;}
-  #mdash-modal .mdx-hist{display:flex;gap:8px;height:170px;align-items:flex-end;margin-bottom:26px;border-bottom:1px solid rgba(148,163,184,.25);}
-  #mdash-modal .mdx-hc{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;position:relative;}
-  #mdash-modal .mdx-hcb{border-radius:5px 5px 0 0;min-height:2px;}
-  #mdash-modal .mdx-hcn{text-align:center;font-size:11px;font-weight:800;color:#E2E8F0;}
-  #mdash-modal .mdx-hcl{position:absolute;bottom:-22px;left:-8px;right:-8px;text-align:center;font-size:9.5px;color:#8EA0C2;white-space:nowrap;overflow:hidden;}
-  #mdash-modal .mdx-srow{display:grid;grid-template-columns:minmax(100px,32%) 1fr 46px;gap:8px;align-items:center;margin:7px 0;font-size:12px;}
-  #mdash-modal .mdx-sn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#E2E8F0;font-weight:700;}
-  #mdash-modal .mdx-st{display:flex;height:12px;border-radius:6px;overflow:hidden;background:rgba(148,163,184,.12);}
-  #mdash-modal .mdx-sp{font-weight:900;text-align:right;}
-  #mdash-modal .mdx-q{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid rgba(148,163,184,.25);color:#fff;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:8px;}
-  #mdash-modal .mdx-q::placeholder{color:#64748B;}
-  #mdash-modal .mdx-tbl{width:100%;border-collapse:collapse;font-size:12px;min-width:620px;}
-  #mdash-modal .mdx-tbl th{background:rgba(255,255,255,.06);color:#CBD5E1;font-weight:700;padding:8px;text-align:left;white-space:nowrap;position:sticky;top:0;}
-  #mdash-modal .mdx-tbl td{padding:7px 8px;border-top:1px solid rgba(148,163,184,.1);color:#CBD5E1;}
-  #mdash-modal .mdx-tbl td b{color:#fff;}
-  #mdash-modal .mdx-tbl tr.bad td{background:rgba(244,63,94,.12);} #mdash-modal .mdx-tbl tr.bad td b{color:#FB7185;}
-  @media (max-width:600px){
-    #mdash-modal .mdx-tiles{grid-template-columns:1fr 1fr;gap:8px;}
-    #mdash-modal .mdx-tile{padding:10px;}
-    #mdash-modal .mdx-tt{flex-direction:column;gap:4px;font-size:11px;}
-    #mdash-modal .mdx-tv{font-size:19px;margin:4px 0 6px;}
-    #mdash-modal .mdx-tv small{display:block;margin:0;font-size:10px;}
-    #mdash-modal .mdx-tf{flex-direction:column;gap:1px;font-size:9.5px;}
-    #mdash-modal .mdx-kv{font-size:24px;}
-    #mdash-modal .mdx-acts{width:100%;} #mdash-modal .mdx-btn{flex:1;padding:8px 4px;font-size:11.5px;white-space:nowrap;}
-  }
-  #mdash-modal .mdx-empty{text-align:center;color:#8EA0C2;font-size:13px;line-height:1.75;margin-top:12px;padding:26px 16px;}
-  #mdash-modal .mdx-empty b{color:#5EEAD4;}
+  /* 📊 측정 대시보드 (차트형) */
+  #mdash-modal{background:rgba(15,23,42,.45);}
+  #mdash-modal .mdv{position:relative;width:100%;max-width:1320px;height:100%;display:flex;flex-direction:column;background:#F4F6FA;color:#1E293B;overflow:hidden;}
+  #mdash-modal .mdv-top{display:flex;align-items:center;gap:10px;padding:14px 16px 12px;background:#fff;border-bottom:1px solid #E2E8F0;flex-wrap:wrap;}
+  #mdash-modal .mdv-brand{flex:1;min-width:220px;}
+  #mdash-modal .mdv-title{font-size:19px;font-weight:900;color:#0F172A;letter-spacing:-.02em;}
+  #mdash-modal .mdv-sub{font-size:11.5px;color:#64748B;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #mdash-modal .mdv-sub b{color:#0B7B74;}
+  #mdash-modal .mdv-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  #mdash-modal .mdv-sel{border:1px solid #CBD5E1;border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:700;background:#fff;color:#1E293B;}
+  #mdash-modal .mdv-btn{background:#fff;border:1px solid #CBD5E1;color:#334155;border-radius:9px;padding:8px 11px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  #mdash-modal .mdv-btn.on{background:#1E3A8A;border-color:#1E3A8A;color:#fff;}
+  #mdash-modal .mdv-x{background:#F1F5F9;border:none;color:#334155;width:36px;height:36px;border-radius:10px;font-size:15px;cursor:pointer;flex-shrink:0;}
+  #mdash-modal .mdv-body{flex:1;overflow-y:auto;padding:12px 14px 40px;-webkit-overflow-scrolling:touch;}
+  #mdash-modal .mdv-alert{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:800;margin-bottom:10px;border:1px solid;cursor:default;}
+  #mdash-modal .mdv-alert.ok{background:#ECFDF3;border-color:#ABEFC6;color:#067647;}
+  #mdash-modal .mdv-alert.bad{background:#FFF6ED;border-color:#F9DBAF;color:#B93815;cursor:pointer;animation:mdvPulse 2s ease-in-out infinite;}
+  #mdash-modal .mdv-alert span{margin-left:auto;font-size:12px;}
+  @keyframes mdvPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,165,36,.0);}50%{box-shadow:0 0 0 5px rgba(245,165,36,.18);}}
+  #mdash-modal .mdv-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+  @media (max-width:760px){ #mdash-modal .mdv-kpis{grid-template-columns:1fr 1fr;} }
+  #mdash-modal .mdv-k{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:12px 14px;box-shadow:0 1px 2px rgba(15,23,42,.04);}
+  #mdash-modal .mdv-k.ring{display:flex;align-items:center;gap:10px;}
+  #mdash-modal .mdv-k.warn{border-color:#FDA29B;background:#FFFBFA;}
+  #mdash-modal .mdv-kl{font-size:11.5px;color:#64748B;font-weight:700;}
+  #mdash-modal .mdv-kv{font-size:28px;font-weight:900;color:#0F172A;line-height:1.15;}
+  #mdash-modal .mdv-kv small{font-size:13px;color:#64748B;margin-left:2px;}
+  #mdash-modal .mdv-ks{font-size:11px;color:#64748B;margin-top:2px;}
+  #mdash-modal .mdv-ring{width:62px;height:62px;flex-shrink:0;}
+  #mdash-modal .mdv-rbg{fill:none;stroke:#EEF2F6;stroke-width:9;}
+  #mdash-modal .mdv-rfg{fill:none;stroke-width:9;stroke-linecap:round;stroke-dasharray:0 var(--c);transition:stroke-dasharray 1.1s cubic-bezier(.2,.8,.2,1);}
+  #mdash-modal .mdv.go .mdv-rfg{stroke-dasharray:var(--len) var(--c);}
+  #mdash-modal .mdv-rt{font-size:15px;font-weight:900;fill:#0F172A;}
+  #mdash-modal .mdv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+  @media (max-width:640px){ #mdash-modal .mdv-grid{grid-template-columns:minmax(0,1fr);} #mdash-modal .mdv-body{padding:10px 10px 40px;} }
+  #mdash-modal .mdv-card{display:flex;flex-direction:column;text-align:left;font:inherit;color:inherit;background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:12px 14px 10px;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.04);opacity:0;transform:translateY(10px);animation:mdvIn .5s ease forwards;transition:box-shadow .2s,border-color .2s,transform .2s;}
+  #mdash-modal .mdv-card{min-width:0;max-width:100%;overflow:hidden;box-sizing:border-box;}
+  #mdash-modal .mdv-grid>*{min-width:0;}
+  #mdash-modal .mdv-card:hover{box-shadow:0 8px 22px rgba(15,23,42,.10);border-color:#93C5FD;}
+  #mdash-modal .mdv-card.bad{border-color:#FDA29B;box-shadow:0 0 0 1px #FECDCA;}
+  @keyframes mdvIn{to{opacity:1;transform:none;}}
+  #mdash-modal .mdv-ch{display:flex;align-items:center;gap:8px;}
+  #mdash-modal .mdv-ic{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;font-weight:900;color:#fff;flex-shrink:0;}
+  #mdash-modal .mdv-ic.ok{background:#22B573;} #mdash-modal .mdv-ic.bad{background:#F5A524;animation:mdvBlink 1.4s infinite;} #mdash-modal .mdv-ic.none{background:#94A3B8;}
+  @keyframes mdvBlink{50%{transform:scale(1.18);}}
+  #mdash-modal .mdv-ct{flex:1;min-width:0;font-size:14px;font-weight:800;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #mdash-modal .mdv-cv b{font-size:24px;font-weight:900;color:#0F172A;}
+  #mdash-modal .mdv-card.bad .mdv-cv b{color:#D92D20;}
+  #mdash-modal .mdv-cv small{font-size:12px;color:#475569;margin-left:2px;font-weight:700;}
+  #mdash-modal .mdv-cs{display:flex;justify-content:space-between;gap:8px;font-size:10.5px;color:#64748B;margin:2px 0 6px 28px;}
+  #mdash-modal .mdv-chart{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:150px;}
+  #mdash-modal .mdv-cf{display:flex;justify-content:space-between;font-size:11px;color:#64748B;border-top:1px dashed #E2E8F0;padding-top:7px;margin-top:6px;}
+  #mdash-modal .mdv-cf .ok{color:#067647;font-weight:800;} #mdash-modal .mdv-cf .bad{color:#D92D20;font-weight:800;}
+  #mdash-modal .mdv-gv{text-align:center;font-size:13px;font-weight:900;color:#067647;background:#ECFDF3;border-radius:8px;padding:3px 10px;margin:-6px auto 0;width:max-content;}
+  #mdash-modal .mdv-gv.bad{color:#B42318;background:#FEF3F2;}
+  #mdash-modal .mdv-gv span{font-size:10.5px;font-weight:700;opacity:.75;margin-left:3px;}
+  #mdash-modal .mdv-mini{margin-top:4px;}
+  #mdash-modal .mdv-sec{font-size:14px;font-weight:900;color:#0F172A;margin:20px 2px 10px;}
+  #mdash-modal .mdv-sec span{font-size:11.5px;color:#64748B;font-weight:600;margin-left:6px;}
+  #mdash-modal .mdv-rings{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;}
+  #mdash-modal .mdv-rc{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:10px;text-align:center;}
+  #mdash-modal .mdv-rc .mdv-ring{width:70px;height:70px;}
+  #mdash-modal .mdv-rn{font-size:12px;font-weight:800;color:#0F172A;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #mdash-modal .mdv-empty{background:#fff;border:1px dashed #CBD5E1;border-radius:14px;padding:26px 16px;text-align:center;color:#64748B;font-size:13px;line-height:1.75;}
+  /* 차트 공통 */
+  #mdash-modal .mdl-svg{width:100%;height:auto;display:block;overflow:visible;}
+  #mdash-modal .mdl-grid{stroke:#EEF2F6;stroke-width:1;}
+  #mdash-modal .mdl-yl{font-size:9.5px;fill:#94A3B8;text-anchor:end;}
+  #mdash-modal .mdl-xl{font-size:9.5px;fill:#64748B;text-anchor:middle;}
+  #mdash-modal .mdl-band{fill:#DCFCE7;opacity:.75;}
+  #mdash-modal .mdl-lim{stroke:#16A34A;stroke-width:1.3;stroke-dasharray:5 4;}
+  #mdash-modal .mdl-limt{font-size:9.5px;fill:#15803D;font-weight:700;text-anchor:end;}
+  #mdash-modal .mdl-area{fill:rgba(59,130,246,.10);opacity:0;animation:mdvFade .8s .6s forwards;}
+  #mdash-modal .mdl-path{fill:none;stroke:#2563EB;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:mdvDraw 1.2s .15s ease-out forwards;}
+  #mdash-modal .mdl-dot{fill:#fff;stroke:#2563EB;stroke-width:1.8;opacity:0;animation:mdvPop .35s ease forwards;}
+  #mdash-modal .mdl-dot.over{fill:#F04438;stroke:#fff;stroke-width:1.5;}
+  #mdash-modal .mdl-call rect{fill:#fff;stroke:#F04438;stroke-width:1.2;} #mdash-modal .mdl-call text{font-size:10.5px;font-weight:800;fill:#B42318;text-anchor:middle;}
+  @keyframes mdvDraw{to{stroke-dashoffset:0;}} @keyframes mdvFade{to{opacity:1;}} @keyframes mdvPop{0%{opacity:0;transform:scale(.2);transform-origin:center;transform-box:fill-box;}100%{opacity:1;transform:scale(1);transform-box:fill-box;transform-origin:center;}}
+  #mdash-modal .mdg-svg{width:100%;max-width:250px;height:auto;display:block;margin:0 auto;overflow:visible;}
+  #mdash-modal .mdg-bg{fill:none;stroke:#EEF2F6;stroke-width:16;stroke-linecap:round;}
+  #mdash-modal .mdg-ok{fill:none;stroke:#DCFCE7;stroke-width:16;}
+  #mdash-modal .mdg-val{fill:none;stroke-width:16;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:mdvDraw 1.3s .2s cubic-bezier(.2,.8,.2,1) forwards;}
+  #mdash-modal .mdg-lim{stroke:#F04438;stroke-width:3;}
+  #mdash-modal .mdg-tk{stroke:#CBD5E1;stroke-width:1.2;} #mdash-modal .mdg-tl{font-size:9.5px;fill:#64748B;text-anchor:middle;}
+  #mdash-modal .mdg-needle{transform-origin:110px 104px;transform:rotate(-90deg);animation:mdvNeedle 1.4s .2s cubic-bezier(.3,1.4,.4,1) forwards;}
+  #mdash-modal .mdg-needle line{stroke:#0F172A;stroke-width:3.2;stroke-linecap:round;} #mdash-modal .mdg-needle circle{fill:#fff;stroke:#0F172A;stroke-width:3;}
+  @keyframes mdvNeedle{to{transform:rotate(var(--to));}}
+  #mdash-modal .mdr{position:relative;padding:22px 6px 4px;}
+  #mdash-modal .mdr-lab{position:absolute;top:0;text-align:center;font-size:10px;font-weight:800;color:#15803D;border-bottom:1.5px dashed #16A34A;padding-bottom:2px;white-space:nowrap;}
+  #mdash-modal .mdr-track{position:relative;height:14px;border-radius:7px;background:#E5E7EB;margin-top:6px;}
+  #mdash-modal .mdr-band{position:absolute;top:0;bottom:0;background:#BBF7D0;border-radius:7px;}
+  #mdash-modal .mdr-dot{position:absolute;top:50%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:#64748B;opacity:0;animation:mdvFade .4s forwards;}
+  #mdash-modal .mdr-dot.over{background:#F04438;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;}
+  #mdash-modal .mdr-mk{position:absolute;top:50%;left:0;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:#fff;border:4px solid #2563EB;box-shadow:0 2px 6px rgba(37,99,235,.35);transition:left 1.2s cubic-bezier(.2,.8,.2,1);}
+  #mdash-modal .mdv.go .mdr-mk, #mdash-modal .mdd .mdr-mk{left:var(--x);}
+  #mdash-modal .mdr-mk.over{border-color:#F04438;}
+  #mdash-modal .mdr-mk em{position:absolute;top:22px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;font-weight:900;color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:7px;padding:1px 7px;white-space:nowrap;}
+  #mdash-modal .mdr-ticks{position:relative;height:30px;margin-top:2px;}
+  #mdash-modal .mdr-ticks span{position:absolute;top:22px;transform:translateX(-50%);font-size:9.5px;color:#94A3B8;}
+  /* 상세 패널 */
+  #mdash-modal .mdv-dwrap{position:absolute;inset:0;pointer-events:none;}
+  #mdash-modal .mdv-dwrap.show{pointer-events:auto;}
+  #mdash-modal .mdd-bg{position:absolute;inset:0;background:rgba(15,23,42,.35);opacity:0;transition:opacity .25s;}
+  #mdash-modal .mdv-dwrap.show .mdd-bg{opacity:1;}
+  #mdash-modal .mdd{position:absolute;top:0;right:0;bottom:0;width:min(500px,100%);background:#fff;display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(15,23,42,.18);transform:translateX(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);}
+  #mdash-modal .mdv-dwrap.show .mdd{transform:none;}
+  @media (max-width:640px){ #mdash-modal .mdd{top:auto;height:92%;width:100%;border-radius:18px 18px 0 0;transform:translateY(105%);} }
+  #mdash-modal .mdd-h{display:flex;align-items:flex-start;gap:10px;padding:16px 16px 10px;border-bottom:1px solid #EEF2F6;}
+  #mdash-modal .mdd-h>div{flex:1;min-width:0;}
+  #mdash-modal .mdd-t{font-size:18px;font-weight:900;color:#0F172A;}
+  #mdash-modal .mdd-s{font-size:12px;color:#64748B;margin-top:2px;}
+  #mdash-modal .mdd-body{flex:1;overflow-y:auto;padding:12px 14px;}
+  #mdash-modal .mdd-box3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+  #mdash-modal .mdd-box3>div{border-radius:12px;padding:10px;}
+  #mdash-modal .mdd-box3 span{display:block;font-size:11px;font-weight:700;color:#475569;}
+  #mdash-modal .mdd-box3 b{font-size:21px;font-weight:900;color:#0F172A;}
+  #mdash-modal .mdd-box3 b small{font-size:11px;margin-left:2px;color:#475569;}
+  #mdash-modal .mdd-box3 .b1{background:#EFF6FF;} #mdash-modal .mdd-box3 .b2{background:#ECFDF3;} #mdash-modal .mdd-box3 .b2 b{color:#067647;}
+  #mdash-modal .mdd-box3 .b3{background:#F0FDF4;} #mdash-modal .mdd-box3 .b3 b{color:#15803D;}
+  #mdash-modal .mdd-box3 .b3.bad{background:#FFF6ED;} #mdash-modal .mdd-box3 .b3.bad b{color:#C4320A;}
+  #mdash-modal .mdd-card{border:1px solid #E2E8F0;border-radius:14px;padding:12px;margin-bottom:10px;}
+  #mdash-modal .mdd-ct{font-size:13px;font-weight:800;color:#0F172A;margin-bottom:8px;}
+  #mdash-modal .mdd-note{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.55;color:#334155;background:#F8FAFC;border-radius:10px;padding:8px 10px;margin-bottom:6px;}
+  #mdash-modal .mdd-note i{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:900;color:#fff;background:#64748B;margin-top:1px;}
+  #mdash-modal .mdd-note.ok{background:#ECFDF3;} #mdash-modal .mdd-note.ok i{background:#22B573;}
+  #mdash-modal .mdd-note.bad{background:#FFF6ED;} #mdash-modal .mdd-note.bad i{background:#F5A524;}
+  #mdash-modal .mdd-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px;}
+  @media (max-width:480px){ #mdash-modal .mdd-stats{grid-template-columns:repeat(3,1fr);} }
+  #mdash-modal .mdd-stats div{background:#F8FAFC;border-radius:10px;padding:7px 4px;text-align:center;}
+  #mdash-modal .mdd-stats span{display:block;font-size:10.5px;color:#64748B;} #mdash-modal .mdd-stats b{font-size:13.5px;color:#0F172A;}
+  #mdash-modal .mdd-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;}
+  #mdash-modal .mdd-tbl th{background:#F1F5F9;color:#475569;font-weight:700;text-align:left;padding:7px 10px;}
+  #mdash-modal .mdd-tbl td{padding:7px 10px;border-top:1px solid #EEF2F6;color:#334155;}
+  #mdash-modal .mdd-tbl tr.lv-bad td{background:#FEF3F2;}
+  #mdash-modal .mdd-st{white-space:nowrap;font-size:10.5px;font-weight:800;border-radius:999px;padding:2px 8px;}
+  #mdash-modal .mdd-st.ok{background:#ECFDF3;color:#067647;} #mdash-modal .mdd-st.mid{background:#F0FDF4;color:#15803D;} #mdash-modal .mdd-st.near{background:#FFFAEB;color:#B54708;} #mdash-modal .mdd-st.bad{background:#FEE4E2;color:#B42318;} #mdash-modal .mdd-st.none{background:#F1F5F9;color:#64748B;}
+  #mdash-modal .mdd-f{display:flex;gap:8px;padding:10px 14px;border-top:1px solid #EEF2F6;}
+  #mdash-modal .mdd-close{flex:1;background:#0F172A;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;}
+  @media (max-width:640px){ #mdash-modal .mdv-acts{width:100%;} #mdash-modal .mdv-btn{flex:1;padding:8px 4px;font-size:11.5px;} #mdash-modal .mdv-title{font-size:17px;} }
+  @media (prefers-reduced-motion:reduce){ #mdash-modal *{animation-duration:.01s !important;transition-duration:.01s !important;} }
   .cmp-banner-btn{width:100%;background:#EEF3FF;border:1px solid #C9DBFF;color:#155EEF;border-radius:12px;padding:11px 14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;-webkit-tap-highlight-color:transparent;}
   .cmp-banner-btn:active{background:#e2ecff;}
   .prev-badge{display:block;font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;margin-top:6px;line-height:1.4;background:var(--bad-weak);color:var(--bad);border:1px solid #F3C2C7;}
@@ -6358,152 +6392,202 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
   function mdRing(pct, col, size){ const C=2*Math.PI*40; const p=pct==null?0:Math.max(0,Math.min(100,pct)); size=size||74;
     return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" class="mdx-ring"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="11"/><circle cx="50" cy="50" r="40" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C*p/100} ${C}" transform="rotate(-90 50 50)"/><text x="50" y="57" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">${pct==null?'-':pct+'%'}</text></svg>`; }
 
-  let mdData = null, mdItem = null, mdBld = '전체', mdQuery = '';
+  /* ── 대시보드 차트 도우미 (SVG, 외부 라이브러리 없음) ── */
+  function mdNice(lo, hi, nt){ nt=nt||6; if(!(hi>lo)){ hi=lo+1; } const span=hi-lo, p=Math.pow(10,Math.floor(Math.log10(span/Math.max(2,nt-2)))); const st=[1,2,2.5,5,10,20].map(x=>x*p).find(x=>span/x<=nt)||p*20;
+    return { lo:Math.floor(lo/st)*st, hi:Math.ceil(hi/st)*st, step:st }; }
+  function mdTick(v){ return (Math.abs(v)<1e-9?0:+v.toFixed(2)).toString(); }
+  /* 측정 위치 순서대로 점 목록 (건물 → 층 → 위치) */
+  function mdSeries(list){
+    const s=list.filter(r=>r.value!=null).slice().sort((a,b)=>String(a.bld).localeCompare(String(b.bld),'ko') || ((a.floor??-9999)-(b.floor??-9999)) || String(a.loc).localeCompare(String(b.loc),'ko'));
+    const multiB=new Set(s.map(r=>r.bld)).size>1;
+    return s.map(r=>({ r, v:r.value, label:(multiB?String(r.bld).slice(0,2)+' ':'')+(r.floor==null?'-':mdFloorLabel(r.floor)), over:mdIsOver(r,r._rg) }));
+  }
+  /* 꺾은선(영역) 차트 — 관리기준 범위는 초록 띠, 기준선은 점선, 이탈 점은 주황 */
+  function mdLineSVG(pts, rg, unit, o){
+    o=o||{}; const W=o.W||360, H=o.H||170, L=o.big?44:36, R=12, T=o.big?22:16, B=H-(o.big?30:24);
+    if(!pts.length) return '';
+    const vs=pts.map(p=>p.v); const ext=vs.slice(); if(rg&&!rg.ac){ if(rg.min!=null) ext.push(rg.min); if(rg.max!=null) ext.push(rg.max); }
+    let lo=Math.min(...ext), hi=Math.max(...ext); const pad=(hi-lo||Math.abs(hi)||1)*0.12; const nc=mdNice(lo-pad, hi+pad, H<120?3:(o.big?7:5)); lo=nc.lo; hi=nc.hi;
+    const X=i=> pts.length===1 ? (L+W-R)/2 : L+(W-L-R)*i/(pts.length-1); const Y=v=>B-(v-lo)/(hi-lo)*(B-T);
+    let g=''; for(let v=lo; v<=hi+1e-9; v+=nc.step){ g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" class="mdl-grid"/><text x="${L-6}" y="${Y(v)+3.5}" class="mdl-yl">${mdTick(v)}</text>`; }
+    let band='', lines='';
+    if(rg && !rg.ac){ const a=rg.min!=null?Math.max(rg.min,lo):lo, b=rg.max!=null?Math.min(rg.max,hi):hi;
+      if(b>a) band=`<rect x="${L}" y="${Y(b)}" width="${W-L-R}" height="${Y(a)-Y(b)}" class="mdl-band"/>`;
+      [['max',rg.max],['min',rg.min]].forEach(([k,v])=>{ if(v==null||v<lo||v>hi) return; lines+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" class="mdl-lim"/><text x="${W-R-2}" y="${Y(v)+(k==='max'?-5:12)}" class="mdl-limt">관리기준 ${mdTick(v)}${escapeHtml(unit||'')}</text>`; }); }
+    const d=pts.map((p,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
+    const area=pts.length>1?`<path d="${d} L${X(pts.length-1)},${B} L${X(0)},${B} Z" class="mdl-area"/>`:'';
+    const step=Math.max(1,Math.ceil(pts.length/(o.big?14:7)));
+    const xl=pts.map((p,i)=> (i%step===0||i===pts.length-1)?`<text x="${X(i)}" y="${B+(o.big?16:14)}" class="mdl-xl">${escapeHtml(p.label)}</text>`:'').join('');
+    const dots=pts.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p.v)}" r="${p.over?(o.big?5.5:4.5):(o.big?4:3.2)}" class="mdl-dot ${p.over?'over':''}" style="animation-delay:${(0.5+i*0.6/pts.length).toFixed(2)}s"><title>${escapeHtml(p.r.loc)} ${escapeHtml(String(p.r.raw))}${escapeHtml(unit||'')}</title></circle>`).join('');
+    let callout=''; if(o.big){ const wi=pts.reduce((bi,p,i)=>p.over&&!pts[bi].over?i:bi,0); const wp=pts.find(p=>p.over)?pts[wi]:null;
+      if(wp){ const cx=Math.min(Math.max(X(wi),L+30),W-R-30), cy=Math.max(Y(wp.v)-14,T); callout=`<g class="mdl-call"><rect x="${cx-30}" y="${cy-16}" width="60" height="18" rx="5"/><text x="${cx}" y="${cy-3.5}">${escapeHtml(String(wp.r.raw))}${escapeHtml(unit||'')}</text></g>`; } }
+    return `<svg viewBox="0 0 ${W} ${H}" class="mdl-svg">${band}${g}${lines}${area}<path d="${d}" pathLength="1" class="mdl-path"/>${dots}${xl}${callout}</svg>`;
+  }
+  /* 반원 게이지 — 상한형(이하) 항목: 바늘이 가장 나쁜 값(최대)을 가리킨다 */
+  function mdGaugeSVG(val, rg, unit){
+    const lim=rg&&rg.max!=null?rg.max:null; let lo=Math.min(0,val,lim!=null?lim:0), hi=Math.max(lim!=null?lim*1.25:val*1.3, val*1.08); const nc=mdNice(lo,hi); lo=nc.lo; hi=nc.hi;
+    const cx=110, cy=104, r=82; const A=v=>Math.PI*(1-(Math.min(Math.max(v,lo),hi)-lo)/(hi-lo)); const P=(v,rr)=>[cx+rr*Math.cos(A(v)), cy-rr*Math.sin(A(v))];
+    const arc=(a,b,rr)=>{ const p1=P(a,rr), p2=P(b,rr); return `M${p1[0].toFixed(1)},${p1[1].toFixed(1)} A${rr},${rr} 0 0 1 ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`; };
+    const lv=mdLevel(val,rg); const col={ok:'#22B573',mid:'#7CC96B',near:'#F5A524',bad:'#F04438',none:'#3B82F6'}[lv];
+    let ticks=''; for(let v=lo; v<=hi+1e-9; v+=nc.step){ const a=P(v,r+12), b=P(v,r-14); const t=P(v,r+24); ticks+=`<line x1="${a[0]}" y1="${a[1]}" x2="${P(v,r+4)[0]}" y2="${P(v,r+4)[1]}" class="mdg-tk"/><text x="${t[0]}" y="${t[1]+3}" class="mdg-tl">${mdTick(v)}</text>`; }
+    const limMark = lim!=null && lim<=hi ? (()=>{ const a=P(lim,r-12), b=P(lim,r+12); return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" class="mdg-lim"/>`; })() : '';
+    const okArc = lim!=null ? `<path d="${arc(lo,Math.min(lim,hi),r)}" class="mdg-ok"/>` : '';
+    const ang=(1-(Math.min(Math.max(val,lo),hi)-lo)/(hi-lo))*180; // 180=왼쪽, 0=오른쪽
+    return `<svg viewBox="0 0 220 128" class="mdg-svg"><path d="${arc(lo,hi,r)}" class="mdg-bg"/>${okArc}<path d="${arc(lo,val,r)}" pathLength="1" class="mdg-val" style="stroke:${col}"/>${limMark}${ticks}
+      <g class="mdg-needle" style="--to:${(90-ang).toFixed(1)}deg"><line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy-r+16}" /><circle cx="${cx}" cy="${cy}" r="7"/></g></svg>`;
+  }
+  /* 범위 게이지 — 하한~상한 띠 위에 위치별 점과 평균 표시 */
+  function mdRangeHTML(pts, rg, unit, avg){
+    const vs=pts.map(p=>p.v); const ext=vs.concat([rg.min,rg.max].filter(v=>v!=null)); let lo=Math.min(...ext), hi=Math.max(...ext); const pad=(hi-lo||1)*0.25; const nc=mdNice(lo-pad,hi+pad); lo=nc.lo; hi=nc.hi;
+    const X=v=>((v-lo)/(hi-lo)*100).toFixed(2);
+    let ticks=''; for(let v=lo; v<=hi+1e-9; v+=nc.step) ticks+=`<span style="left:${X(v)}%">${mdTick(v)}</span>`;
+    const band=`<i class="mdr-band" style="left:${X(rg.min!=null?rg.min:lo)}%;width:${X(rg.max!=null?rg.max:hi)-X(rg.min!=null?rg.min:lo)}%"></i>`;
+    const dots=pts.map((p,i)=>`<b class="mdr-dot ${p.over?'over':''}" style="left:${X(p.v)}%;animation-delay:${(0.4+i*0.5/pts.length).toFixed(2)}s" title="${escapeHtml(p.r.loc)} ${escapeHtml(String(p.r.raw))}${escapeHtml(unit)}"></b>`).join('');
+    const ov=mdIsOver({value:avg},rg);
+    return `<div class="mdr"><div class="mdr-lab" style="left:${X(rg.min!=null?rg.min:lo)}%;width:${X(rg.max!=null?rg.max:hi)-X(rg.min!=null?rg.min:lo)}%">관리기준 ${escapeHtml(mdRangeText(rg,unit))}</div>
+      <div class="mdr-track">${band}${dots}<div class="mdr-mk ${ov?'over':''}" style="--x:${X(avg)}%"><em>${mdFmt(avg)}${escapeHtml(unit)}</em></div></div><div class="mdr-ticks">${ticks}</div></div>`;
+  }
+  /* 숫자 올라가는 효과 */
+  function mdCountUp(root){
+    root.querySelectorAll('[data-count]').forEach(el=>{ const to=+el.dataset.count, dec=+(el.dataset.dec||0); if(isNaN(to)) return; const t0=performance.now(), dur=900;
+      const f=t=>{ const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3); el.textContent=(to*e).toFixed(dec); if(k<1) requestAnimationFrame(f); else el.textContent=(+to.toFixed(dec)).toString(); }; requestAnimationFrame(f); });
+  }
+  /* 한 항목 분석 정보 */
+  function mdAnalyze(list){
+    const rg=list[0]._rg, unit=(list.find(r=>r.unit)||{}).unit||'';
+    const vals=list.filter(r=>r.value!=null); const st=mdStats(vals.map(r=>r.value));
+    const judged=vals.filter(r=>mdApplies(r.value,rg)); const out=judged.filter(r=>mdIsOver(r,rg));
+    let kind='line'; if(rg&&!rg.ac&&rg.min!=null&&rg.max!=null) kind='range'; else if(rg&&!rg.ac&&rg.max!=null) kind='gauge';
+    // 대표값: 상한형=최대, 하한형=최소, 범위형=평균
+    let rep=st?st.avg:null, repLab='평균';
+    if(rg&&!rg.ac&&rg.max!=null&&rg.min==null){ rep=st&&st.max; repLab='최고값'; }
+    if(rg&&!rg.ac&&rg.min!=null&&rg.max==null){ rep=st&&st.min; repLab='최저값'; }
+    let worst=null; if(judged.length){ worst=judged.slice().sort((a,b)=>{ const m=r=>{ const v=r.value; if(rg.max!=null&&rg.min!=null) return Math.min(v-rg.min,rg.max-v)/((rg.max-rg.min)||1); if(rg.max!=null) return (rg.max-v)/(Math.abs(rg.max)||1); return (v-rg.min)/(Math.abs(rg.min)||1); }; return m(a)-m(b); })[0]; }
+    let margin=null; if(worst&&rg){ const v=worst.value; if(rg.max!=null&&(rg.min==null||Math.abs(rg.max-v)<=Math.abs(v-rg.min))) margin=rg.max-v; else if(rg.min!=null) margin=v-rg.min; }
+    return { rg, unit, vals, st, judged, out, kind, rep, repLab, worst, margin };
+  }
+
+  let mdData = null, mdBld = '전체', mdDetail = null;
   function showMeasureDashboard(data){
-    if(data) { mdData=data; mdItem=null; mdBld='전체'; mdQuery=''; }
+    if(data) { mdData=data; mdBld='전체'; mdDetail=null; }
     if(!mdData) mdData = current ? mdRowsFromInspection(current) : { rows:[], catStat:[], title:'', date:'', source:'' };
     let ov=document.getElementById('mdash-modal');
     if(!ov){ ov=document.createElement('div'); ov.id='mdash-modal'; ov.className='overlay top-layer'; ov.style.cssText='align-items:stretch;justify-content:center;padding:0;'; document.body.appendChild(ov); }
-    const D=mdData, rows=D.rows;
-    rows.forEach(r=>{ if(r._rg===undefined) r._rg=mdRange(r.itemName,r.std,r.fk); });
+    const D=mdData;
+    D.rows.forEach(r=>{ if(r._rg===undefined) r._rg=mdRange(r.itemName,r.std,r.fk); });
+    const bldAll=[...new Set(D.rows.map(r=>r.bld))]; if(mdBld!=='전체' && !bldAll.includes(mdBld)) mdBld='전체';
+    const rows = mdBld==='전체' ? D.rows : D.rows.filter(r=>r.bld===mdBld);
     const items={}; rows.forEach(r=>{ (items[r.itemName]=items[r.itemName]||[]).push(r); });
-    const outOf=n=>items[n].filter(r=>mdIsOver(r,r._rg)).length;
-    const itemNames=Object.keys(items).sort((a,b)=>{ const oa=outOf(a)?0:1, ob=outOf(b)?0:1; const ga=/접지저항/.test(a)?0:1, gb=/접지저항/.test(b)?0:1; return oa-ob || ga-gb || items[b].length-items[a].length; });
-    if(!mdItem || !items[mdItem]) mdItem=itemNames[0]||null;
-    const judged=rows.filter(r=>mdApplies(r.value,r._rg)); const outRows=judged.filter(r=>mdIsOver(r,r._rg));
-    const okPct = judged.length? Math.round((judged.length-outRows.length)/judged.length*100) : null;
-    let cg=0,cb=0,cn=0; D.catStat.forEach(c=>{ cg+=c.good; cb+=c.bad; cn+=c.na; });
-    const tot=cg+cb+cn; const progPct = tot? Math.round((cg+cb)/tot*100) : null;
-    const passPct = (cg+cb)? Math.round(cg/(cg+cb)*100) : null;
-    const C={ok:'#2DD4BF',mid:'#7DD3A8',near:'#FBBF24',bad:'#F43F5E',none:'#64748B',blue:'#60A5FA'};
+    const A={}; Object.keys(items).forEach(n=>A[n]=mdAnalyze(items[n]));
+    const names=Object.keys(items).sort((a,b)=>(A[b].out.length?1:0)-(A[a].out.length?1:0) || (/접지저항/.test(b)?1:0)-(/접지저항/.test(a)?1:0) || items[b].length-items[a].length);
+    const judgedN=names.reduce((s,n)=>s+A[n].judged.length,0), outN=names.reduce((s,n)=>s+A[n].out.length,0);
+    const okPct=judgedN?Math.round((judgedN-outN)/judgedN*100):null;
+    let cg=0,cb=0,cn=0; D.catStat.forEach(c=>{ cg+=c.good; cb+=c.bad; cn+=c.na; }); const tot=cg+cb+cn; const prog=tot?Math.round((cg+cb)/tot*100):null;
+    const outItems=names.filter(n=>A[n].out.length);
     let h='';
-    // ── A. KPI 띠 ──
-    h+=`<div class="mdx-kpis">
-      <div class="mdx-card mdx-kpi"><div class="mdx-kl">측정값</div><div class="mdx-kv">${rows.length}<small>건</small></div><div class="mdx-ks">${itemNames.length}개 측정 항목</div></div>
-      <div class="mdx-card mdx-kpi mdx-kring">${mdRing(okPct, outRows.length?C.near:C.ok)}<div><div class="mdx-kl">기준 충족률</div><div class="mdx-ks">${judged.length-outRows.length} / ${judged.length}건 기준 이내</div></div></div>
-      <div class="mdx-card mdx-kpi ${outRows.length?'alert':''}"><div class="mdx-kl">기준 이탈</div><div class="mdx-kv" style="color:${outRows.length?C.bad:C.ok}">${outRows.length}<small>건</small></div><div class="mdx-ks">${outRows.length?'아래 빨간 표시 확인':'모든 측정값이 기준 이내'}</div></div>
-      <div class="mdx-card mdx-kpi mdx-kring">${mdRing(progPct, C.blue)}<div><div class="mdx-kl">점검 진행률</div><div class="mdx-ks">판정 ${cg+cb} / ${tot}항목</div></div></div>
-      <div class="mdx-card mdx-kpi"><div class="mdx-kl">부적합</div><div class="mdx-kv" style="color:${cb?C.bad:'#fff'}">${cb}<small>건</small></div><div class="mdx-ks">적합율 ${passPct==null?'-':passPct+'%'}</div></div>
+    // 경고 띠
+    h+= outItems.length
+      ? `<button class="mdv-alert bad" data-open="${escapeHtml(outItems[0])}">⚠️ 확인 필요 · ${outItems.map(n=>`${escapeHtml(mdShort(n))} ${A[n].out.length}건`).slice(0,3).join(' · ')}${outItems.length>3?` 외 ${outItems.length-3}개 항목`:''} <span>상세 ›</span></button>`
+      : `<div class="mdv-alert ok">✅ 측정값 ${judgedN}건 모두 관리기준 이내${judgedN<rows.length?` · 기준 없는 값 ${rows.length-judgedN}건`:''}</div>`;
+    // KPI
+    const ring=(p,col)=>{ const C=2*Math.PI*30; return `<svg viewBox="0 0 76 76" class="mdv-ring"><circle cx="38" cy="38" r="30" class="mdv-rbg"/><circle cx="38" cy="38" r="30" class="mdv-rfg" style="stroke:${col};--len:${(C*(p||0)/100).toFixed(1)};--c:${C.toFixed(1)}" transform="rotate(-90 38 38)"/><text x="38" y="44" text-anchor="middle" class="mdv-rt">${p==null?'-':p+'%'}</text></svg>`; };
+    h+=`<div class="mdv-kpis">
+      <div class="mdv-k"><div class="mdv-kl">측정 항목</div><div class="mdv-kv"><span data-count="${names.length}">0</span><small>종</small></div><div class="mdv-ks">측정값 ${rows.length}건</div></div>
+      <div class="mdv-k ring">${ring(okPct, outN?'#F5A524':'#22B573')}<div><div class="mdv-kl">관리기준 충족</div><div class="mdv-ks">${judgedN-outN} / ${judgedN}건</div></div></div>
+      <div class="mdv-k ${outN?'warn':''}"><div class="mdv-kl">기준 이탈</div><div class="mdv-kv" style="color:${outN?'#E5484D':'#16A34A'}"><span data-count="${outN}">0</span><small>건</small></div><div class="mdv-ks">${outN?outItems.length+'개 항목':'이상 없음'}</div></div>
+      <div class="mdv-k ring">${ring(prog,'#3B82F6')}<div><div class="mdv-kl">점검 진행률</div><div class="mdv-ks">판정 ${cg+cb} / ${tot}항목 · 부적합 ${cb}</div></div></div>
     </div>`;
-    if(!rows.length){
-      h+=`<div class="mdx-card mdx-empty">측정값이 입력된 항목이 없습니다.<br>접지저항·전압·온습도·수신감도 등 <b>측정값 칸</b>에 숫자를 넣으면 이 화면에 그래프로 나타납니다.<br>지난 점검은 <b>📂 엑셀 불러오기</b>로 대시보드 엑셀을 열어 보세요.</div>`;
+    if(!names.length){
+      h+=`<div class="mdv-empty">측정값이 입력된 항목이 없습니다.<br>접지저항·전압·온습도·수신감도 등 <b>측정값 칸</b>에 숫자를 넣으면 이 화면에 차트로 나타납니다.<br>지난 점검은 <b>📂 엑셀 불러오기</b>로 대시보드 엑셀을 열어 보세요.</div>`;
     } else {
-      // ── B. 측정 항목 상태판 ──
-      h+=`<div class="mdx-sec">측정 항목 상태판 <span>항목을 누르면 아래 그래프가 바뀝니다</span></div><div class="mdx-tiles">`;
-      itemNames.forEach(n=>{
-        const a=items[n], rg=a[0]._rg, st=mdStats(a.map(r=>r.value)), u=(a.find(r=>r.unit)||{}).unit||'';
-        const out=a.filter(r=>mdIsOver(r,rg)).length, jud=a.filter(r=>mdApplies(r.value,rg)).length;
-        // 게이지 범위: 값과 기준을 모두 포함
-        const vs=a.map(r=>r.value).filter(v=>v!=null); const ext=[...vs]; if(rg){ if(rg.min!=null) ext.push(rg.min); if(rg.max!=null) ext.push(rg.max); }
-        let lo=Math.min(...ext), hi=Math.max(...ext); if(hi===lo){ hi+=1; lo-=1; } const pad=(hi-lo)*0.08; lo-=pad; hi+=pad;
-        const X=v=>((v-lo)/(hi-lo)*100).toFixed(1);
-        const band = rg ? `<i class="mdx-band" style="left:${X(rg.min!=null?rg.min:lo)}%;right:${(100-X(rg.max!=null?rg.max:hi))}%"></i>` : '';
-        const dots = a.filter(r=>r.value!=null).map(r=>`<b class="mdx-dot ${mdIsOver(r,rg)?'bad':''}" style="left:${X(r.value)}%" title="${escapeHtml(r.loc)} ${escapeHtml(String(r.raw))}${escapeHtml(u)}"></b>`).join('');
-        const chip = !rg ? `<span class="mdx-chip none">기준 없음</span>` : out ? `<span class="mdx-chip bad">이탈 ${out}</span>` : `<span class="mdx-chip ok">정상 ${jud}/${jud}</span>`;
-        h+=`<button class="mdx-card mdx-tile ${n===mdItem?'on':''} ${out?'alert':''}" data-item="${escapeHtml(n)}">
-          <div class="mdx-tt"><span title="${escapeHtml(n)}">${escapeHtml(mdShort(n))}</span>${chip}</div>
-          <div class="mdx-tv">${mdFmt(st&&st.avg)}<small>${escapeHtml(u)} 평균</small></div>
-          <div class="mdx-gauge">${band}${dots}</div>
-          <div class="mdx-tf"><span>${mdFmt(st&&st.min)}~${mdFmt(st&&st.max)}${escapeHtml(u)} · ${a.length}건</span><span>${rg?'기준 '+escapeHtml(mdRangeText(rg,u)):''}</span></div>
+      h+=`<div class="mdv-grid">`;
+      names.forEach((n,ci)=>{
+        const a=A[n], pts=mdSeries(items[n]); const st=a.st; const icon=!a.rg?'<i class="mdv-ic none">–</i>':a.out.length?'<i class="mdv-ic bad">!</i>':'<i class="mdv-ic ok">✓</i>';
+        let chart='';
+        if(a.kind==='gauge' && pts.length) chart=mdGaugeSVG(a.rep, a.rg, a.unit)+`<div class="mdv-gv ${a.out.length?'bad':''}">${mdFmt(a.rep)}${escapeHtml(a.unit)} <span>${a.repLab}</span></div>`;
+        else if(a.kind==='range' && pts.length) chart=mdRangeHTML(pts, a.rg, a.unit, st.avg)+(pts.length>=3?`<div class="mdv-mini">${mdLineSVG(pts,a.rg,a.unit,{W:360,H:96})}</div>`:'');
+        else chart=mdLineSVG(pts, a.rg, a.unit, {W:360,H:170});
+        h+=`<button class="mdv-card ${a.out.length?'bad':''}" data-open="${escapeHtml(n)}" style="animation-delay:${(ci*0.04).toFixed(2)}s">
+          <div class="mdv-ch">${icon}<span class="mdv-ct" title="${escapeHtml(n)}">${escapeHtml(mdShort(n))}</span><span class="mdv-cv"><b data-count="${a.rep==null?'':a.rep}" data-dec="${a.rep!=null&&Math.abs(a.rep)<10?2:1}">${mdFmt(a.rep)}</b><small>${escapeHtml(a.unit)}</small></span></div>
+          <div class="mdv-cs"><span>${a.repLab} · ${a.vals.length}곳</span><span>${a.rg?'관리기준 '+escapeHtml(mdRangeText(a.rg,a.unit)):'관리기준 없음'}</span></div>
+          <div class="mdv-chart">${chart}</div>
+          <div class="mdv-cf">${a.out.length?`<span class="bad">이탈 ${a.out.length}곳</span>`:a.rg?`<span class="ok">정상 ${a.judged.length}/${a.judged.length}</span>`:'<span>판정 기준 없음</span>'}<span>자세히 ›</span></div>
         </button>`;
       });
       h+=`</div>`;
-      // ── C. 선택 항목 상세 ──
-      const all=items[mdItem], rg=all[0]._rg, unit=(all.find(r=>r.unit)||{}).unit||'';
-      const blds=[...new Set(all.map(r=>r.bld))]; if(mdBld!=='전체' && !blds.includes(mdBld)) mdBld='전체';
-      const sel = mdBld==='전체'? all : all.filter(r=>r.bld===mdBld);
-      const st=mdStats(sel.map(r=>r.value)); const out=sel.filter(r=>mdIsOver(r,rg)).length;
-      h+=`<div class="mdx-sec">${escapeHtml(mdShort(mdItem))} <span>${rg?'기준 '+escapeHtml(mdRangeText(rg,unit)):'기준 없음'}${rg&&rg.ac?' (DC 값은 판정 제외)':''}</span></div>`;
-      if(blds.length>1) h+=`<div class="mdx-chips">${['전체',...blds].map(b=>`<button class="mdx-pill ${b===mdBld?'on':''}" data-bld="${escapeHtml(b)}">${escapeHtml(b)}</button>`).join('')}</div>`;
-      h+=`<div class="mdx-grid">`;
-      // C0 통계
-      h+=`<div class="mdx-card mdx-s12"><div class="mdx-stats">${[['건수',st?st.n+'건':'-'],['평균',mdFmt(st&&st.avg)+unit],['최소',mdFmt(st&&st.min)+unit],['최대',mdFmt(st&&st.max)+unit],['중앙값',mdFmt(st&&st.med)+unit],['표준편차',mdFmt(st&&st.sd)],['기준 이탈',out+'건']].map(([a,b])=>`<div><span>${a}</span><b ${a==='기준 이탈'?`style="color:${out?C.bad:C.ok}"`:''}>${b}</b></div>`).join('')}</div></div>`;
-      // C1 건물×층 측정 지도
-      const hf=[...new Set(sel.filter(r=>r.value!=null).map(r=>r.floor===null?-9999:r.floor))].sort((a,b)=>b-a);
-      const hb=mdBld==='전체'?blds:[mdBld];
-      if(hf.length){
-        const cell=(b,f)=>{ const m=sel.filter(r=>r.bld===b && (r.floor===null?-9999:r.floor)===f && r.value!=null); if(!m.length) return '<td class="lv-e">·</td>';
-          const lvl=m.map(r=>mdLevel(r.value,rg)); const worst=['bad','near','mid','ok','none'].find(x=>lvl.includes(x));
-          const v=m.reduce((x,y)=>x+y.value,0)/m.length;
-          return `<td class="lv-${worst}" title="${escapeHtml(b)} ${mdFloorLabel(f===-9999?null:f)} · ${m.map(r=>escapeHtml(r.loc)+' '+escapeHtml(String(r.raw))).join(', ')}">${mdFmt(v)}${m.length>1?`<small>${m.length}곳 평균</small>`:''}</td>`; };
-        h+=`<div class="mdx-card mdx-s7"><div class="mdx-ct">🗺 건물·층 측정 지도 <span>${escapeHtml(unit)}</span></div><div class="mdx-scroll"><table class="mdx-hm"><thead><tr><th>층</th>${hb.map(b=>`<th>${escapeHtml(b)}</th>`).join('')}</tr></thead><tbody>${hf.map(f=>`<tr><th>${f===-9999?'-':mdFloorLabel(f)}</th>${hb.map(b=>cell(b,f)).join('')}</tr>`).join('')}</tbody></table></div>
-          <div class="mdx-legend"><span><i style="background:${C.ok}"></i>여유</span><span><i style="background:${C.mid}"></i>보통</span><span><i style="background:${C.near}"></i>기준 근접</span><span><i style="background:${C.bad}"></i>기준 이탈</span><span><i style="background:${C.none}"></i>기준 없음</span></div></div>`;
-      }
-      // C2 층별 평균 (SVG 막대 + 기준선)
-      const fl=[...new Set(sel.filter(r=>r.value!=null).map(r=>r.floor===null?-9999:r.floor))].sort((a,b)=>a-b);
-      if(fl.length){
-        const fv=fl.map(f=>{ const m=sel.filter(r=>(r.floor===null?-9999:r.floor)===f && r.value!=null); const avg=m.reduce((s,x)=>s+x.value,0)/m.length; return {f,avg,lv:mdLevel(avg,rg)}; });
-        const ext=fv.map(x=>x.avg).concat(0); if(rg){ if(rg.min!=null) ext.push(rg.min); if(rg.max!=null) ext.push(rg.max); }
-        let lo=Math.min(...ext), hi=Math.max(...ext); if(hi===lo) hi=lo+1; const pad=(hi-lo)*0.12; hi+=pad; if(lo<0) lo-=pad;
-        const W=520,H=230,L=34,B=196,T=16; const Y=v=>B-(v-lo)/(hi-lo)*(B-T); const bw=Math.min(46,(W-L-10)/fv.length*0.62); const gap=(W-L-10)/fv.length;
-        let svg=`<svg viewBox="0 0 ${W} ${H}" class="mdx-svg"><defs><linearGradient id="mdg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5EEAD4"/><stop offset="1" stop-color="#0E7490"/></linearGradient><linearGradient id="mdgr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FB7185"/><stop offset="1" stop-color="#9F1239"/></linearGradient></defs>`;
-        for(let i=0;i<=4;i++){ const v=lo+(hi-lo)*i/4; svg+=`<line x1="${L}" x2="${W-6}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(255,255,255,.07)"/><text x="${L-5}" y="${Y(v)+3}" text-anchor="end" font-size="9.5" fill="#8EA0C2">${mdFmt(v)}</text>`; }
-        if(rg&&!rg.ac){ [rg.min,rg.max].forEach((tv,ti)=>{ if(tv==null||tv<lo||tv>hi) return; svg+=`<line x1="${L}" x2="${W-6}" y1="${Y(tv)}" y2="${Y(tv)}" stroke="${C.bad}" stroke-width="1.4" stroke-dasharray="5 4"/><text x="${W-8}" y="${Y(tv)-4}" text-anchor="end" font-size="10" font-weight="700" fill="${C.bad}">${ti?'상한':'하한'} ${tv}</text>`; }); }
-        fv.forEach((x,i)=>{ const cx=L+gap*i+gap/2; const y0=Y(Math.max(0,lo)), y1=Y(x.avg); const top=Math.min(y0,y1), hh=Math.max(Math.abs(y0-y1),1.5);
-          svg+=`<rect x="${cx-bw/2}" y="${top}" width="${bw}" height="${hh}" rx="4" fill="url(#${x.lv==='bad'?'mdgr':'mdg'})"/><text x="${cx}" y="${y1-5}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#E2E8F0">${mdFmt(x.avg)}</text><text x="${cx}" y="${B+15}" text-anchor="middle" font-size="10" fill="#8EA0C2">${x.f===-9999?'-':mdFloorLabel(x.f)}</text>`; });
-        svg+=`</svg>`;
-        h+=`<div class="mdx-card mdx-s5"><div class="mdx-ct">📊 층별 평균 <span>${escapeHtml(unit)}</span></div>${svg}</div>`;
-      }
-      // C3 위치별 측정값
-      const byLoc=sel.filter(r=>r.value!=null).slice().sort((a,b)=>String(a.bld).localeCompare(String(b.bld),'ko') || ((b.floor??-9999)-(a.floor??-9999)) || String(a.loc).localeCompare(String(b.loc),'ko'));
-      if(byLoc.length){
-        const vs=byLoc.map(r=>r.value); const ext=vs.concat(0); if(rg&&!rg.ac){ if(rg.min!=null) ext.push(rg.min); if(rg.max!=null) ext.push(rg.max); }
-        let lo=Math.min(...ext), hi=Math.max(...ext); if(hi===lo) hi=lo+1; const X=v=>(v-lo)/(hi-lo)*100;
-        h+=`<div class="mdx-card mdx-s7"><div class="mdx-ct">📍 위치별 측정값 <span>${byLoc.length}곳</span></div><div class="mdx-hlist">${byLoc.map(r=>{ const lv=mdLevel(r.value,rg);
-          return `<div class="mdx-hrow"><div class="mdx-hn" title="${escapeHtml(r.loc)} · ${escapeHtml(r.catName||'')}">${escapeHtml(r.loc||'-')}<small>${escapeHtml(r.catName||'')}</small></div><div class="mdx-ht">${rg&&!rg.ac&&rg.min!=null&&rg.min>=lo?`<i class="mdx-hthr" style="left:${X(rg.min)}%"></i>`:''}${rg&&!rg.ac&&rg.max!=null&&rg.max<=hi?`<i class="mdx-hthr" style="left:${X(rg.max)}%"></i>`:''}<div class="mdx-hb lv-${lv}" style="left:${Math.min(X(0),X(r.value))}%;width:${Math.max(Math.abs(X(r.value)-X(0)),1.2)}%"></div></div><div class="mdx-hv lv-t-${lv}">${escapeHtml(String(r.raw))}<small>${escapeHtml(unit)}</small></div></div>`; }).join('')}</div></div>`;
-        // C4 분포
-        if(byLoc.length>=4 && st && st.max>st.min){
-          const Bn=6, w=(st.max-st.min)/Bn, bins=Array(Bn).fill(0); byLoc.forEach(r=>{ let i=Math.floor((r.value-st.min)/w); if(i>=Bn) i=Bn-1; bins[i]++; }); const bm=Math.max(...bins);
-          h+=`<div class="mdx-card mdx-s5"><div class="mdx-ct">📈 값 분포 <span>${byLoc.length}건</span></div><div class="mdx-hist">${bins.map((c,i)=>{ const a=st.min+w*i, b=a+w; const lv=mdLevel((a+b)/2,rg);
-            return `<div class="mdx-hc"><div class="mdx-hcn">${c||''}</div><div class="mdx-hcb lv-${lv==='none'?'blue':lv}" style="height:${c/bm*100}%"></div><div class="mdx-hcl">${mdFmt(a)}~${mdFmt(b)}</div></div>`; }).join('')}</div></div>`;
-        }
-      }
-      h+=`</div>`;
     }
-    // ── D. 점검 결과 + 설비별 적합율 ──
-    if(D.catStat.length){
-      const Cc=2*Math.PI*42; let off=0; const segs=[[cg,C.ok,'적합'],[cb,C.bad,'부적합'],[cn,'#475569','미점검']];
-      const arcs = tot? segs.filter(s=>s[0]>0).map(s=>{ const len=Cc*s[0]/tot; const a=`<circle cx="60" cy="60" r="42" fill="none" stroke="${s[1]}" stroke-width="15" stroke-dasharray="${len} ${Cc-len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`; off+=len; return a; }).join(''):'';
-      h+=`<div class="mdx-grid" style="margin-top:12px;"><div class="mdx-card mdx-s4"><div class="mdx-ct">🧾 점검 결과</div><div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;">
-        <svg viewBox="0 0 120 120" width="150" height="150"><circle cx="60" cy="60" r="42" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="15"/>${arcs}<text x="60" y="58" text-anchor="middle" font-size="20" font-weight="800" fill="#fff">${passPct==null?'-':passPct+'%'}</text><text x="60" y="75" text-anchor="middle" font-size="9" fill="#8EA0C2">적합율</text></svg>
-        <div class="mdx-legend col">${segs.map(s=>`<span><i style="background:${s[1]}"></i>${s[2]} <b>${s[0]}</b>${tot?` <em>${Math.round(s[0]/tot*100)}%</em>`:''}</span>`).join('')}</div></div></div>
-        <div class="mdx-card mdx-s8"><div class="mdx-ct">🏷 설비별 적합율 <span>판정된 ${D.catStat.filter(r=>r.good+r.bad>0).length}종${D.catStat.some(r=>r.good+r.bad===0)?` · 미점검 ${D.catStat.filter(r=>r.good+r.bad===0).length}종 숨김`:''}</span></div>${D.catStat.filter(r=>r.good+r.bad>0).sort((a,b)=>(a.good/(a.good+a.bad))-(b.good/(b.good+b.bad))).map(r=>{ const t2=r.good+r.bad+r.na||1; const p=(r.good+r.bad)?Math.round(r.good/(r.good+r.bad)*100):null;
-          return `<div class="mdx-srow"><div class="mdx-sn" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</div><div class="mdx-st"><i style="width:${r.good/t2*100}%;background:${C.ok}"></i><i style="width:${r.bad/t2*100}%;background:${C.bad}"></i><i style="width:${r.na/t2*100}%;background:#475569"></i></div><div class="mdx-sp" style="color:${p==null?'#8EA0C2':p>=90?C.ok:p>=70?C.near:C.bad}">${p==null?'-':p+'%'}</div></div>`; }).join('')}</div></div>`;
+    // 점검 결과 · 설비별 적합율 (링)
+    const judgedCats=D.catStat.filter(r=>r.good+r.bad>0);
+    if(judgedCats.length){
+      h+=`<div class="mdv-sec">설비별 적합율 <span>판정된 ${judgedCats.length}종</span></div><div class="mdv-rings">${judgedCats.map(r=>{ const p=Math.round(r.good/(r.good+r.bad)*100); return `<div class="mdv-rc">${ring(p,p>=90?'#22B573':p>=70?'#F5A524':'#E5484D')}<div class="mdv-rn" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</div><div class="mdv-ks">적합 ${r.good} · 부적합 ${r.bad}</div></div>`; }).join('')}</div>`;
     }
-    // ── E. 전체 측정값 표 ──
-    if(rows.length){
-      const q=mdQuery.trim().toLowerCase();
-      const fl=rows.filter(r=>!q || [r.bld,r.floorLabel,r.loc,r.catName,r.itemName,r.raw].join(' ').toLowerCase().includes(q));
-      h+=`<div class="mdx-sec">전체 측정값 <span>${fl.length}/${rows.length}건 · 기준 이탈 행은 빨간색</span></div>
-        <input class="mdx-q" id="md-q" placeholder="검색 (위치·설비·항목, 예: 13층, 접지, 습도)" value="${escapeHtml(mdQuery)}">
-        <div class="mdx-card mdx-scroll" style="padding:0;"><table class="mdx-tbl"><thead><tr><th>층</th><th>점검 위치</th><th>설비</th><th>측정 항목</th><th>측정값</th><th>기준</th><th>판정</th></tr></thead><tbody>${fl.slice(0,500).map(r=>{ const o=mdIsOver(r,r._rg);
-          return `<tr class="${o?'bad':''}"><td>${escapeHtml(r.floorLabel)}</td><td>${escapeHtml(r.loc||'')}</td><td>${escapeHtml(r.catName||'')}</td><td>${escapeHtml(mdShort(r.itemName))}</td><td><b>${escapeHtml(String(r.raw))}</b>${escapeHtml(r.unit||'')}</td><td>${r._rg?escapeHtml(mdRangeText(r._rg,r.unit)):'-'}</td><td>${r.result==='불량'?'<b style="color:#F43F5E">부적합</b>':mdGoodRes(r.result)?'적합':escapeHtml(r.result||'-')}</td></tr>`; }).join('')}</tbody></table></div>${fl.length>500?'<div class="mdx-ks" style="margin-top:6px">앞 500건만 표시 — 검색으로 좁혀 보세요.</div>':''}`;
-    }
-    ov.innerHTML = `<div class="mdx">
-      <div class="mdx-top">
-        <div class="mdx-brand"><div class="mdx-logo">📊</div><div style="min-width:0"><div class="mdx-title">측정 대시보드</div><div class="mdx-sub">${escapeHtml(D.title||'')}${D.date?' · '+escapeHtml(D.date):''}${D.type?' · '+escapeHtml(D.type):''}${D.inspector?' · '+escapeHtml(D.inspector):''}</div></div></div>
-        <div class="mdx-acts">
-          ${current?`<button class="mdx-btn ${D.source==='현재 점검'?'on':''}" id="md-cur">📋 현재 점검</button>`:''}
-          <button class="mdx-btn" id="md-xlsx">📂 엑셀 불러오기</button>
-          ${current?`<button class="mdx-btn" id="md-export">📈 엑셀 저장</button>`:''}
-          <button class="mdx-x" id="md-close" aria-label="닫기">✕</button>
+    ov.innerHTML = `<div class="mdv">
+      <div class="mdv-top">
+        <div class="mdv-brand"><div class="mdv-title">정보통신설비 측정 대시보드</div><div class="mdv-sub">${escapeHtml(D.title||'')}${D.date?' · '+escapeHtml(D.date):''}${D.type?' · '+escapeHtml(D.type):''} — <b>${escapeHtml(D.source||'')}</b></div></div>
+        <div class="mdv-acts">
+          ${bldAll.length>1?`<select class="mdv-sel" id="md-bld">${['전체',...bldAll].map(b=>`<option ${b===mdBld?'selected':''}>${escapeHtml(b)}</option>`).join('')}</select>`:''}
+          ${current?`<button class="mdv-btn ${D.source==='현재 점검'?'on':''}" id="md-cur">📋 현재 점검</button>`:''}
+          <button class="mdv-btn" id="md-xlsx">📂 엑셀 불러오기</button>
+          ${current?`<button class="mdv-btn" id="md-export">📈 엑셀 저장</button>`:''}
+          <button class="mdv-x" id="md-close" aria-label="닫기">✕</button>
         </div>
         <input type="file" id="md-file" accept=".xlsx" style="display:none">
       </div>
-      <div class="mdx-srcbar">데이터: <b>${escapeHtml(D.source||'')}</b>${D.source==='현재 점검'?' — 지금 입력된 측정값(⏸ 대기 위치 제외)':''}</div>
-      <div class="mdx-body">${h}</div></div>`;
-    const close=()=>{ ov.remove(); };
-    ov.querySelector('#md-close').onclick=close;
-    const scroller=ov.querySelector('.mdx-body'); const keep=()=>{ const y=scroller.scrollTop; showMeasureDashboard(); const s2=document.querySelector('#mdash-modal .mdx-body'); if(s2) s2.scrollTop=y; };
-    ov.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>{ mdItem=b.dataset.item; mdBld='전체'; keep(); });
-    ov.querySelectorAll('[data-bld]').forEach(b=>b.onclick=()=>{ mdBld=b.dataset.bld; keep(); });
+      <div class="mdv-body">${h}</div>
+      <div class="mdv-dwrap" id="md-dwrap"></div></div>`;
+    mdCountUp(ov.querySelector('.mdv-body'));
+    requestAnimationFrame(()=>requestAnimationFrame(()=>ov.querySelector('.mdv')&&ov.querySelector('.mdv').classList.add('go')));
+    ov.querySelector('#md-close').onclick=()=>ov.remove();
+    ov.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>mdOpenDetail(b.dataset.open, items[b.dataset.open], A[b.dataset.open]));
+    const bs=ov.querySelector('#md-bld'); if(bs) bs.onchange=()=>{ mdBld=bs.value; showMeasureDashboard(); };
     const curBtn=ov.querySelector('#md-cur'); if(curBtn) curBtn.onclick=()=>{ showMeasureDashboard(mdRowsFromInspection(current)); };
     const expBtn=ov.querySelector('#md-export'); if(expBtn) expBtn.onclick=()=>exportDashboardExcel();
     const fi=ov.querySelector('#md-file'); ov.querySelector('#md-xlsx').onclick=()=>fi.click();
     fi.onchange=async ev=>{ const f=ev.target.files[0]; if(!f) return;
       try{ const d=await mdRowsFromExcel(f); showMeasureDashboard(d); showToast(`엑셀에서 측정값 ${d.rows.length}건을 불러왔습니다.`); }
       catch(e){ alert('엑셀을 읽지 못했습니다: '+e.message); } };
-    const qi=ov.querySelector('#md-q'); if(qi){ qi.oninput=()=>{ mdQuery=qi.value; const pos=qi.selectionStart; keep(); const n=document.getElementById('md-q'); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(_){} } }; }
+  }
+  /* 항목 상세 분석 패널 */
+  function mdOpenDetail(name, list, a){
+    const wrap=document.getElementById('md-dwrap'); if(!wrap||!list) return;
+    const pts=mdSeries(list), rg=a.rg, u=a.unit, st=a.st;
+    // 분석 문장
+    const notes=[];
+    if(!rg) notes.push(['i','관리기준을 숫자로 읽을 수 없는 항목입니다(예: 정격값·설계값 기준). 값의 분포만 표시합니다.']);
+    else if(a.out.length) notes.push(['bad',`${a.judged.length}곳 중 <b>${a.out.length}곳</b>이 관리기준(${escapeHtml(mdRangeText(rg,u))})을 벗어났습니다.`]);
+    else notes.push(['ok',`${a.judged.length}곳 모두 관리기준(${escapeHtml(mdRangeText(rg,u))}) 이내입니다.${a.margin!=null?` 기준까지 가장 가까운 곳의 여유는 <b>${mdFmt(Math.abs(a.margin))}${escapeHtml(u)}</b>입니다.`:''}`]);
+    if(rg&&rg.ac){ const dc=a.vals.length-a.judged.length; if(dc) notes.push(['i',`${dc}건은 DC 전원 값으로 보고 AC 기준(${escapeHtml(rg.label)}) 판정에서 뺐습니다.`]); }
+    if(a.worst) notes.push([a.out.length?'bad':'i',`${a.out.length?'기준을 가장 많이 벗어난 곳':'기준에 가장 가까운 곳'}: <b>${escapeHtml(a.worst.loc)}</b> ${escapeHtml(String(a.worst.raw))}${escapeHtml(u)}${a.worst.catName?` (${escapeHtml(a.worst.catName)})`:''}`]);
+    if(st && st.n>=2){ const hiR=a.vals.reduce((x,y)=>y.value>x.value?y:x), loR=a.vals.reduce((x,y)=>y.value<x.value?y:x);
+      notes.push(['i',`최고 ${escapeHtml(hiR.loc)} ${mdFmt(hiR.value)}${escapeHtml(u)} · 최저 ${escapeHtml(loR.loc)} ${mdFmt(loR.value)}${escapeHtml(u)} · 편차(표준편차) ${mdFmt(st.sd)}`]); }
+    const fl=a.vals.filter(r=>r.floor!=null&&r.floor!==999);
+    if(new Set(fl.map(r=>r.floor)).size>=3){ const n=fl.length, mx=fl.reduce((s,r)=>s+r.floor,0)/n, my=fl.reduce((s,r)=>s+r.value,0)/n;
+      const sl=fl.reduce((s,r)=>s+(r.floor-mx)*(r.value-my),0)/(fl.reduce((s,r)=>s+(r.floor-mx)*(r.floor-mx),0)||1);
+      if(st && Math.abs(sl)*5 > (st.sd||0)*0.8 && Math.abs(sl)>1e-6) notes.push(['i',`층이 올라갈수록 값이 <b>${sl>0?'커지는':'작아지는'}</b> 경향이 있습니다(층당 약 ${mdFmt(Math.abs(sl))}${escapeHtml(u)}).`]);
+      else notes.push(['i','층에 따른 뚜렷한 증감은 보이지 않습니다.']); }
+    const blds=[...new Set(a.vals.map(r=>r.bld))]; if(blds.length>1) notes.push(['i','건물별 평균: '+blds.map(b=>{ const m=a.vals.filter(r=>r.bld===b); return `${escapeHtml(b)} ${mdFmt(m.reduce((s,r)=>s+r.value,0)/m.length)}${escapeHtml(u)}`; }).join(' · ')]);
+    // 위치 표: 기준에 가까운 순
+    const sorted=a.vals.slice().sort((x,y)=>{ const lv={bad:0,near:1,mid:2,ok:3,none:4}; return lv[mdLevel(x.value,rg)]-lv[mdLevel(y.value,rg)] || (rg&&rg.max!=null? y.value-x.value : x.value-y.value); });
+    const diff = a.margin==null? null : a.margin;
+    wrap.innerHTML=`<div class="mdd-bg"></div><div class="mdd">
+      <div class="mdd-h"><div><div class="mdd-t">${escapeHtml(mdShort(name))} 상세</div><div class="mdd-s">${escapeHtml(mdBld==='전체'?'전체 위치':mdBld)} · ${a.vals.length}곳 측정</div></div><button class="mdv-x light" id="mdd-x">✕</button></div>
+      <div class="mdd-body">
+        <div class="mdd-box3">
+          <div class="b1"><span>${a.repLab}</span><b>${mdFmt(a.rep)}<small>${escapeHtml(u)}</small></b></div>
+          <div class="b2"><span>관리기준</span><b style="font-size:${rg&&mdRangeText(rg,u).length>9?'15px':''}">${rg?escapeHtml(mdRangeText(rg,u)):'-'}</b></div>
+          <div class="b3 ${a.out.length?'bad':''}"><span>${a.out.length?'이탈':'최소 여유'}</span><b>${a.out.length?a.out.length+'곳':diff==null?'-':mdFmt(Math.abs(diff))+'<small>'+escapeHtml(u)+'</small>'}</b></div>
+        </div>
+        ${a.kind==='gauge'&&pts.length?`<div class="mdd-card">${mdGaugeSVG(a.rep,rg,u)}</div>`:''}
+        ${a.kind==='range'&&pts.length?`<div class="mdd-card">${mdRangeHTML(pts,rg,u,st.avg)}</div>`:''}
+        <div class="mdd-card"><div class="mdd-ct">위치별 측정값 추이</div>${mdLineSVG(pts,rg,u,{W:460,H:230,big:true})}</div>
+        <div class="mdd-card"><div class="mdd-ct">분석 결과</div>${notes.map(([k,t])=>`<div class="mdd-note ${k}"><i>${k==='ok'?'✓':k==='bad'?'!':'i'}</i><span>${t}</span></div>`).join('')}</div>
+        <div class="mdd-stats">${[['평균',mdFmt(st&&st.avg)],['중앙값',mdFmt(st&&st.med)],['최소',mdFmt(st&&st.min)],['최대',mdFmt(st&&st.max)],['표준편차',mdFmt(st&&st.sd)],['측정',(st?st.n:0)+'곳']].map(([x,y])=>`<div><span>${x}</span><b>${y}</b></div>`).join('')}</div>
+        <div class="mdd-card" style="padding:0;"><div class="mdd-ct" style="padding:12px 12px 0;">위치별 값 (기준에 가까운 순)</div><table class="mdd-tbl"><thead><tr><th>위치</th><th>설비</th><th>값</th><th>상태</th></tr></thead><tbody>${sorted.map(r=>{ const lv=mdLevel(r.value,rg); return `<tr class="lv-${lv}"><td>${escapeHtml(r.loc)}</td><td>${escapeHtml(r.catName||'')}</td><td><b>${escapeHtml(String(r.raw))}</b>${escapeHtml(u)}</td><td><span class="mdd-st ${lv}">${{bad:'이탈',near:'근접',mid:'보통',ok:'여유',none:'-'}[lv]}</span></td></tr>`; }).join('')}</tbody></table></div>
+      </div>
+      <div class="mdd-f"><button class="mdd-close" id="mdd-close">닫기</button></div></div>`;
+    wrap.classList.add('show');
+    const close=()=>{ wrap.classList.remove('show'); setTimeout(()=>{ if(!wrap.classList.contains('show')) wrap.innerHTML=''; },260); };
+    wrap.querySelector('#mdd-x').onclick=close; wrap.querySelector('#mdd-close').onclick=close; wrap.querySelector('.mdd-bg').onclick=close;
   }
 
   async function exportDashboardExcel(){

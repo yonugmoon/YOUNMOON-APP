@@ -138,6 +138,9 @@ main{flex:1;position:relative;overflow:hidden}
 .prev{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .prev span{background:var(--chip);border:1px solid var(--line);border-radius:7px;padding:3px 8px;font-size:12px}
 .grid2{display:grid;grid-template-columns:1fr 110px;gap:8px}
+#scrAdj .tbar .row{flex-wrap:wrap}
+#scrAdj .tbar .row .btn.sm{padding:8px 9px}
+#adjNext{flex:1 0 100%;margin-top:4px}
 </style>
 </head>
 <body>
@@ -166,6 +169,7 @@ main{flex:1;position:relative;overflow:hidden}
       </div>
       <div class="sec-t"><span>저장된 안내도 (건물·층별)</span><span id="savedCnt"></span></div>
       <div id="savedList"></div>
+      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">피난안내도 스캐너 v1.6 · 2026-11-18</div>
     </section>
 
     <!-- CAMERA -->
@@ -193,8 +197,8 @@ main{flex:1;position:relative;overflow:hidden}
       </div>
       <div class="tbar">
         <div class="seg" id="modeSeg">
-          <button data-mode="crop" class="on">📄 스캔 (영역 자르기)</button>
-          <button data-mode="level">📐 수평·수직 보정만</button>
+          <button data-mode="crop" class="on">✂️ 선택 영역 자르기</button>
+          <button data-mode="level">🖼️ 사진 전체 유지</button>
         </div>
         <div class="info" id="adjInfo"><b>드래그</b>해서 도면 영역을 선택하세요.</div>
         <div class="row">
@@ -202,8 +206,7 @@ main{flex:1;position:relative;overflow:hidden}
           <button class="btn sm" id="adjFull">⬚ 전체</button>
           <button class="btn sm" id="adjRot">⟳ 90°</button>
           <button class="btn sm" id="adjCorner" title="꼭짓점 4점 조정">◇ 꼭짓점</button>
-          <div class="grow"></div>
-          <button class="btn primary" id="adjNext">확인 →</button>
+          <button class="btn primary" id="adjNext">확인 → (자르기 + 수평·수직 보정)</button>
         </div>
       </div>
     </section>
@@ -1046,7 +1049,10 @@ function setInfoDrag() {
     if (g && g.type !== 'corner') {
       const P = S.quad.map(Adj.toScr), w = Math.max(dist(P[0], P[1]), dist(P[3], P[2])), h = Math.max(dist(P[0], P[3]), dist(P[1], P[2]));
       if (g.moved && (w < 30 || h < 30)) { S.quad = g.prevQuad; S.box = g.prevBox; toast('영역이 너무 작습니다 — 다시 드래그하세요'); }
-      else if (g.moved) $('#adjInfo').innerHTML = `<b>도면 영역 선택됨</b>${S.paper ? ' (안내도 기울기에 맞춰 원근 보정)' : ''} · 다시 드래그하거나 확인을 누르세요`;
+      else if (g.moved) {
+        if (S.mode !== 'crop') { S.mode = 'crop'; syncModeSeg(); toast('선택 영역 자르기로 전환했습니다'); }
+        $('#adjInfo').innerHTML = `<b>도면 영역 선택됨</b> · 확인을 누르면 이 영역만 잘라서 수평·수직 보정합니다`;
+      }
     }
     if (g && g.type === 'corner') S.box = null;
     g = null; Adj.drag = -1; pid = null; $('#loupe').style.display = 'none'; Adj.draw();
@@ -1060,10 +1066,13 @@ $('#adjCorner').onclick = () => {
   else { boxFromQuad(); quadFromBox(); setInfoDrag(); }
   Adj.draw();
 };
-function syncModeSeg() { [...$('#modeSeg').children].forEach(b => b.classList.toggle('on', b.dataset.mode === S.mode)); }
+function syncModeSeg() {
+  [...$('#modeSeg').children].forEach(b => b.classList.toggle('on', b.dataset.mode === S.mode));
+  $('#adjNext').textContent = S.mode === 'crop' ? '확인 → (선택 영역 자르기 + 수평·수직 보정)' : '확인 → (사진 전체 + 수평·수직 보정)';
+}
 $('#modeSeg').onclick = e => {
   const b = e.target.closest('button'); if (!b) return; S.mode = b.dataset.mode; syncModeSeg();
-  toast(S.mode === 'crop' ? '스캔: 지정한 영역만 잘라 반듯하게 폅니다' : '수평·수직 보정: 사진 전체를 유지하며 기울기·원근만 바로잡습니다');
+  toast(S.mode === 'crop' ? '선택한 영역만 잘라서 반듯하게 폅니다 (수평·수직 자동 보정)' : '자르지 않고 사진 전체를 유지합니다 (수평·수직 자동 보정)');
 };
 $('#adjAuto').onclick = () => { busy(true); setTimeout(() => { autoDetect(false); busy(false); }, 30); };
 $('#adjFull').onclick = () => { S.quad = fullQuad(0); S.paper = null; boxFromQuad(); $('#adjInfo').textContent = '사진 전체가 선택되었습니다.'; Adj.draw(); };
@@ -1084,6 +1093,7 @@ $('#adjNext').onclick = async () => {
     buildWarp(true);
     S.tool = 'here'; Mark.syncTools(); Mark.setTab('mark');
     go('mark');
+    if (S.mode === 'level') toast('사진 전체 유지 모드 — 자르려면 ✂️ 선택 영역 자르기를 선택하세요', 3000);
     const has = S.markers.some(m => m.type === 'here');
     showHint(has ? '현위치를 끌어 옮기거나 다른 표시를 추가하세요' : '지도를 탭해 현재 위치를 표시하세요');
   } catch (e) { console.error(e); toast('보정 중 오류가 발생했습니다'); }

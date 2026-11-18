@@ -280,6 +280,20 @@
   #mdash-modal .md-spct{font-weight:900;text-align:right;}
   #mdash-modal .md-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted,#64708A);margin-top:8px;}
   #mdash-modal .md-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px;}
+  #mdash-modal .md-hero{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+  #mdash-modal .md-hero-c{background:#fff;border:1px solid var(--border,#E3E6EC);border-radius:14px;padding:10px 8px 8px;text-align:center;}
+  #mdash-modal .md-donut{width:100%;max-width:150px;height:auto;display:block;margin:0 auto 4px;}
+  #mdash-modal .md-kpi{display:flex;gap:10px;align-items:center;border-left:4px solid var(--kc);}
+  #mdash-modal .md-kpi-ic{width:34px;height:34px;border-radius:10px;background:#F2F5FA;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  #mdash-modal .md-hm{border-collapse:separate;border-spacing:3px;width:100%;font-size:12px;}
+  #mdash-modal .md-hm th{background:#1A2540;color:#fff;font-weight:700;padding:6px 8px;border-radius:6px;white-space:nowrap;}
+  #mdash-modal .md-hm tbody th{background:#EEF1F7;color:#1A2540;}
+  #mdash-modal .md-hm td{text-align:center;padding:8px 6px;border-radius:6px;font-weight:800;color:#fff;min-width:56px;}
+  #mdash-modal .md-hm td small{display:block;font-size:9px;font-weight:600;opacity:.85;}
+  #mdash-modal .md-hm-g1{background:#16A34A;} #mdash-modal .md-hm-g2{background:#86D19A;color:#14532D !important;}
+  #mdash-modal .md-hm-y{background:#F2C14E;color:#5B3B00 !important;} #mdash-modal .md-hm-r{background:#E5484D;}
+  #mdash-modal .md-hm-e{background:#F4F5F8;color:#B5BCCB !important;font-weight:400 !important;}
+  #mdash-modal .md-top{background:linear-gradient(120deg,#1A2540 0%,#1F3A68 60%,#0B7B74 100%);}
   #mdash-modal .md-empty{background:#fff;border:1px dashed var(--border,#D7DCE6);border-radius:14px;padding:22px 16px;text-align:center;color:var(--muted,#64708A);font-size:13px;line-height:1.7;margin-top:12px;}
   .cmp-banner-btn{width:100%;background:#EEF3FF;border:1px solid #C9DBFF;color:#155EEF;border-radius:12px;padding:11px 14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;-webkit-tap-highlight-color:transparent;}
   .cmp-banner-btn:active{background:#e2ecff;}
@@ -5846,7 +5860,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     document.getElementById('stab-iso').addEventListener('click', ()=>switchStructTab('iso'));
     document.getElementById('stab-cat').addEventListener('click', ()=>switchStructTab('cat'));
     document.getElementById('struct-xlsx-btn').addEventListener('click', exportStructureExcel);
-    document.getElementById('struct-dash-btn').addEventListener('click', exportDashboardExcel);
+    document.getElementById('struct-dash-btn').addEventListener('click', ()=>showMeasureDashboard(mdRowsFromInspection(current)));
   }
 
   function switchStructTab(tab){
@@ -6300,13 +6314,26 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     let overAll=0; rows.forEach(r=>{ if(mdIsOver(r, mdThreshold(r.itemName,r.std))) overAll++; });
     let cg=0,cb=0,cn=0; D.catStat.forEach(c=>{ cg+=c.good; cb+=c.bad; cn+=c.na; });
     const passPct = (cg+cb)? Math.round(cg/(cg+cb)*100) : null;
-    const kpi=(lab,val,sub,col)=>`<div class="md-kpi"><div class="md-kpi-l">${lab}</div><div class="md-kpi-v" style="${col?'color:'+col:''}">${val}</div>${sub?`<div class="md-kpi-s">${sub}</div>`:''}</div>`;
     let body='';
-    body+=`<div class="md-kpis">
-      ${kpi('측정값', rows.length+'건', itemNames.length+'개 항목')}
-      ${kpi('기준 초과', overAll+'건', overAll?'빨간 막대 확인':'모두 기준 이내', overAll?'var(--bad,#E5484D)':'var(--good,#22B573)')}
-      ${kpi('점검 적합율', passPct==null?'-':passPct+'%', `적합 ${cg} · 부적합 ${cb}`, passPct==null?'':passPct>=90?'var(--good,#22B573)':passPct>=70?'#E8A317':'var(--bad,#E5484D)')}
-      ${kpi('미점검', cn+'건', '판정 없는 항목')}
+    const kpi=(ic,lab,val,sub,col)=>`<div class="md-kpi" style="--kc:${col||'#2563EB'}"><div class="md-kpi-ic">${ic}</div><div><div class="md-kpi-l">${lab}</div><div class="md-kpi-v" style="color:${col||'#1A2540'}">${val}</div>${sub?`<div class="md-kpi-s">${sub}</div>`:''}</div></div>`;
+    const withinN = rows.filter(r=>r.value!=null && mdThreshold(r.itemName,r.std).thr!=null).length;
+    const okPct = withinN ? Math.round((withinN-overAll)/withinN*100) : null;
+    const passCol = passPct==null?'#64708A':passPct>=90?'#16A34A':passPct>=70?'#E8A317':'#E5484D';
+    // 도넛(점검 결과) + 링(측정 기준 충족률) — SVG
+    const donut=(segs,center,sub)=>{ const tot=segs.reduce((a,x)=>a+x.v,0); const C=2*Math.PI*42; let off=0;
+      const arcs = tot? segs.filter(x=>x.v>0).map(x=>{ const len=C*x.v/tot; const a=`<circle cx="60" cy="60" r="42" fill="none" stroke="${x.c}" stroke-width="16" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`; off+=len; return a; }).join('') : `<circle cx="60" cy="60" r="42" fill="none" stroke="#E6E9F0" stroke-width="16"/>`;
+      return `<svg viewBox="0 0 120 120" class="md-donut"><circle cx="60" cy="60" r="42" fill="none" stroke="#EEF0F5" stroke-width="16"/>${arcs}<text x="60" y="58" text-anchor="middle" font-size="19" font-weight="900" fill="#1A2540">${center}</text><text x="60" y="76" text-anchor="middle" font-size="9.5" fill="#64708A">${sub}</text></svg>`; };
+    body+=`<div class="md-hero">
+      <div class="md-hero-c">${donut([{v:cg,c:'#22B573'},{v:cb,c:'#E5484D'},{v:cn,c:'#C4CADB'}], passPct==null?'-':passPct+'%', '점검 적합율')}
+        <div class="md-legend" style="justify-content:center"><span><i style="background:#22B573"></i>적합 ${cg}</span><span><i style="background:#E5484D"></i>부적합 ${cb}</span><span><i style="background:#C4CADB"></i>미점검 ${cn}</span></div></div>
+      <div class="md-hero-c">${donut([{v:withinN-overAll,c:'#1ABDB5'},{v:overAll,c:'#E5484D'}], okPct==null?'-':okPct+'%', '측정 기준 충족')}
+        <div class="md-legend" style="justify-content:center"><span><i style="background:#1ABDB5"></i>기준 이내 ${withinN-overAll}</span><span><i style="background:#E5484D"></i>초과 ${overAll}</span></div></div>
+    </div>
+    <div class="md-kpis">
+      ${kpi('📏','측정값', rows.length+'건', itemNames.length+'개 항목')}
+      ${kpi('🚨','기준 초과', overAll+'건', overAll?'빨간색 표시 확인':'모두 기준 이내', overAll?'#E5484D':'#16A34A')}
+      ${kpi('✅','점검 적합율', passPct==null?'-':passPct+'%', `적합 ${cg} · 부적합 ${cb}`, passCol)}
+      ${kpi('⏳','미점검', cn+'건', '판정 없는 항목', '#64708A')}
     </div>`;
     if(!rows.length){
       body+=`<div class="md-empty">측정값이 입력된 항목이 없습니다.<br>접지저항·전압·수신감도 등 <b>측정값 칸</b>에 숫자를 넣으면 여기에서 그래프로 볼 수 있습니다.<br>지난 점검은 <b>📂 엑셀 불러오기</b>로 대시보드 엑셀을 열어 보세요.</div>`;
@@ -6321,6 +6348,17 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       body+=`<div class="md-card"><div class="md-card-h"><b>${escapeHtml(mdItem)}</b><span>${escapeHtml(thrTxt)}</span></div>
         ${blds.length>1?`<div class="md-chips" style="margin:6px 0 2px;">${['전체',...blds].map(b=>`<button class="md-chip sm ${b===mdBld?'on':''}" data-bld="${escapeHtml(b)}">${escapeHtml(b)}</button>`).join('')}</div>`:''}
         <div class="md-stats">${[['건수',st?st.n+'건':'-'],['평균',mdFmt(st&&st.avg)+unit],['최소',mdFmt(st&&st.min)+unit],['최대',mdFmt(st&&st.max)+unit],['중앙값',mdFmt(st&&st.med)+unit],['표준편차',mdFmt(st&&st.sd)],['기준 초과',over+'건']].map(([a,b])=>`<div><span>${a}</span><b ${a==='기준 초과'&&over?'style="color:var(--bad,#E5484D)"':''}>${b}</b></div>`).join('')}</div>`;
+      // 건물 × 층 히트맵 (구조도처럼 위층이 위)
+      { const hb=[...new Set(all.map(r=>r.bld))]; const hf=[...new Set(all.filter(r=>r.value!=null).map(r=>r.floor===null?-9999:r.floor))].sort((a,b)=>b-a);
+        if(hf.length){
+          const cell=(b,f)=>{ const m=all.filter(r=>r.bld===b && (r.floor===null?-9999:r.floor)===f && r.value!=null); if(!m.length) return '<td class="md-hm-e">·</td>';
+            const v=m.reduce((x,y)=>x+y.value,0)/m.length; let cls='g1';
+            if(t.thr!=null){ const ov=mdIsOver({value:v},t); if(ov) cls='r'; else { const ratio = t.lowerBad ? (t.thr!==0? t.thr/v : 0) : (t.thr!==0? v/t.thr : 0); cls = ratio>0.8?'y':ratio>0.5?'g2':'g1'; } }
+            return `<td class="md-hm-${cls}" title="${escapeHtml(b)} ${mdFloorLabel(f===-9999?null:f)} · ${m.length}곳">${mdFmt(v)}${m.length>1?`<small>×${m.length}</small>`:''}</td>`; };
+          body+=`<div class="md-sub">건물·층 측정 지도 ${unit?'('+escapeHtml(unit)+')':''}</div>
+            <div class="md-tbl-wrap"><table class="md-hm"><thead><tr><th>층</th>${hb.map(b=>`<th>${escapeHtml(b)}</th>`).join('')}</tr></thead><tbody>${hf.map(f=>`<tr><th>${f===-9999?'-':mdFloorLabel(f)}</th>${hb.map(b=>cell(b,f)).join('')}</tr>`).join('')}</tbody></table></div>
+            <div class="md-legend"><span><i style="background:#16A34A"></i>여유</span><span><i style="background:#86D19A"></i>보통</span><span><i style="background:#F2C14E"></i>기준 근접(80%↑)</span><span><i style="background:#E5484D"></i>기준 초과</span></div>`;
+        } }
       // 층별 평균 (세로 막대)
       const floors=[...new Set(sel.filter(r=>r.value!=null).map(r=>r.floor===null?-9999:r.floor))].sort((a,b)=>a-b);
       if(floors.length){
@@ -6398,7 +6436,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
   async function exportDashboardExcel(){
     if(!current) return;
     if(typeof ExcelJS === 'undefined'){ alert('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결 후 새로고침해 주세요.'); return; }
-    const btn = document.getElementById('struct-dash-btn');
+    const btn = document.getElementById('md-export') || document.getElementById('struct-dash-btn');
+    const btnTxt = btn ? btn.textContent : '';
     if(btn){ btn.disabled=true; btn.textContent='생성 중…'; }
     try{
       // ── 측정값 수집 ──
@@ -6514,6 +6553,36 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       });
       if(rows.length===0) wd.getCell(2,1).value='측정값이 입력된 항목이 없습니다.';
 
+      /* ── 시트4: 건물·층 측정 지도 (히트맵) — 측정 항목마다 층(위층이 위) × 건물 평균값, 기준 대비 색 ── */
+      { const wh=wb.addWorksheet('건물·층 측정 지도',{views:[{showGridLines:false}]});
+        wh.getColumn(1).width=3; wh.getColumn(2).width=10;
+        let r0=1; const t1=wh.getCell(r0,2); t1.value=`🗺 ${current.siteName} 건물·층 측정 지도`; t1.font={bold:true,size:15,color:{argb:'FF1A2540'}}; r0+=2;
+        const items={}; rows.forEach(r=>{ if(r.value!=null) (items[r.itemName]=items[r.itemName]||[]).push(r); });
+        const names=Object.keys(items).sort((a,b)=>(/접지저항/.test(a)?0:1)-(/접지저항/.test(b)?0:1) || items[b].length-items[a].length);
+        if(!names.length){ wh.getCell(r0,2).value='측정값이 입력된 항목이 없습니다.'; }
+        names.forEach(nm=>{
+          const d=items[nm]; const t=mdThreshold(nm,(d.find(r=>r.std)||{}).std); const unit=(d.find(r=>r.unit)||{}).unit||'';
+          const blds=[...new Set(d.map(r=>r.bld))]; const fls=[...new Set(d.map(r=>r.floor===null?-9999:r.floor))].sort((a,b)=>b-a);
+          const h=wh.getCell(r0,2); h.value=`■ ${nm}${unit?' ('+unit+')':''}  —  ${t.thr==null?'기준 없음':'기준 '+t.thr+unit+(t.lowerBad?' 이상':' 이하')}`; h.font={bold:true,size:12,color:{argb:'FF1A2540'}}; r0++;
+          const hc=(c,v)=>{ c.value=v; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1A2540'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center',vertical:'middle'}; };
+          hc(wh.getCell(r0,2),'층'); blds.forEach((b,i)=>{ hc(wh.getCell(r0,3+i),b); if((wh.getColumn(3+i).width||0)<14) wh.getColumn(3+i).width=14; }); r0++;
+          fls.forEach(f=>{
+            const fc=wh.getCell(r0,2); fc.value=f===-9999?'-':mdFloorLabel(f); fc.font={bold:true,color:{argb:'FF1A2540'}}; fc.alignment={horizontal:'center'}; fc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFEEF1F7'}};
+            blds.forEach((b,i)=>{ const c=wh.getCell(r0,3+i); const m=d.filter(r=>r.bld===b&&(r.floor===null?-9999:r.floor)===f);
+              c.alignment={horizontal:'center',vertical:'middle'}; c.border={top:{style:'thin',color:{argb:'FFFFFFFF'}},bottom:{style:'thin',color:{argb:'FFFFFFFF'}},left:{style:'thin',color:{argb:'FFFFFFFF'}},right:{style:'thin',color:{argb:'FFFFFFFF'}}};
+              if(!m.length){ c.value='·'; c.font={color:{argb:'FFB5BCCB'}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF4F5F8'}}; return; }
+              const v=m.reduce((x,y)=>x+y.value,0)/m.length; c.value=Math.round(v*100)/100; c.numFmt='0.00';
+              let col='FF16A34A', fcol='FFFFFFFF';
+              if(t.thr!=null){ if(mdIsOver({value:v},t)) col='FFE5484D'; else { const ratio=t.lowerBad?(v? t.thr/v:0):(t.thr? v/t.thr:0); if(ratio>0.8){ col='FFF2C14E'; fcol='FF5B3B00'; } else if(ratio>0.5){ col='FF86D19A'; fcol='FF14532D'; } } }
+              c.fill={type:'pattern',pattern:'solid',fgColor:{argb:col}}; c.font={bold:true,color:{argb:fcol}};
+            });
+            r0++;
+          });
+          r0+=2;
+        });
+        const lg=wh.getCell(r0,2); lg.value='색: 초록=여유 · 연두=보통 · 노랑=기준 근접(80% 이상) · 빨강=기준 초과 · 회색=측정 없음 (여러 곳이면 평균)'; lg.font={size:10,color:{argb:'FF64708A'}};
+      }
+
       /* ── 시트3: 설비별 적합율 ── */
       const wr=wb.addWorksheet('설비별 적합율');
       ['설비','적합','부적합','미점검','적합율'].forEach((h,i)=>{ const c=wr.getCell(1,i+1); c.value=h;
@@ -6531,7 +6600,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     }catch(e){
       alert('대시보드 생성 오류: '+e.message);
     }finally{
-      if(btn){ btn.disabled=false; btn.textContent='📈 대시보드'; }
+      if(btn){ btn.disabled=false; btn.textContent=btnTxt; }
     }
   }
 
@@ -8270,12 +8339,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         ${cmpSummary && cmpSummary.prevBad
           ? `<button class="cmp-banner-btn" id="prevbad-banner-btn" style="background:#FDEDEC;border-color:#F5C4C2;color:#C02026;"><span>🔴 전회 부적합 ${cmpSummary.prevBad}건 · 위치 보기</span><span>›</span></button>`
           : ''}
-        <button class="cmp-banner-btn" id="mdash-banner-btn" style="background:#ECFDF8;border-color:#B7EBDD;color:#0B7B74;"><span>📊 측정 대시보드 · 측정값 ${(()=>{ try{ return mdRowsFromInspection(current).rows.length; }catch(e){ return 0; } })()}건 통계·그래프 보기</span><span>›</span></button>
         <div id="cat-list"></div>
       </div>
     `);
     app.innerHTML = html.join("");
-    { const mb=document.getElementById("mdash-banner-btn"); if(mb) mb.onclick=()=>showMeasureDashboard(mdRowsFromInspection(current)); }
     document.getElementById("back-btn").onclick = ()=>{
       if(activeCatId){ activeCatId=null; renderDetail(); window.scrollTo({top:0, behavior:"auto"}); return; }
       current=null; cmpBase=null; deleteConfirmId=null; renderList();

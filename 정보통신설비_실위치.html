@@ -150,6 +150,7 @@ main{flex:1;position:relative;overflow:hidden}
     <div class="logo" id="logo">설</div>
     <h1 id="title">정보통신설비 실위치</h1>
     <div class="steps" id="steps"><i></i><i></i><i></i></div>
+    <button class="iconbtn hidden" id="btnHome" aria-label="홈으로" title="홈으로">🏠</button>
   </header>
   <main>
     <!-- HOME -->
@@ -169,7 +170,7 @@ main{flex:1;position:relative;overflow:hidden}
       </div>
       <div class="sec-t"><span>저장된 도면 (건물·층별)</span><span id="savedCnt"></span></div>
       <div id="savedList"></div>
-      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">정보통신설비 실위치 v1.7 · 2026-11-18</div>
+      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">정보통신설비 실위치 v1.8 · 2026-11-18</div>
     </section>
 
     <!-- CAMERA -->
@@ -287,6 +288,17 @@ main{flex:1;position:relative;overflow:hidden}
     <div class="row" style="margin-top:16px">
       <button class="btn grow" id="sameCancel">취소</button>
       <button class="btn primary grow" id="sameOk">추가</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="doneModal">
+  <div class="box" style="text-align:center">
+    <div style="font-size:40px;line-height:1">✅</div>
+    <h3 style="margin:10px 0 4px">저장 완료</h3>
+    <div class="info" id="doneMsg" style="margin:0 0 16px"></div>
+    <div class="row">
+      <button class="btn grow" id="doneStay">계속 편집</button>
+      <button class="btn primary grow" id="doneHome">🏠 홈으로</button>
     </div>
   </div>
 </div>
@@ -726,6 +738,7 @@ function go(name) {
   S.screen = name;
   for (const k in SCREENS) $(SCREENS[k]).classList.toggle('on', k === name);
   $('#btnBack').classList.toggle('hidden', name === 'home');
+  $('#btnHome').classList.toggle('hidden', name === 'home');
   $('#logo').classList.toggle('hidden', name !== 'home');
   const step = { home: 0, cam: 1, adj: 2, mark: 3 }[name];
   [...$('#steps').children].forEach((el, i) => el.classList.toggle('on', i < step));
@@ -735,6 +748,17 @@ function go(name) {
   if (name === 'adj') { Adj.cornerMode = false; $('#adjCorner').classList.remove('primary'); if (S.quad) boxFromQuad(); requestAnimationFrame(Adj.fit); }
   if (name === 'mark') { updateTitle(); renderFloorBar(); requestAnimationFrame(() => { Mark.resize(); Mark.fit(); }); }
 }
+// 저장 이후 변경 여부 (홈 이동 시 확인용)
+const snapOf = () => JSON.stringify([S.markers.map(stripM), S.quad, S.mode, S.fine, S.filter]);
+function markSaved() { S.savedSnap = snapOf(); }
+const isDirty = () => !!S.view && S.savedSnap !== snapOf();
+function goHome() {
+  if (S.screen !== 'home' && isDirty() && !confirm('저장하지 않은 변경 내용이 있습니다. 저장하지 않고 홈으로 이동할까요?')) return;
+  go('home');
+}
+$('#btnHome').onclick = goHome;
+$('#doneHome').onclick = () => { $('#doneModal').classList.remove('on'); go('home'); };
+$('#doneStay').onclick = () => $('#doneModal').classList.remove('on');
 $('#btnBack').onclick = () => {
   if (S.screen === 'mark') go(S.src ? 'adj' : 'home');
   else go('home');
@@ -1604,7 +1628,8 @@ $('#saveOk').onclick = async () => {
       const r = await copyToFloors(rec, same, $('#saveSameHere').checked);
       msg += ` · 동일층 ${r.added.length}개 추가` + (r.skipped.length ? ` (${r.skipped.join(', ')} 이미 있음)` : '');
     }
-    toast(msg, 3000); updateTitle(); renderFloorBar();
+    markSaved(); updateTitle(); renderFloorBar();
+    $('#doneMsg').textContent = msg; $('#doneModal').classList.add('on');
   } catch (e) { console.error(e); toast('저장 실패: 저장공간을 확인하세요'); }
   busy(false);
 };
@@ -1628,7 +1653,7 @@ $('#sameOk').onclick = async () => {
   $('#sameModal').classList.remove('on'); busy(true);
   try {
     let rec;
-    if (sameTarget.live) { rec = await currentRecord(); await DB.put(rec); } // 현재 수정 내용 먼저 저장
+    if (sameTarget.live) { rec = await currentRecord(); await DB.put(rec); markSaved(); } // 현재 수정 내용 먼저 저장
     else rec = await DB.get(sameTarget.id);
     const r = await copyToFloors(rec, fl, $('#sameHere').checked);
     toast(`동일층 ${r.added.length}개 추가` + (r.skipped.length ? ` · ${r.skipped.join(', ')} 이미 있어 건너뜀` : ''), 3200);
@@ -1660,7 +1685,7 @@ async function openRecord(id) {
   const r = await DB.get(id);
   S.src = r.src ? await blobToCanvas(r.src) : null;
   S.quad = r.quad; S.paper = r.paper || null; S.mode = r.mode || 'crop'; S.fine = r.fine || 0; S.filter = r.filter || 'color';
-  S.markers = r.markers || []; S.history = []; S.sel = null; S.savedId = r.id; S.mapping = null;
+  S.markers = r.markers || []; S.history = []; S.sel = null; S.savedId = r.id; S.mapping = null; S.savedSnap = null;
   S.building = bldgOf(r); S.floor = r.floor || ''; S.sameAs = r.sameAs || null;
   if (S.src && S.quad) buildWarp(false);
   else { S.warped = await blobToCanvas(r.view); S.view = S.warped; }
@@ -1668,7 +1693,7 @@ async function openRecord(id) {
   const hasRoom = roomsOf(S.markers).length > 0;
   if (!TOOLS.some(t => t.id === S.tool)) S.tool = 'select'; Mark.syncTools(); Mark.setTab('mark');
   if (S.screen !== 'mark') go('mark'); else Mark.fit();
-  updateTitle(); renderFloorBar();
+  markSaved(); updateTitle(); renderFloorBar();
   if (!hasRoom) showHint(`${S.floor || ''} 설비실 위치를 표시하세요`);
 }
 $('#savedList').onclick = async e => {

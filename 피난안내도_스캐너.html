@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>피난안내도 스캐너</title>
+<style>
+:root{
+  --bg:#0b1220; --panel:#111a2e; --panel-2:#0e1626; --line:#1e2b45;
+  --ink:#e8edf7; --ink-dim:#9fb0cc; --ink-faint:#64748b;
+  --brand:#3bd6c6; --brand-2:#2a9df4; --warn:#f4b740; --bad:#f4685f; --good:#4ad991;
+  --chip:#16233c; --shadow:0 8px 30px rgba(0,0,0,.35);
+  --r:14px; --r-sm:10px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;overflow:hidden;overscroll-behavior:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:14px}
+input,select{font-family:inherit;font-size:15px}
+.app{position:fixed;inset:0;display:flex;flex-direction:column}
+header{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(180deg,#0d1526,#0b1220);border-bottom:1px solid var(--line);z-index:5}
+header h1{font-size:16px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#16a34a,#3bd6c6);display:grid;place-items:center;font-weight:800;color:#06210f;font-size:14px;flex:0 0 auto}
+.steps{display:flex;gap:4px}
+.steps i{width:22px;height:4px;border-radius:2px;background:var(--line)}
+.steps i.on{background:var(--brand)}
+.iconbtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--chip);font-size:18px;flex:0 0 auto}
+.iconbtn:active{transform:scale(.95)}
+main{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;display:none;flex-direction:column}
+.screen.on{display:flex}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border-radius:12px;background:var(--chip);font-weight:600;font-size:15px;border:1px solid var(--line);white-space:nowrap}
+.btn.primary{background:linear-gradient(135deg,#2a9df4,#3bd6c6);color:#04121d;border:none}
+.btn.danger{background:#3a1717;color:#ffb4ae;border-color:#5a2222}
+.btn.sm{padding:8px 11px;font-size:13px;border-radius:10px}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4}
+.row{display:flex;gap:8px;align-items:center}
+.grow{flex:1}
+
+/* home */
+.home{overflow-y:auto;padding:18px 16px calc(24px + var(--safe-b))}
+.hero{background:radial-gradient(120% 120% at 0% 0%,#14324a 0%,#111a2e 55%);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+.hero h2{margin:0 0 6px;font-size:21px}
+.hero p{margin:0 0 16px;color:var(--ink-dim);font-size:14px}
+.hero .btn{width:100%;margin-top:8px;padding:15px}
+.feat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 22px}
+.feat div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:12px;color:var(--ink-dim)}
+.feat b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px}
+.sec-t{font-size:13px;color:var(--ink-dim);margin:0 2px 10px;display:flex;justify-content:space-between}
+.saved{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative}
+.card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#fff}
+.card .meta{padding:8px 10px}
+.card .meta b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .meta span{font-size:11px;color:var(--ink-faint)}
+.card .del{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff;font-size:14px}
+.empty{color:var(--ink-faint);font-size:13px;text-align:center;padding:26px 10px;border:1px dashed var(--line);border-radius:12px}
+
+/* camera */
+#scrCam{background:#000}
+.camwrap{position:relative;flex:1;overflow:hidden}
+.camwrap video,.camwrap canvas{position:absolute;inset:0;width:100%;height:100%}
+.camwrap video{object-fit:cover}
+.levelbox{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);padding:6px 12px;border-radius:20px;font-size:12px;display:flex;gap:10px;align-items:center;backdrop-filter:blur(6px)}
+.levelbox .dot{width:9px;height:9px;border-radius:50%;background:var(--warn)}
+.levelbox.ok .dot{background:var(--good)}
+.camhint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);padding:6px 12px;border-radius:20px;font-size:12px;white-space:nowrap}
+.cambar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-around;padding:16px 10px calc(18px + var(--safe-b));background:#000}
+.shutter{width:72px;height:72px;border-radius:50%;border:4px solid #fff;background:rgba(255,255,255,.15);display:grid;place-items:center}
+.shutter::after{content:"";width:56px;height:56px;border-radius:50%;background:#fff}
+.shutter:active::after{background:#cfd8e3}
+.camside{width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:#cbd5e1}
+.camside .iconbtn{background:#1c1f26}
+.camside .iconbtn.on{background:var(--brand);color:#04121d}
+
+/* adjust */
+.stage{position:relative;flex:1;overflow:hidden;background:#05080f;touch-action:none}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.loupe{position:absolute;width:120px;height:120px;border-radius:50%;border:3px solid #fff;box-shadow:var(--shadow);overflow:hidden;display:none;pointer-events:none;top:12px;left:12px;background:#000}
+.loupe canvas{width:100%;height:100%}
+.tbar{flex:0 0 auto;background:var(--panel);border-top:1px solid var(--line);padding:10px 12px calc(10px + var(--safe-b))}
+.seg{display:flex;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
+.seg button{flex:1;padding:8px 6px;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-dim)}
+.seg button.on{background:var(--chip);color:var(--ink);box-shadow:inset 0 0 0 1px #2c3d61}
+.info{font-size:12px;color:var(--ink-dim);margin:8px 2px}
+.info b{color:var(--brand)}
+
+/* mark */
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;padding:8px 12px;border-radius:20px;background:var(--chip);border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--ink-dim);display:flex;align-items:center;gap:6px}
+.chip.on{background:#173a4a;border-color:var(--brand);color:var(--ink)}
+.chip .sw{width:10px;height:10px;border-radius:3px}
+.slider{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:var(--ink-dim)}
+.slider input[type=range]{flex:1;accent-color:var(--brand)}
+.slider output{width:52px;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+.hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(11,18,32,.85);border:1px solid var(--line);padding:7px 14px;border-radius:20px;font-size:13px;white-space:nowrap;pointer-events:none;transition:opacity .3s}
+.floatbtns{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:8px}
+.floatbtns .iconbtn{background:rgba(17,26,46,.9);border:1px solid var(--line)}
+.sheet{margin-top:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:10px;display:none}
+.sheet.on{display:block}
+.sheet input[type=text]{width:100%;padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:#0a111f;color:var(--ink)}
+
+/* modal / toast */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.modal.on{display:flex}
+.modal .box{width:100%;max-width:520px;background:var(--panel);border:1px solid var(--line);border-radius:18px 18px 0 0;padding:18px 16px calc(18px + var(--safe-b))}
+.modal h3{margin:0 0 12px;font-size:17px}
+.modal label{display:block;font-size:12px;color:var(--ink-dim);margin:10px 0 5px}
+.modal input[type=text]{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#0a111f;color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:calc(110px + var(--safe-b));transform:translateX(-50%) translateY(20px);background:#1d2a44;border:1px solid #2c3d61;color:var(--ink);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:60;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.busy{position:fixed;inset:0;background:rgba(5,8,15,.6);display:none;place-items:center;z-index:70}
+.busy.on{display:grid}
+.spin{width:44px;height:44px;border-radius:50%;border:4px solid #23324f;border-top-color:var(--brand);animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <button class="iconbtn hidden" id="btnBack" aria-label="뒤로">‹</button>
+    <div class="logo" id="logo">피</div>
+    <h1 id="title">피난안내도 스캐너</h1>
+    <div class="steps" id="steps"><i></i><i></i><i></i></div>
+  </header>
+  <main>
+    <!-- HOME -->
+    <section class="screen on home" id="scrHome">
+      <div class="hero">
+        <h2>피난안내도 촬영 → 내 위치 표시</h2>
+        <p>벽에 붙은 피난안내도를 찍으면 자동으로 영역을 찾아 반듯하게 펴고, 바로 현재 위치를 표시할 수 있습니다.</p>
+        <button class="btn primary" id="btnCam">📷 카메라로 스캔</button>
+        <button class="btn" id="btnPick">🖼️ 사진 불러오기 / 촬영</button>
+        <input type="file" id="fileIn" accept="image/*" class="hidden">
+        <input type="file" id="fileCap" accept="image/*" capture="environment" class="hidden">
+      </div>
+      <div class="feat">
+        <div><b>자동 스캔</b>안내도 테두리 자동 검출·원근 보정</div>
+        <div><b>수평·수직</b>기울기 자동 측정 및 보정</div>
+        <div><b>위치 표시</b>현위치·비상구·경로 표시 후 공유</div>
+      </div>
+      <div class="sec-t"><span>저장된 안내도</span><span id="savedCnt"></span></div>
+      <div class="saved" id="savedList"></div>
+    </section>
+
+    <!-- CAMERA -->
+    <section class="screen" id="scrCam">
+      <div class="camwrap" id="camWrap">
+        <video id="video" playsinline muted autoplay></video>
+        <canvas id="camOverlay"></canvas>
+        <div class="levelbox" id="levelBox"><span class="dot"></span><span id="levelTxt">수평 측정 중…</span></div>
+        <div class="camhint" id="camHint">안내도 전체가 화면에 들어오게 비춰주세요</div>
+      </div>
+      <div class="cambar">
+        <div class="camside"><button class="iconbtn" id="camGallery">🖼️</button>앨범</div>
+        <div class="camside"><button class="iconbtn" id="camAuto">A</button>자동촬영</div>
+        <button class="shutter" id="shutter" aria-label="촬영"></button>
+        <div class="camside"><button class="iconbtn" id="camTorch">🔦</button>조명</div>
+        <div class="camside"><button class="iconbtn" id="camClose">✕</button>닫기</div>
+      </div>
+    </section>
+
+    <!-- ADJUST -->
+    <section class="screen" id="scrAdj">
+      <div class="stage" id="adjStage">
+        <canvas id="adjCanvas"></canvas>
+        <div class="loupe" id="loupe"><canvas id="loupeCanvas" width="240" height="240"></canvas></div>
+      </div>
+      <div class="tbar">
+        <div class="seg" id="modeSeg">
+          <button data-mode="crop" class="on">📄 스캔 (영역 자르기)</button>
+          <button data-mode="level">📐 수평·수직 보정만</button>
+        </div>
+        <div class="info" id="adjInfo">모서리를 끌어 안내도 영역을 맞추세요.</div>
+        <div class="row">
+          <button class="btn sm" id="adjAuto">✨ 자동검출</button>
+          <button class="btn sm" id="adjFull">⬚ 전체</button>
+          <button class="btn sm" id="adjRot">⟳ 90°</button>
+          <div class="grow"></div>
+          <button class="btn primary" id="adjNext">확인 →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MARK -->
+    <section class="screen" id="scrMark">
+      <div class="stage" id="markStage">
+        <canvas id="markCanvas"></canvas>
+        <div class="hint" id="markHint">지도를 탭해 현재 위치를 표시하세요</div>
+        <div class="floatbtns">
+          <button class="iconbtn" id="btnUndo" title="실행취소">↶</button>
+          <button class="iconbtn" id="btnFit" title="화면맞춤">⤢</button>
+        </div>
+      </div>
+      <div class="tbar">
+        <div class="seg" id="tabSeg" style="margin-bottom:10px">
+          <button data-tab="mark" class="on">📍 위치표시</button>
+          <button data-tab="fix">🎛️ 보정·필터</button>
+        </div>
+        <div id="tabMark">
+          <div class="chips" id="toolChips"></div>
+          <div class="sheet" id="selSheet">
+            <div class="row" style="margin-bottom:8px">
+              <input type="text" id="selLabel" placeholder="라벨 (예: 2층 엘리베이터 앞)">
+              <button class="btn sm danger" id="selDel">삭제</button>
+            </div>
+            <div class="slider">크기<input type="range" id="selSize" min="0.5" max="3" step="0.1" value="1"><output id="selSizeO">1.0</output></div>
+            <div class="slider" id="selDirRow">방향<input type="range" id="selDir" min="-1" max="359" step="1" value="-1"><output id="selDirO">없음</output></div>
+          </div>
+        </div>
+        <div id="tabFix" class="hidden">
+          <div class="chips" id="filterChips"></div>
+          <div class="slider">기울기<input type="range" id="fineAng" min="-15" max="15" step="0.1" value="0"><output id="fineAngO">0.0°</output></div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn sm" id="btnAutoLevel">📐 자동 수평·수직</button>
+            <button class="btn sm" id="btnReCrop">✂️ 영역 다시 지정</button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn grow" id="btnSave">💾 저장</button>
+          <button class="btn primary grow" id="btnExport">📤 이미지 공유</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="saveModal">
+  <div class="box">
+    <h3>안내도 저장</h3>
+    <label>이름</label>
+    <input type="text" id="saveName" placeholder="예: ○○빌딩 2층">
+    <div class="row" style="margin-top:16px">
+      <button class="btn grow" id="saveCancel">취소</button>
+      <button class="btn primary grow" id="saveOk">저장</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="busy" id="busy"><div class="spin"></div></div>
+
+<script>
+'use strict';
+/* =====================================================================
+ *  피난안내도 스캐너 — 촬영 · 자동 영역검출 · 원근/수평 보정 · 위치표시
+ *  외부 라이브러리 없이 동작 (오프라인 가능)
+ * ===================================================================== */
+const $ = s => document.querySelector(s);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const DPR = () => Math.min(window.devicePixelRatio || 1, 3);
+const MAX_SRC = 2800;   // 원본 최대 변 길이
+const MAX_OUT = 2400;   // 보정 결과 최대 변 길이
+
+function toast(msg, ms = 2000) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), ms);
+}
+const busy = on => $('#busy').classList.toggle('on', on);
+const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+
+/* =====================================================================
+ *  1. 영상처리 기초
+ * ===================================================================== */
+function grayOf(data, n) {
+  const g = new Float32Array(n);
+  for (let i = 0, j = 0; i < n; i++, j += 4) g[i] = 0.299 * data[j] + 0.587 * data[j + 1] + 0.114 * data[j + 2];
+  return g;
+}
+// 분리형 박스 블러 (누적합)
+function boxBlur(src, w, h, r) {
+  if (r < 1) return src.slice();
+  const tmp = new Float32Array(w * h), out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const o = y * w; let s = 0;
+    for (let x = -r; x <= r; x++) s += src[o + clamp(x, 0, w - 1)];
+    for (let x = 0; x < w; x++) {
+      tmp[o + x] = s / (2 * r + 1);
+      s += src[o + Math.min(x + r + 1, w - 1)] - src[o + Math.max(x - r, 0)];
+    }
+  }
+  for (let x = 0; x < w; x++) {
+    let s = 0;
+    for (let y = -r; y <= r; y++) s += tmp[clamp(y, 0, h - 1) * w + x];
+    for (let y = 0; y < h; y++) {
+      out[y * w + x] = s / (2 * r + 1);
+      s += tmp[Math.min(y + r + 1, h - 1) * w + x] - tmp[Math.max(y - r, 0) * w + x];
+    }
+  }
+  return out;
+}
+function maxFilter(src, w, h, r) {
+  const tmp = new Float32Array(w * h), out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let m = 0; for (let k = Math.max(0, x - r), e = Math.min(w - 1, x + r); k <= e; k++) { const v = src[y * w + k]; if (v > m) m = v; }
+    tmp[y * w + x] = m;
+  }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let m = 0; for (let k = Math.max(0, y - r), e = Math.min(h - 1, y + r); k <= e; k++) { const v = tmp[k * w + x]; if (v > m) m = v; }
+    out[y * w + x] = m;
+  }
+  return out;
+}
+function sobel(g, w, h) {
+  const gx = new Float32Array(w * h), gy = new Float32Array(w * h), mag = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x;
+    const a = g[i - w - 1], b = g[i - w], c = g[i - w + 1], d = g[i - 1], f = g[i + 1], p = g[i + w - 1], q = g[i + w], r = g[i + w + 1];
+    const sx = (c + 2 * f + r) - (a + 2 * d + p);
+    const sy = (p + 2 * q + r) - (a + 2 * b + c);
+    gx[i] = sx; gy[i] = sy; mag[i] = Math.hypot(sx, sy);
+  }
+  return { gx, gy, mag };
+}
+function percentile(arr, p) {
+  let max = 0; for (let i = 0; i < arr.length; i++) if (arr[i] > max) max = arr[i];
+  if (max <= 0) return 0;
+  const bins = 512, hist = new Uint32Array(bins);
+  for (let i = 0; i < arr.length; i++) hist[Math.min(bins - 1, (arr[i] / max * bins) | 0)]++;
+  const target = arr.length * p; let acc = 0;
+  for (let b = 0; b < bins; b++) { acc += hist[b]; if (acc >= target) return (b + 0.5) / bins * max; }
+  return max;
+}
+function readPixels(source, sw, sh, maxSide) {
+  const s = Math.min(1, maxSide / Math.max(sw, sh));
+  const w = Math.max(8, Math.round(sw * s)), h = Math.max(8, Math.round(sh * s));
+  const c = mkCanvas(w, h), ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(source, 0, 0, w, h);
+  return { data: ctx.getImageData(0, 0, w, h).data, w, h, s };
+}
+
+/* =====================================================================
+ *  2. 안내도 영역(사각형) 자동 검출 — 그래디언트 방향 허프 변환
+ * ===================================================================== */
+function detectQuad(source, sw, sh, maxSide = 480) {
+  const { data, w, h, s } = readPixels(source, sw, sh, maxSide);
+  let g = grayOf(data, w * h);
+  g = boxBlur(boxBlur(g, w, h, 1), w, h, 1);
+  const { gx, gy, mag } = sobel(g, w, h);
+  const thr = Math.max(30, percentile(mag, 0.90));
+
+  // 허프 누적 (그래디언트 방향 ±4° 만 투표)
+  const nT = 180, diag = Math.ceil(Math.hypot(w, h)), nR = 2 * diag + 1;
+  const acc = new Float32Array(nT * nR);
+  const COS = new Float32Array(nT), SIN = new Float32Array(nT);
+  for (let t = 0; t < nT; t++) { COS[t] = Math.cos(t * Math.PI / 180); SIN[t] = Math.sin(t * Math.PI / 180); }
+  const edge = new Uint8Array(w * h);
+  for (let y = 2; y < h - 2; y++) for (let x = 2; x < w - 2; x++) {
+    const i = y * w + x, m = mag[i];
+    if (m < thr) continue;
+    edge[i] = 1;
+    let th = Math.atan2(gy[i], gx[i]) * 180 / Math.PI; if (th < 0) th += 180;
+    const t0 = Math.round(th);
+    for (let dt = -4; dt <= 4; dt++) {
+      const t = ((t0 + dt) % 180 + 180) % 180;
+      const r = Math.round(x * COS[t] + y * SIN[t]) + diag;
+      acc[t * nR + r] += 1;
+    }
+  }
+  // 피크 추출 (비최대 억제)
+  const minVotes = Math.min(w, h) * 0.12;
+  const peaks = [];
+  for (let t = 0; t < nT; t++) for (let r = 0; r < nR; r++) {
+    const v = acc[t * nR + r]; if (v < minVotes) continue;
+    let isMax = true;
+    for (let dt = -3; dt <= 3 && isMax; dt++) {
+      let tt = t + dt, rr0 = r;
+      if (tt < 0) { tt += 180; rr0 = 2 * diag - r; } else if (tt >= 180) { tt -= 180; rr0 = 2 * diag - r; }
+      for (let dr = -6; dr <= 6; dr++) {
+        if (!dt && !dr) continue;
+        const rr = rr0 + dr; if (rr < 0 || rr >= nR) continue;
+        const u = acc[tt * nR + rr];
+        if (u > v || (u === v && (dt < 0 || (dt === 0 && dr < 0)))) { isMax = false; break; }
+      }
+    }
+    if (isMax) peaks.push({ t, r: r - diag, v });
+  }
+  peaks.sort((a, b) => b.v - a.v);
+  const H = [], V = [];
+  for (const p of peaks) {
+    const L = { t: p.t, r: p.r, v: p.v, c: COS[p.t], s: SIN[p.t] };
+    if (p.t >= 50 && p.t <= 130) { if (H.length < 14) { L.pos = (L.r - (w / 2) * L.c) / L.s; H.push(L); } }
+    else if (p.t <= 40 || p.t >= 140) { if (V.length < 14) { L.pos = (L.r - (h / 2) * L.s) / L.c; V.push(L); } }
+  }
+  // 사진 테두리를 가상의 직선으로 추가 (안내도 일부가 화면 밖으로 잘린 경우 대비)
+  H.push({ t: 90, r: 1, v: 0, c: 0, s: 1, pos: 1, border: true }, { t: 90, r: h - 2, v: 0, c: 0, s: 1, pos: h - 2, border: true });
+  V.push({ t: 0, r: 1, v: 0, c: 1, s: 0, pos: 1, border: true }, { t: 0, r: w - 2, v: 0, c: 1, s: 0, pos: w - 2, border: true });
+  const inter = (a, b) => {
+    const det = a.c * b.s - a.s * b.c; if (Math.abs(det) < 1e-6) return null;
+    return [(a.r * b.s - a.s * b.r) / det, (a.c * b.r - a.r * b.c) / det];
+  };
+  // 변 지지도 (해당 변을 따라 실제 에지가 얼마나 존재하는지)
+  const support = (p, q) => {
+    const N = 48; let hit = 0, tot = 0;
+    const dx = q[0] - p[0], dy = q[1] - p[1], len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len;
+    for (let k = 0; k < N; k++) {
+      const f = 0.04 + 0.92 * k / (N - 1);
+      const x = Math.round(p[0] + dx * f), y = Math.round(p[1] + dy * f);
+      if (x < 1 || y < 1 || x >= w - 1 || y >= h - 1) continue;
+      tot++;
+      let ok = false;
+      for (let oy = -1; oy <= 1 && !ok; oy++) for (let ox = -1; ox <= 1 && !ok; ox++) {
+        const i = (y + oy) * w + x + ox;
+        if (edge[i] && Math.abs(gx[i] * nx + gy[i] * ny) > 0.8 * mag[i]) ok = true;
+      }
+      if (ok) hit++;
+    }
+    return tot < N * 0.5 ? 0 : hit / tot;
+  };
+  let best = null;
+  const insideQ = (q, x, y) => { let sg = 0; for (let i = 0; i < 4; i++) { const a = q[i], b = q[(i + 1) % 4]; const cr = Math.sign((b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0])); if (!sg) sg = cr; else if (cr && cr !== sg) return false; } return true; };
+  const area = q => { let a = 0; for (let i = 0; i < 4; i++) { const p = q[i], n = q[(i + 1) % 4]; a += p[0] * n[1] - n[0] * p[1]; } return Math.abs(a) / 2; };
+  const convex = q => { let sg = 0; for (let i = 0; i < 4; i++) { const a = q[i], b = q[(i + 1) % 4], c = q[(i + 2) % 4]; const cr = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]); if (!sg) sg = Math.sign(cr); else if (Math.sign(cr) !== sg) return false; } return true; };
+  for (let i = 0; i < H.length; i++) for (let j = 0; j < H.length; j++) {
+    const top = H[i], bot = H[j]; if (bot.pos - top.pos < h * 0.15) continue;
+    for (let k = 0; k < V.length; k++) for (let l = 0; l < V.length; l++) {
+      const lef = V[k], rig = V[l]; if (rig.pos - lef.pos < w * 0.15) continue;
+      const q = [inter(top, lef), inter(top, rig), inter(bot, rig), inter(bot, lef)];
+      if (q.some(p => !p || p[0] < -0.03 * w || p[0] > 1.03 * w || p[1] < -0.03 * h || p[1] > 1.03 * h)) continue;
+      if (!convex(q)) continue;
+      const af = area(q) / (w * h); if (af < 0.08) continue;
+      const nb = !!top.border + !!bot.border + !!lef.border + !!rig.border; if (nb > 2) continue;
+      const BS = 0.5; // 테두리 변의 가정 지지도
+      const sp = [top.border ? BS : support(q[0], q[1]), rig.border ? BS : support(q[1], q[2]), bot.border ? BS : support(q[2], q[3]), lef.border ? BS : support(q[3], q[0])];
+      const mn = Math.min(...sp); if (mn < 0.3) continue;
+      const mean = (sp[0] + sp[1] + sp[2] + sp[3]) / 4;
+      if (nb && mean < 0.6) continue;
+      // 화면 중앙을 포함하는 사각형 우대 (촬영 대상은 보통 가운데)
+      const center = insideQ(q, w / 2, h / 2) ? 1.25 : 1;
+      const score = (0.6 * mean + 0.4 * mn) * (0.45 + 0.55 * Math.sqrt(af)) * center;
+      const realMean = nb === 4 ? 0 : sp.reduce((a, v, i) => a + ([top, rig, bot, lef][i].border ? 0 : v), 0) / (4 - nb);
+      if (!best || score > best.score) best = { q, score, mean: realMean, mn };
+    }
+  }
+  if (!best || best.mean < 0.45) return null;
+  return {
+    quad: best.q.map(p => [clamp(p[0] / s, 0, sw), clamp(p[1] / s, 0, sh)]),
+    score: best.score, conf: best.mean
+  };
+}
+
+/* =====================================================================
+ *  3. 호모그래피 · 원근 변환
+ * ===================================================================== */
+function solve(A, b) { // 가우스 소거
+  const n = b.length;
+  for (let i = 0; i < n; i++) {
+    let p = i; for (let r = i + 1; r < n; r++) if (Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r;
+    [A[i], A[p]] = [A[p], A[i]]; [b[i], b[p]] = [b[p], b[i]];
+    const d = A[i][i]; if (Math.abs(d) < 1e-12) return null;
+    for (let r = i + 1; r < n; r++) {
+      const f = A[r][i] / d; if (!f) continue;
+      for (let c = i; c < n; c++) A[r][c] -= f * A[i][c];
+      b[r] -= f * b[i];
+    }
+  }
+  const x = new Array(n);
+  for (let i = n - 1; i >= 0; i--) { let s = b[i]; for (let c = i + 1; c < n; c++) s -= A[i][c] * x[c]; x[i] = s / A[i][i]; }
+  return x;
+}
+function homography(src, dst) { // src[i] → dst[i]
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = src[i], [u, v] = dst[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  const h = solve(A, b); return h ? [...h, 1] : null;
+}
+const applyH = (H, x, y) => { const z = H[6] * x + H[7] * y + H[8]; return [(H[0] * x + H[1] * y + H[2]) / z, (H[3] * x + H[4] * y + H[5]) / z, z]; };
+function mul3(A, B) {
+  const C = new Array(9);
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) C[r * 3 + c] = A[r * 3] * B[c] + A[r * 3 + 1] * B[3 + c] + A[r * 3 + 2] * B[6 + c];
+  return C;
+}
+function inv3(m) {
+  const [a, b, c, d, e, f, g, h, i] = m;
+  const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g;
+  const det = a * A + b * B + c * C;
+  return [A / det, -(b * i - c * h) / det, (b * f - c * e) / det, B / det, (a * i - c * g) / det, -(a * f - c * d) / det, C / det, -(a * h - b * g) / det, (a * e - b * d) / det];
+}
+// H: 출력좌표 → 원본좌표. 양선형 보간 역매핑.
+function warp(srcCanvas, H, ow, oh, bg = [255, 255, 255]) {
+  const sw = srcCanvas.width, sh = srcCanvas.height;
+  const sd = srcCanvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, sw, sh).data;
+  const out = mkCanvas(ow, oh), octx = out.getContext('2d');
+  const img = octx.createImageData(out.width, out.height), od = img.data;
+  ow = out.width; oh = out.height;
+  for (let y = 0; y < oh; y++) {
+    let X = H[1] * y + H[2], Y = H[4] * y + H[5], Z = H[7] * y + H[8];
+    let o = y * ow * 4;
+    for (let x = 0; x < ow; x++, o += 4) {
+      const z = H[6] * x + Z, fx = (H[0] * x + X) / z, fy = (H[3] * x + Y) / z;
+      if (fx < 0 || fy < 0 || fx > sw - 1 || fy > sh - 1 || z <= 0) { od[o] = bg[0]; od[o + 1] = bg[1]; od[o + 2] = bg[2]; od[o + 3] = 255; continue; }
+      const x0 = fx | 0, y0 = fy | 0, x1 = Math.min(x0 + 1, sw - 1), y1 = Math.min(y0 + 1, sh - 1);
+      const ax = fx - x0, ay = fy - y0;
+      const i00 = (y0 * sw + x0) * 4, i10 = (y0 * sw + x1) * 4, i01 = (y1 * sw + x0) * 4, i11 = (y1 * sw + x1) * 4;
+      const w00 = (1 - ax) * (1 - ay), w10 = ax * (1 - ay), w01 = (1 - ax) * ay, w11 = ax * ay;
+      od[o] = sd[i00] * w00 + sd[i10] * w10 + sd[i01] * w01 + sd[i11] * w11;
+      od[o + 1] = sd[i00 + 1] * w00 + sd[i10 + 1] * w10 + sd[i01 + 1] * w01 + sd[i11 + 1] * w11;
+      od[o + 2] = sd[i00 + 2] * w00 + sd[i10 + 2] * w10 + sd[i01 + 2] * w01 + sd[i11 + 2] * w11;
+      od[o + 3] = 255;
+    }
+  }
+  octx.putImageData(img, 0, 0);
+  return out;
+}
+// 사각형의 실제 가로/세로 비율 추정 (핀홀 카메라 모델, Zhang & He 방식)
+function estimateSize(q, imgW, imgH) {
+  const wTop = dist(q[0], q[1]), wBot = dist(q[3], q[2]), hL = dist(q[0], q[3]), hR = dist(q[1], q[2]);
+  let W = Math.max(wTop, wBot), Hh = Math.max(hL, hR);
+  try {
+    const u0 = imgW / 2, v0 = imgH / 2;
+    const m1 = [q[3][0] - u0, q[3][1] - v0, 1], m2 = [q[2][0] - u0, q[2][1] - v0, 1], m3 = [q[0][0] - u0, q[0][1] - v0, 1], m4 = [q[1][0] - u0, q[1][1] - v0, 1];
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const k2 = dot(cross(m1, m4), m3) / dot(cross(m2, m4), m3);
+    const k3 = dot(cross(m1, m4), m2) / dot(cross(m3, m4), m2);
+    const n2 = [k2 * m2[0] - m1[0], k2 * m2[1] - m1[1], k2 * m2[2] - m1[2]];
+    const n3 = [k3 * m3[0] - m1[0], k3 * m3[1] - m1[1], k3 * m3[2] - m1[2]];
+    const f2 = -(n2[0] * n3[0] + n2[1] * n3[1]) / (n2[2] * n3[2]);
+    if (f2 > 0 && isFinite(f2)) {
+      const f = Math.sqrt(f2);
+      // 초점거리가 그럴듯한 범위(35mm 환산 ~15–120mm)일 때만 사용
+      const ratioF = f / Math.max(imgW, imgH);
+      if (ratioF > 0.4 && ratioF < 3.5) {
+        const ww = (n2[0] * n2[0] + n2[1] * n2[1]) / f2 + n2[2] * n2[2];
+        const hh = (n3[0] * n3[0] + n3[1] * n3[1]) / f2 + n3[2] * n3[2];
+        const ar = Math.sqrt(ww / hh);
+        if (isFinite(ar) && ar > 0.1 && ar < 10) {
+          if (W / Hh > ar) W = Hh * ar; else Hh = W / ar;
+          // 크기는 원래 변 길이에 맞춰 키움
+          const sc = Math.max(wTop, wBot) / W; if (sc > 1) { W *= sc; Hh *= sc; }
+        }
+      }
+    }
+  } catch (e) { /* 실패 시 단순 추정 사용 */ }
+  return [W, Hh];
+}
+
+/* =====================================================================
+ *  4. 기울기(수평) 추정 — 그래디언트 방향 히스토그램
+ * ===================================================================== */
+function estimateSkew(canvas) {
+  const { data, w, h } = readPixels(canvas, canvas.width, canvas.height, 700);
+  let g = grayOf(data, w * h); g = boxBlur(g, w, h, 1);
+  const { gx, gy, mag } = sobel(g, w, h);
+  const thr = Math.max(25, percentile(mag, 0.85));
+  const RANGE = 15, BIN = 0.2, nb = Math.round(2 * RANGE / BIN) + 1, hist = new Float32Array(nb);
+  for (let i = 0; i < w * h; i++) {
+    if (mag[i] < thr) continue;
+    let a = Math.atan2(gy[i], gx[i]) * 180 / Math.PI;
+    a = ((a % 90) + 90 + 45) % 90 - 45;
+    if (Math.abs(a) > RANGE) continue;
+    hist[Math.round((a + RANGE) / BIN)] += mag[i];
+  }
+  const sm = new Float32Array(nb);
+  for (let i = 0; i < nb; i++) { let s = 0, c = 0; for (let k = -3; k <= 3; k++) { const j = i + k; if (j >= 0 && j < nb) { s += hist[j] * (4 - Math.abs(k)); c += 4 - Math.abs(k); } } sm[i] = s / c; }
+  let bi = 0; for (let i = 1; i < nb; i++) if (sm[i] > sm[bi]) bi = i;
+  let off = 0;
+  if (bi > 0 && bi < nb - 1) { const a = sm[bi - 1], b = sm[bi], c = sm[bi + 1]; const d = a - 2 * b + c; if (d) off = 0.5 * (a - c) / d; }
+  const avg = sm.reduce((s, v) => s + v, 0) / nb;
+  return { angle: (bi + off) * BIN - RANGE, conf: avg ? sm[bi] / avg : 0 };
+}
+
+/* =====================================================================
+ *  5. 스캐너 필터 (조명 평탄화)
+ * ===================================================================== */
+function backgroundMap(data, w, h) {
+  const sc = Math.min(1, 300 / Math.max(w, h)), sw = Math.max(4, Math.round(w * sc)), sh = Math.max(4, Math.round(h * sc));
+  const small = new Float32Array(sw * sh);
+  for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) {
+    const sx = Math.min(w - 1, Math.round(x / sc)), sy = Math.min(h - 1, Math.round(y / sc)), j = (sy * w + sx) * 4;
+    small[y * sw + x] = Math.max(data[j], data[j + 1], data[j + 2]);
+  }
+  const r = Math.max(2, Math.round(Math.max(sw, sh) / 45));
+  let bg = maxFilter(small, sw, sh, r);
+  bg = boxBlur(boxBlur(bg, sw, sh, r * 2), sw, sh, r * 2);
+  return { bg, sw, sh, sc };
+}
+function applyFilter(canvas, mode) {
+  if (mode === 'none') return canvas;
+  const w = canvas.width, h = canvas.height;
+  const out = mkCanvas(w, h), octx = out.getContext('2d', { willReadFrequently: true });
+  octx.drawImage(canvas, 0, 0);
+  const img = octx.getImageData(0, 0, w, h), d = img.data;
+  const { bg, sw, sh, sc } = backgroundMap(d, w, h);
+  for (let y = 0; y < h; y++) {
+    const by = Math.min(sh - 1, y * sc);
+    const y0 = by | 0, y1 = Math.min(sh - 1, y0 + 1), fy = by - y0;
+    for (let x = 0; x < w; x++) {
+      const bx = Math.min(sw - 1, x * sc), x0 = bx | 0, x1 = Math.min(sw - 1, x0 + 1), fx = bx - x0;
+      const b = (bg[y0 * sw + x0] * (1 - fx) + bg[y0 * sw + x1] * fx) * (1 - fy) + (bg[y1 * sw + x0] * (1 - fx) + bg[y1 * sw + x1] * fx) * fy;
+      const k = 248 / Math.max(40, b), j = (y * w + x) * 4;
+      let r = d[j] * k, g = d[j + 1] * k, bl = d[j + 2] * k;
+      if (mode === 'color') {
+        const L = 0.299 * r + 0.587 * g + 0.114 * bl;
+        r = L + (r - L) * 1.35; g = L + (g - L) * 1.35; bl = L + (bl - L) * 1.35;   // 채도
+        const c = v => 255 * Math.pow(clamp(v, 0, 255) / 255, 1.25);                // 대비
+        d[j] = c(r); d[j + 1] = c(g); d[j + 2] = c(bl);
+      } else {
+        const L = 0.299 * r + 0.587 * g + 0.114 * bl;
+        let v = mode === 'bw' ? (L - 150) * 255 / (225 - 150) : 255 * Math.pow(clamp(L, 0, 255) / 255, 1.4);
+        v = clamp(v, 0, 255); d[j] = d[j + 1] = d[j + 2] = v;
+      }
+    }
+  }
+  octx.putImageData(img, 0, 0);
+  return out;
+}
+
+/* =====================================================================
+ *  6. 상태
+ * ===================================================================== */
+const S = {
+  screen: 'home',
+  src: null,            // 원본 캔버스
+  quad: null,           // [[x,y]x4] TL,TR,BR,BL
+  autoQuad: null,
+  mode: 'crop',         // crop | level
+  fine: 0,              // 미세 회전(°)
+  filter: 'color',
+  warped: null,         // 원근 보정 결과
+  view: null,           // 필터 적용 결과 (표시/내보내기 기준)
+  markers: [],
+  history: [],
+  tool: 'here',
+  sel: null,
+  savedId: null,
+  name: '',
+};
+const TOOLS = [
+  { id: 'select', name: '✋ 이동' },
+  { id: 'here', name: '📍 현위치', color: '#e11d48' },
+  { id: 'exit', name: '비상구', color: '#16a34a', text: '비상구' },
+  { id: 'stairs', name: '계단', color: '#7c3aed', text: '계단' },
+  { id: 'ext', name: '소화기', color: '#dc2626', text: '소화기' },
+  { id: 'assembly', name: '집결지', color: '#2563eb', text: '집결지' },
+  { id: 'path', name: '〰 대피경로', color: '#16a34a' },
+  { id: 'note', name: '📝 메모', color: '#ca8a04' },
+];
+const TOOL = Object.fromEntries(TOOLS.map(t => [t.id, t]));
+const FILTERS = [
+  { id: 'color', name: '✨ 선명 컬러' },
+  { id: 'none', name: '원본' },
+  { id: 'gray', name: '흑백' },
+  { id: 'bw', name: '문서 스캔' },
+];
+
+/* =====================================================================
+ *  7. 화면 전환
+ * ===================================================================== */
+const SCREENS = { home: '#scrHome', cam: '#scrCam', adj: '#scrAdj', mark: '#scrMark' };
+function go(name) {
+  S.screen = name;
+  for (const k in SCREENS) $(SCREENS[k]).classList.toggle('on', k === name);
+  $('#btnBack').classList.toggle('hidden', name === 'home');
+  $('#logo').classList.toggle('hidden', name !== 'home');
+  const step = { home: 0, cam: 1, adj: 2, mark: 3 }[name];
+  [...$('#steps').children].forEach((el, i) => el.classList.toggle('on', i < step));
+  $('#title').textContent = { home: '피난안내도 스캐너', cam: '안내도 촬영', adj: '영역 · 보정', mark: '위치 표시' }[name];
+  if (name !== 'cam') Cam.stop();
+  if (name === 'home') renderSaved();
+  if (name === 'adj') requestAnimationFrame(Adj.fit);
+  if (name === 'mark') requestAnimationFrame(() => { Mark.resize(); Mark.fit(); });
+}
+$('#btnBack').onclick = () => {
+  if (S.screen === 'mark') go(S.src ? 'adj' : 'home');
+  else go('home');
+};
+
+/* =====================================================================
+ *  8. 이미지 불러오기
+ * ===================================================================== */
+async function loadFile(file) {
+  if (!file) return;
+  busy(true);
+  try {
+    let bmp;
+    try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch (e) {
+      bmp = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = URL.createObjectURL(file); });
+    }
+    const w = bmp.width, h = bmp.height;
+    await setSource(bmp, w, h);
+  } catch (e) { console.error(e); toast('이미지를 불러오지 못했습니다'); }
+  busy(false);
+}
+async function setSource(img, w, h, opts = {}) {
+  const s = Math.min(1, MAX_SRC / Math.max(w, h));
+  const c = mkCanvas(w * s, h * s);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  S.src = c; S.mapping = null; S.fine = 0; S.markers = []; S.history = []; S.sel = null; S.savedId = null; S.name = '';
+  S.mode = 'crop';
+  await nextFrame();
+  if (opts.quad) S.quad = opts.quad.map(p => [p[0] * s, p[1] * s]);
+  else autoDetect(true);
+  S.autoQuad = S.quad && S.quad.map(p => p.slice());
+  syncModeSeg();
+  go('adj');
+}
+function fullQuad(inset = 0) {
+  const w = S.src.width, h = S.src.height, ix = w * inset, iy = h * inset;
+  return [[ix, iy], [w - ix, iy], [w - ix, h - iy], [ix, h - iy]];
+}
+function autoDetect(silent) {
+  const r = detectQuad(S.src, S.src.width, S.src.height);
+  if (r) {
+    S.quad = r.quad;
+    $('#adjInfo').innerHTML = `안내도 영역을 <b>자동 검출</b>했습니다 (신뢰도 ${Math.round(r.conf * 100)}%). 필요하면 모서리를 끌어 조정하세요.`;
+  } else {
+    S.quad = fullQuad(0.04);
+    $('#adjInfo').innerHTML = '테두리를 찾지 못했습니다. 모서리 4개를 안내도 꼭짓점에 맞춰주세요.';
+    if (!silent) toast('자동 검출 실패 — 수동으로 맞춰주세요');
+  }
+  Adj && Adj.draw && Adj.draw();
+  return !!r;
+}
+$('#btnPick').onclick = () => $('#fileIn').click();
+$('#fileIn').onchange = e => { loadFile(e.target.files[0]); e.target.value = ''; };
+$('#fileCap').onchange = e => { loadFile(e.target.files[0]); e.target.value = ''; };
+
+/* =====================================================================
+ *  9. 카메라 (실시간 영역 검출 + 수평계 + 자동촬영)
+ * ===================================================================== */
+const Cam = {
+  stream: null, timer: null, quad: null, stableSince: 0, auto: false, torch: false, tilt: null,
+  async start() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $('#fileCap').click(); return; }
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false });
+    } catch (e) {
+      console.warn(e); toast('카메라를 열 수 없어 기본 카메라 앱을 사용합니다'); $('#fileCap').click(); return;
+    }
+    go('cam');
+    const v = $('#video'); v.srcObject = this.stream; await v.play().catch(() => {});
+    this.quad = null; this.stableSince = 0;
+    this.timer = setInterval(() => this.tick(), 350);
+    this.listenTilt();
+    const caps = this.stream.getVideoTracks()[0].getCapabilities?.() || {};
+    $('#camTorch').parentElement.style.opacity = caps.torch ? 1 : .35;
+  },
+  stop() {
+    clearInterval(this.timer); this.timer = null;
+    if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+    window.removeEventListener('devicemotion', this.onMotion);
+    const oc = $('#camOverlay'); oc.getContext('2d').clearRect(0, 0, oc.width, oc.height);
+  },
+  // 화면(cover) 좌표 변환
+  mapping() {
+    const v = $('#video'), wrap = $('#camWrap');
+    const vw = v.videoWidth, vh = v.videoHeight, cw = wrap.clientWidth, ch = wrap.clientHeight;
+    const s = Math.max(cw / vw, ch / vh);
+    return { s, ox: (cw - vw * s) / 2, oy: (ch - vh * s) / 2, cw, ch };
+  },
+  tick() {
+    const v = $('#video'); if (!v.videoWidth) return;
+    const r = detectQuad(v, v.videoWidth, v.videoHeight, 300);
+    const now = performance.now();
+    if (r && this.quad && r.quad.every((p, i) => dist(p, this.quad[i]) < Math.max(v.videoWidth, v.videoHeight) * 0.02)) {
+      if (!this.stableSince) this.stableSince = now;
+    } else this.stableSince = 0;
+    this.quad = r ? r.quad : null;
+    this.drawOverlay();
+    const hint = $('#camHint');
+    if (!r) hint.textContent = '안내도 전체가 화면에 들어오게 비춰주세요';
+    else if (this.auto) hint.textContent = this.stableSince ? '움직이지 마세요… 자동 촬영' : '안내도 인식됨 — 고정해주세요';
+    else hint.textContent = '안내도 인식됨 — 촬영 버튼을 누르세요';
+    if (this.auto && this.stableSince && now - this.stableSince > 1200 && (!this.tilt || this.tilt.ok)) this.capture();
+  },
+  drawOverlay() {
+    const oc = $('#camOverlay'), m = this.mapping(), dpr = DPR();
+    oc.width = m.cw * dpr; oc.height = m.ch * dpr;
+    const ctx = oc.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, m.cw, m.ch);
+    // 수평·수직 가이드 격자
+    ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 1;
+    for (let k = 1; k < 3; k++) {
+      ctx.beginPath(); ctx.moveTo(m.cw * k / 3, 0); ctx.lineTo(m.cw * k / 3, m.ch); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, m.ch * k / 3); ctx.lineTo(m.cw, m.ch * k / 3); ctx.stroke();
+    }
+    if (this.tilt) { // 기울기 수평선
+      const cx = m.cw / 2, cy = m.ch / 2, a = this.tilt.roll * Math.PI / 180, L = m.cw * 0.3;
+      ctx.strokeStyle = this.tilt.ok ? '#4ad991' : '#f4b740'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(cx - Math.cos(a) * L, cy - Math.sin(a) * L); ctx.lineTo(cx + Math.cos(a) * L, cy + Math.sin(a) * L); ctx.stroke();
+    }
+    if (!this.quad) return;
+    const P = this.quad.map(p => [p[0] * m.s + m.ox, p[1] * m.s + m.oy]);
+    ctx.fillStyle = 'rgba(59,214,198,.18)'; ctx.strokeStyle = this.stableSince ? '#4ad991' : '#3bd6c6'; ctx.lineWidth = 3;
+    ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; P.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], 6, 0, 7); ctx.fill(); });
+  },
+  listenTilt() {
+    const start = () => window.addEventListener('devicemotion', this.onMotion);
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission().then(r => r === 'granted' && start()).catch(() => {});
+    } else start();
+  },
+  onMotion: (e) => {
+    const g = e.accelerationIncludingGravity; if (!g || g.x == null) return;
+    let x = g.x, y = g.y; const z = g.z;
+    const so = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+    if (so === 90) [x, y] = [-y, x]; else if (so === -90 || so === 270) [x, y] = [y, -x]; else if (so === 180) [x, y] = [-x, -y];
+    const n = Math.hypot(x, y, z) || 1;
+    const pitch = Math.asin(clamp(z / n, -1, 1)) * 180 / Math.PI;      // 0 = 벽과 평행(세움)
+    let roll = Math.atan2(x, y) * 180 / Math.PI;
+    if (roll > 90) roll -= 180; else if (roll < -90) roll += 180;      // 플랫폼별 부호 차이 흡수
+    const flat = Math.abs(pitch) > 60;                                   // 바닥/책상 위 촬영
+    const ok = flat ? Math.abs(90 - Math.abs(pitch)) < 4 : (Math.abs(roll) < 2 && Math.abs(pitch) < 6);
+    Cam.tilt = { roll: flat ? 0 : roll, pitch, ok, flat };
+    const box = $('#levelBox'); box.classList.toggle('ok', ok);
+    $('#levelTxt').textContent = flat ? `바닥 촬영 · 기울기 ${(90 - Math.abs(pitch)).toFixed(1)}°`
+      : `수평 ${roll.toFixed(1)}° · 수직 ${pitch.toFixed(1)}°` + (ok ? ' ✓' : '');
+  },
+  capture() {
+    const v = $('#video'); if (!v.videoWidth) return;
+    const c = mkCanvas(v.videoWidth, v.videoHeight); c.getContext('2d').drawImage(v, 0, 0);
+    const q = this.quad && this.quad.map(p => p.slice());
+    this.stop();
+    if (navigator.vibrate) navigator.vibrate(40);
+    busy(true);
+    setTimeout(async () => {
+      await setSource(c, c.width, c.height, q ? { quad: q } : {});
+      if (q) $('#adjInfo').innerHTML = '촬영 중 검출된 <b>안내도 영역</b>입니다. 필요하면 모서리를 조정하세요.';
+      busy(false);
+    }, 30);
+  },
+  async toggleTorch() {
+    const t = this.stream && this.stream.getVideoTracks()[0]; if (!t) return;
+    try { this.torch = !this.torch; await t.applyConstraints({ advanced: [{ torch: this.torch }] }); $('#camTorch').classList.toggle('on', this.torch); }
+    catch (e) { toast('이 기기는 조명을 지원하지 않습니다'); }
+  },
+};
+$('#btnCam').onclick = () => Cam.start();
+$('#shutter').onclick = () => Cam.capture();
+$('#camClose').onclick = () => go('home');
+$('#camGallery').onclick = () => $('#fileIn').click();
+$('#camTorch').onclick = () => Cam.toggleTorch();
+$('#camAuto').onclick = () => { Cam.auto = !Cam.auto; $('#camAuto').classList.toggle('on', Cam.auto); toast(Cam.auto ? '자동 촬영 켜짐 — 인식되면 자동으로 찍습니다' : '자동 촬영 꺼짐'); };
+
+/* =====================================================================
+ *  10. 영역 조정 화면 (4 모서리 드래그 + 확대경)
+ * ===================================================================== */
+const Adj = {
+  v: { s: 1, ox: 0, oy: 0 }, drag: -1,
+  fit() {
+    if (!S.src) return;
+    const st = $('#adjStage'), c = $('#adjCanvas'), dpr = DPR();
+    const W = st.clientWidth, H = st.clientHeight; c.width = W * dpr; c.height = H * dpr;
+    const pad = 28, s = Math.min((W - pad * 2) / S.src.width, (H - pad * 2) / S.src.height);
+    Adj.v = { s, ox: (W - S.src.width * s) / 2, oy: (H - S.src.height * s) / 2, W, H };
+    Adj.draw();
+  },
+  toScr: p => [p[0] * Adj.v.s + Adj.v.ox, p[1] * Adj.v.s + Adj.v.oy],
+  toImg: (x, y) => [(x - Adj.v.ox) / Adj.v.s, (y - Adj.v.oy) / Adj.v.s],
+  draw() {
+    if (!S.src || S.screen !== 'adj') return;
+    const c = $('#adjCanvas'), ctx = c.getContext('2d'), dpr = DPR(), v = Adj.v;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#05080f'; ctx.fillRect(0, 0, v.W, v.H);
+    ctx.drawImage(S.src, v.ox, v.oy, S.src.width * v.s, S.src.height * v.s);
+    const P = S.quad.map(Adj.toScr);
+    // 바깥 영역 어둡게
+    ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.5)';
+    ctx.beginPath(); ctx.rect(0, 0, v.W, v.H);
+    ctx.moveTo(P[0][0], P[0][1]); for (let i = 3; i >= 1; i--) ctx.lineTo(P[i][0], P[i][1]); ctx.closePath();
+    ctx.fill('evenodd'); ctx.restore();
+    ctx.strokeStyle = '#3bd6c6'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.stroke();
+    // 3등분 보조선
+    ctx.strokeStyle = 'rgba(59,214,198,.35)'; ctx.lineWidth = 1;
+    const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    for (const t of [1 / 3, 2 / 3]) {
+      let a = lerp(P[0], P[1], t), b = lerp(P[3], P[2], t); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
+      a = lerp(P[0], P[3], t); b = lerp(P[1], P[2], t); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
+    }
+    P.forEach((p, i) => {
+      ctx.beginPath(); ctx.arc(p[0], p[1], Adj.drag === i ? 15 : 12, 0, 7);
+      ctx.fillStyle = Adj.drag === i ? 'rgba(59,214,198,.55)' : 'rgba(255,255,255,.25)'; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#3bd6c6'; ctx.stroke();
+    });
+  },
+  loupe(p) {
+    const L = $('#loupe'), lc = $('#loupeCanvas'), ctx = lc.getContext('2d');
+    L.style.display = 'block';
+    const sp = Adj.toScr(p);
+    L.style.left = (sp[0] < Adj.v.W / 2 ? Adj.v.W - 132 : 12) + 'px';
+    const z = 3, R = 60 / (Adj.v.s * z); // 확대경 반경(원본 픽셀)
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 240, 240);
+    ctx.drawImage(S.src, p[0] - R, p[1] - R, R * 2, R * 2, 0, 0, 240, 240);
+    ctx.strokeStyle = '#3bd6c6'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(120, 90); ctx.lineTo(120, 150); ctx.moveTo(90, 120); ctx.lineTo(150, 120); ctx.stroke();
+  },
+};
+(() => {
+  const st = $('#adjStage');
+  let pid = null;
+  st.addEventListener('pointerdown', e => {
+    if (!S.quad) return;
+    const rc = st.getBoundingClientRect(), x = e.clientX - rc.left, y = e.clientY - rc.top;
+    let bi = -1, bd = 44;
+    S.quad.forEach((p, i) => { const d = dist(Adj.toScr(p), [x, y]); if (d < bd) { bd = d; bi = i; } });
+    if (bi < 0) { // 가장 가까운 모서리를 선택 (화면 밖 모서리 대비)
+      let md = Infinity; S.quad.forEach((p, i) => { const d = dist(Adj.toScr(p), [x, y]); if (d < md) { md = d; bi = i; } });
+      if (md > 120) return;
+    }
+    Adj.drag = bi; pid = e.pointerId; st.setPointerCapture(pid);
+    Adj.grab = [S.quad[bi][0] - Adj.toImg(x, y)[0], S.quad[bi][1] - Adj.toImg(x, y)[1]];
+    Adj.loupe(S.quad[bi]); Adj.draw();
+  });
+  st.addEventListener('pointermove', e => {
+    if (Adj.drag < 0 || e.pointerId !== pid) return;
+    const rc = st.getBoundingClientRect(), p = Adj.toImg(e.clientX - rc.left, e.clientY - rc.top);
+    S.quad[Adj.drag] = [clamp(p[0] + Adj.grab[0], 0, S.src.width), clamp(p[1] + Adj.grab[1], 0, S.src.height)];
+    Adj.loupe(S.quad[Adj.drag]); Adj.draw();
+  });
+  const up = () => { Adj.drag = -1; pid = null; $('#loupe').style.display = 'none'; Adj.draw(); };
+  st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
+})();
+function syncModeSeg() { [...$('#modeSeg').children].forEach(b => b.classList.toggle('on', b.dataset.mode === S.mode)); }
+$('#modeSeg').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return; S.mode = b.dataset.mode; syncModeSeg();
+  toast(S.mode === 'crop' ? '스캔: 지정한 영역만 잘라 반듯하게 폅니다' : '수평·수직 보정: 사진 전체를 유지하며 기울기·원근만 바로잡습니다');
+};
+$('#adjAuto').onclick = () => { busy(true); setTimeout(() => { autoDetect(false); busy(false); }, 30); };
+$('#adjFull').onclick = () => { S.quad = fullQuad(0); $('#adjInfo').textContent = '사진 전체가 선택되었습니다.'; Adj.draw(); };
+$('#adjRot').onclick = () => {
+  const s = S.src, c = mkCanvas(s.height, s.width), ctx = c.getContext('2d');
+  ctx.translate(c.width, 0); ctx.rotate(Math.PI / 2); ctx.drawImage(s, 0, 0);
+  const h = s.height;
+  // (x,y) → (h - y, x), 꼭짓점 순서 유지(TL 기준 회전)
+  const q = S.quad.map(p => [h - p[1], p[0]]);
+  S.quad = [q[3], q[0], q[1], q[2]];
+  S.src = c; S.mapping = null; Adj.fit();
+};
+$('#adjNext').onclick = async () => {
+  busy(true); await nextFrame();
+  try {
+    buildWarp(true);
+    S.tool = 'here'; Mark.syncTools(); Mark.setTab('mark');
+    go('mark');
+    const has = S.markers.some(m => m.type === 'here');
+    showHint(has ? '현위치를 끌어 옮기거나 다른 표시를 추가하세요' : '지도를 탭해 현재 위치를 표시하세요');
+  } catch (e) { console.error(e); toast('보정 중 오류가 발생했습니다'); }
+  busy(false);
+};
+
+/* =====================================================================
+ *  11. 보정 파이프라인 (원근 + 미세회전 + 필터)
+ * ===================================================================== */
+function computeMatrix(fine) {
+  const q = S.quad, sw = S.src.width, sh = S.src.height;
+  let [W, Hh] = estimateSize(q, sw, sh);
+  let Hd2s, ow, oh;
+  const rect = [[0, 0], [W, 0], [W, Hh], [0, Hh]];
+  const Hs2r = homography(q, rect);
+  if (S.mode === 'level' && Hs2r) {
+    // 사진 전체를 유지: 원본 네 모서리를 보정 좌표로 옮겨 경계 계산
+    const corners = [[0, 0], [sw, 0], [sw, sh], [0, sh]].map(p => applyH(Hs2r, p[0], p[1]));
+    if (corners.every(p => p[2] > 0)) {
+      let x0 = Math.min(...corners.map(p => p[0])), x1 = Math.max(...corners.map(p => p[0]));
+      let y0 = Math.min(...corners.map(p => p[1])), y1 = Math.max(...corners.map(p => p[1]));
+      x0 = Math.max(x0, -W * 0.8); y0 = Math.max(y0, -Hh * 0.8); x1 = Math.min(x1, W * 1.8); y1 = Math.min(y1, Hh * 1.8);
+      const bw = x1 - x0, bh = y1 - y0, sc = Math.min(1.5, MAX_OUT / Math.max(bw, bh));
+      ow = bw * sc; oh = bh * sc;
+      Hd2s = mul3(inv3(Hs2r), [1 / sc, 0, x0, 0, 1 / sc, y0, 0, 0, 1]);
+    }
+  }
+  if (!Hd2s) {
+    const sc = Math.min(1.5, MAX_OUT / Math.max(W, Hh));
+    ow = W * sc; oh = Hh * sc;
+    Hd2s = homography([[0, 0], [ow, 0], [ow, oh], [0, oh]], q);
+  }
+  ow = Math.round(ow); oh = Math.round(oh);
+  if (fine) { // 출력 중심 기준 회전
+    const a = -fine * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), cx = ow / 2, cy = oh / 2;
+    const R = [c, -s, cx - c * cx + s * cy, s, c, cy - s * cx - c * cy, 0, 0, 1];
+    Hd2s = mul3(Hd2s, R);
+  }
+  return { Hd2s, ow, oh };
+}
+function buildWarp(autoLevel) {
+  let { Hd2s, ow, oh } = computeMatrix(0);
+  S.warped = warp(S.src, Hd2s, ow, oh);
+  if (autoLevel) {
+    const sk = estimateSkew(S.warped);
+    S.fine = (Math.abs(sk.angle) > 0.25 && Math.abs(sk.angle) < 14.5 && sk.conf > 1.6) ? -sk.angle : 0;
+    S.lastSkew = sk;
+  }
+  if (S.fine) { ({ Hd2s, ow, oh } = computeMatrix(S.fine)); S.warped = warp(S.src, Hd2s, ow, oh); }
+  // 기존 표시 위치를 새 보정 좌표로 옮김 (영역·모드·각도가 바뀌어도 지도상 같은 지점 유지)
+  const prev = S.mapping, next = { Hd2s, ow, oh };
+  if (prev && prev.src === S.src && S.markers.length) {
+    const Hs2d = inv3(Hd2s);
+    const mv = (x, y) => { const sp = applyH(prev.Hd2s, x * prev.ow, y * prev.oh), d = applyH(Hs2d, sp[0], sp[1]); return [clamp(d[0] / ow, 0, 1), clamp(d[1] / oh, 0, 1)]; };
+    for (const m of S.markers) {
+      if (m.type === 'path') m.pts = m.pts.map(p => mv(p[0], p[1]));
+      else[m.x, m.y] = mv(m.x, m.y);
+    }
+  }
+  next.src = S.src; S.mapping = next;
+  S.view = applyFilter(S.warped, S.filter);
+  $('#fineAng').value = S.fine; $('#fineAngO').textContent = S.fine.toFixed(1) + '°';
+  if (autoLevel && S.fine) toast(`자동 수평 보정 ${S.fine > 0 ? '+' : ''}${S.fine.toFixed(1)}° 적용`);
+}
+
+/* =====================================================================
+ *  12. 위치 표시 화면
+ * ===================================================================== */
+function showHint(t) { const h = $('#markHint'); h.textContent = t; h.style.opacity = 1; clearTimeout(showHint._t); showHint._t = setTimeout(() => h.style.opacity = 0, 3500); }
+const unitOf = (m) => Math.max(S.view.width, S.view.height) * 0.045 * (m.size || 1);
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function drawMarker(ctx, m, opt = {}) {
+  const W = S.view.width, H = S.view.height, u = unitOf(m), x = m.x * W, y = m.y * H;
+  const t = TOOL[m.type] || TOOL.note;
+  ctx.save();
+  ctx.font = `800 ${u * 0.5}px ${getComputedStyle(document.body).fontFamily}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (m.type === 'path') {
+    const P = m.pts.map(p => [p[0] * W, p[1] * H]);
+    const line = (lw, col) => { ctx.lineWidth = lw; ctx.strokeStyle = col; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke(); };
+    line(u * 0.38, '#fff'); line(u * 0.22, t.color);
+    const e = P[P.length - 1]; let b = P[0];
+    for (let i = P.length - 2; i >= 0; i--) if (dist(P[i], e) > u * 0.6) { b = P[i]; break; }
+    const a = Math.atan2(e[1] - b[1], e[0] - b[0]), L = u * 0.75;
+    ctx.beginPath(); ctx.moveTo(e[0] + Math.cos(a) * L * 0.4, e[1] + Math.sin(a) * L * 0.4);
+    ctx.lineTo(e[0] + Math.cos(a + 2.5) * L, e[1] + Math.sin(a + 2.5) * L);
+    ctx.lineTo(e[0] + Math.cos(a - 2.5) * L, e[1] + Math.sin(a - 2.5) * L); ctx.closePath();
+    ctx.fillStyle = t.color; ctx.strokeStyle = '#fff'; ctx.lineWidth = u * 0.08; ctx.fill(); ctx.stroke();
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; P.forEach(p => { x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); });
+    m._bb = [x0 - u * 0.5, y0 - u * 0.5, x1 + u * 0.5, y1 + u * 0.5];
+    if (opt.sel) { ctx.setLineDash([u * 0.2, u * 0.15]); ctx.lineWidth = u * 0.06; ctx.strokeStyle = '#3bd6c6'; ctx.strokeRect(m._bb[0], m._bb[1], m._bb[2] - m._bb[0], m._bb[3] - m._bb[1]); }
+    ctx.restore(); return;
+  }
+  if (m.type === 'here') {
+    if (m.dir != null && m.dir >= 0) { // 바라보는 방향
+      const a = (m.dir - 90) * Math.PI / 180, R = u * 2.4;
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, R); gr.addColorStop(0, 'rgba(225,29,72,.55)'); gr.addColorStop(1, 'rgba(225,29,72,0)');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, R, a - 0.5, a + 0.5); ctx.closePath(); ctx.fill();
+    }
+    const pulse = opt.pulse != null ? opt.pulse : 0.5;
+    ctx.fillStyle = `rgba(225,29,72,${0.28 * (1 - pulse) + 0.08})`;
+    ctx.beginPath(); ctx.arc(x, y, u * (0.8 + 0.7 * pulse), 0, 7); ctx.fill();
+    ctx.fillStyle = '#e11d48'; ctx.strokeStyle = '#fff'; ctx.lineWidth = u * 0.13;
+    ctx.beginPath(); ctx.arc(x, y, u * 0.38, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, u * 0.12, 0, 7); ctx.fill();
+    const txt = m.label ? `현위치 · ${m.label}` : '현위치 (You are here)';
+    const tw = ctx.measureText(txt).width, bw = tw + u * 0.7, bh = u * 0.9, by = y - u * 0.7 - bh;
+    ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = u * 0.3; ctx.shadowOffsetY = u * 0.08;
+    roundRect(ctx, x - bw / 2, by, bw, bh, u * 0.25); ctx.fillStyle = '#e11d48'; ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.beginPath(); ctx.moveTo(x - u * 0.2, by + bh - 1); ctx.lineTo(x + u * 0.2, by + bh - 1); ctx.lineTo(x, by + bh + u * 0.22); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillText(txt, x, by + bh / 2 + u * 0.02);
+    m._bb = [Math.min(x - bw / 2, x - u * 0.6), by, Math.max(x + bw / 2, x + u * 0.6), y + u * 0.6];
+  } else {
+    const txt = m.type === 'note' ? (m.label || '메모') : (m.label ? `${t.text} ${m.label}` : t.text);
+    const tw = ctx.measureText(txt).width, bw = tw + u * 0.6, bh = u * 0.85, by = y - u * 0.3 - bh;
+    ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = u * 0.25; ctx.shadowOffsetY = u * 0.06;
+    roundRect(ctx, x - bw / 2, by, bw, bh, u * 0.2); ctx.fillStyle = t.color; ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.lineWidth = u * 0.08; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - u * 0.18, by + bh); ctx.lineTo(x + u * 0.18, by + bh); ctx.lineTo(x, y); ctx.closePath(); ctx.fillStyle = t.color; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillText(txt, x, by + bh / 2 + u * 0.02);
+    m._bb = [x - bw / 2, by, x + bw / 2, y + u * 0.15];
+  }
+  if (opt.sel) { const b = m._bb, p = u * 0.15; ctx.setLineDash([u * 0.2, u * 0.15]); ctx.lineWidth = u * 0.07; ctx.strokeStyle = '#3bd6c6'; ctx.strokeRect(b[0] - p, b[1] - p, b[2] - b[0] + 2 * p, b[3] - b[1] + 2 * p); }
+  ctx.restore();
+}
+
+const Mark = {
+  v: { s: 1, tx: 0, ty: 0 }, W: 0, H: 0, raf: 0,
+  resize() {
+    const st = $('#markStage'), c = $('#markCanvas'), dpr = DPR();
+    Mark.W = st.clientWidth; Mark.H = st.clientHeight; c.width = Mark.W * dpr; c.height = Mark.H * dpr;
+  },
+  fit() {
+    if (!S.view) return;
+    const pad = 12, s = Math.min((Mark.W - pad * 2) / S.view.width, (Mark.H - pad * 2) / S.view.height);
+    Mark.v = { s, tx: (Mark.W - S.view.width * s) / 2, ty: (Mark.H - S.view.height * s) / 2 };
+    Mark.minS = s * 0.5;
+  },
+  toImg: (x, y) => [(x - Mark.v.tx) / Mark.v.s, (y - Mark.v.ty) / Mark.v.s],
+  loop(t) {
+    Mark.raf = requestAnimationFrame(Mark.loop);
+    if (S.screen !== 'mark' || !S.view) return;
+    const c = $('#markCanvas'), ctx = c.getContext('2d'), dpr = DPR(), v = Mark.v;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#05080f'; ctx.fillRect(0, 0, Mark.W, Mark.H);
+    ctx.setTransform(dpr * v.s, 0, 0, dpr * v.s, dpr * v.tx, dpr * v.ty);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(S.view, 0, 0);
+    const pulse = (t % 1600) / 1600;
+    for (const m of S.markers) drawMarker(ctx, m, { sel: m === S.sel, pulse });
+    if (Mark.drawing) drawMarker(ctx, Mark.drawing, {});
+  },
+  syncTools() {
+    $('#toolChips').innerHTML = TOOLS.map(t => `<button class="chip ${S.tool === t.id ? 'on' : ''}" data-t="${t.id}">${t.color ? `<span class="sw" style="background:${t.color}"></span>` : ''}${t.name}</button>`).join('');
+  },
+  syncFilters() {
+    $('#filterChips').innerHTML = FILTERS.map(f => `<button class="chip ${S.filter === f.id ? 'on' : ''}" data-f="${f.id}">${f.name}</button>`).join('');
+  },
+  setTab(tab) {
+    [...$('#tabSeg').children].forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+    $('#tabMark').classList.toggle('hidden', tab !== 'mark');
+    $('#tabFix').classList.toggle('hidden', tab !== 'fix');
+    $('#btnReCrop').classList.toggle('hidden', !S.src);
+    $('#btnAutoLevel').classList.toggle('hidden', !S.src);
+    $('#fineAng').disabled = !S.src;
+    Mark.syncFilters();
+    requestAnimationFrame(() => { Mark.resize(); });
+  },
+  select(m) {
+    S.sel = m;
+    const sh = $('#selSheet'); sh.classList.toggle('on', !!m);
+    if (!m) return;
+    $('#selLabel').value = m.label || '';
+    $('#selLabel').placeholder = m.type === 'here' ? '설명 (예: 2층 엘리베이터 앞)' : '라벨';
+    $('#selSize').value = m.size || 1; $('#selSizeO').textContent = (+(m.size || 1)).toFixed(1);
+    $('#selDirRow').classList.toggle('hidden', m.type !== 'here');
+    const d = m.dir == null ? -1 : m.dir; $('#selDir').value = d; $('#selDirO').textContent = d < 0 ? '없음' : d + '°';
+  },
+  snapshot() { S.history.push(JSON.stringify(S.markers.map(stripM))); if (S.history.length > 50) S.history.shift(); },
+  hit(p) {
+    for (let i = S.markers.length - 1; i >= 0; i--) {
+      const m = S.markers[i], b = m._bb; if (!b) continue;
+      if (p[0] < b[0] || p[0] > b[2] || p[1] < b[1] || p[1] > b[3]) continue;
+      if (m.type === 'path') {
+        const W = S.view.width, H = S.view.height, tol = unitOf(m) * 0.5;
+        for (let k = 1; k < m.pts.length; k++) if (segDist(p, [m.pts[k - 1][0] * W, m.pts[k - 1][1] * H], [m.pts[k][0] * W, m.pts[k][1] * H]) < tol) return m;
+        continue;
+      }
+      return m;
+    }
+    return null;
+  },
+};
+const stripM = m => { const o = { ...m }; delete o._bb; return o; };
+function segDist(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+  const t = l2 ? clamp(((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2, 0, 1) : 0;
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+}
+requestAnimationFrame(Mark.loop);
+
+(() => {
+  const st = $('#markStage'), P = new Map();
+  let g = null; // 현재 제스처
+  const rel = e => { const r = st.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  st.addEventListener('pointerdown', e => {
+    if (!S.view) return;
+    st.setPointerCapture(e.pointerId);
+    P.set(e.pointerId, rel(e));
+    if (P.size === 2) { // 핀치 시작
+      if (Mark.drawing) Mark.drawing = null;
+      const [a, b] = [...P.values()];
+      g = { type: 'pinch', d0: dist(a, b), s0: Mark.v.s, c0: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], v0: { ...Mark.v } };
+      return;
+    }
+    if (P.size > 2) return;
+    const sp = rel(e), ip = Mark.toImg(...sp), hit = Mark.hit(ip);
+    g = { type: 'pan', start: sp, last: sp, t0: performance.now(), moved: false, hit, v0: { ...Mark.v } };
+    if (hit) {
+      Mark.snapshot(); g.type = 'drag'; g.orig = JSON.parse(JSON.stringify(stripM(hit))); g.ip0 = ip; Mark.select(hit);
+    } else if (S.tool === 'path') {
+      Mark.drawing = { type: 'path', pts: [[ip[0] / S.view.width, ip[1] / S.view.height]], size: 1 };
+      g.type = 'path';
+    }
+  });
+  st.addEventListener('pointermove', e => {
+    if (!P.has(e.pointerId) || !g) return;
+    P.set(e.pointerId, rel(e));
+    if (g.type === 'pinch' && P.size >= 2) {
+      const [a, b] = [...P.values()], c = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      const s = clamp(g.s0 * dist(a, b) / g.d0, Mark.minS, 12);
+      const ix = (g.c0[0] - g.v0.tx) / g.v0.s, iy = (g.c0[1] - g.v0.ty) / g.v0.s;
+      Mark.v = { s, tx: c[0] - ix * s, ty: c[1] - iy * s };
+      return;
+    }
+    const sp = rel(e);
+    if (dist(sp, g.start) > 7) g.moved = true;
+    if (g.type === 'pan') { Mark.v.tx = g.v0.tx + sp[0] - g.start[0]; Mark.v.ty = g.v0.ty + sp[1] - g.start[1]; }
+    else if (g.type === 'drag' && g.moved) {
+      const ip = Mark.toImg(...sp), dx = (ip[0] - g.ip0[0]) / S.view.width, dy = (ip[1] - g.ip0[1]) / S.view.height, m = g.hit;
+      if (m.type === 'path') m.pts = g.orig.pts.map(p => [p[0] + dx, p[1] + dy]);
+      else { m.x = clamp(g.orig.x + dx, 0, 1); m.y = clamp(g.orig.y + dy, 0, 1); }
+    } else if (g.type === 'path' && Mark.drawing) {
+      const ip = Mark.toImg(...sp), pts = Mark.drawing.pts, last = pts[pts.length - 1];
+      const np = [clamp(ip[0] / S.view.width, 0, 1), clamp(ip[1] / S.view.height, 0, 1)];
+      if (Math.hypot((np[0] - last[0]) * S.view.width, (np[1] - last[1]) * S.view.height) > unitOf({}) * 0.15) pts.push(np);
+    }
+  });
+  const end = e => {
+    if (!P.has(e.pointerId)) return;
+    P.delete(e.pointerId);
+    if (!g) return;
+    if (g.type === 'pinch') { if (P.size === 0) g = null; else g = { type: 'none' }; return; }
+    if (g.type === 'drag' && !g.moved) S.history.pop();
+    if (g.type === 'path') {
+      const d = Mark.drawing; Mark.drawing = null;
+      if (d && d.pts.length >= 2) { Mark.snapshot(); S.markers.push(d); Mark.select(d); }
+      else if (!g.moved) placeAt(Mark.toImg(...g.start));
+    } else if (g.type === 'pan' && !g.moved && performance.now() - g.t0 < 600) {
+      if (S.tool === 'select') Mark.select(null);
+      else placeAt(Mark.toImg(...g.start));
+    }
+    g = null;
+  };
+  st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
+  st.addEventListener('wheel', e => {
+    e.preventDefault(); if (!S.view) return;
+    const sp = rel(e), f = Math.exp(-e.deltaY * 0.0015), s = clamp(Mark.v.s * f, Mark.minS, 12);
+    const ix = (sp[0] - Mark.v.tx) / Mark.v.s, iy = (sp[1] - Mark.v.ty) / Mark.v.s;
+    Mark.v = { s, tx: sp[0] - ix * s, ty: sp[1] - iy * s };
+  }, { passive: false });
+})();
+function placeAt(ip) {
+  if (ip[0] < 0 || ip[1] < 0 || ip[0] > S.view.width || ip[1] > S.view.height) { Mark.select(null); return; }
+  if (S.tool === 'select' || S.tool === 'path') { Mark.select(null); if (S.tool === 'path') showHint('손가락으로 끌어 대피 경로를 그리세요'); return; }
+  Mark.snapshot();
+  const m = { type: S.tool, x: ip[0] / S.view.width, y: ip[1] / S.view.height, size: 1, label: '' };
+  if (S.tool === 'here') {
+    const old = S.markers.find(k => k.type === 'here');
+    if (old) { old.x = m.x; old.y = m.y; Mark.select(old); showHint('현위치를 옮겼습니다'); return; }
+    m.dir = -1;
+  }
+  if (S.tool === 'note') {
+    const t = prompt('메모 내용', ''); if (!t) { S.history.pop(); return; }
+    m.label = t;
+  }
+  S.markers.push(m); Mark.select(m);
+  if (S.tool === 'here') { showHint('현위치 표시 완료 — 끌어서 조정할 수 있습니다'); if (navigator.vibrate) navigator.vibrate(20); }
+}
+
+$('#toolChips').onclick = e => {
+  const b = e.target.closest('.chip'); if (!b) return; S.tool = b.dataset.t; Mark.syncTools();
+  const msg = { select: '표시를 탭해 선택·이동하세요. 빈 곳을 끌면 지도가 움직입니다', here: '지도를 탭해 현재 위치를 표시하세요', path: '손가락으로 끌어 대피 경로를 그리세요', note: '메모를 붙일 곳을 탭하세요' }[S.tool] || `지도를 탭해 ${TOOL[S.tool].text} 위치를 표시하세요`;
+  showHint(msg);
+};
+$('#tabSeg').onclick = e => { const b = e.target.closest('button'); if (b) Mark.setTab(b.dataset.tab); };
+$('#selLabel').oninput = e => { if (S.sel) S.sel.label = e.target.value; };
+$('#selSize').oninput = e => { if (S.sel) { S.sel.size = +e.target.value; $('#selSizeO').textContent = (+e.target.value).toFixed(1); } };
+$('#selDir').oninput = e => { if (S.sel) { const d = +e.target.value; S.sel.dir = d; $('#selDirO').textContent = d < 0 ? '없음' : d + '°'; } };
+$('#selDel').onclick = () => { if (!S.sel) return; Mark.snapshot(); S.markers = S.markers.filter(m => m !== S.sel); Mark.select(null); };
+$('#btnUndo').onclick = () => { const h = S.history.pop(); if (h == null) return toast('되돌릴 작업이 없습니다'); S.markers = JSON.parse(h); Mark.select(null); };
+$('#btnFit').onclick = () => Mark.fit();
+$('#filterChips').onclick = e => {
+  const b = e.target.closest('.chip'); if (!b || !S.warped) return;
+  S.filter = b.dataset.f; Mark.syncFilters();
+  busy(true); setTimeout(() => { S.view = applyFilter(S.warped, S.filter); busy(false); }, 30);
+};
+let fineT = null;
+$('#fineAng').oninput = e => {
+  S.fine = +e.target.value; $('#fineAngO').textContent = S.fine.toFixed(1) + '°';
+  clearTimeout(fineT); fineT = setTimeout(() => { if (S.src) { buildWarp(false); } }, 250);
+};
+$('#btnAutoLevel').onclick = () => {
+  if (!S.src) return;
+  busy(true);
+  setTimeout(() => {
+    // 영역 재검출 → 원근 보정 → 잔여 기울기 보정
+    const r = detectQuad(S.src, S.src.width, S.src.height);
+    if (r) { S.quad = r.quad; S.mode = 'level'; syncModeSeg(); }
+    S.fine = 0; buildWarp(true);
+    toast(r ? `원근·수평 보정 완료 (기울기 ${S.fine.toFixed(1)}°)` : `수평 보정 ${S.fine.toFixed(1)}° (테두리 미검출)`);
+    Mark.fit(); busy(false);
+  }, 30);
+};
+$('#btnReCrop').onclick = () => go('adj');
+
+/* =====================================================================
+ *  13. 내보내기 / 공유
+ * ===================================================================== */
+function composeExport() {
+  const W = S.view.width, H = S.view.height, foot = Math.round(Math.max(W, H) * 0.045);
+  const c = mkCanvas(W, H + foot), ctx = c.getContext('2d');
+  ctx.drawImage(S.view, 0, 0);
+  for (const m of S.markers) drawMarker(ctx, m, { pulse: 0.35 });
+  ctx.fillStyle = '#0b1220'; ctx.fillRect(0, H, W, foot);
+  ctx.fillStyle = '#fff'; ctx.font = `700 ${foot * 0.42}px ${getComputedStyle(document.body).fontFamily}`; ctx.textBaseline = 'middle';
+  const d = new Date(), ds = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const here = S.markers.find(m => m.type === 'here');
+  ctx.textAlign = 'left'; ctx.fillText(`피난안내도${S.name ? ' · ' + S.name : ''}${here && here.label ? ' · 현위치: ' + here.label : ''}`, foot * 0.4, H + foot / 2);
+  ctx.textAlign = 'right'; ctx.fillStyle = '#9fb0cc'; ctx.fillText(ds, W - foot * 0.4, H + foot / 2);
+  return c;
+}
+$('#btnExport').onclick = async () => {
+  if (!S.view) return;
+  busy(true);
+  try {
+    const c = composeExport();
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+    const fname = `피난안내도_${(S.name || 'map').replace(/[\\/:*?"<>|\s]+/g, '_')}_${Date.now()}.jpg`;
+    const file = new File([blob], fname, { type: 'image/jpeg' });
+    busy(false);
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: '피난안내도 · 현위치' }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('이미지를 저장했습니다');
+  } catch (e) { console.error(e); busy(false); toast('내보내기 실패'); }
+};
+
+/* =====================================================================
+ *  14. 저장소 (IndexedDB)
+ * ===================================================================== */
+const DB = {
+  db: null,
+  open() {
+    if (this.db) return Promise.resolve(this.db);
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('evac-map-scanner', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('maps', { keyPath: 'id' });
+      r.onsuccess = () => { this.db = r.result; res(this.db); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async tx(mode, fn) {
+    const db = await this.open();
+    return new Promise((res, rej) => { const t = db.transaction('maps', mode), st = t.objectStore('maps'); const q = fn(st); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); });
+  },
+  put: v => DB.tx('readwrite', s => s.put(v)),
+  all: () => DB.tx('readonly', s => s.getAll()),
+  get: id => DB.tx('readonly', s => s.get(id)),
+  del: id => DB.tx('readwrite', s => s.delete(id)),
+};
+const toBlob = (c, type = 'image/jpeg', q = 0.9) => new Promise(r => c.toBlob(r, type, q));
+$('#btnSave').onclick = () => { $('#saveName').value = S.name || ''; $('#saveModal').classList.add('on'); setTimeout(() => $('#saveName').focus(), 50); };
+$('#saveCancel').onclick = () => $('#saveModal').classList.remove('on');
+$('#saveOk').onclick = async () => {
+  $('#saveModal').classList.remove('on');
+  S.name = $('#saveName').value.trim() || `안내도 ${new Date().toLocaleDateString('ko-KR')}`;
+  busy(true);
+  try {
+    const thumbC = (() => { const ex = composeExport(), s = 360 / Math.max(ex.width, ex.height), t = mkCanvas(ex.width * s, ex.height * s); t.getContext('2d').drawImage(ex, 0, 0, t.width, t.height); return t; })();
+    const rec = {
+      id: S.savedId || ('m' + Date.now()), name: S.name, ts: Date.now(),
+      thumb: thumbC.toDataURL('image/jpeg', 0.75),
+      view: await toBlob(S.view),
+      src: S.src ? await toBlob(S.src, 'image/jpeg', 0.92) : null,
+      quad: S.quad, mode: S.mode, fine: S.fine, filter: S.filter,
+      markers: S.markers.map(stripM),
+    };
+    await DB.put(rec); S.savedId = rec.id;
+    toast('저장했습니다');
+  } catch (e) { console.error(e); toast('저장 실패: 저장공간을 확인하세요'); }
+  busy(false);
+};
+async function renderSaved() {
+  let list = [];
+  try { list = (await DB.all()) || []; } catch (e) { }
+  list.sort((a, b) => b.ts - a.ts);
+  $('#savedCnt').textContent = list.length ? `${list.length}개` : '';
+  const el = $('#savedList');
+  if (!list.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1">아직 저장된 안내도가 없습니다.<br>촬영 후 위치를 표시하고 저장해보세요.</div>'; return; }
+  el.innerHTML = list.map(r => `<div class="card" data-id="${r.id}"><img src="${r.thumb}" alt=""><div class="meta"><b>${escapeHtml(r.name)}</b><span>${new Date(r.ts).toLocaleString('ko-KR')}</span></div><button class="del" data-del="${r.id}">✕</button></div>`).join('');
+}
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const blobToCanvas = async b => { const bmp = await createImageBitmap(b); const c = mkCanvas(bmp.width, bmp.height); c.getContext('2d').drawImage(bmp, 0, 0); return c; };
+$('#savedList').onclick = async e => {
+  const del = e.target.closest('[data-del]');
+  if (del) { e.stopPropagation(); if (confirm('이 안내도를 삭제할까요?')) { await DB.del(del.dataset.del); renderSaved(); } return; }
+  const card = e.target.closest('.card'); if (!card) return;
+  busy(true);
+  try {
+    const r = await DB.get(card.dataset.id);
+    S.src = r.src ? await blobToCanvas(r.src) : null;
+    S.quad = r.quad; S.mode = r.mode || 'crop'; S.fine = r.fine || 0; S.filter = r.filter || 'color';
+    S.markers = r.markers || []; S.history = []; S.sel = null; S.savedId = r.id; S.name = r.name; S.mapping = null;
+    if (S.src && S.quad) buildWarp(false);
+    else { S.warped = await blobToCanvas(r.view); S.view = S.warped; }
+    syncModeSeg(); S.tool = 'select'; Mark.syncTools(); Mark.setTab('mark'); Mark.select(null);
+    go('mark');
+  } catch (err) { console.error(err); toast('불러오기 실패'); }
+  busy(false);
+};
+
+/* =====================================================================
+ *  15. 초기화
+ * ===================================================================== */
+window.addEventListener('resize', () => {
+  if (S.screen === 'adj') Adj.fit();
+  if (S.screen === 'mark') { Mark.resize(); Mark.fit(); }
+});
+Mark.syncTools(); Mark.syncFilters();
+go('home');
+// 디버그/테스트용 노출
+window.EvacApp = { S, detectQuad, estimateSkew, buildWarp, go, setSource };
+</script>
+</body>
+</html>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0b1220">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>피난안내도 스캐너</title>
+<title>설비실 위치도</title>
 <style>
 :root{
   --bg:#0b1220; --panel:#111a2e; --panel-2:#0e1626; --line:#1e2b45;
@@ -147,16 +147,16 @@ main{flex:1;position:relative;overflow:hidden}
 <div class="app">
   <header>
     <button class="iconbtn hidden" id="btnBack" aria-label="뒤로">‹</button>
-    <div class="logo" id="logo">피</div>
-    <h1 id="title">피난안내도 스캐너</h1>
+    <div class="logo" id="logo">설</div>
+    <h1 id="title">정보통신설비 실위치</h1>
     <div class="steps" id="steps"><i></i><i></i><i></i></div>
   </header>
   <main>
     <!-- HOME -->
     <section class="screen on home" id="scrHome">
       <div class="hero">
-        <h2>피난안내도 촬영 → 내 위치 표시</h2>
-        <p>벽에 붙은 피난안내도를 찍으면 자동으로 영역을 찾아 반듯하게 펴고, 바로 현재 위치를 표시할 수 있습니다.</p>
+        <h2>층별 설비실 위치 파악</h2>
+        <p>각 층 피난안내도(평면도)를 촬영해 반듯하게 펴고, MDF·IDF·TPS·EPS 등 정보통신 설비실 위치를 표시해 층별로 관리합니다.</p>
         <button class="btn primary" id="btnCam">📷 카메라로 스캔</button>
         <button class="btn" id="btnPick">🖼️ 사진 불러오기 / 촬영</button>
         <input type="file" id="fileIn" accept="image/*" class="hidden">
@@ -165,11 +165,11 @@ main{flex:1;position:relative;overflow:hidden}
       <div class="feat">
         <div><b>자동 스캔</b>안내도 테두리 자동 검출·원근 보정</div>
         <div><b>수평·수직</b>기울기 자동 측정 및 보정</div>
-        <div><b>위치 표시</b>현위치·비상구·경로 표시 후 공유</div>
+        <div><b>실 위치</b>MDF·IDF·TPS·EPS·통신실 표시·공유</div>
       </div>
-      <div class="sec-t"><span>저장된 안내도 (건물·층별)</span><span id="savedCnt"></span></div>
+      <div class="sec-t"><span>저장된 도면 (건물·층별)</span><span id="savedCnt"></span></div>
       <div id="savedList"></div>
-      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">피난안내도 스캐너 v1.6 · 2026-11-18</div>
+      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">정보통신설비 실위치 v1.7 · 2026-11-18</div>
     </section>
 
     <!-- CAMERA -->
@@ -224,7 +224,7 @@ main{flex:1;position:relative;overflow:hidden}
       </div>
       <div class="tbar">
         <div class="seg" id="tabSeg" style="margin-bottom:10px">
-          <button data-tab="mark" class="on">📍 위치표시</button>
+          <button data-tab="mark" class="on">📍 실 위치</button>
           <button data-tab="fix">🎛️ 보정·필터</button>
         </div>
         <div id="tabMark">
@@ -258,17 +258,17 @@ main{flex:1;position:relative;overflow:hidden}
 
 <div class="modal" id="saveModal">
   <div class="box">
-    <h3>안내도 저장</h3>
+    <h3>도면 저장</h3>
     <div class="grid2">
       <div><label>건물명</label><input type="text" id="saveBldg" placeholder="예: ○○빌딩" list="bldgList"></div>
-      <div><label>층</label><input type="text" id="saveFloor" placeholder="2층"></div>
+      <div><label>층</label><input type="text" id="saveFloor" placeholder="2층 / B1"></div>
     </div>
     <datalist id="bldgList"></datalist>
     <label>동일층 추가 (같은 평면인 층 · 선택)</label>
     <input type="text" id="saveSame" placeholder="예: 3-7, 9, B1">
-    <div class="mhelp">입력한 층마다 같은 안내도·표시가 복사됩니다. 범위(3-7), 지하(B1, 지하2) 사용 가능</div>
+    <div class="mhelp">입력한 층마다 같은 평면도·실 위치가 복사됩니다. 범위(3-7), 지하(B1, 지하2) 사용 가능</div>
     <div class="prev" id="saveSamePrev"></div>
-    <label class="chk"><input type="checkbox" id="saveSameHere"> 현위치 표시도 함께 복사 (보통 층마다 다름)</label>
+    <label class="chk"><input type="checkbox" id="saveSameHere" checked> 실 위치 표시도 함께 복사 (같은 평면이면 보통 동일)</label>
     <div class="row" style="margin-top:16px">
       <button class="btn grow" id="saveCancel">취소</button>
       <button class="btn primary grow" id="saveOk">저장</button>
@@ -283,7 +283,7 @@ main{flex:1;position:relative;overflow:hidden}
     <input type="text" id="sameFloors" placeholder="예: 3-7, 9, B1">
     <div class="mhelp">범위(3-7), 쉼표 구분, 지하(B1 / 지하1) 입력 가능 · 이미 있는 층은 건너뜁니다</div>
     <div class="prev" id="samePrev"></div>
-    <label class="chk"><input type="checkbox" id="sameHere"> 현위치 표시도 함께 복사</label>
+    <label class="chk"><input type="checkbox" id="sameHere" checked> 실 위치 표시도 함께 복사</label>
     <div class="row" style="margin-top:16px">
       <button class="btn grow" id="sameCancel">취소</button>
       <button class="btn primary grow" id="sameOk">추가</button>
@@ -681,22 +681,36 @@ const S = {
   view: null,           // 필터 적용 결과 (표시/내보내기 기준)
   markers: [],
   history: [],
-  tool: 'here',
+  tool: 'select',
   sel: null,
   savedId: null,
   name: '', building: '', floor: '', sameAs: null,
 };
+// 정보통신설비 실 종류
 const TOOLS = [
   { id: 'select', name: '✋ 이동' },
-  { id: 'here', name: '📍 현위치', color: '#e11d48' },
-  { id: 'exit', name: '비상구', color: '#16a34a', text: '비상구' },
-  { id: 'stairs', name: '계단', color: '#7c3aed', text: '계단' },
-  { id: 'ext', name: '소화기', color: '#dc2626', text: '소화기' },
-  { id: 'assembly', name: '집결지', color: '#2563eb', text: '집결지' },
-  { id: 'path', name: '〰 대피경로', color: '#16a34a' },
-  { id: 'note', name: '📝 메모', color: '#ca8a04' },
+  { id: 'mdf', name: 'MDF실', color: '#2563eb', text: 'MDF실' },
+  { id: 'idf', name: 'IDF실', color: '#0891b2', text: 'IDF실' },
+  { id: 'tps', name: 'TPS실', color: '#7c3aed', text: 'TPS실' },
+  { id: 'eps', name: 'EPS실', color: '#ea580c', text: 'EPS실' },
+  { id: 'comm', name: '통신실', color: '#16a34a', text: '통신실' },
+  { id: 'server', name: '전산실', color: '#0f766e', text: '전산실' },
+  { id: 'disaster', name: '방재실', color: '#dc2626', text: '방재실' },
+  { id: 'elec', name: '전기실', color: '#ca8a04', text: '전기실' },
+  { id: 'mech', name: '기계실', color: '#475569', text: '기계실' },
+  { id: 'room', name: '➕ 직접입력', color: '#be185d', text: '실' },
+  { id: 'note', name: '📝 메모', color: '#a16207', text: '메모' },
 ];
-const TOOL = Object.fromEntries(TOOLS.map(t => [t.id, t]));
+// 이전 버전에서 저장된 표시도 그대로 보이도록 유지 (도구 목록에는 표시 안 함)
+const LEGACY = [
+  { id: 'here', color: '#e11d48', text: '현위치' }, { id: 'exit', color: '#16a34a', text: '비상구' },
+  { id: 'stairs', color: '#7c3aed', text: '계단' }, { id: 'ext', color: '#dc2626', text: '소화기' },
+  { id: 'assembly', color: '#2563eb', text: '집결지' }, { id: 'path', color: '#16a34a', text: '경로' },
+];
+const TOOL = Object.fromEntries([...TOOLS, ...LEGACY].map(t => [t.id, t]));
+const isRoom = m => m.type !== 'note' && TOOL[m.type] && !LEGACY.some(l => l.id === m.type);
+const roomName = m => m.type === 'room' ? (m.label || '실') : (TOOL[m.type].text + (m.label ? ' ' + m.label : ''));
+const roomsOf = markers => (markers || []).filter(isRoom).map(roomName);
 const FILTERS = [
   { id: 'color', name: '✨ 선명 컬러' },
   { id: 'none', name: '원본' },
@@ -715,7 +729,7 @@ function go(name) {
   $('#logo').classList.toggle('hidden', name !== 'home');
   const step = { home: 0, cam: 1, adj: 2, mark: 3 }[name];
   [...$('#steps').children].forEach((el, i) => el.classList.toggle('on', i < step));
-  $('#title').textContent = { home: '피난안내도 스캐너', cam: '안내도 촬영', adj: '영역 · 보정', mark: '위치 표시' }[name];
+  $('#title').textContent = { home: '정보통신설비 실위치', cam: '평면도 촬영', adj: '영역 · 보정', mark: '실 위치 표시' }[name];
   if (name !== 'cam') Cam.stop();
   if (name === 'home') renderSaved();
   if (name === 'adj') { Adj.cornerMode = false; $('#adjCorner').classList.remove('primary'); if (S.quad) boxFromQuad(); requestAnimationFrame(Adj.fit); }
@@ -1091,11 +1105,11 @@ $('#adjNext').onclick = async () => {
   busy(true); await nextFrame();
   try {
     buildWarp(true);
-    S.tool = 'here'; Mark.syncTools(); Mark.setTab('mark');
+    if (!TOOLS.some(t => t.id === S.tool)) S.tool = 'select';
+    Mark.syncTools(); Mark.setTab('mark');
     go('mark');
     if (S.mode === 'level') toast('사진 전체 유지 모드 — 자르려면 ✂️ 선택 영역 자르기를 선택하세요', 3000);
-    const has = S.markers.some(m => m.type === 'here');
-    showHint(has ? '현위치를 끌어 옮기거나 다른 표시를 추가하세요' : '지도를 탭해 현재 위치를 표시하세요');
+    showHint('아래에서 실 종류(MDF·IDF·TPS…)를 고르고 도면을 탭하세요');
   } catch (e) { console.error(e); toast('보정 중 오류가 발생했습니다'); }
   busy(false);
 };
@@ -1208,7 +1222,7 @@ function drawMarker(ctx, m, opt = {}) {
     ctx.fillStyle = '#fff'; ctx.fillText(txt, x, by + bh / 2 + u * 0.02);
     m._bb = [Math.min(x - bw / 2, x - u * 0.6), by, Math.max(x + bw / 2, x + u * 0.6), y + u * 0.6];
   } else {
-    const txt = m.type === 'note' ? (m.label || '메모') : (m.label ? `${t.text} ${m.label}` : t.text);
+    const txt = (m.type === 'note' || m.type === 'room') ? (m.label || t.text) : (m.label ? `${t.text} ${m.label}` : t.text);
     const tw = ctx.measureText(txt).width, bw = tw + u * 0.6, bh = u * 0.85, by = y - u * 0.3 - bh;
     ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = u * 0.25; ctx.shadowOffsetY = u * 0.06;
     roundRect(ctx, x - bw / 2, by, bw, bh, u * 0.2); ctx.fillStyle = t.color; ctx.fill();
@@ -1269,7 +1283,7 @@ const Mark = {
     const sh = $('#selSheet'); sh.classList.toggle('on', !!m);
     if (!m) return;
     $('#selLabel').value = m.label || '';
-    $('#selLabel').placeholder = m.type === 'here' ? '설명 (예: 2층 엘리베이터 앞)' : '라벨';
+    $('#selLabel').placeholder = m.type === 'room' ? '실 이름 (예: 중계기실)' : m.type === 'note' ? '메모 내용' : '번호·비고 (예: 3-1, 동측)';
     $('#selSize').value = m.size || 1; $('#selSizeO').textContent = (+(m.size || 1)).toFixed(1);
     $('#selDirRow').classList.toggle('hidden', m.type !== 'here');
     const d = m.dir == null ? -1 : m.dir; $('#selDir').value = d; $('#selDirO').textContent = d < 0 ? '없음' : d + '°';
@@ -1378,17 +1392,17 @@ function placeAt(ip) {
     if (old) { old.x = m.x; old.y = m.y; Mark.select(old); showHint('현위치를 옮겼습니다'); return; }
     m.dir = -1;
   }
-  if (S.tool === 'note') {
-    const t = prompt('메모 내용', ''); if (!t) { S.history.pop(); return; }
-    m.label = t;
+  if (S.tool === 'note' || S.tool === 'room') {
+    const t = prompt(S.tool === 'room' ? '실 이름 (예: 중계기실, 국사, CCTV실)' : '메모 내용', ''); if (!t) { S.history.pop(); return; }
+    m.label = t.trim();
   }
   S.markers.push(m); Mark.select(m);
-  if (S.tool === 'here') { showHint('현위치 표시 완료 — 끌어서 조정할 수 있습니다'); if (navigator.vibrate) navigator.vibrate(20); }
+  showHint(`${m.type === 'note' ? '메모' : roomName(m)} 표시 — 끌어서 옮기고, 아래에서 번호·비고를 입력하세요`); if (navigator.vibrate) navigator.vibrate(20);
 }
 
 $('#toolChips').onclick = e => {
   const b = e.target.closest('.chip'); if (!b) return; S.tool = b.dataset.t; Mark.syncTools();
-  const msg = { select: '표시를 탭해 선택·이동하세요. 빈 곳을 끌면 지도가 움직입니다', here: '지도를 탭해 현재 위치를 표시하세요', path: '손가락으로 끌어 대피 경로를 그리세요', note: '메모를 붙일 곳을 탭하세요' }[S.tool] || `지도를 탭해 ${TOOL[S.tool].text} 위치를 표시하세요`;
+  const msg = { select: '표시를 탭해 선택·이동하세요. 빈 곳을 끌면 도면이 움직입니다', room: '실 위치를 탭한 뒤 이름을 입력하세요', note: '메모를 붙일 곳을 탭하세요' }[S.tool] || `도면에서 ${TOOL[S.tool].text} 위치를 탭하세요`;
   showHint(msg);
 };
 $('#tabSeg').onclick = e => { const b = e.target.closest('button'); if (b) Mark.setTab(b.dataset.tab); };
@@ -1446,9 +1460,12 @@ function composeImage(view, markers, info = {}) {
     roundRect(ctx, x, H + foot * 0.15, fw, foot * 0.7, foot * 0.15); ctx.fillStyle = '#e11d48'; ctx.fill();
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(info.floor, x + fw / 2, H + foot / 2); x += fw + foot * 0.3;
   }
-  const here = markers.find(m => m.type === 'here');
+  const rooms = roomsOf(markers);
   ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
-  ctx.fillText(`피난안내도${info.building ? ' · ' + info.building : ''}${here && here.label ? ' · 현위치: ' + here.label : ''}`, x, H + foot / 2);
+  let line = `${info.building || '정보통신설비'}${rooms.length ? ' · ' + rooms.join(', ') : ''}`;
+  const maxW = W - x - foot * 0.4 - ctx.measureText('0000.00.00 00:00').width - foot * 0.6;
+  while (ctx.measureText(line).width > maxW && line.length > 4) line = line.slice(0, -2) + '…';
+  ctx.fillText(line, x, H + foot / 2);
   ctx.textAlign = 'right'; ctx.fillStyle = '#9fb0cc'; ctx.fillText(ds, W - foot * 0.4, H + foot / 2);
   return c;
 }
@@ -1460,11 +1477,11 @@ $('#btnExport').onclick = async () => {
   try {
     const c = composeExport();
     const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
-    const fname = `피난안내도_${(titleOf(S.building, S.floor) || 'map').replace(/[\\/:*?"<>|\s]+/g, '_')}_${Date.now()}.jpg`;
+    const fname = `설비실위치_${(titleOf(S.building, S.floor) || 'map').replace(/[\\/:*?"<>|\s]+/g, '_')}_${Date.now()}.jpg`;
     const file = new File([blob], fname, { type: 'image/jpeg' });
     busy(false);
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: '피난안내도 · 현위치' }); return; } catch (e) { if (e.name === 'AbortError') return; }
+      try { await navigator.share({ files: [file], title: '정보통신설비 실위치' }); return; } catch (e) { if (e.name === 'AbortError') return; }
     }
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
@@ -1535,13 +1552,13 @@ async function currentRecord() {
     markers: S.markers.map(stripM), sameAs: S.sameAs || null,
   };
 }
-// 동일층 복사: 이미지·보정값 공유, 현위치는 선택적으로 제외
+// 동일층 복사: 이미지·보정값 공유, 실 위치 표시는 선택적으로 복사
 async function copyToFloors(rec, floors, copyHere) {
   const all = (await DB.all()) || [], b = bldgOf(rec);
   const exist = new Set(all.filter(r => bldgOf(r) === b).map(r => r.floor));
   const added = [], skipped = [];
   let thumb = rec.thumb;
-  const markers = (rec.markers || []).filter(m => copyHere || m.type !== 'here');
+  const markers = copyHere ? (rec.markers || []).filter(m => m.type !== 'here') : [];
   if (rec.view) { try { const v = await blobToCanvas(rec.view); thumb = null; rec._v = v; } catch (e) { } }
   for (const f of floors) {
     if (f === rec.floor) continue;
@@ -1564,7 +1581,7 @@ async function fillBldgList() {
 }
 function openSave(focusSame) {
   $('#saveBldg').value = S.building || ''; $('#saveFloor').value = S.floor || '';
-  $('#saveSame').value = ''; $('#saveSamePrev').innerHTML = ''; $('#saveSameHere').checked = false;
+  $('#saveSame').value = ''; $('#saveSamePrev').innerHTML = ''; $('#saveSameHere').checked = true;
   fillBldgList();
   $('#saveModal').classList.add('on');
   setTimeout(() => $(focusSame ? '#saveSame' : (S.building ? '#saveFloor' : '#saveBldg')).focus(), 50);
@@ -1599,8 +1616,8 @@ $('#btnSame').onclick = () => {
 let sameTarget = null;
 function openSameModal(t) {
   sameTarget = t;
-  $('#sameSrc').innerHTML = `기준: <b>${escapeHtml(titleOf(t.building, t.floor))}</b> 의 안내도와 표시를 복사합니다.`;
-  $('#sameFloors').value = ''; $('#samePrev').innerHTML = ''; $('#sameHere').checked = false;
+  $('#sameSrc').innerHTML = `기준: <b>${escapeHtml(titleOf(t.building, t.floor))}</b> 의 평면도와 실 위치를 복사합니다.`;
+  $('#sameFloors').value = ''; $('#samePrev').innerHTML = ''; $('#sameHere').checked = true;
   $('#sameModal').classList.add('on'); setTimeout(() => $('#sameFloors').focus(), 50);
 }
 $('#sameFloors').oninput = () => showPrev('#sameFloors', '#samePrev', sameTarget && sameTarget.floor);
@@ -1633,7 +1650,7 @@ async function renderSaved() {
   el.innerHTML = gs.map(([b, rs]) => {
     rs.sort((x, y) => floorKey(x.floor) - floorKey(y.floor) || y.ts - x.ts);
     return `<div class="grp"><div class="grp-t">🏢 ${escapeHtml(b)} <span>${rs.length}개 층</span></div><div class="saved">` +
-      rs.map(r => `<div class="card" data-id="${r.id}"><img src="${r.thumb}" alt="">${r.floor ? `<span class="fl">${escapeHtml(r.floor)}</span>` : ''}<button class="cp" data-cp="${r.id}">+동일층</button><button class="del" data-del="${r.id}">✕</button><div class="meta"><b>${escapeHtml(r.floor || r.name)}</b><span>${new Date(r.ts).toLocaleDateString('ko-KR')}</span>${r.sameAs ? ' <span class="same">· 동일층</span>' : ''}${(r.markers || []).some(m => m.type === 'here') ? '' : ' <span class="same" style="color:var(--warn)">· 현위치 미지정</span>'}</div></div>`).join('') +
+      rs.map(r => `<div class="card" data-id="${r.id}"><img src="${r.thumb}" alt="">${r.floor ? `<span class="fl">${escapeHtml(r.floor)}</span>` : ''}<button class="cp" data-cp="${r.id}">+동일층</button><button class="del" data-del="${r.id}">✕</button><div class="meta"><b>${escapeHtml(r.floor || r.name)}</b><span>${new Date(r.ts).toLocaleDateString('ko-KR')}</span>${r.sameAs ? ' <span class="same">· 동일층</span>' : ''}${roomsOf(r.markers).length ? `<div class="same" style="margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(roomsOf(r.markers).join(' · '))}</div>` : ' <span class="same" style="color:var(--warn)">· 실 미표시</span>'}</div></div>`).join('') +
       `</div></div>`;
   }).join('');
 }
@@ -1648,11 +1665,11 @@ async function openRecord(id) {
   if (S.src && S.quad) buildWarp(false);
   else { S.warped = await blobToCanvas(r.view); S.view = S.warped; }
   syncModeSeg(); Mark.select(null);
-  const hasHere = S.markers.some(m => m.type === 'here');
-  S.tool = hasHere ? 'select' : 'here'; Mark.syncTools(); Mark.setTab('mark');
+  const hasRoom = roomsOf(S.markers).length > 0;
+  if (!TOOLS.some(t => t.id === S.tool)) S.tool = 'select'; Mark.syncTools(); Mark.setTab('mark');
   if (S.screen !== 'mark') go('mark'); else Mark.fit();
   updateTitle(); renderFloorBar();
-  if (!hasHere) showHint(`${S.floor || ''} 현위치를 탭해 표시하세요`);
+  if (!hasRoom) showHint(`${S.floor || ''} 설비실 위치를 표시하세요`);
 }
 $('#savedList').onclick = async e => {
   const del = e.target.closest('[data-del]');
@@ -1666,7 +1683,7 @@ $('#savedList').onclick = async e => {
 };
 
 /* ---------- 같은 건물 층 전환 바 ---------- */
-function updateTitle() { if (S.screen === 'mark') $('#title').textContent = S.floor ? `위치 표시 · ${titleOf(S.building, S.floor)}` : '위치 표시'; }
+function updateTitle() { if (S.screen === 'mark') $('#title').textContent = S.floor ? `실 위치 · ${titleOf(S.building, S.floor)}` : '실 위치 표시'; }
 async function renderFloorBar() {
   const bar = $('#floorBar');
   if (!S.savedId) { bar.classList.add('hidden'); return; }
@@ -1674,7 +1691,7 @@ async function renderFloorBar() {
   try { rs = ((await DB.all()) || []).filter(r => bldgOf(r) === S.building); } catch (e) { }
   if (rs.length < 2) { bar.classList.add('hidden'); return; }
   rs.sort((a, b) => floorKey(a.floor) - floorKey(b.floor));
-  bar.innerHTML = rs.map(r => `<button data-fid="${r.id}" class="${r.id === S.savedId ? 'on' : ''}">${escapeHtml(r.floor || r.name)}${(r.markers || []).some(m => m.type === 'here') ? '' : ' ·'}</button>`).join('');
+  bar.innerHTML = rs.map(r => `<button data-fid="${r.id}" class="${r.id === S.savedId ? 'on' : ''}">${escapeHtml(r.floor || r.name)}${roomsOf(r.markers).length ? '' : ' ·'}</button>`).join('');
   bar.classList.remove('hidden');
   const on = bar.querySelector('.on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
 }

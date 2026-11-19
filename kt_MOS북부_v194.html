@@ -291,7 +291,7 @@
   #mdash-modal .mdl-path{fill:none;stroke:#2563EB;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:mdvDraw 1.2s .15s ease-out forwards;}
   #mdash-modal .mdl-dot{fill:#fff;stroke:#2563EB;stroke-width:1.8;opacity:0;animation:mdvPop .35s ease forwards;}
   #mdash-modal .mdl-dot.over{fill:#F04438;stroke:#fff;stroke-width:1.5;}
-  #mdash-modal .mdl-call rect{fill:#fff;stroke:#F04438;stroke-width:1.2;} #mdash-modal .mdl-call text{font-size:10.5px;font-weight:800;fill:#B42318;text-anchor:middle;}
+  #mdash-modal .mdl-call rect{fill:#fff;stroke:#F5A524;stroke-width:1.2;} #mdash-modal .mdl-call text{font-size:10.5px;font-weight:800;fill:#B45309;text-anchor:middle;}
   @keyframes mdvDraw{to{stroke-dashoffset:0;}} @keyframes mdvFade{to{opacity:1;}} @keyframes mdvPop{0%{opacity:0;transform:scale(.2);transform-origin:center;transform-box:fill-box;}100%{opacity:1;transform:scale(1);transform-box:fill-box;transform-origin:center;}}
   #mdash-modal .mdg-svg{width:100%;max-width:250px;height:auto;display:block;margin:0 auto;overflow:visible;}
   #mdash-modal .mdg-bg{fill:none;stroke:#EEF2F6;stroke-width:16;stroke-linecap:round;}
@@ -481,6 +481,16 @@
   #mdash-modal .mdn{position:sticky;top:-12px;z-index:50;display:flex;gap:6px;overflow-x:auto;margin:-12px -14px 8px;padding:10px 14px;background:rgba(244,246,250,.94);backdrop-filter:blur(6px);border-bottom:1px solid #E2E8F0;}
   #mdash-modal .mdn button{flex-shrink:0;border:1px solid #CBD5E1;background:#fff;color:#334155;border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:800;cursor:pointer;}
   #mdash-modal .mdn button.on{background:#1E3A8A;border-color:#1E3A8A;color:#fff;}
+  #mdash-modal .mdv-alert.dev{background:#FFFBEB;border-color:#FDE68A;color:#92400E;cursor:pointer;margin-top:-4px;}
+  #mdash-modal .mdo-dot.dev{background:#F5A524;}
+  #mdash-modal .mdo-st.dev{background:#FFFBEB;color:#B45309;}
+  #mdash-modal .mdv-card.dev{border-color:#FCD34D;box-shadow:0 0 0 1px #FDE68A;}
+  #mdash-modal .mdv-card.dev .mdv-cv b{color:#B45309;}
+  #mdash-modal .mdv-cf .dev{color:#B45309;font-weight:800;}
+  #mdash-modal .mdv-ic.red{background:#F04438;animation:mdvBlink 1.4s infinite;}
+  #mdash-modal .mdd-note.dev{background:#FFFBEB;} #mdash-modal .mdd-note.dev i{background:#F5A524;}
+  #mdash-modal .mdd-box3 .b3.dev{background:#FFFBEB;} #mdash-modal .mdd-box3 .b3.dev b{color:#B45309;}
+  #mdash-modal .mdl-dot.over{fill:#F5A524 !important;}
   #mdash-modal .mdo-sh{grid-column:span 12;font-size:16px;font-weight:900;color:#0F172A;margin:14px 2px 2px;padding-left:10px;border-left:4px solid #2563EB;scroll-margin-top:60px;}
   #mdash-modal .mdo-sh span{font-size:11.5px;font-weight:600;color:#64748B;margin-left:6px;}
   #mdash-modal #md-sec-summary{margin-top:0;}
@@ -6566,7 +6576,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     let band='', lines='';
     if(rg && !rg.ac){ const a=rg.min!=null?Math.max(rg.min,lo):lo, b=rg.max!=null?Math.min(rg.max,hi):hi;
       if(b>a) band=`<rect x="${L}" y="${Y(b)}" width="${W-L-R}" height="${Y(a)-Y(b)}" class="mdl-band"/>`;
-      [['max',rg.max],['min',rg.min]].forEach(([k,v])=>{ if(v==null||v<lo||v>hi) return; lines+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" class="mdl-lim"/><text x="${W-R-2}" y="${Y(v)+(k==='max'?-5:12)}" class="mdl-limt">관리기준 ${mdTick(v)}${escapeHtml(unit||'')}</text>`; }); }
+      [['max',rg.max],['min',rg.min]].forEach(([k,v])=>{ if(v==null||v<lo||v>hi) return; lines+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" class="mdl-lim"/><text x="${W-R-2}" y="${Y(v)+(k==='max'?-5:12)}" class="mdl-limt">참고기준 ${mdTick(v)}${escapeHtml(unit||'')}</text>`; }); }
     const d=pts.map((p,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
     const area=pts.length>1?`<path d="${d} L${X(pts.length-1)},${B} L${X(0)},${B} Z" class="mdl-area"/>`:'';
     const step=Math.max(1,Math.ceil(pts.length/(o.big?14:7)));
@@ -6597,7 +6607,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const band=`<i class="mdr-band" style="left:${X(rg.min!=null?rg.min:lo)}%;width:${X(rg.max!=null?rg.max:hi)-X(rg.min!=null?rg.min:lo)}%"></i>`;
     const dots=pts.map((p,i)=>`<b class="mdr-dot ${p.over?'over':''}" style="left:${X(p.v)}%;animation-delay:${(0.4+i*0.5/pts.length).toFixed(2)}s" title="${escapeHtml(p.r.loc)} ${escapeHtml(String(p.r.raw))}${escapeHtml(unit)}"></b>`).join('');
     const ov=mdIsOver({value:avg},rg);
-    return `<div class="mdr"><div class="mdr-lab" style="left:${X(rg.min!=null?rg.min:lo)}%;width:${X(rg.max!=null?rg.max:hi)-X(rg.min!=null?rg.min:lo)}%">관리기준 ${escapeHtml(mdRangeText(rg,unit))}</div>
+    return `<div class="mdr"><div class="mdr-lab" style="left:${X(rg.min!=null?rg.min:lo)}%;width:${X(rg.max!=null?rg.max:hi)-X(rg.min!=null?rg.min:lo)}%">참고기준 ${escapeHtml(mdRangeText(rg,unit))}</div>
       <div class="mdr-track">${band}${dots}<div class="mdr-mk ${ov?'over':''}" style="--x:${X(avg)}%"><em>${mdFmt(avg)}${escapeHtml(unit)}</em></div></div><div class="mdr-ticks">${ticks}</div></div>`;
   }
   /* 숫자 올라가는 효과 */
@@ -6609,7 +6619,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
   function mdAnalyze(list){
     const rg=list[0]._rg, unit=(list.find(r=>r.unit)||{}).unit||'';
     const vals=list.filter(r=>r.value!=null); const st=mdStats(vals.map(r=>r.value));
-    const judged=vals.filter(r=>mdApplies(r.value,rg)); const out=judged.filter(r=>mdIsOver(r,rg));
+    const judged=vals.filter(r=>mdApplies(r.value,rg)); const out=judged.filter(r=>mdIsOver(r,rg)); const bad=list.filter(r=>r.result==='불량');
     let kind='line'; if(rg&&!rg.ac&&rg.min!=null&&rg.max!=null) kind='range'; else if(rg&&!rg.ac&&rg.max!=null) kind='gauge';
     // 대표값: 상한형=최대, 하한형=최소, 범위형=평균
     let rep=st?st.avg:null, repLab='평균';
@@ -6617,13 +6627,14 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     if(rg&&!rg.ac&&rg.min!=null&&rg.max==null){ rep=st&&st.min; repLab='최저값'; }
     let worst=null; if(judged.length){ worst=judged.slice().sort((a,b)=>{ const m=r=>{ const v=r.value; if(rg.max!=null&&rg.min!=null) return Math.min(v-rg.min,rg.max-v)/((rg.max-rg.min)||1); if(rg.max!=null) return (rg.max-v)/(Math.abs(rg.max)||1); return (v-rg.min)/(Math.abs(rg.min)||1); }; return m(a)-m(b); })[0]; }
     let margin=null; if(worst&&rg){ const v=worst.value; if(rg.max!=null&&(rg.min==null||Math.abs(rg.max-v)<=Math.abs(v-rg.min))) margin=rg.max-v; else if(rg.min!=null) margin=v-rg.min; }
-    return { rg, unit, vals, st, judged, out, kind, rep, repLab, worst, margin };
+    return { bad, rg, unit, vals, st, judged, out, kind, rep, repLab, worst, margin };
   }
 
   /* ── 🎥 영상 품질 검수 결과(별도 프로그램의 HTML 성적서·백업 JSON) → 측정 대시보드 ── */
   function vqNum(s){ if(s==null) return null; const t=String(s).replace(/,/g,'').trim(); if(!/^-?\d+(\.\d+)?$/.test(t)) return null; return parseFloat(t); }
   function vqStd(c){ const m=String(c||'').match(/^([≥≤])\s*(-?[\d.,]+)/); if(!m) return ''; return m[2].replace(/,/g,'')+(m[1]==='≥'?' 이상':' 이하'); }
-  function vqRes(v){ return v==='충족'?'양호':v==='미달'?'불량':''; }
+  /* 영상 품질 값은 참고기준 비교값 — 미달은 「참고범위 밖」으로만 보고 부적합 판정으로 세지 않는다 */
+  function vqRes(v){ return v==='충족'?'양호':''; }
   /* HTML 성적서: 표(항목/단위/측정값/기준/판정) + 시험 기록의 설치 위치 */
   function vqParseHTML(text, fname){
     const doc=new DOMParser().parseFromString(text,'text/html');
@@ -6854,7 +6865,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const X=i=>pts.length===1?W/2:2+(W-4)*i/(pts.length-1), Y=v=>H-2-(v-lo)/(hi-lo)*(H-4);
     let band=''; if(rg&&!rg.ac){ const a=rg.min!=null?Math.max(rg.min,lo):lo, b=rg.max!=null?Math.min(rg.max,hi):hi; if(b>a) band=`<rect x="0" y="${Y(b).toFixed(1)}" width="${W}" height="${(Y(a)-Y(b)).toFixed(1)}" fill="#DCFCE7"/>`; }
     const d=pts.map((p,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
-    return `<svg viewBox="0 0 ${W} ${H}" class="mdo-spark" preserveAspectRatio="none">${band}<path d="${d}" pathLength="1" class="mdo-sline"/>${pts.map((p,i)=>p.over?`<circle cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="2.6" fill="#F04438"/>`:'').join('')}<circle cx="${X(pts.length-1).toFixed(1)}" cy="${Y(pts[pts.length-1].v).toFixed(1)}" r="2.4" fill="#2563EB"/></svg>`;
+    return `<svg viewBox="0 0 ${W} ${H}" class="mdo-spark" preserveAspectRatio="none">${band}<path d="${d}" pathLength="1" class="mdo-sline"/>${pts.map((p,i)=>p.over?`<circle cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="2.6" fill="#F5A524"/>`:'').join('')}<circle cx="${X(pts.length-1).toFixed(1)}" cy="${Y(pts[pts.length-1].v).toFixed(1)}" r="2.4" fill="#2563EB"/></svg>`;
   }
   function mdBullet(st, rg){
     if(!st) return '';
@@ -6875,8 +6886,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const noStd=rows.length-judgedN;
     let h=`<div class="mdo-grid">`;
     // ① 도넛 2개
-    h+=`<div class="mdo-p s4"><div class="mdo-t">관리기준 충족 <span>측정값 ${rowsN}건</span></div><div class="mdo-dn">${mdDonutSVG([{v:judgedN-outN,c:'#22B573'},{v:outN,c:'#F04438'},{v:noStd,c:'#CBD5E1'}], okPct==null?'-':okPct+'%','기준 충족률')}
-      <div class="mdo-lg"><span><i style="background:#22B573"></i>기준 이내 <b>${judgedN-outN}</b></span><span><i style="background:#F04438"></i>이탈 <b>${outN}</b></span><span><i style="background:#CBD5E1"></i>기준 없음 <b>${noStd}</b></span></div></div></div>`;
+    h+=`<div class="mdo-p s4"><div class="mdo-t">사내 참고범위 <span>측정값 ${rowsN}건</span></div><div class="mdo-dn">${mdDonutSVG([{v:judgedN-outN,c:'#22B573'},{v:outN,c:'#F5A524'},{v:noStd,c:'#CBD5E1'}], okPct==null?'-':okPct+'%','참고범위 이내')}
+      <div class="mdo-lg"><span><i style="background:#22B573"></i>범위 이내 <b>${judgedN-outN}</b></span><span><i style="background:#F5A524"></i>범위 밖(환경 편차) <b>${outN}</b></span><span><i style="background:#CBD5E1"></i>참고기준 없음 <b>${noStd}</b></span></div></div></div>`;
     h+=`<div class="mdo-p s4"><div class="mdo-t">점검 결과 <span>판정 ${cg+cb}항목</span></div><div class="mdo-dn">${mdDonutSVG([{v:cg,c:'#3B82F6'},{v:cb,c:'#F04438'}], (cg+cb)?Math.round(cg/(cg+cb)*100)+'%':'-','적합율')}
       <div class="mdo-lg"><span><i style="background:#3B82F6"></i>적합 <b>${cg}</b></span><span><i style="background:#F04438"></i>부적합 <b>${cb}</b></span></div></div></div>`;
     // ② 대표 게이지 (상한형 최대 2개)
@@ -6884,9 +6895,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     h+=`<div class="mdo-p s4"><div class="mdo-t">주요 게이지 <span>최고값 기준</span></div><div class="mdo-gs">${gNames.length?gNames.map(n=>{ const a=A[n]; return `<div class="mdo-g" data-open="${escapeHtml(n)}">${mdGaugeSVG(a.rep,a.rg,a.unit)}<div class="mdo-gl"><b class="${a.out.length?'bad':''}">${mdFmt(a.rep)}${escapeHtml(a.unit)}</b> ${escapeHtml(mdShort(n))}</div></div>`; }).join(''):'<div class="mdo-none">상한 기준 항목 없음</div>'}</div></div>`;
     // ③ 항목별 스파크라인 표 (모든 측정값 한눈에)
     h+=`<div class="mdo-sh s12" id="md-sec-items">측정 항목 <span>줄을 누르면 위치별 그래프·분석 결과</span></div>`;
-    h+=`<div class="mdo-p s12"><div class="mdo-t">측정 항목 한눈에 보기 <span>${names.length}개 항목 · 줄을 누르면 상세 분석</span></div><div class="mdo-tw"><table class="mdo-tbl"><thead><tr><th></th><th>측정 항목</th><th>위치별 추이</th><th class="r">평균</th><th class="r">최소~최대</th><th>기준 대비 분포</th><th>관리기준</th><th class="c">상태</th></tr></thead><tbody>${names.map((n,i)=>{ const a=A[n]; const pts=mdSeries(items[n]); const st=a.st;
-      return `<tr data-open="${escapeHtml(n)}" style="animation-delay:${(i*0.03).toFixed(2)}s"><td><i class="mdo-dot ${a.out.length?'bad':a.rg?'ok':'none'}"></i></td><td class="nm" title="${escapeHtml(n)}">${escapeHtml(mdShort(n))}<small>${a.vals.length}곳 · 최소~최대 ${mdFmt(st&&st.min)}~${mdFmt(st&&st.max)}${a.rg?' · 기준 '+escapeHtml(mdRangeText(a.rg,a.unit)):''}</small></td><td class="sp">${mdSparkL(pts,a.rg)}</td><td class="r big">${mdFmt(st&&st.avg)}<small>${escapeHtml(a.unit)}</small></td><td class="r">${mdFmt(st&&st.min)}~${mdFmt(st&&st.max)}</td><td class="bl">${mdBullet(st,a.rg)}</td><td class="std">${a.rg?escapeHtml(mdRangeText(a.rg,a.unit)):'-'}</td><td class="c">${a.out.length?`<span class="mdo-st bad">이탈 ${a.out.length}</span>`:a.rg?'<span class="mdo-st ok">정상</span>':'<span class="mdo-st none">-</span>'}</td></tr>`; }).join('')}</tbody></table></div>
-      <div class="mdo-lg" style="margin-top:6px"><span><i style="background:#DCFCE7"></i>관리기준 범위</span><span><i style="background:#334155;height:4px"></i>최소~최대</span><span><i style="background:#2563EB;border-radius:50%"></i>평균</span><span><i style="background:#F04438;border-radius:50%"></i>이탈 위치</span></div></div>`;
+    h+=`<div class="mdo-p s12"><div class="mdo-t">측정 항목 한눈에 보기 <span>${names.length}개 항목 · 줄을 누르면 상세 분석</span></div><div class="mdo-tw"><table class="mdo-tbl"><thead><tr><th></th><th>측정 항목</th><th>위치별 추이</th><th class="r">평균</th><th class="r">최소~최대</th><th>기준 대비 분포</th><th>사내 참고기준</th><th class="c">상태</th></tr></thead><tbody>${names.map((n,i)=>{ const a=A[n]; const pts=mdSeries(items[n]); const st=a.st;
+      return `<tr data-open="${escapeHtml(n)}" style="animation-delay:${(i*0.03).toFixed(2)}s"><td><i class="mdo-dot ${a.bad.length?'bad':a.out.length?'dev':a.rg?'ok':'none'}"></i></td><td class="nm" title="${escapeHtml(n)}">${escapeHtml(mdShort(n))}<small>${a.vals.length}곳 · 최소~최대 ${mdFmt(st&&st.min)}~${mdFmt(st&&st.max)}${a.rg?' · 기준 '+escapeHtml(mdRangeText(a.rg,a.unit)):''}</small></td><td class="sp">${mdSparkL(pts,a.rg)}</td><td class="r big">${mdFmt(st&&st.avg)}<small>${escapeHtml(a.unit)}</small></td><td class="r">${mdFmt(st&&st.min)}~${mdFmt(st&&st.max)}</td><td class="bl">${mdBullet(st,a.rg)}</td><td class="std">${a.rg?escapeHtml(mdRangeText(a.rg,a.unit)):'-'}</td><td class="c">${a.bad.length?`<span class="mdo-st bad">부적합 ${a.bad.length}</span>`:a.out.length?`<span class="mdo-st dev" title="사내 참고범위 밖 — 환경 편차">범위 밖 ${a.out.length}</span>`:a.rg?'<span class="mdo-st ok">범위 이내</span>':'<span class="mdo-st none">-</span>'}</td></tr>`; }).join('')}</tbody></table></div>
+      <div class="mdo-lg" style="margin-top:6px"><span><i style="background:#DCFCE7"></i>사내 참고범위</span><span><i style="background:#334155;height:4px"></i>최소~최대</span><span><i style="background:#2563EB;border-radius:50%"></i>평균</span><span><i style="background:#F04438;border-radius:50%"></i>이탈 위치</span></div></div>`;
     // ④ 항목별 기준 충족률 (막대)
     h+=`<div class="mdo-sh s12" id="md-sec-charts">그래프</div>`;
     const bl=names.filter(n=>A[n].judged.length).map(n=>{ const a=A[n]; const p=Math.round((a.judged.length-a.out.length)/a.judged.length*100); return {key:n,label:mdShort(n),value:p,color:p===100?'#22B573':p>=80?'#F5A524':'#F04438'}; });
@@ -6898,7 +6909,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       h+=`<div class="mdo-p s6" data-open="${escapeHtml(fName)}" style="cursor:pointer"><div class="mdo-t">층별 평균 추이 — ${escapeHtml(mdShort(fName))} <span>${escapeHtml(a.unit)}</span></div>${mdLineSVG(pts,a.rg,a.unit,{W:460,H:210})}</div>`; }
     // ⑥ 범위형 게이지 (온도·습도 등)
     const rNames=names.filter(n=>A[n].kind==='range'&&A[n].vals.length).slice(0,4);
-    if(rNames.length) h+=`<div class="mdo-p s12"><div class="mdo-t">범위 기준 항목 <span>초록 = 관리기준 범위 · 점 = 위치별 값 · 파란 원 = 평균</span></div><div class="mdo-rs">${rNames.map(n=>{ const a=A[n]; return `<div class="mdo-r" data-open="${escapeHtml(n)}"><div class="mdo-rn">${escapeHtml(mdShort(n))}<b class="${a.out.length?'bad':''}">${mdFmt(a.st.avg)}${escapeHtml(a.unit)}</b></div>${mdRangeHTML(mdSeries(items[n]),a.rg,a.unit,a.st.avg)}</div>`; }).join('')}</div></div>`;
+    if(rNames.length) h+=`<div class="mdo-p s12"><div class="mdo-t">범위 기준 항목 <span>초록 = 사내 참고범위 · 점 = 위치별 값 · 파란 원 = 평균</span></div><div class="mdo-rs">${rNames.map(n=>{ const a=A[n]; return `<div class="mdo-r" data-open="${escapeHtml(n)}"><div class="mdo-rn">${escapeHtml(mdShort(n))}<b class="${a.out.length?'bad':''}">${mdFmt(a.st.avg)}${escapeHtml(a.unit)}</b></div>${mdRangeHTML(mdSeries(items[n]),a.rg,a.unit,a.st.avg)}</div>`; }).join('')}</div></div>`;
     // ⑥-2 영상 품질 검수 (설치 위치별 해상도·프레임률·색상 분포·9구역 밝기)
     const vqList = (mdData && mdData.source==='현재 점검' && current) ? (current.videoQuality||[]) : [];
     if(vqList.length){
@@ -6965,11 +6976,11 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     body+=sec('1. 측정 결과 요약',{first:true});
     const kw=Math.floor(TW/6);
     body+=tbl([kw,kw,kw,kw,kw,TW-kw*5],
-      tr(['측정 종류','측정값','관리기준 충족률','기준 이탈','점검 설비·위치','점검 적합율'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{bg:'D9D9D9',b:true})).join(''),380,false)+
-      tr([`${names.length}가지`,`${rows.length}건`,okPct==null?'-':`${okPct}% (${judgedN-outN}/${judgedN})`,`${outN}건`,`${D.eqN!=null?D.eqN:D.catStat.length}종 · ${D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size}곳`,(cg+cb)?`${Math.round(cg/(cg+cb)*100)}% (부적합 ${cb})`:'-'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{b:true,sz:19,color:i===3&&outN?'C00000':undefined})).join(''),460));
-    body+=pp(rn(outN?`※ 관리기준을 벗어난 측정값 ${outN}건이 있습니다(3항 참고).`:`※ 판정 가능한 측정값 ${judgedN}건이 모두 관리기준 이내입니다.`,{sz:16,color:outN?'C00000':'375623'}),{before:60,after:120});
+      tr(['측정 종류','측정값','사내 참고범위 이내','부적합 판정','점검 설비·위치','점검 적합율'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{bg:'D9D9D9',b:true})).join(''),380,false)+
+      tr([`${names.length}가지`,`${rows.length}건`,okPct==null?'-':`${okPct}% (${judgedN-outN}/${judgedN})`,`${cb}건`,`${D.eqN!=null?D.eqN:D.catStat.length}종 · ${D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size}곳`,(cg+cb)?`${Math.round(cg/(cg+cb)*100)}% (부적합 ${cb})`:'-'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{b:true,sz:19,color:i===3&&cb?'C00000':undefined})).join(''),460));
+    body+=pp(rn(`※ 측정값의 기준은 법정 고시값이 아닌 사내 참고기준입니다. ${cb?`부적합 판정 ${cb}건이 있습니다.`:'부적합 판정은 없습니다.'}${outN?` 참고범위 밖 측정값 ${outN}건은 공간·환경 차이에 따른 편차로 부적합이 아닙니다(3항 참고).`:` 판정 가능한 측정값 ${judgedN}건이 모두 참고범위 이내입니다.`}`,{sz:16,color:cb?'C00000':'375623'}),{before:60,after:120});
     // 그림 2개(도넛) 나란히
-    const d1=donutChart('관리기준 충족',[{label:'기준 이내',val:judgedN-outN,color:CH.good},{label:'이탈',val:outN,color:CH.bad},{label:'기준 없음',val:rows.length-judgedN,color:'#C4CADB'}], okPct==null?'-':okPct+'%', '기준 충족률');
+    const d1=donutChart('사내 참고범위',[{label:'범위 이내',val:judgedN-outN,color:CH.good},{label:'범위 밖(환경 편차)',val:outN,color:CH.warn},{label:'참고기준 없음',val:rows.length-judgedN,color:'#C4CADB'}], okPct==null?'-':okPct+'%', '참고범위 이내');
     const d2=donutChart('점검 결과',[{label:'적합',val:cg,color:CH.blue},{label:'부적합',val:cb,color:CH.bad}], (cg+cb)?Math.round(cg/(cg+cb)*100)+'%':'-', '적합율');
     const half=Math.floor(TW/2);
     body+=tbl([half,TW-half], tr(tc(pp(pic(d1,8.2),{jc:'center'}),half,{nb:true})+tc(pp(pic(d2,8.2),{jc:'center'}),TW-half,{nb:true}),300));
@@ -6977,19 +6988,19 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     if(names.length){
       body+=sec('2. 측정 항목별 결과');
       if(o.style==='cards'){
-        body+=pp(rn('측정 항목마다 위치별 측정값을 게이지·범위·추이 그래프로 나타냈습니다. 초록 띠는 관리기준 범위, 빨간 점은 기준을 벗어난 위치입니다.',{sz:16,color:'555555'}),{after:80});
+        body+=pp(rn('측정 항목마다 위치별 측정값을 게이지·범위·추이 그래프로 나타냈습니다. 초록 띠는 사내 참고범위, 주황 점은 참고범위 밖 위치(환경 편차)입니다.',{sz:16,color:'555555'}),{after:80});
         const imgs=[]; for(const n of names){ const c=await mdSvgToCanvas(mdCardSVG(n,A[n],mdSeries(items[n])),520,360,2); if(c) imgs.push(c); if(o.onProgress) o.onProgress(`항목 그래프 만드는 중… ${imgs.length}/${names.length}`); }
         const hw=Math.floor(TW/2);
         for(let k=0;k<imgs.length;k+=2){ body+=tbl([hw,TW-hw], `<w:tr><w:trPr><w:cantSplit/></w:trPr>`+tc(pp(pic(imgs[k],7.9),{jc:'center',after:60}),hw,{nb:true})+tc(imgs[k+1]?pp(pic(imgs[k+1],7.9),{jc:'center',after:60}):pp(rn('')),TW-hw,{nb:true})+`</w:tr>`); }
       } else {
       const W=[480,2950,820,1150,1650,1750,TW-480-2950-820-1150-1650-1750];
-      let rr=tr(['No','측정 항목','측정 수','평균','최소~최대','관리기준','판정'].map((t,i)=>cell(t,W[i],{bg:'D9D9D9',b:true})).join(''),380,true);
+      let rr=tr(['No','측정 항목','측정 수','평균','최소~최대','사내 참고기준','결과'].map((t,i)=>cell(t,W[i],{bg:'D9D9D9',b:true})).join(''),380,true);
       names.forEach((n,i)=>{ const a=A[n], st=a.st, u=a.unit;
-        rr+=tr([String(i+1),mdShort(n),`${a.vals.length}`,`${NF(st&&st.avg)}${u}`,`${NF(st&&st.min)}~${NF(st&&st.max)}`,a.rg?mdRangeText(a.rg,u).replace(/\d{5,}/g,m=>(+m).toLocaleString('ko-KR'))+(items[n].some(r=>r.soft)?' (완화)':''):'-',a.out.length?`이탈 ${a.out.length}`:a.rg?'적합':'-'].map((t,k)=>cell(t,W[k],{jc:k===1?'left':'center',color:k===6&&a.out.length?'C00000':undefined,b:k===6&&!!a.out.length})).join(''),340); });
+        rr+=tr([String(i+1),mdShort(n),`${a.vals.length}`,`${NF(st&&st.avg)}${u}`,`${NF(st&&st.min)}~${NF(st&&st.max)}`,a.rg?mdRangeText(a.rg,u).replace(/\d{5,}/g,m=>(+m).toLocaleString('ko-KR'))+(items[n].some(r=>r.soft)?' (완화)':''):'-',a.bad.length?`부적합 ${a.bad.length}`:a.out.length?`범위 밖 ${a.out.length}`:a.rg?'범위 이내':'-'].map((t,k)=>cell(t,W[k],{jc:k===1?'left':'center',color:k===6&&a.bad.length?'C00000':k===6&&a.out.length?'B45309':undefined,b:k===6&&!!(a.bad.length||a.out.length)})).join(''),340); });
       body+=tbl(W,rr);
       // 그래프: 항목별 충족률 + 층별 평균
       const bl=names.filter(n=>A[n].judged.length).slice(0,14);
-      if(bl.length){ body+=pp(rn(''),{after:80}); body+=pp(pic(barChart('항목별 관리기준 충족률 (%)', bl.map(n=>mdShort(n).slice(0,8)), [{name:'충족률',color:CH.teal,data:bl.map(n=>Math.round((A[n].judged.length-A[n].out.length)/A[n].judged.length*100))}], {max:100,min:0,dec:0}),16.5),{jc:'center',after:80}); }
+      if(bl.length){ body+=pp(rn(''),{after:80}); body+=pp(pic(barChart('항목별 사내 참고범위 이내 비율 (%)', bl.map(n=>mdShort(n).slice(0,8)), [{name:'충족률',color:CH.teal,data:bl.map(n=>Math.round((A[n].judged.length-A[n].out.length)/A[n].judged.length*100))}], {max:100,min:0,dec:0}),16.5),{jc:'center',after:80}); }
       const fName=names.slice().sort((x,y)=>new Set(items[y].map(r=>r.floor)).size-new Set(items[x].map(r=>r.floor)).size || (/접지저항/.test(y)?1:0)-(/접지저항/.test(x)?1:0))[0];
       if(fName){ const a=A[fName]; const fl=[...new Set(a.vals.map(r=>r.floor==null?-9999:r.floor))].sort((p,q)=>p-q);
         if(fl.length>=2){ const thr=a.rg&&!a.rg.ac?(a.rg.max!=null?a.rg.max:a.rg.min):null;
@@ -6997,12 +7008,13 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       }
       // 3. 기준 이탈 상세
       const outs=[]; names.forEach(n=>A[n].out.forEach(r=>outs.push({n,r,a:A[n]})));
-      body+=sec('3. 관리기준 이탈 내역');
+      body+=sec('3. 사내 참고범위 밖 측정값 (환경 편차)');
+      body+=pp(rn('사내 참고기준을 벗어났지만 점검 판정은 적합인 값입니다. 공간(예: TPS실·방재실)과 환경에 따라 달라지는 값으로, 부적합이 아닙니다.',{sz:16,color:'555555'}),{after:60});
       if(outs.length){ const W3=[2600,2700,1300,1600,TW-2600-2700-1300-1600];
-        let r3=tr(['설치 위치','측정 항목','측정값','관리기준','설비'].map((t,i)=>cell(t,W3[i],{bg:'D9D9D9',b:true})).join(''),380,true);
-        outs.forEach(o=>{ r3+=tr([o.r.loc,mdShort(o.n),`${NF(o.r.raw)}${o.a.unit}`,mdRangeText(o.a.rg,o.a.unit).replace(/\d{5,}/g,m=>(+m).toLocaleString('ko-KR')),o.r.catName||''].map((t,k)=>cell(t,W3[k],{jc:k<2?'left':'center',color:k===2?'C00000':undefined,b:k===2})).join(''),340); });
+        let r3=tr(['설치 위치','측정 항목','측정값','사내 참고기준','설비'].map((t,i)=>cell(t,W3[i],{bg:'D9D9D9',b:true})).join(''),380,true);
+        outs.forEach(o=>{ r3+=tr([o.r.loc,mdShort(o.n),`${NF(o.r.raw)}${o.a.unit}`,mdRangeText(o.a.rg,o.a.unit).replace(/\d{5,}/g,m=>(+m).toLocaleString('ko-KR')),o.r.catName||''].map((t,k)=>cell(t,W3[k],{jc:k<2?'left':'center',color:k===2?'B45309':undefined,b:k===2})).join(''),340); });
         body+=tbl(W3,r3);
-      } else body+=pp(rn('관리기준을 벗어난 측정값이 없습니다.',{sz:18}),{after:80});
+      } else body+=pp(rn('사내 참고범위를 벗어난 측정값이 없습니다.',{sz:18}),{after:80});
     }
     // 4. 영상 품질 검수
     const vqList=(current && D.source==='현재 점검')?(current.videoQuality||[]):[];
@@ -7064,16 +7076,16 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
   function mdItemGridHTML(names, items, A){
     let h=`<div class="mdv-grid">`;
     names.forEach((n,ci)=>{
-      const a=A[n], pts=mdSeries(items[n]); const st=a.st; const icon=!a.rg?'<i class="mdv-ic none">–</i>':a.out.length?'<i class="mdv-ic bad">!</i>':'<i class="mdv-ic ok">✓</i>';
+      const a=A[n], pts=mdSeries(items[n]); const st=a.st; const icon=a.bad.length?'<i class="mdv-ic red">!</i>':!a.rg?'<i class="mdv-ic none">–</i>':a.out.length?'<i class="mdv-ic bad">~</i>':'<i class="mdv-ic ok">✓</i>';
       let chart='';
       if(a.kind==='gauge' && pts.length) chart=mdGaugeSVG(a.rep, a.rg, a.unit)+`<div class="mdv-gv ${a.out.length?'bad':''}">${mdFmt(a.rep)}${escapeHtml(a.unit)} <span>${a.repLab}</span></div>`;
       else if(a.kind==='range' && pts.length) chart=mdRangeHTML(pts, a.rg, a.unit, st.avg)+(pts.length>=3?`<div class="mdv-mini">${mdLineSVG(pts,a.rg,a.unit,{W:360,H:96})}</div>`:'');
       else chart=mdLineSVG(pts, a.rg, a.unit, {W:360,H:170});
-      h+=`<button class="mdv-card ${a.out.length?'bad':''}" data-open="${escapeHtml(n)}" style="animation-delay:${(ci*0.04).toFixed(2)}s">
+      h+=`<button class="mdv-card ${a.bad.length?'bad':a.out.length?'dev':''}" data-open="${escapeHtml(n)}" style="animation-delay:${(ci*0.04).toFixed(2)}s">
         <div class="mdv-ch">${icon}<span class="mdv-ct" title="${escapeHtml(n)}">${escapeHtml(mdShort(n))}</span><span class="mdv-cv"><b data-count="${a.rep==null?'':a.rep}" data-dec="${a.rep!=null&&Math.abs(a.rep)<10?2:1}">${mdFmt(a.rep)}</b><small>${escapeHtml(a.unit)}</small></span></div>
-        <div class="mdv-cs"><span>${a.repLab} · ${a.vals.length}곳</span><span>${a.rg?'관리기준 '+escapeHtml(mdRangeText(a.rg,a.unit)):'관리기준 없음'}</span></div>
+        <div class="mdv-cs"><span>${a.repLab} · ${a.vals.length}곳</span><span>${a.rg?'참고기준 '+escapeHtml(mdRangeText(a.rg,a.unit)):'참고기준 없음'}</span></div>
         <div class="mdv-chart">${chart}</div>
-        <div class="mdv-cf">${a.out.length?`<span class="bad">이탈 ${a.out.length}곳</span>`:a.rg?`<span class="ok">정상 ${a.judged.length}/${a.judged.length}</span>`:'<span>판정 기준 없음</span>'}<span>자세히 ›</span></div>
+        <div class="mdv-cf">${a.bad.length?`<span class="bad">부적합 ${a.bad.length}곳</span>`:a.out.length?`<span class="dev">참고범위 밖 ${a.out.length}곳 (환경 편차)</span>`:a.rg?`<span class="ok">범위 이내 ${a.judged.length}/${a.judged.length}</span>`:'<span>참고기준 없음</span>'}<span>자세히 ›</span></div>
       </button>`;
     });
     return h+`</div>`;
@@ -7083,8 +7095,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     .mdl-grid{stroke:#EEF2F6;stroke-width:1}.mdl-yl{font-size:9.5px;fill:#94A3B8;text-anchor:end}.mdl-xl{font-size:9.5px;fill:#64748B;text-anchor:middle}
     .mdl-band{fill:#DCFCE7;opacity:.8}.mdl-lim{stroke:#16A34A;stroke-width:1.3;stroke-dasharray:5 4}.mdl-limt{font-size:9.5px;fill:#15803D;font-weight:700;text-anchor:end}
     .mdl-area{fill:rgba(59,130,246,.10)}.mdl-path{fill:none;stroke:#2563EB;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
-    .mdl-dot{fill:#fff;stroke:#2563EB;stroke-width:1.8}.mdl-dot.over{fill:#F04438;stroke:#fff;stroke-width:1.5}
-    .mdl-call rect{fill:#fff;stroke:#F04438;stroke-width:1.2}.mdl-call text{font-size:10.5px;font-weight:800;fill:#B42318;text-anchor:middle}
+    .mdl-dot{fill:#fff;stroke:#2563EB;stroke-width:1.8}.mdl-dot.over{fill:#F5A524;stroke:#fff;stroke-width:1.5}
+    .mdl-call rect{fill:#fff;stroke:#F5A524;stroke-width:1.2}.mdl-call text{font-size:10.5px;font-weight:800;fill:#B45309;text-anchor:middle}
     .mdg-bg{fill:none;stroke:#EEF2F6;stroke-width:16;stroke-linecap:round}.mdg-ok{fill:none;stroke:#DCFCE7;stroke-width:16}.mdg-val{fill:none;stroke-width:16;stroke-linecap:round}
     .mdg-lim{stroke:#F04438;stroke-width:3}.mdg-tk{stroke:#CBD5E1;stroke-width:1.2}.mdg-tl{font-size:9.5px;fill:#64748B;text-anchor:middle}
     .mdg-needle line{stroke:#0F172A;stroke-width:3.2;stroke-linecap:round}.mdg-needle circle{fill:#fff;stroke:#0F172A;stroke-width:3}`;
@@ -7092,7 +7104,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
   function mdRangeSVG(pts, rg, unit, avg, W){
     const vs=pts.map(p=>p.v); const ext=vs.concat([rg.min,rg.max].filter(v=>v!=null)); let lo=Math.min(...ext), hi=Math.max(...ext); const pad=(hi-lo||1)*0.25; const nc=mdNice(lo-pad,hi+pad); lo=nc.lo; hi=nc.hi;
     const L=16, R=W-16, X=v=>L+(v-lo)/(hi-lo)*(R-L); const y=34; const a=rg.min!=null?rg.min:lo, b=rg.max!=null?rg.max:hi;
-    let t=`<text x="${(X(a)+X(b))/2}" y="12" text-anchor="middle" font-size="11" font-weight="800" fill="#15803D">관리기준 ${escapeHtml(mdRangeText(rg,unit))}</text><line x1="${X(a)}" x2="${X(b)}" y1="17" y2="17" stroke="#16A34A" stroke-dasharray="3 2"/>`;
+    let t=`<text x="${(X(a)+X(b))/2}" y="12" text-anchor="middle" font-size="11" font-weight="800" fill="#15803D">참고기준 ${escapeHtml(mdRangeText(rg,unit))}</text><line x1="${X(a)}" x2="${X(b)}" y1="17" y2="17" stroke="#16A34A" stroke-dasharray="3 2"/>`;
     t+=`<rect x="${L}" y="${y-7}" width="${R-L}" height="14" rx="7" fill="#E5E7EB"/><rect x="${X(a)}" y="${y-7}" width="${Math.max(X(b)-X(a),2)}" height="14" rx="7" fill="#BBF7D0"/>`;
     pts.forEach(p=>{ t+=`<circle cx="${X(p.v)}" cy="${y}" r="${p.over?4.5:3.5}" fill="${p.over?'#F04438':'#64748B'}"/>`; });
     const ov=mdIsOver({value:avg},rg); t+=`<circle cx="${X(avg)}" cy="${y}" r="9" fill="#fff" stroke="${ov?'#F04438':'#2563EB'}" stroke-width="4"/><rect x="${X(avg)-34}" y="${y+12}" width="68" height="18" rx="6" fill="#EFF6FF" stroke="#BFDBFE"/><text x="${X(avg)}" y="${y+25}" text-anchor="middle" font-size="11" font-weight="900" fill="#1D4ED8">${mdFmt(avg)}${escapeHtml(unit)}</text>`;
@@ -7101,7 +7113,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
   }
   function mdCardSVG(n, a, pts){
     const W=520, H=360, out=a.out.length, u=a.unit;
-    const icCol=!a.rg?'#94A3B8':out?'#F5A524':'#22B573', icTx=!a.rg?'–':out?'!':'✓';
+    const icCol=a.bad.length?'#F04438':!a.rg?'#94A3B8':out?'#F5A524':'#22B573', icTx=a.bad.length?'!':!a.rg?'–':out?'~':'✓';
     const ttl=mdShort(n); const tShort=ttl.length>22?ttl.slice(0,21)+'…':ttl;
     let body='';
     if(a.kind==='gauge' && pts.length){ body+=mdNest(mdGaugeSVG(a.rep,a.rg,u,true),110,82,300,175);
@@ -7109,14 +7121,14 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     else if(a.kind==='range' && pts.length){ body+=`<g transform="translate(10,86)">${mdRangeSVG(pts,a.rg,u,a.st.avg,W-20)}</g>`;
       if(pts.length>=3) body+=mdNest(mdLineSVG(pts,a.rg,u,{W:360,H:96}),14,184,W-28,128); }
     else body+=mdNest(mdLineSVG(pts,a.rg,u,{W:360,H:170}),12,80,W-24,236);
-    const foot = out?`<tspan fill="#D92D20" font-weight="800">이탈 ${out}곳</tspan>`:a.rg?`<tspan fill="#067647" font-weight="800">정상 ${a.judged.length}/${a.judged.length}</tspan>`:'판정 기준 없음';
+    const foot = a.bad.length?`<tspan fill="#D92D20" font-weight="800">부적합 ${a.bad.length}곳</tspan>`:out?`<tspan fill="#B45309" font-weight="800">참고범위 밖 ${out}곳 (환경 편차)</tspan>`:a.rg?`<tspan fill="#067647" font-weight="800">범위 이내 ${a.judged.length}/${a.judged.length}</tspan>`:'참고기준 없음';
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><style>${MD_SVG_CSS}</style>
-      <rect x="1.5" y="1.5" width="${W-3}" height="${H-3}" rx="16" fill="#fff" stroke="${out?'#FDA29B':'#E2E8F0'}" stroke-width="${out?2.5:1.5}"/>
+      <rect x="1.5" y="1.5" width="${W-3}" height="${H-3}" rx="16" fill="#fff" stroke="${a.bad.length?'#FDA29B':out?'#FCD34D':'#E2E8F0'}" stroke-width="${a.bad.length||out?2.5:1.5}"/>
       <circle cx="30" cy="33" r="11" fill="${icCol}"/><text x="30" y="38" text-anchor="middle" font-size="13" font-weight="900" fill="#fff">${icTx}</text>
       <text x="50" y="39" font-size="16.5" font-weight="800" fill="#0F172A">${escapeHtml(tShort)}</text>
-      <text x="${W-18}" y="41" text-anchor="end" font-size="25" font-weight="900" fill="${out?'#D92D20':'#0F172A'}">${mdFmt(a.rep)}<tspan font-size="12" font-weight="700" fill="#475569"> ${escapeHtml(u)}</tspan></text>
+      <text x="${W-18}" y="41" text-anchor="end" font-size="25" font-weight="900" fill="${a.bad.length?'#D92D20':out?'#B45309':'#0F172A'}">${mdFmt(a.rep)}<tspan font-size="12" font-weight="700" fill="#475569"> ${escapeHtml(u)}</tspan></text>
       <text x="50" y="64" font-size="11.5" fill="#64748B">${a.repLab} · ${a.vals.length}곳</text>
-      <text x="${W-18}" y="64" text-anchor="end" font-size="11.5" fill="#64748B">${a.rg?'관리기준 '+escapeHtml(mdRangeText(a.rg,u)):'관리기준 없음'}</text>
+      <text x="${W-18}" y="64" text-anchor="end" font-size="11.5" fill="#64748B">${a.rg?'참고기준 '+escapeHtml(mdRangeText(a.rg,u)):'참고기준 없음'}</text>
       ${body}
       <line x1="18" x2="${W-18}" y1="326" y2="326" stroke="#E2E8F0" stroke-dasharray="4 3"/>
       <text x="20" y="347" font-size="12" fill="#64748B">${foot}</text><text x="${W-18}" y="347" text-anchor="end" font-size="11" fill="#94A3B8">위치별 ${pts.length}곳</text></svg>`;
@@ -7129,9 +7141,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const k=(no,cls,lab,val,unit,sub)=>`<div class="md3-k ${cls}" data-tilt><div class="md3-kno">${no}</div><div class="md3-kl">${lab}</div><div class="md3-kv"><span data-count="${val}">0</span><small>${unit}</small></div><div class="md3-ks">${sub}</div><i class="md3-shine"></i></div>`;
     return `<div class="md3-ks4">
       ${k('01','c1','측정 종류',names.length,'가지',`접지저항·온습도 등 · 측정값 ${rowsN}건`)}
-      ${k('02',okPct===100?'c2':'c2w','관리기준 충족',okPct==null?0:okPct,'%',`${judgedN-outN} / ${judgedN}건 기준 이내`)}
-      ${k('03',outN?'c3':'c3ok','기준 이탈',outN,'건',outN?outItems.length+'개 항목 · 아래 빨간 표시':'이상 없음')}
-      ${k('04',cb?'c3':'c4','점검 설비',catN,'종',`점검 위치 ${locN}곳 · 판정 ${cg+cb}항목 · 부적합 ${cb}`)}
+      ${k('02',okPct===100?'c2':'c2w','참고범위 이내',okPct==null?0:okPct,'%',`${judgedN-outN} / ${judgedN}건 · 사내 참고기준`)}
+      ${k('03',cb?'c3':'c3ok','부적합 판정',cb,'건',`참고범위 밖 ${outN}건은 환경 편차(부적합 아님)`)}
+      ${k('04','c4','점검 설비',catN,'종',`점검 위치 ${locN}곳 · 판정 ${cg+cb}항목`)}
     </div>`;
   }
   function mdInitTilt(root){
@@ -7160,9 +7172,11 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const outItems=names.filter(n=>A[n].out.length);
     let h='';
     // 경고 띠
-    h+= outItems.length
-      ? `<button class="mdv-alert bad" data-open="${escapeHtml(outItems[0])}">⚠️ 확인 필요 · ${outItems.map(n=>`${escapeHtml(mdShort(n))} ${A[n].out.length}건`).slice(0,3).join(' · ')}${outItems.length>3?` 외 ${outItems.length-3}개 항목`:''} <span>상세 ›</span></button>`
-      : `<div class="mdv-alert ok">✅ 측정값 ${judgedN}건 모두 관리기준 이내${judgedN<rows.length?` · 기준 없는 값 ${rows.length-judgedN}건`:''}</div>`;
+    const badItems=names.filter(n=>A[n].bad.length);
+    h+= cb
+      ? `<button class="mdv-alert bad" ${badItems[0]?`data-open="${escapeHtml(badItems[0])}"`:'id="md-badall"'}>⚠️ 부적합 판정 ${cb}건 — 점검 결과를 확인하세요${badItems.length?' · '+badItems.slice(0,3).map(n=>escapeHtml(mdShort(n))).join(' · '):''} <span>상세 ›</span></button>`
+      : `<div class="mdv-alert ok">✅ 부적합 판정 없음 (판정 ${cg}항목 모두 적합)</div>`;
+    if(outItems.length) h+=`<button class="mdv-alert dev" data-open="${escapeHtml(outItems[0])}">ℹ️ 사내 참고범위 밖 측정값 ${outN}건 — 공간·환경 차이에 따른 편차로, 부적합이 아닙니다 · ${outItems.slice(0,3).map(n=>`${escapeHtml(mdShort(n))} ${A[n].out.length}`).join(' · ')}${outItems.length>3?` 외 ${outItems.length-3}개`:''} <span>상세 ›</span></button>`;
     const alertH=h;
     const judgedCats=D.catStat.filter(r=>r.good+r.bad>0);
     const hasVq = !!(current && D.source==='현재 점검' && (current.videoQuality||[]).length);
@@ -7204,6 +7218,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     ov.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>mdOpenDetail(b.dataset.open, items[b.dataset.open], A[b.dataset.open]));
     const bs=ov.querySelector('#md-bld'); if(bs) bs.onchange=()=>{ mdBld=bs.value; showMeasureDashboard(); };
     const vqb=ov.querySelector('#md-vq'); if(vqb) vqb.onclick=vqOpenPanel;
+    const bal=ov.querySelector('#md-badall'); if(bal) bal.onclick=()=>{ if(!current||typeof showAllDefectsModal!=='function') return; ov.remove(); showAllDefectsModal(); };
     ov.querySelectorAll('.mdv-body img[data-imgkey]').forEach(async im=>{ try{ const u=await sGet(im.dataset.imgkey,false); if(u){ im.src=u; im.onclick=()=>vqViewImage(u); } }catch(e){} });
     const curBtn=ov.querySelector('#md-cur'); if(curBtn) curBtn.onclick=()=>{ showMeasureDashboard(mdRowsFromInspection(current)); };
     const expBtn=ov.querySelector('#md-export'); if(expBtn) expBtn.onclick=()=>exportDashboardExcel();
@@ -7219,9 +7234,12 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const pts=mdSeries(list), rg=a.rg, u=a.unit, st=a.st;
     // 분석 문장
     const notes=[];
-    if(!rg) notes.push(['i','관리기준을 숫자로 읽을 수 없는 항목입니다(예: 정격값·설계값 기준). 값의 분포만 표시합니다.']);
-    else if(a.out.length) notes.push(['bad',`${a.judged.length}곳 중 <b>${a.out.length}곳</b>이 관리기준(${escapeHtml(mdRangeText(rg,u))})을 벗어났습니다.`]);
-    else notes.push(['ok',`${a.judged.length}곳 모두 관리기준(${escapeHtml(mdRangeText(rg,u))}) 이내입니다.${a.margin!=null?` 기준까지 가장 가까운 곳의 여유는 <b>${mdFmt(Math.abs(a.margin))}${escapeHtml(u)}</b>입니다.`:''}`]);
+    if(a.bad.length) notes.push(['bad',`점검자가 <b>부적합</b>으로 판정한 위치 ${a.bad.length}곳: ${a.bad.slice(0,5).map(r=>escapeHtml(r.loc)).join(', ')}${a.bad.length>5?' 외':''}`]);
+    { const ty={}; a.vals.forEach(r=>{ const t=extractRoomType(r.loc); if(t&&t!==r.loc) (ty[t]=ty[t]||[]).push(r.value); }); const ks=Object.keys(ty).filter(k=>ty[k].length);
+      if(ks.length>=2) notes.push(['i','공간 유형별 평균: '+ks.map(k=>`${escapeHtml(k)} ${mdFmt(ty[k].reduce((x,y)=>x+y,0)/ty[k].length)}${escapeHtml(u)} (${ty[k].length}곳)`).join(' · ')+' — 공간마다 환경이 달라 값 차이가 날 수 있습니다.']); }
+    if(!rg) notes.push(['i','참고기준을 숫자로 읽을 수 없는 항목입니다(예: 정격값·설계값 기준). 값의 분포만 표시합니다.']);
+    else if(a.out.length) notes.push(['dev',`${a.judged.length}곳 중 <b>${a.out.length}곳</b>이 사내 참고기준(${escapeHtml(mdRangeText(rg,u))}) 밖입니다. ${a.bad.length?'':'점검 판정은 적합이며, 공간·환경 차이에 따른 편차로 봅니다(부적합 아님).'}`]);
+    else notes.push(['ok',`${a.judged.length}곳 모두 사내 참고기준(${escapeHtml(mdRangeText(rg,u))}) 이내입니다.${a.margin!=null?` 기준까지 가장 가까운 곳의 여유는 <b>${mdFmt(Math.abs(a.margin))}${escapeHtml(u)}</b>입니다.`:''}`]);
     if(list[0]&&list[0].vq){ notes.push(['i', list.some(r=>r.soft) ? '영상 품질 검수 값입니다. 성적서에 기준이 없어 <b>휴대폰 측정을 고려한 완화 참고 기준</b>('+escapeHtml(list.find(r=>r.soft).std)+')으로 판정했습니다. 계약·시방서 기준이 있으면 그 값을 우선하세요.' : '영상 품질 검수 프로그램의 성적서 기준으로 판정했습니다.']); }
     if(rg&&rg.ac){ const dc=a.vals.length-a.judged.length; if(dc) notes.push(['i',`${dc}건은 DC 전원 값으로 보고 AC 기준(${escapeHtml(rg.label)}) 판정에서 뺐습니다.`]); }
     if(a.worst) notes.push([a.out.length?'bad':'i',`${a.out.length?'기준을 가장 많이 벗어난 곳':'기준에 가장 가까운 곳'}: <b>${escapeHtml(a.worst.loc)}</b> ${escapeHtml(String(a.worst.raw))}${escapeHtml(u)}${a.worst.catName?` (${escapeHtml(a.worst.catName)})`:''}`]);
@@ -7241,8 +7259,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       <div class="mdd-body">
         <div class="mdd-box3">
           <div class="b1"><span>${a.repLab}</span><b>${mdFmt(a.rep)}<small>${escapeHtml(u)}</small></b></div>
-          <div class="b2"><span>관리기준</span><b style="font-size:${rg&&mdRangeText(rg,u).length>9?'15px':''}">${rg?escapeHtml(mdRangeText(rg,u)):'-'}</b></div>
-          <div class="b3 ${a.out.length?'bad':''}"><span>${a.out.length?'이탈':'최소 여유'}</span><b>${a.out.length?a.out.length+'곳':diff==null?'-':mdFmt(Math.abs(diff))+'<small>'+escapeHtml(u)+'</small>'}</b></div>
+          <div class="b2"><span>사내 참고기준</span><b style="font-size:${rg&&mdRangeText(rg,u).length>9?'15px':''}">${rg?escapeHtml(mdRangeText(rg,u)):'-'}</b></div>
+          <div class="b3 ${a.bad.length?'bad':a.out.length?'dev':''}"><span>${a.bad.length?'부적합':a.out.length?'참고범위 밖':'최소 여유'}</span><b>${a.bad.length?a.bad.length+'곳':a.out.length?a.out.length+'곳':diff==null?'-':mdFmt(Math.abs(diff))+'<small>'+escapeHtml(u)+'</small>'}</b></div>
         </div>
         ${a.kind==='gauge'&&pts.length?`<div class="mdd-card">${mdGaugeSVG(a.rep,rg,u)}</div>`:''}
         ${a.kind==='range'&&pts.length?`<div class="mdd-card">${mdRangeHTML(pts,rg,u,st.avg)}</div>`:''}

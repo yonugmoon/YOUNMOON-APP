@@ -64,7 +64,24 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 .heat-cells{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
 .heat-cells span{padding:3px 0;text-align:center;font-size:.75rem;font-weight:650;border:1px solid #71829a;border-radius:3px}
 .comparison details{margin-top:8px}
-@media print{.dash-viz,.dash-kpi,.color-strip span,.color-key,.heat-cells span{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+.dash-counts .pending{color:#e6edf6}
+.verdict{margin:10px 0;padding:10px 12px;border-radius:8px;font-weight:700;border:1px solid}
+.verdict small{display:block;font-weight:400;font-size:.75rem;margin-top:2px}
+.verdict.pass{background:#12392b;color:#8ce3bd;border-color:#2f8a62}
+.verdict.fail{background:#3d1820;color:#ffa0a0;border-color:#a8444f}
+.verdict.hold{background:#232f40;color:#e6edf6;border-color:#526a86}
+.timeline{position:relative;height:16px;margin:6px 0 4px;background:#31455c;border-radius:4px;overflow:hidden}
+.timeline span{position:absolute;top:0;bottom:0;min-width:2px;background:#ffa0a0}
+.timeline-axis{display:flex;justify-content:space-between;font-size:.72rem;color:#bfcedf}
+.photo-preview{display:block;max-width:100%;max-height:360px;margin-top:8px;border:1px solid #d4e0e4;border-radius:8px}
+.history-table td:last-child{white-space:nowrap}
+.history-table button{min-height:36px;padding:5px 10px;font-size:.82rem}
+.history-pass{color:#0b7a4f;font-weight:700}
+.history-fail{color:#b3303e;font-weight:700}
+.report-meta{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:.9rem;margin:0 0 12px}
+.report-meta dt{font-weight:700}
+.report-meta dd{margin:0;white-space:pre-wrap}
+@media print{.dash-viz,.dash-kpi,.color-strip span,.color-key,.heat-cells span,.verdict,.timeline,.timeline span{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 </style>
 </head>
 <body>
@@ -72,7 +89,12 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 <p id="local-info" hidden>오프라인 파일 모드입니다. 영상은 기기 안에서 처리합니다. RTSP는 PC 연결 모드에서 사용할 수 있습니다.</p>
 <form id="form">
 <section>
+<div class="grid">
 <label>설치 위치<input id="site" placeholder="예) 1층 출입구" autocomplete="off"></label>
+<label>점검자<input id="inspector" placeholder="예) 홍길동" autocomplete="name"></label>
+</div>
+<label style="margin-top:12px">비고<textarea id="memo" rows="2" placeholder="현장 특이사항, 장비 모델 등"></textarea></label>
+<p>입력값은 이 기기에 자동 저장되어 페이지를 다시 열어도 유지됩니다.</p>
 </section>
 <section>
 <h2>영상 분석</h2>
@@ -107,6 +129,7 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 <p>화면이 사진을 채우도록 정면에서 촬영하세요. 사진 분석값은 반사, 노출, 촬영 거리의 영향을 받는 참고값입니다.</p>
 <button id="photo-run" type="button">사진 진단</button>
 <pre id="photo-result" aria-live="polite"></pre>
+<img id="photo-preview" class="photo-preview" alt="분석한 사진 영역과 이상색 후보 표시" hidden>
 </section>
 <section>
 <details class="result-details"><summary>합격 기준 설정</summary>
@@ -128,6 +151,8 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 <div class="actions">
 <button type="submit">판정 갱신</button>
 <button class="secondary" id="download" type="button">HTML 성적서 저장</button>
+<button class="secondary" id="csv" type="button">CSV 저장</button>
+<button class="secondary" id="save-history" type="button">점검 이력에 추가</button>
 <button class="secondary" id="backup" type="button">점검 기록 백업</button>
 <label>입력 기록 복원<input id="restore" type="file" accept=".json,application/json"></label>
 </div>
@@ -140,15 +165,33 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 <pre id="details"></pre>
 </details>
 </section>
+<section>
+<h2>점검 이력</h2>
+<p id="history-empty">저장된 점검 이력이 없습니다. 위치별 측정 후 ‘점검 이력에 추가’를 누르세요.</p>
+<div class="table"><table id="history" class="history-table" aria-label="점검 이력" hidden>
+<thead><tr><th>일시</th><th>설치 위치</th><th>점검자</th><th>종합 판정</th><th></th></tr></thead>
+<tbody></tbody>
+</table></div>
+<div class="actions">
+<button class="secondary" id="history-csv" type="button">이력 CSV 저장</button>
+<button class="secondary" id="history-clear" type="button">이력 비우기</button>
+</div>
+</section>
 <p id="status" role="status" aria-live="polite"></p>
 </form>
 <script>
 const get = id => document.getElementById(id);
 const key = location.hash.slice(1);
+// PC 서버가 준 세션 키(#…)가 없으면 서버 API를 쓸 수 없으므로 기기 내 분석(오프라인 모드)으로 동작합니다.
 const local = !['http:', 'https:'].includes(location.protocol) ||
-    new URLSearchParams(location.search).has('offline');
+    new URLSearchParams(location.search).has('offline') || !key;
 const fields = ['site'];
 const videoSettings = ['video-pattern', 'pixel-limit', 'brightness-limit', 'contrast-limit', 'sharpness-limit', 'pattern-limit'];
+const reportFields = ['inspector', 'memo'];
+const DRAFT_KEY = 'video-quality-inspector:draft';
+const HISTORY_KEY = 'video-quality-inspector:history';
+const HISTORY_LIMIT = 100;
+let photoThumb = '';
 const limits = ['최소 실측 프레임률(fps)', '최대 화면 정지 후보(건)'];
 const exampleLimits = ['25', '0'];
 let result = null;
@@ -158,6 +201,10 @@ const colorLabels = {white:'흰색', black:'검정', red:'빨강', green:'초록
 
 if (local) {
     get('local-info').hidden = false;
+    if (['http:', 'https:'].includes(location.protocol) && !key) {
+        get('local-info').textContent = 'PC 연결 정보가 없어 오프라인 모드로 실행합니다. 영상과 사진은 기기 안에서 처리합니다. ' +
+            'RTSP·PC 분석은 PC 서버 창에 표시된 전체 접속 주소로 여세요.';
+    }
     get('mode').options[1].disabled = true;
     get('mode').value = 'file';
     limits[0] = '최소 브라우저 표시 프레임률(fps)';
@@ -191,12 +238,21 @@ get('mode').addEventListener('change', () => {
 
 async function request(path, body, extra = {}) {
     if (!key) throw new Error('PC에 표시된 전체 접속 주소를 다시 여세요.');
-    const response = await fetch('/api/' + path, {
-        method: 'POST',
-        headers: {'X-Session-Key': key, ...extra},
-        body
-    });
-    if (!response.ok) throw new Error((await response.json()).error);
+    let response;
+    try {
+        response = await fetch('/api/' + path, {
+            method: 'POST',
+            headers: {'X-Session-Key': key, ...extra},
+            body
+        });
+    } catch {
+        throw new Error('PC 분석 서버에 연결하지 못했습니다. Wi-Fi와 서버 창을 확인하세요.');
+    }
+    if (!response.ok) {
+        let message = '';
+        try { message = (await response.json()).error; } catch { /* JSON이 아닌 오류 응답 */ }
+        throw new Error(message || 'PC 분석 서버 오류 (HTTP ' + response.status + ')');
+    }
     return response;
 }
 
@@ -226,10 +282,28 @@ async function update() {
 
 async function measurements() {
     const data = local || result?.browser ? localMeasurements() : await (await request('measure', payload())).json();
+    const serverRows = (data.rows || []).map(row => row.map(cell => cell == null ? '—' : String(cell)));
     const imageRows = videoImageRows(result);
     const details = data.details + '\n' + videoImageNotes(result);
-    return {...data, details, chartRows: [...imageRows, ...data.rows], photoRows,
-        allRows: [...overviewRows(data.rows, imageRows, result), ...photoRows]};
+    const chartRows = [...imageRows, ...serverRows];
+    return {...data, rows: serverRows, details, chartRows, photoRows, video: result,
+        verdict: overallVerdict(chartRows),
+        allRows: [...overviewRows(serverRows, imageRows, result), ...photoRows]};
+}
+
+// 기준이 입력된 항목만으로 종합 판정을 냅니다. 하나라도 미달이면 불합격, 미측정이 남아 있으면 판정 보류.
+function overallVerdict(rows) {
+    const judged = rows.filter(row => row[3] !== '—');
+    const failed = judged.filter(row => row[4] === '미달');
+    const pending = judged.filter(row => row[4] !== '충족' && row[4] !== '미달');
+    if (failed.length) {
+        return {code: 'fail', label: '불합격', note: '미달 ' + failed.length + '건 · ' + failed.map(row => row[0]).join(', ')};
+    }
+    if (!judged.length) return {code: 'hold', label: '판정 보류', note: '기준값이 입력된 항목이 없습니다.'};
+    if (pending.length) {
+        return {code: 'hold', label: '판정 보류', note: '미측정 ' + pending.length + '건 · ' + pending.map(row => row[0]).join(', ')};
+    }
+    return {code: 'pass', label: '합격', note: '기준 항목 ' + judged.length + '건 모두 충족'};
 }
 
 function referenceRow(name, unit, value, verdict = '참고') {
@@ -263,8 +337,10 @@ function videoImageRows(video) {
         row('영상 평균 밝기', '0–255', metrics?.brightness, 'brightness-limit', 255),
         row('영상 밝기 표준편차 (대비)', '지수', metrics?.contrast, 'contrast-limit', 127.5),
         row('영상 선명도 (라플라시안 분산)', '지수', metrics?.sharpness, 'sharpness-limit'),
-        row('흰색 패턴 상대 균일도', '%', get('video-pattern').value === 'white' ? metrics?.uniformity : null,
-            'pattern-limit', 100),
+        // 일반 영상에서는 균일도가 의미 없으므로 기준 판정에서 제외합니다.
+        get('video-pattern').value === 'white'
+            ? row('흰색 패턴 상대 균일도', '%', metrics?.uniformity, 'pattern-limit', 100)
+            : row('흰색 패턴 상대 균일도', '%', null, null),
         ...(metrics?.colors ? colorRows('영상', metrics.colors) : []),
     ];
 }
@@ -313,8 +389,8 @@ async function run(message, task) {
     try {
         get('status').textContent = await task();
     } catch (error) {
-        get('status').textContent = error instanceof TypeError
-            ? 'PC 분석 서버에 연결하지 못했습니다. Wi-Fi와 서버 창을 확인하세요.'
+        get('status').textContent = error instanceof TypeError || !error?.message
+            ? '처리 중 오류가 발생했습니다: ' + (error?.message || error)
             : error.message;
     } finally {
         controls.forEach(control => { control.disabled = false; });
@@ -363,10 +439,154 @@ get('form').addEventListener('submit', event => {
 });
 
 get('download').addEventListener('click', () => run('성적서 생성 중…', async () => {
-    const blob = makeReport(await measurements());
-    downloadBlob(blob, 'video-quality.html');
+    const data = await measurements();
+    downloadBlob(makeReport(data, reportInfo(), photoThumb), fileName('video-quality-report', 'html'));
     return '성적서 다운로드를 시작했습니다.';
 }));
+
+get('csv').addEventListener('click', () => run('CSV 생성 중…', async () => {
+    const data = await measurements();
+    const info = reportInfo();
+    const head = [['설치 위치', info.site], ['점검자', info.inspector], ['점검 일시', info.date],
+        ['종합 판정', data.verdict.label + ' (' + data.verdict.note + ')'], ['비고', info.memo], []];
+    const rows = [...head, ['항목', '단위', '측정값', '기준', '판정'], ...data.allRows];
+    downloadBlob(csvBlob(rows), fileName('video-quality-values', 'csv'));
+    return 'CSV 다운로드를 시작했습니다.';
+}));
+
+function reportInfo(savedAt = new Date()) {
+    return {
+        site: get('site').value.trim(), inspector: get('inspector').value.trim(),
+        memo: get('memo').value.trim(), date: savedAt.toLocaleString('ko-KR')
+    };
+}
+
+function fileName(prefix, extension, site = get('site').value.trim(), when = new Date()) {
+    const pad = n => String(n).padStart(2, '0');
+    const stamp = when.getFullYear() + pad(when.getMonth() + 1) + pad(when.getDate()) + '-' +
+        pad(when.getHours()) + pad(when.getMinutes());
+    // 일부 브라우저는 한글 등 비ASCII 다운로드 이름을 무시하므로 파일 이름은 ASCII만 씁니다(위치명은 파일 내용에 포함).
+    const safeSite = /^[\x20-\x7e]*$/.test(site)
+        ? site.replace(/[^A-Za-z0-9-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40) : '';
+    return [prefix, safeSite, stamp].filter(Boolean).join('_') + '.' + extension;
+}
+
+function csvBlob(rows) {
+    const cell = value => {
+        const text = String(value ?? '');
+        return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+    };
+    // BOM을 붙여 엑셀에서 한글이 깨지지 않게 합니다.
+    return new Blob(['﻿' + rows.map(row => row.map(cell).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'});
+}
+
+function readStore(name, fallback) {
+    try {
+        const raw = localStorage.getItem(name);
+        return raw ? JSON.parse(raw) : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+function writeStore(name, value) {
+    try {
+        localStorage.setItem(name, JSON.stringify(value));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function saveDraft() {
+    writeStore(DRAFT_KEY, Object.fromEntries([...fields, ...videoSettings, ...reportFields].map(id => [id, get(id).value])));
+}
+
+function loadDraft() {
+    const draft = readStore(DRAFT_KEY, null);
+    if (!draft || typeof draft !== 'object') return;
+    for (const id of [...fields, ...videoSettings, ...reportFields]) {
+        if (typeof draft[id] === 'string') get(id).value = draft[id];
+    }
+}
+
+get('save-history').addEventListener('click', () => hasLocation() && run('점검 이력에 저장하는 중…', async () => {
+    const data = await measurements();
+    if (!result && !photoRows.length) throw new Error('먼저 영상이나 사진을 측정하세요.');
+    const savedAt = new Date();
+    const history = readStore(HISTORY_KEY, []);
+    history.unshift({
+        id: savedAt.getTime() + '-' + Math.random().toString(36).slice(2, 7),
+        savedAt: savedAt.toISOString(), info: reportInfo(savedAt), verdict: data.verdict,
+        data: {chartRows: data.chartRows, photoRows: data.photoRows, allRows: data.allRows,
+            details: data.details, verdict: data.verdict, video: data.video}
+    });
+    history.length = Math.min(history.length, HISTORY_LIMIT);
+    if (!writeStore(HISTORY_KEY, history)) {
+        throw new Error('기기 저장 공간이 부족하거나 저장이 차단되어 이력을 저장하지 못했습니다. CSV나 성적서로 보관하세요.');
+    }
+    renderHistory();
+    return '점검 이력에 저장했습니다. (' + history.length + '건)';
+}));
+
+function renderHistory() {
+    const history = readStore(HISTORY_KEY, []);
+    const table = get('history');
+    table.hidden = !history.length;
+    get('history-empty').hidden = history.length > 0;
+    table.tBodies[0].replaceChildren(...history.map(entry => {
+        const row = document.createElement('tr');
+        row.insertCell().textContent = new Date(entry.savedAt).toLocaleString('ko-KR');
+        row.insertCell().textContent = entry.info?.site || '—';
+        row.insertCell().textContent = entry.info?.inspector || '—';
+        const verdict = row.insertCell();
+        verdict.textContent = entry.verdict?.label || '—';
+        verdict.className = entry.verdict?.code === 'pass' ? 'history-pass' : entry.verdict?.code === 'fail' ? 'history-fail' : '';
+        const actions = row.insertCell();
+        const report = document.createElement('button');
+        report.type = 'button';
+        report.className = 'secondary';
+        report.textContent = '성적서';
+        report.addEventListener('click', () => {
+            downloadBlob(makeReport(entry.data, entry.info), fileName('video-quality-report', 'html', entry.info?.site || '', new Date(entry.savedAt)));
+        });
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'secondary';
+        remove.textContent = '삭제';
+        remove.style.marginLeft = '4px';
+        remove.addEventListener('click', () => {
+            if (!confirm((entry.info?.site || '이') + ' 점검 이력을 삭제할까요?')) return;
+            writeStore(HISTORY_KEY, readStore(HISTORY_KEY, []).filter(item => item.id !== entry.id));
+            renderHistory();
+        });
+        actions.append(report, remove);
+        return row;
+    }));
+}
+
+get('history-csv').addEventListener('click', () => {
+    const history = readStore(HISTORY_KEY, []);
+    if (!history.length) {
+        get('status').textContent = '저장된 점검 이력이 없습니다.';
+        return;
+    }
+    const rows = [['저장 일시', '설치 위치', '점검자', '종합 판정', '판정 사유', '비고', '항목', '단위', '측정값', '기준', '판정']];
+    for (const entry of history) {
+        const base = [new Date(entry.savedAt).toLocaleString('ko-KR'), entry.info?.site, entry.info?.inspector,
+            entry.verdict?.label, entry.verdict?.note, entry.info?.memo];
+        for (const item of entry.data?.allRows || []) rows.push([...base, ...item]);
+    }
+    downloadBlob(csvBlob(rows), fileName('video-quality-history', 'csv', ''));
+    get('status').textContent = '이력 CSV 다운로드를 시작했습니다.';
+});
+
+get('history-clear').addEventListener('click', () => {
+    if (!readStore(HISTORY_KEY, []).length || !confirm('저장된 점검 이력을 모두 삭제할까요?')) return;
+    writeStore(HISTORY_KEY, []);
+    renderHistory();
+    get('status').textContent = '점검 이력을 비웠습니다.';
+});
 
 function downloadBlob(blob, name) {
     const url = URL.createObjectURL(blob);
@@ -393,8 +613,9 @@ get('backup').addEventListener('click', () => run('기록을 저장하는 중…
     downloadBlob(new Blob([JSON.stringify({
         format: 'video-quality-inspector', version: 1, savedAt: new Date().toISOString(),
         fields: record.fields, video: record.result, photo: photoEvidence,
-        videoSettings: Object.fromEntries(videoSettings.map(id => [id, get(id).value]))
-    }, null, 2)], {type: 'application/json'}), 'inspection-backup.json');
+        videoSettings: Object.fromEntries(videoSettings.map(id => [id, get(id).value])),
+        report: Object.fromEntries(reportFields.map(id => [id, get(id).value]))
+    }, null, 2)], {type: 'application/json'}), fileName('inspection-backup', 'json'));
     return '점검 기록 다운로드를 시작했습니다.';
 }));
 
@@ -418,12 +639,14 @@ get('restore').addEventListener('change', () => run('입력 기록을 불러오�
             if (typeof record.videoSettings[id] === 'string') get(id).value = record.videoSettings[id];
         }
     }
+    for (const id of reportFields) {
+        get(id).value = typeof record.report?.[id] === 'string' ? record.report[id] : '';
+    }
+    saveDraft();
     result = null;
     clearOutput();
     get('photo').value = '';
-    photoEvidence = '';
-    photoRows = [];
-    get('photo-result').textContent = '';
+    clearPhoto();
     await update();
     return '입력 기록을 복원했습니다. 영상과 사진은 다시 선택해 측정하세요.';
 }));
@@ -435,24 +658,37 @@ function clearOutput() {
     get('details').textContent = '';
 }
 
-get('site').addEventListener('change', () => {
-    result = null;
-    photoRows = [];
+function clearPhoto() {
     photoEvidence = '';
+    photoRows = [];
+    photoThumb = '';
     get('photo-result').textContent = '';
-    clearOutput();
-});
+    get('photo-preview').hidden = true;
+    get('photo-preview').removeAttribute('src');
+}
+
+// 결과가 화면에 있을 때만 다시 그립니다. 다른 측정 결과는 지우지 않습니다.
+function refreshShown() {
+    if (get('result-details').hidden) return;
+    if (!result && !photoRows.length && !local) return clearOutput();
+    update().catch(error => { get('status').textContent = error.message; });
+}
+
+// 위치·점검자·비고와 기준값은 바뀔 때마다 기기에 자동 저장합니다.
+for (const id of [...fields, ...videoSettings, ...reportFields]) {
+    get(id).addEventListener('input', saveDraft);
+    get(id).addEventListener('change', saveDraft);
+}
+get('video-pattern').addEventListener('change', refreshShown);
 
 for (const id of ['video', 'source', 'mode', 'freeze', 'seconds']) {
-    get(id).addEventListener('change', () => { result = null; clearOutput(); });
+    get(id).addEventListener('change', () => { result = null; refreshShown(); });
 }
 for (const id of ['photo', 'photo-mode', 'pattern']) {
     get(id).addEventListener('change', () => {
         get('pattern-field').hidden = get('photo-mode').value !== 'color';
-        photoEvidence = '';
-        photoRows = [];
-        get('photo-result').textContent = '';
-        clearOutput();
+        clearPhoto();
+        refreshShown();
     });
 }
 
@@ -465,10 +701,14 @@ get('photo-run').addEventListener('click', () => hasLocation() && run('기기에
         referenceRow('사진 해상도', 'px', image.originalWidth + ' × ' + image.originalHeight),
         referenceRow('사진 총 픽셀 수', 'px', image.originalWidth * image.originalHeight),
     ];
-    const findings = photoMetrics(image, mode, get('pattern').value, readings);
+    const points = [];
+    const findings = photoMetrics(image, mode, get('pattern').value, readings, points);
     photoRows = readings;
     photoEvidence = ['사진 진단 (예비 참고)', photo.name + ' · 분석 영역 ' + image.width + ' × ' + image.height,
         ...findings].join('\n');
+    photoThumb = evidenceThumbnail(image.canvas, points);
+    get('photo-preview').src = photoThumb;
+    get('photo-preview').hidden = false;
     get('photo-result').textContent = photoEvidence;
     await update();
     get('comparison').scrollIntoView({block: 'start', behavior: 'smooth'});
@@ -495,13 +735,38 @@ async function readPhoto(file) {
         ctx.drawImage(image, image.naturalWidth * .05, image.naturalHeight * .05,
             image.naturalWidth * crop, image.naturalHeight * crop, 0, 0, canvas.width, canvas.height);
         const {data, width, height} = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        return {data, width, height, originalWidth: image.naturalWidth, originalHeight: image.naturalHeight};
+        return {data, width, height, canvas, originalWidth: image.naturalWidth, originalHeight: image.naturalHeight};
     } finally {
         URL.revokeObjectURL(url);
     }
 }
 
-function photoMetrics({data, width: w, height: h}, mode, pattern, readings = []) {
+// 성적서에 넣을 증빙 사진(최대 640px JPEG)을 만들고 이상색 후보 위치에 빨간 원을 표시합니다.
+function evidenceThumbnail(source, points) {
+    const scale = Math.min(1, 640 / Math.max(source.width, source.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(source.width * scale);
+    canvas.height = Math.round(source.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#ff2d55';
+    ctx.fillStyle = '#ff2d55';
+    ctx.font = 'bold 14px system-ui, sans-serif';
+    points.forEach(([x, y], index) => {
+        ctx.beginPath();
+        ctx.arc(x * scale, y * scale, 12, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillText(String(index + 1), x * scale + 14, y * scale - 10);
+    });
+    try {
+        return canvas.toDataURL('image/jpeg', 0.8);
+    } catch {
+        return '';
+    }
+}
+
+function photoMetrics({data, width: w, height: h}, mode, pattern, readings = [], points = []) {
     const count = w * h;
     const gray = new Float32Array(count);
     const rows = new Float64Array(h), cols = new Float64Array(w);
@@ -546,7 +811,7 @@ function photoMetrics({data, width: w, height: h}, mode, pattern, readings = [])
             '색상 분포   ' + distribution.join(' / '),
             '구역 평균 사진 밝기 (0–255)   ' + [...means].map(x => x.toFixed(1)).join(' / ')];
         if (match < 85) return [...lines, '패턴 일치율이 85% 미만이어서 화소 이상 후보 분석을 보류했습니다.'];
-        const candidates = anomalyRegions(data, w, h, readings);
+        const candidates = anomalyRegions(data, w, h, readings, points);
         return [...lines, candidates, '사진 속 이상색 영역을 원본 화면에서 확인하세요.'];
     }
     let lapSum = 0, lapSquares = 0;
@@ -592,7 +857,7 @@ function describeGrid(profile, axis, readings) {
     return axis + '선 ' + centers.length + '개 · 간격 변동계수 ' + variation.toFixed(1) + '%';
 }
 
-function anomalyRegions(data, w, h, readings) {
+function anomalyRegions(data, w, h, readings, points = []) {
     const histograms = Array.from({length:3}, () => new Uint32Array(256));
     for (let i = 0; i < data.length; i += 4) {
         for (let j = 0; j < 3; j++) histograms[j][data[i+j]]++;
@@ -632,7 +897,10 @@ function anomalyRegions(data, w, h, readings) {
         }
         if (count < 2 || count > Math.max(4, flags.length*.002)) continue;
         regions++;
-        if (locations.length < 8) locations.push('(' + Math.round(sx/count) + ', ' + Math.round(sy/count) + ')');
+        if (locations.length < 8) {
+            locations.push('(' + Math.round(sx/count) + ', ' + Math.round(sy/count) + ')');
+            points.push([sx/count, sy/count]);
+        }
     }
     readings.push(referenceRow('사진 이상색 영역 후보', '개', regions));
     return '작은 이상색 영역 ' + regions + '개' + (locations.length ? ' · 예시 좌표 ' + locations.join(', ') : '') +
@@ -676,6 +944,20 @@ function analyzeLocal(file, minimum) {
     const colorCounts = Object.fromEntries(Object.keys(colorLabels).map(color => [color, 0]));
     let colorPixels = 0;
     let imageSamples = 0, uniformitySamples = 0, lastImageTime = -Infinity;
+    let wakeLock = null, lastProgress = 0;
+    // 측정 중 화면이 꺼지면 재생이 멈춰 측정이 중단되므로 화면 꺼짐을 막습니다(지원 브라우저만).
+    navigator.wakeLock?.request('screen').then(lock => { wakeLock = lock; }).catch(() => {});
+
+    function progress(frame) {
+        const now = performance.now();
+        if (now - lastProgress < 500) return;
+        lastProgress = now;
+        const total = video.duration;
+        get('status').textContent = Number.isFinite(total) && total > 0
+            ? '재생 측정 중 ' + frame.mediaTime.toFixed(1) + ' / ' + total.toFixed(1) + '초 (' +
+                Math.min(100, Math.round(100 * frame.mediaTime / total)) + '%) · 원하는 화면에서 정지·현재 화면 측정'
+            : '재생 측정 중 ' + frame.mediaTime.toFixed(1) + '초';
+    }
 
     function endFreeze() {
         if (freezeStart !== undefined && previous.mediaTime - freezeStart >= minimum) {
@@ -688,6 +970,8 @@ function analyzeLocal(file, minimum) {
         let finished = false;
         function cleanup() {
             finished = true;
+            wakeLock?.release().catch(() => {});
+            wakeLock = null;
             stop.onclick = null;
             stop.disabled = stop.hidden = true;
             video.cancelVideoFrameCallback(callback);
@@ -762,6 +1046,7 @@ function analyzeLocal(file, minimum) {
                 latestRgba = rgba;
                 stop.disabled = false;
                 samples++;
+                progress(frame);
                 callback = video.requestVideoFrameCallback(inspect);
             } catch {
                 fail('영상 프레임을 읽지 못했습니다. 다른 파일로 다시 시도하세요.');
@@ -776,8 +1061,9 @@ function analyzeLocal(file, minimum) {
             const measurement = {
                 label: file.name, width: video.videoWidth, height: video.videoHeight, browser: true,
                 frames, observed_fps: span > 0 ? (frames - 1) / span : null,
+                duration: Number.isFinite(video.duration) ? video.duration : previous.mediaTime,
                 window: span, events, freeze_seconds: minimum, skippedCallbacks, dropped,
-                image_metrics: {
+                image_metrics: !imageSamples ? null : {
                     brightness: imageTotals.brightness / imageSamples,
                     contrast: imageTotals.contrast / imageSamples,
                     sharpness: imageTotals.sharpness / imageSamples,
@@ -883,12 +1169,15 @@ function localMeasurements() {
     return {rows, details: lines.join('\n')};
 }
 
-const escape = value => value.replace(/[&<>]/g, mark => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'})[mark]);
+const escape = value => String(value ?? '').replace(/[&<>"']/g,
+    mark => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[mark]);
 
 function comparisonMarkup(rows) {
     const cards = rows.map(([name, unit, reading, criterion, verdict]) => {
-        const value = reading === '—' ? null : Number(reading);
-        const limit = criterion === '—' ? null : Number(criterion.slice(2));
+        const parsed = reading === '—' ? NaN : Number(reading);
+        const value = Number.isFinite(parsed) ? parsed : null;
+        const limitParsed = criterion === '—' ? NaN : Number(String(criterion).slice(2));
+        const limit = Number.isFinite(limitParsed) ? limitParsed : null;
         const axis = unit === '%' ? 100 : unit === '0–255' ? 255 : name.includes('표준편차') ? 127.5 : 0;
         const scale = Math.max(axis, value ?? 0, limit == null ? 0 : limit * 1.15);
         const position = number => scale > 0 ? Math.min(100, 100 * number / scale) : 0;
@@ -935,8 +1224,24 @@ function brightnessHeatmap(rows) {
     return '<div class="dash-viz"><h4>사진 밝기 9구역 · 0–255</h4><div class="heat-cells">' + cells + '</div></div>';
 }
 
-function dashboardMarkup({chartRows, photoRows, allRows}) {
+// 정지 후보가 영상의 어느 구간에서 났는지 한 줄 막대로 보여 줍니다.
+function freezeTimeline(video) {
+    if (!video || video.snapshotAt != null || !Array.isArray(video.events)) return '';
+    const ends = video.events.map(([start, length]) => start + length);
+    const total = Math.max(Number(video.duration) || 0, Number(video.window) || 0, ...ends);
+    if (!(total > 0)) return '';
+    const marks = video.events.map(([start, length]) => '<span style="left:' + (100 * start / total) +
+        '%;width:' + (100 * length / total) + '%" title="' + start.toFixed(1) + '초부터 ' + length.toFixed(1) +
+        '초"></span>').join('');
+    const summary = video.events.length ? '정지 후보 ' + video.events.length + '건' : '정지 후보 없음';
+    return '<div class="dash-viz"><h4>정지 후보 타임라인 · ' + summary + '</h4>' +
+        '<div class="timeline" role="img" aria-label="' + escape(summary) + '">' + marks + '</div>' +
+        '<div class="timeline-axis"><span>0초</span><span>' + total.toFixed(1) + '초</span></div></div>';
+}
+
+function dashboardMarkup({chartRows, photoRows, allRows, verdict, video}, options = {}) {
     const judged = chartRows.filter(row => row[3] !== '—');
+    const overall = verdict || overallVerdict(chartRows);
     const counts = ['충족', '미달', '미측정'].map((status, index) => {
         const count = judged.filter(row => row[4] === status).length;
         return '<span class="' + ['pass', 'fail', 'pending'][index] + '">' + status + ' ' + count + '</span>';
@@ -955,31 +1260,43 @@ function dashboardMarkup({chartRows, photoRows, allRows}) {
         return '<div class="dash-kpi"><span>' + label + '</span><strong>' + escape(value) +
             (['fps', '초'].includes(row[1]) ? ' ' + row[1] : '') + '</strong></div>';
     }).join('');
-    const visuals = colorDistribution(chartRows, '영상') + colorDistribution(photoRows, '사진') +
+    const visuals = freezeTimeline(video) + colorDistribution(chartRows, '영상') + colorDistribution(photoRows, '사진') +
         brightnessHeatmap(photoRows);
     const benchmarks = judged.length ? '<h4>기준 비교</h4>' + comparisonMarkup(judged) : '';
     const photo = photoRows.length ? '<h4>사진 진단 · 참고</h4>' + comparisonMarkup(photoRows) : '';
     return '<div class="dash-header"><h3>품질 대시보드</h3><div class="dash-counts">' + counts + '</div></div>' +
+        '<div class="verdict ' + overall.code + '" role="status">종합 판정 · ' + escape(overall.label) +
+        '<small>' + escape(overall.note) + '</small></div>' +
         (kpis ? '<div class="dash-kpis">' + kpis + '</div>' : '') +
         (visuals ? '<div class="dash-charts">' + visuals + '</div>' : '<p>영상이나 사진을 분석하면 그래프가 표시됩니다.</p>') +
-        '<details class="result-details"><summary>기준 비교·개별 그래프</summary>' +
+        '<details class="result-details"' + (options.open ? ' open' : '') + '><summary>기준 비교·개별 그래프</summary>' +
         '<p class="legend"><span class="measured">■ 측정값</span><span class="target">│ 기준값</span></p>' +
         benchmarks + comparisonMarkup(chartRows.filter(row => row[3] === '—')) + photo + '</details>';
 }
 
-function makeReport(data) {
+function makeReport(data, info = reportInfo(), thumb = '') {
     const {allRows, details} = data;
     const content = allRows.map(row => '<tr>' + row.map(cell => '<td>' + escape(cell) + '</td>').join('') + '</tr>').join('');
+    const meta = [['설치 위치', info.site], ['점검자', info.inspector], ['점검 일시', info.date], ['비고', info.memo]]
+        .map(([label, value]) => '<dt>' + label + '</dt><dd>' + escape(value || '—') + '</dd>').join('');
+    const evidence = thumb && /^data:image\/jpeg;base64,/.test(thumb)
+        ? '<h2>사진 증빙</h2><img class="photo-preview" src="' + thumb + '" alt="분석 사진 영역(빨간 원: 이상색 후보)">' +
+            '<p>빨간 원은 이상색 영역 후보 위치입니다. 원본 화면에서 확인하세요.</p>'
+        : '';
     return new Blob(['<!doctype html><html lang="ko"><meta charset="utf-8">' +
-        '<meta name="viewport" content="width=device-width"><title>영상 품질 검수 성적서</title>' +
+        '<meta name="viewport" content="width=device-width"><title>영상 품질 검수 성적서' +
+        (info.site ? ' - ' + escape(info.site) : '') + '</title>' +
         '<style>' + document.querySelector('style').textContent + ' body{background:#fff} </style>' +
-        '<h1>영상 품질 검수 성적서</h1><p>' + escape(new Date().toLocaleString('ko-KR')) +
-        '</p><div class="comparison">' + dashboardMarkup(data) +
+        '<h1>영상 품질 검수 성적서</h1><dl class="report-meta">' + meta + '</dl>' +
+        '<div class="comparison">' + dashboardMarkup(data, {open: true}) +
         '</div><table><thead><tr><th>항목</th><th>단위</th><th>측정값</th><th>기준</th><th>판정</th></tr></thead><tbody>' +
-        content + '</tbody></table><h2>시험 기록</h2><pre>' + escape(details) + '</pre></html>'],
+        content + '</tbody></table>' + evidence + '<h2>시험 기록</h2><pre>' + escape(details) + '</pre>' +
+        '<p>점검자 확인: ________________ (서명)</p></html>'],
         {type: 'text/html;charset=utf-8'});
 }
 
+loadDraft();
+renderHistory();
 if (local || key) {
     update().catch(error => { get('status').textContent = error.message; });
 }

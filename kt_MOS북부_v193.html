@@ -6505,9 +6505,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const catStat=(insp.categories||[]).map(cat=>{ let good=0,bad=0,na=0;
       (cat.locations||[]).forEach(loc=>{ if(loc.pending) return; (loc.items||[]).forEach(it=>{ total++; if(mdGoodRes(it.result)) good++; else if(it.result==='불량') bad++; else na++; }); });
       return {label:cat.name,good,bad,na}; }).filter(r=>r.good+r.bad+r.na>0);
-    let locN=0; (insp.categories||[]).forEach(cat=>(cat.locations||[]).forEach(loc=>{ if(!loc.pending && (loc.items||[]).some(it=>it.result)) locN++; }));
+    const _eq=eqTotals(insp); const locN=_eq.locs, eqN=_eq.cats;
     const tl={'유지보수':'🔧 유지보수점검','유지보수2':'⚠️ 유지보수(부적합)','성능':'📊 성능점검'}[insp.inspType]||'';
-    return { rows, catStat, locN, title:(insp.siteName||'')+(insp.buildingName && insp.buildingName!==insp.siteName?' · '+insp.buildingName:''), date:insp.date||'', type:tl, inspector:insp.inspector||'', source:'현재 점검' };
+    return { rows, catStat, locN, eqN, title:(insp.siteName||'')+(insp.buildingName && insp.buildingName!==insp.siteName?' · '+insp.buildingName:''), date:insp.date||'', type:tl, inspector:insp.inspector||'', source:'현재 점검' };
   }
   /* 대시보드 엑셀·부적합 엑셀(측정값 데이터 시트) → 측정값 행 */
   async function mdRowsFromExcel(file){
@@ -6965,8 +6965,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     body+=sec('1. 측정 결과 요약',{first:true});
     const kw=Math.floor(TW/6);
     body+=tbl([kw,kw,kw,kw,kw,TW-kw*5],
-      tr(['측정 항목','측정값','관리기준 충족률','기준 이탈','점검 위치','점검 적합율'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{bg:'D9D9D9',b:true})).join(''),380,false)+
-      tr([`${names.length}종`,`${rows.length}건`,okPct==null?'-':`${okPct}% (${judgedN-outN}/${judgedN})`,`${outN}건`,`${D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size}곳 (설비 ${judgedCats.length}종)`,(cg+cb)?`${Math.round(cg/(cg+cb)*100)}% (부적합 ${cb})`:'-'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{b:true,sz:19,color:i===3&&outN?'C00000':undefined})).join(''),460));
+      tr(['측정 종류','측정값','관리기준 충족률','기준 이탈','점검 설비·위치','점검 적합율'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{bg:'D9D9D9',b:true})).join(''),380,false)+
+      tr([`${names.length}가지`,`${rows.length}건`,okPct==null?'-':`${okPct}% (${judgedN-outN}/${judgedN})`,`${outN}건`,`${D.eqN!=null?D.eqN:D.catStat.length}종 · ${D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size}곳`,(cg+cb)?`${Math.round(cg/(cg+cb)*100)}% (부적합 ${cb})`:'-'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{b:true,sz:19,color:i===3&&outN?'C00000':undefined})).join(''),460));
     body+=pp(rn(outN?`※ 관리기준을 벗어난 측정값 ${outN}건이 있습니다(3항 참고).`:`※ 판정 가능한 측정값 ${judgedN}건이 모두 관리기준 이내입니다.`,{sz:16,color:outN?'C00000':'375623'}),{before:60,after:120});
     // 그림 2개(도넛) 나란히
     const d1=donutChart('관리기준 충족',[{label:'기준 이내',val:judgedN-outN,color:CH.good},{label:'이탈',val:outN,color:CH.bad},{label:'기준 없음',val:rows.length-judgedN,color:'#C4CADB'}], okPct==null?'-':okPct+'%', '기준 충족률');
@@ -7128,10 +7128,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const {names,rowsN,judgedN,outN,okPct,cg,cb,outItems,locN,catN}=ctx;
     const k=(no,cls,lab,val,unit,sub)=>`<div class="md3-k ${cls}" data-tilt><div class="md3-kno">${no}</div><div class="md3-kl">${lab}</div><div class="md3-kv"><span data-count="${val}">0</span><small>${unit}</small></div><div class="md3-ks">${sub}</div><i class="md3-shine"></i></div>`;
     return `<div class="md3-ks4">
-      ${k('01','c1','측정 항목',names.length,'종',`측정값 ${rowsN}건`)}
+      ${k('01','c1','측정 종류',names.length,'가지',`접지저항·온습도 등 · 측정값 ${rowsN}건`)}
       ${k('02',okPct===100?'c2':'c2w','관리기준 충족',okPct==null?0:okPct,'%',`${judgedN-outN} / ${judgedN}건 기준 이내`)}
       ${k('03',outN?'c3':'c3ok','기준 이탈',outN,'건',outN?outItems.length+'개 항목 · 아래 빨간 표시':'이상 없음')}
-      ${k('04',cb?'c3':'c4','점검 위치',locN,'곳',`설비 ${catN}종 · 판정 ${cg+cb}항목 · 부적합 ${cb}`)}
+      ${k('04',cb?'c3':'c4','점검 설비',catN,'종',`점검 위치 ${locN}곳 · 판정 ${cg+cb}항목 · 부적합 ${cb}`)}
     </div>`;
   }
   function mdInitTilt(root){
@@ -7169,13 +7169,13 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const secs=[['summary','요약'],['items','측정 항목'],['charts','그래프'],...(hasVq?[['video','영상 품질']]:[]),...(judgedCats.length?[['equip','설비']]:[])];
     h = `<nav class="mdn">${secs.map(([k,l],i)=>`<button data-sec="${k}" class="${i?'':'on'}">${l}</button>`).join('')}</nav>`
       + `<div class="mdo-sh" id="md-sec-summary">요약</div>` + alertH
-      + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,cg,cb,outItems,locN:(D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size),catN:D.catStat.filter(r=>r.good+r.bad>0).length});
+      + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,cg,cb,outItems,locN:(D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size),catN:(D.eqN!=null?D.eqN:D.catStat.length)});
     if(!names.length){
       h+=`<div class="mdv-empty" style="margin-top:12px">측정값이 입력된 항목이 없습니다.<br>접지저항·전압·온습도·수신감도 등 <b>측정값 칸</b>에 숫자를 넣으면 이 화면에 그래프로 나타납니다.<br>지난 점검은 <b>📂 엑셀 불러오기</b>, 영상 품질 검수 결과는 <b>🎥 영상 품질</b>로 불러옵니다.</div>`;
     } else {
       h+=mdOverviewHTML(names, items, A, {judgedN,outN,okPct,prog,cg,cb,cn,rowsN:rows.length,judgedCats,rows});
     }
-    if(mdView==='items' && names.length){ h = alertH + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,cg,cb,outItems,locN:(D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size),catN:D.catStat.filter(r=>r.good+r.bad>0).length}) + mdItemGridHTML(names, items, A); }
+    if(mdView==='items' && names.length){ h = alertH + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,cg,cb,outItems,locN:(D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size),catN:(D.eqN!=null?D.eqN:D.catStat.length)}) + mdItemGridHTML(names, items, A); }
     ov.innerHTML = `<div class="mdv">
       <div class="mdv-top">
         <div class="mdv-brand"><div class="mdv-title">정보통신설비 측정 대시보드</div><div class="mdv-sub">${escapeHtml(D.title||'')}${D.date?' · '+escapeHtml(D.date):''}${D.type?' · '+escapeHtml(D.type):''} — <b>${escapeHtml(D.source||'')}</b></div></div>

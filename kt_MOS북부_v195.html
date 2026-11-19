@@ -212,7 +212,7 @@
   /* 차수 비교 */
   /* 📊 측정 대시보드 (차트형) */
   #mdash-modal{background:rgba(15,23,42,.45);}
-  #mdash-modal .mdv{position:relative;width:100%;max-width:1320px;height:100%;display:flex;flex-direction:column;background:#F4F6FA;color:#1E293B;overflow:hidden;}
+  #mdash-modal .mdv{position:relative;width:100%;max-width:1600px;height:100%;display:flex;flex-direction:column;background:#F4F6FA;color:#1E293B;overflow:hidden;}
   #mdash-modal .mdv-top{display:flex;align-items:center;gap:10px;padding:14px 16px 12px;background:#fff;border-bottom:1px solid #E2E8F0;flex-wrap:wrap;}
   #mdash-modal .mdv-brand{flex:1;min-width:220px;}
   #mdash-modal .mdv-title{font-size:19px;font-weight:900;color:#0F172A;letter-spacing:-.02em;}
@@ -315,7 +315,7 @@
   #mdash-modal .mdr-ticks{position:relative;height:30px;margin-top:2px;}
   #mdash-modal .mdr-ticks span{position:absolute;top:22px;transform:translateX(-50%);font-size:9.5px;color:#94A3B8;}
   /* 상세 패널 */
-  #mdash-modal .mdv-dwrap{position:absolute;inset:0;pointer-events:none;}
+  #mdash-modal .mdv-dwrap{position:absolute;inset:0;pointer-events:none;z-index:300;}
   #mdash-modal .mdv-dwrap.show{pointer-events:auto;}
   #mdash-modal .mdd-bg{position:absolute;inset:0;background:rgba(15,23,42,.35);opacity:0;transition:opacity .25s;}
   #mdash-modal .mdv-dwrap.show .mdd-bg{opacity:1;}
@@ -478,8 +478,9 @@
   #mdash-modal .md3-ks{font-size:11px;opacity:.85;margin-top:2px;}
   #mdash-modal .md3-shine{position:absolute;inset:0;background:radial-gradient(240px circle at var(--sx,30%) var(--sy,0%),rgba(255,255,255,.28),transparent 60%);pointer-events:none;}
 
-  #mdash-modal .mdn{position:sticky;top:-12px;z-index:50;display:flex;gap:6px;overflow-x:auto;margin:-12px -14px 8px;padding:10px 14px;background:rgba(244,246,250,.94);backdrop-filter:blur(6px);border-bottom:1px solid #E2E8F0;}
-  #mdash-modal .mdn button{flex-shrink:0;border:1px solid #CBD5E1;background:#fff;color:#334155;border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:800;cursor:pointer;}
+  #mdash-modal .mdn{display:flex;gap:5px;overflow-x:auto;flex-shrink:1;min-width:0;scrollbar-width:none;}
+  #mdash-modal .mdn::-webkit-scrollbar{display:none;}
+  #mdash-modal .mdn button{flex-shrink:0;border:1px solid #CBD5E1;background:#fff;color:#334155;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:800;cursor:pointer;}
   #mdash-modal .mdn button.on{background:#1E3A8A;border-color:#1E3A8A;color:#fff;}
   #mdash-modal .mdv-alert.dev{background:#FFFBEB;border-color:#FDE68A;color:#92400E;cursor:pointer;margin-top:-4px;}
   #mdash-modal .mdo-dot.dev{background:#F5A524;}
@@ -1230,6 +1231,21 @@
   .cat.drillin .cat-body{border-radius:0 0 12px 12px;}
   /* 설비 바 안 아이콘 (작게) */
   .cat-ic{width:22px;height:22px;object-fit:contain;vertical-align:-5px;margin-right:7px;}
+  /* v195: 상단 압축 */
+  #mdash-modal .mdv-top{padding:8px 12px;gap:8px;row-gap:6px;}
+  #mdash-modal .mdv-brand{flex:0 1 auto;min-width:180px;}
+  #mdash-modal .mdv-title{font-size:16px;}
+  #mdash-modal .mdv-sub{font-size:11px;margin-top:1px;max-width:380px;}
+  #mdash-modal .mdv-acts{margin-left:auto;gap:5px;}
+  #mdash-modal .mdv-btn,#mdash-modal .mdv-sel{padding:6px 9px;font-size:12px;}
+  #mdash-modal .mdv-x{width:32px;height:32px;}
+  #mdash-modal .mdv-body{padding:10px 12px 40px;}
+  #mdash-modal .mdv-alerts{display:flex;gap:8px;margin-bottom:10px;}
+  #mdash-modal .mdv-alerts .mdv-alert{flex:1 1 0;min-width:0;margin:0;padding:8px 12px;font-size:12.5px;}
+  #mdash-modal .mdv-alerts .mdv-alert.ok{flex:0 1 auto;}
+  #mdash-modal .mdv-alerts .mdv-alert .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #mdash-modal .mdv-alerts .mdv-alert span{flex-shrink:0;white-space:nowrap;}
+  @media (max-width:760px){ #mdash-modal .mdv-alerts{flex-direction:column;gap:6px;} #mdash-modal .mdn{order:3;width:100%;} #mdash-modal .mdv-sub{max-width:none;} }
 </style>
 <script>
 /* ── 화면모드(단말기 / 태블릿 / PC) : 첫 페인트 전에 적용 (깜빡임 방지) ── */
@@ -7174,33 +7190,34 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     // 경고 띠
     const badItems=names.filter(n=>A[n].bad.length);
     h+= cb
-      ? `<button class="mdv-alert bad" ${badItems[0]?`data-open="${escapeHtml(badItems[0])}"`:'id="md-badall"'}>⚠️ 부적합 판정 ${cb}건 — 점검 결과를 확인하세요${badItems.length?' · '+badItems.slice(0,3).map(n=>escapeHtml(mdShort(n))).join(' · '):''} <span>상세 ›</span></button>`
-      : `<div class="mdv-alert ok">✅ 부적합 판정 없음 (판정 ${cg}항목 모두 적합)</div>`;
-    if(outItems.length) h+=`<button class="mdv-alert dev" data-open="${escapeHtml(outItems[0])}">ℹ️ 사내 참고범위 밖 측정값 ${outN}건 — 공간·환경 차이에 따른 편차로, 부적합이 아닙니다 · ${outItems.slice(0,3).map(n=>`${escapeHtml(mdShort(n))} ${A[n].out.length}`).join(' · ')}${outItems.length>3?` 외 ${outItems.length-3}개`:''} <span>상세 ›</span></button>`;
+      ? `<button class="mdv-alert bad" ${badItems[0]?`data-open="${escapeHtml(badItems[0])}"`:'id="md-badall"'}><b class="t">⚠️ 부적합 판정 ${cb}건${badItems.length?' · '+badItems.slice(0,3).map(n=>escapeHtml(mdShort(n))).join(' · '):''}</b><span>상세 ›</span></button>`
+      : `<div class="mdv-alert ok"><b class="t">✅ 부적합 판정 없음 · ${cg}항목 모두 적합</b></div>`;
+    if(outItems.length) h+=`<button class="mdv-alert dev" data-open="${escapeHtml(outItems[0])}" title="공간·환경 차이에 따른 편차로, 부적합이 아닙니다"><b class="t">ℹ️ 참고범위 밖 ${outN}건 (환경 편차·부적합 아님) · ${outItems.slice(0,3).map(n=>`${escapeHtml(mdShort(n))} ${A[n].out.length}`).join(' · ')}${outItems.length>3?` 외 ${outItems.length-3}개`:''}</b><span>상세 ›</span></button>`;
     const alertH=h;
     const judgedCats=D.catStat.filter(r=>r.good+r.bad>0);
     const hasVq = !!(current && D.source==='현재 점검' && (current.videoQuality||[]).length);
     const secs=[['summary','요약'],['items','측정 항목'],['charts','그래프'],...(hasVq?[['video','영상 품질']]:[]),...(judgedCats.length?[['equip','설비']]:[])];
-    h = `<nav class="mdn">${secs.map(([k,l],i)=>`<button data-sec="${k}" class="${i?'':'on'}">${l}</button>`).join('')}</nav>`
-      + `<div class="mdo-sh" id="md-sec-summary">요약</div>` + alertH
+    const navH = `<nav class="mdn">${secs.map(([k,l],i)=>`<button data-sec="${k}" class="${i?'':'on'}">${l}</button>`).join('')}</nav>`;
+    h = `<div id="md-sec-summary"></div><div class="mdv-alerts">${alertH}</div>`
       + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,cg,cb,outItems,locN:(D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size),catN:(D.eqN!=null?D.eqN:D.catStat.length)});
     if(!names.length){
       h+=`<div class="mdv-empty" style="margin-top:12px">측정값이 입력된 항목이 없습니다.<br>접지저항·전압·온습도·수신감도 등 <b>측정값 칸</b>에 숫자를 넣으면 이 화면에 그래프로 나타납니다.<br>지난 점검은 <b>📂 엑셀 불러오기</b>, 영상 품질 검수 결과는 <b>🎥 영상 품질</b>로 불러옵니다.</div>`;
     } else {
       h+=mdOverviewHTML(names, items, A, {judgedN,outN,okPct,prog,cg,cb,cn,rowsN:rows.length,judgedCats,rows});
     }
-    if(mdView==='items' && names.length){ h = alertH + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,cg,cb,outItems,locN:(D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size),catN:(D.eqN!=null?D.eqN:D.catStat.length)}) + mdItemGridHTML(names, items, A); }
+    if(mdView==='items' && names.length){ h = `<div class="mdv-alerts">${alertH}</div>` + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,cg,cb,outItems,locN:(D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size),catN:(D.eqN!=null?D.eqN:D.catStat.length)}) + mdItemGridHTML(names, items, A); }
     ov.innerHTML = `<div class="mdv">
       <div class="mdv-top">
         <div class="mdv-brand"><div class="mdv-title">정보통신설비 측정 대시보드</div><div class="mdv-sub">${escapeHtml(D.title||'')}${D.date?' · '+escapeHtml(D.date):''}${D.type?' · '+escapeHtml(D.type):''} — <b>${escapeHtml(D.source||'')}</b></div></div>
+        ${mdView!=='items'&&names.length?navH:''}
         <div class="mdv-acts">
           ${bldAll.length>1?`<select class="mdv-sel" id="md-bld">${['전체',...bldAll].map(b=>`<option ${b===mdBld?'selected':''}>${escapeHtml(b)}</option>`).join('')}</select>`:''}
           ${names.length?`<div class="mdv-seg">${[['all','📊 통합'],['items','🗂 항목별']].map(([k,l])=>`<button data-view="${k}" class="${mdView===k?'on':''}">${l}</button>`).join('')}</div>`:''}
           ${current?`<button class="mdv-btn ${D.source==='현재 점검'?'on':''}" id="md-cur">📋 현재 점검</button>`:''}
           ${current?`<button class="mdv-btn vq" id="md-vq">🎥 영상 품질${(current.videoQuality||[]).length?' '+(current.videoQuality||[]).length:''}</button>`:''}
-          <button class="mdv-btn" id="md-xlsx">📂 엑셀 불러오기</button>
-          ${current?`<button class="mdv-btn" id="md-export">📈 엑셀 저장</button>`:''}
-          <button class="mdv-btn word" id="md-word">📄 워드 저장</button>
+          <button class="mdv-btn" id="md-xlsx" title="지난 점검 엑셀 불러오기">📂 불러오기</button>
+          ${current?`<button class="mdv-btn" id="md-export" title="엑셀로 저장">📈 엑셀</button>`:''}
+          <button class="mdv-btn word" id="md-word" title="워드로 저장">📄 워드</button>
           <button class="mdv-x" id="md-close" aria-label="닫기">✕</button>
         </div>
         <input type="file" id="md-file" accept=".xlsx" style="display:none">
@@ -7212,9 +7229,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     ov.querySelector('#md-close').onclick=()=>ov.remove();
     mdInitTilt(ov);
     ov.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ mdView=b.dataset.view; try{ localStorage.setItem('md-view3',mdView); }catch(e){} showMeasureDashboard(); const bd=document.querySelector('#mdash-modal .mdv-body'); if(bd) bd.scrollTop=0; });
-    { const body=ov.querySelector('.mdv-body'); const btns=[...ov.querySelectorAll('.mdn [data-sec]')]; const yOf=t=>t.getBoundingClientRect().top-body.getBoundingClientRect().top+body.scrollTop;
-      btns.forEach(b=>b.onclick=()=>{ const t=ov.querySelector('#md-sec-'+b.dataset.sec); if(t) body.scrollTo({top:Math.max(0,yOf(t)-58),behavior:'smooth'}); });
-      body.addEventListener('scroll',()=>{ let cur=btns[0]; btns.forEach(b=>{ const t=ov.querySelector('#md-sec-'+b.dataset.sec); if(t && yOf(t)-80<=body.scrollTop) cur=b; }); if(body.scrollTop+body.clientHeight>=body.scrollHeight-4) cur=btns[btns.length-1]; btns.forEach(b=>b.classList.toggle('on',b===cur)); },{passive:true}); }
+    { const body=ov.querySelector('.mdv-body'); const btns=[...ov.querySelectorAll('.mdn [data-sec]')]; const yOf=t=>{ let y=0,e=t; while(e && e!==body && e.offsetParent){ y+=e.offsetTop; e=e.offsetParent; if(e===body.offsetParent) break; } return y-body.offsetTop-body.clientTop; };
+      btns.forEach(b=>b.onclick=()=>{ const t=ov.querySelector('#md-sec-'+b.dataset.sec); if(t) body.scrollTo({top:Math.max(0,yOf(t)-10),behavior:'smooth'}); });
+      body.addEventListener('scroll',()=>{ let cur=btns[0]; btns.forEach(b=>{ const t=ov.querySelector('#md-sec-'+b.dataset.sec); if(t && yOf(t)-30<=body.scrollTop) cur=b; }); if(body.scrollTop+body.clientHeight>=body.scrollHeight-4) cur=btns[btns.length-1]; btns.forEach(b=>b.classList.toggle('on',b===cur)); },{passive:true}); }
     ov.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>mdOpenDetail(b.dataset.open, items[b.dataset.open], A[b.dataset.open]));
     const bs=ov.querySelector('#md-bld'); if(bs) bs.onchange=()=>{ mdBld=bs.value; showMeasureDashboard(); };
     const vqb=ov.querySelector('#md-vq'); if(vqb) vqb.onclick=vqOpenPanel;

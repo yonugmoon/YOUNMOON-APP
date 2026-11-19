@@ -6378,11 +6378,11 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
     ctx.fillStyle=CH.navy; ctx.font='bold 20px sans-serif'; ctx.textAlign='left'; ctx.fillText(title,20,30);
     rows.forEach((r,i)=>{
-      const y=64+i*46, tot=(r.good+r.bad+r.na)||1;
+      const y=64+i*46, tot=(r.good+r.bad)||1;
       ctx.fillStyle=CH.txt; ctx.font='13px sans-serif'; ctx.textAlign='right';
       ctx.fillText(r.label.length>13?r.label.slice(0,12)+'…':r.label, x0-10, y+18);
       let x=x0;
-      [['good',CH.good],['bad',CH.bad],['na','#C4CADB']].forEach(([k,col])=>{
+      [['good',CH.good],['bad',CH.bad]].forEach(([k,col])=>{
         const w=plotW*r[k]/tot; if(w<=0) return;
         ctx.fillStyle=col; ctx.fillRect(x,y,w,26);
         if(w>26){ ctx.fillStyle='#fff'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center'; ctx.fillText(r[k],x+w/2,y+18); }
@@ -6393,12 +6393,12 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       ctx.fillText(pct+'%', x+8, y+18);
     });
     // 범례
-    let lx=x0; [['적합',CH.good],['부적합',CH.bad],['미점검','#C4CADB']].forEach(([n,col])=>{
+    let lx=x0; [['적합',CH.good],['부적합',CH.bad]].forEach(([n,col])=>{
       ctx.fillStyle=col; ctx.fillRect(lx,H-24,12,12); ctx.fillStyle=CH.txt; ctx.font='12px sans-serif'; ctx.textAlign='left'; ctx.fillText(n,lx+16,H-14); lx+=80; });
     return c;
   }
   // 도넛 (전체 진행률·통계)
-  function donutChart(title, segs, centerText){ // segs:[{label,val,color}]
+  function donutChart(title, segs, centerText, subText){ // segs:[{label,val,color}]
     const W=760,H=380,cx=230,cy=210,R=120,r=68;
     const c=makeCanvas(W,H), ctx=c.getContext('2d');
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
@@ -6409,7 +6409,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       a+=ang; });
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
     ctx.fillStyle=CH.navy; ctx.font='bold 34px sans-serif'; ctx.textAlign='center'; ctx.fillText(centerText,cx,cy+6);
-    ctx.font='13px sans-serif'; ctx.fillStyle=CH.muted; ctx.fillText('완료율',cx,cy+28);
+    ctx.font='13px sans-serif'; ctx.fillStyle=CH.muted; ctx.fillText(subText||'적합율',cx,cy+28);
     // 범례
     let ly=90; segs.forEach(s=>{ ctx.fillStyle=s.color; ctx.fillRect(430,ly,16,16);
       ctx.fillStyle=CH.txt; ctx.font='14px sans-serif'; ctx.textAlign='left';
@@ -6491,8 +6491,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const catStat=(insp.categories||[]).map(cat=>{ let good=0,bad=0,na=0;
       (cat.locations||[]).forEach(loc=>{ if(loc.pending) return; (loc.items||[]).forEach(it=>{ total++; if(mdGoodRes(it.result)) good++; else if(it.result==='불량') bad++; else na++; }); });
       return {label:cat.name,good,bad,na}; }).filter(r=>r.good+r.bad+r.na>0);
+    let locN=0; (insp.categories||[]).forEach(cat=>(cat.locations||[]).forEach(loc=>{ if(!loc.pending && (loc.items||[]).some(it=>it.result)) locN++; }));
     const tl={'유지보수':'🔧 유지보수점검','유지보수2':'⚠️ 유지보수(부적합)','성능':'📊 성능점검'}[insp.inspType]||'';
-    return { rows, catStat, title:(insp.siteName||'')+(insp.buildingName && insp.buildingName!==insp.siteName?' · '+insp.buildingName:''), date:insp.date||'', type:tl, inspector:insp.inspector||'', source:'현재 점검' };
+    return { rows, catStat, locN, title:(insp.siteName||'')+(insp.buildingName && insp.buildingName!==insp.siteName?' · '+insp.buildingName:''), date:insp.date||'', type:tl, inspector:insp.inspector||'', source:'현재 점검' };
   }
   /* 대시보드 엑셀·부적합 엑셀(측정값 데이터 시트) → 측정값 행 */
   async function mdRowsFromExcel(file){
@@ -6515,7 +6516,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     }
     let catStat=[]; const wr=wb.getWorksheet('설비별 적합율');
     if(wr){ for(let r=2;r<=wr.rowCount;r++){ const row=wr.getRow(r); const lb=txt(row.getCell(1).value); if(!lb) continue;
-      catStat.push({label:lb,good:+txt(row.getCell(2).value)||0,bad:+txt(row.getCell(3).value)||0,na:+txt(row.getCell(4).value)||0}); } }
+      catStat.push({label:lb,good:+txt(row.getCell(2).value)||0,bad:+txt(row.getCell(3).value)||0,na:0}); } }
     if(!catStat.length){ const by={}; rows.forEach(x=>{ const k=x.catName||'(설비)'; by[k]=by[k]||{label:k,good:0,bad:0,na:0}; if(mdGoodRes(x.result)) by[k].good++; else if(x.result==='불량') by[k].bad++; else by[k].na++; }); catStat=Object.values(by); }
     let title=''; const wsD=wb.getWorksheet('대시보드'); if(wsD){ title=txt(wsD.getCell(1,2).value).replace(/^📈\s*/,'').replace(/\s*측정 대시보드.*$/,''); }
     return { rows, catStat, title: title || file.name.replace(/\.xlsx?$/i,''), date:'', type:'', inspector:'', source:'엑셀 · '+file.name };
@@ -6862,8 +6863,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     // ① 도넛 2개
     h+=`<div class="mdo-p s4"><div class="mdo-t">관리기준 충족 <span>측정값 ${rowsN}건</span></div><div class="mdo-dn">${mdDonutSVG([{v:judgedN-outN,c:'#22B573'},{v:outN,c:'#F04438'},{v:noStd,c:'#CBD5E1'}], okPct==null?'-':okPct+'%','기준 충족률')}
       <div class="mdo-lg"><span><i style="background:#22B573"></i>기준 이내 <b>${judgedN-outN}</b></span><span><i style="background:#F04438"></i>이탈 <b>${outN}</b></span><span><i style="background:#CBD5E1"></i>기준 없음 <b>${noStd}</b></span></div></div></div>`;
-    h+=`<div class="mdo-p s4"><div class="mdo-t">점검 결과 <span>진행률 ${prog==null?'-':prog+'%'}</span></div><div class="mdo-dn">${mdDonutSVG([{v:cg,c:'#3B82F6'},{v:cb,c:'#F04438'},{v:cn,c:'#E2E8F0'}], (cg+cb)?Math.round(cg/(cg+cb)*100)+'%':'-','적합율')}
-      <div class="mdo-lg"><span><i style="background:#3B82F6"></i>적합 <b>${cg}</b></span><span><i style="background:#F04438"></i>부적합 <b>${cb}</b></span><span><i style="background:#E2E8F0"></i>미점검 <b>${cn}</b></span></div></div></div>`;
+    h+=`<div class="mdo-p s4"><div class="mdo-t">점검 결과 <span>판정 ${cg+cb}항목</span></div><div class="mdo-dn">${mdDonutSVG([{v:cg,c:'#3B82F6'},{v:cb,c:'#F04438'}], (cg+cb)?Math.round(cg/(cg+cb)*100)+'%':'-','적합율')}
+      <div class="mdo-lg"><span><i style="background:#3B82F6"></i>적합 <b>${cg}</b></span><span><i style="background:#F04438"></i>부적합 <b>${cb}</b></span></div></div></div>`;
     // ② 대표 게이지 (상한형 최대 2개)
     const gNames=names.filter(n=>A[n].kind==='gauge').slice(0,2);
     h+=`<div class="mdo-p s4"><div class="mdo-t">주요 게이지 <span>최고값 기준</span></div><div class="mdo-gs">${gNames.length?gNames.map(n=>{ const a=A[n]; return `<div class="mdo-g" data-open="${escapeHtml(n)}">${mdGaugeSVG(a.rep,a.rg,a.unit)}<div class="mdo-gl"><b class="${a.out.length?'bad':''}">${mdFmt(a.rep)}${escapeHtml(a.unit)}</b> ${escapeHtml(mdShort(n))}</div></div>`; }).join(''):'<div class="mdo-none">상한 기준 항목 없음</div>'}</div></div>`;
@@ -6902,8 +6903,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     }
     // ⑦ 설비별 적합율 (가로 누적 막대)
     if(judgedCats.length) h+=`<div class="mdo-sh s12" id="md-sec-equip">설비</div>`;
-    if(judgedCats.length) h+=`<div class="mdo-p s12"><div class="mdo-t">설비별 점검 결과 <span>판정된 ${judgedCats.length}종</span></div><div class="mdo-cs">${judgedCats.map((r,i)=>{ const t=r.good+r.bad+r.na||1; const p=Math.round(r.good/(r.good+r.bad)*100);
-      return `<div class="mdo-cr"><div class="mdo-cn" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</div><div class="mdo-ct" style="--d:${(i*0.04).toFixed(2)}s"><i style="width:${(r.good/t*100).toFixed(1)}%;background:#3B82F6"></i><i style="width:${(r.bad/t*100).toFixed(1)}%;background:#F04438"></i><i style="width:${(r.na/t*100).toFixed(1)}%;background:#E2E8F0"></i></div><div class="mdo-cp" style="color:${p>=90?'#16A34A':p>=70?'#D97706':'#DC2626'}">${p}%</div></div>`; }).join('')}</div></div>`;
+    if(judgedCats.length) h+=`<div class="mdo-p s12"><div class="mdo-t">설비별 점검 결과 <span>판정된 ${judgedCats.length}종</span></div><div class="mdo-cs">${judgedCats.map((r,i)=>{ const t=r.good+r.bad||1; const p=Math.round(r.good/(r.good+r.bad)*100);
+      return `<div class="mdo-cr"><div class="mdo-cn" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</div><div class="mdo-ct" style="--d:${(i*0.04).toFixed(2)}s"><i style="width:${(r.good/t*100).toFixed(1)}%;background:#3B82F6"></i><i style="width:${(r.bad/t*100).toFixed(1)}%;background:#F04438"></i></div><div class="mdo-cp" style="color:${p>=90?'#16A34A':p>=70?'#D97706':'#DC2626'}">${p}%</div></div>`; }).join('')}</div></div>`;
     h+=`</div>`;
     return h;
   }
@@ -6950,12 +6951,12 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     body+=sec('1. 측정 결과 요약',{first:true});
     const kw=Math.floor(TW/6);
     body+=tbl([kw,kw,kw,kw,kw,TW-kw*5],
-      tr(['측정 항목','측정값','관리기준 충족률','기준 이탈','점검 진행률','점검 적합율'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{bg:'D9D9D9',b:true})).join(''),380,false)+
-      tr([`${names.length}종`,`${rows.length}건`,okPct==null?'-':`${okPct}% (${judgedN-outN}/${judgedN})`,`${outN}건`,prog==null?'-':`${prog}%`,(cg+cb)?`${Math.round(cg/(cg+cb)*100)}% (부적합 ${cb})`:'-'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{b:true,sz:19,color:i===3&&outN?'C00000':undefined})).join(''),460));
+      tr(['측정 항목','측정값','관리기준 충족률','기준 이탈','점검 위치','점검 적합율'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{bg:'D9D9D9',b:true})).join(''),380,false)+
+      tr([`${names.length}종`,`${rows.length}건`,okPct==null?'-':`${okPct}% (${judgedN-outN}/${judgedN})`,`${outN}건`,`${D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size}곳 (설비 ${judgedCats.length}종)`,(cg+cb)?`${Math.round(cg/(cg+cb)*100)}% (부적합 ${cb})`:'-'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{b:true,sz:19,color:i===3&&outN?'C00000':undefined})).join(''),460));
     body+=pp(rn(outN?`※ 관리기준을 벗어난 측정값 ${outN}건이 있습니다(3항 참고).`:`※ 판정 가능한 측정값 ${judgedN}건이 모두 관리기준 이내입니다.`,{sz:16,color:outN?'C00000':'375623'}),{before:60,after:120});
     // 그림 2개(도넛) 나란히
-    const d1=donutChart('관리기준 충족',[{label:'기준 이내',val:judgedN-outN,color:CH.good},{label:'이탈',val:outN,color:CH.bad},{label:'기준 없음',val:rows.length-judgedN,color:'#C4CADB'}], okPct==null?'-':okPct+'%');
-    const d2=donutChart('점검 결과',[{label:'적합',val:cg,color:CH.blue},{label:'부적합',val:cb,color:CH.bad},{label:'미점검',val:cn,color:'#C4CADB'}], (cg+cb)?Math.round(cg/(cg+cb)*100)+'%':'-');
+    const d1=donutChart('관리기준 충족',[{label:'기준 이내',val:judgedN-outN,color:CH.good},{label:'이탈',val:outN,color:CH.bad},{label:'기준 없음',val:rows.length-judgedN,color:'#C4CADB'}], okPct==null?'-':okPct+'%', '기준 충족률');
+    const d2=donutChart('점검 결과',[{label:'적합',val:cg,color:CH.blue},{label:'부적합',val:cb,color:CH.bad}], (cg+cb)?Math.round(cg/(cg+cb)*100)+'%':'-', '적합율');
     const half=Math.floor(TW/2);
     body+=tbl([half,TW-half], tr(tc(pp(pic(d1,8.2),{jc:'center'}),half,{nb:true})+tc(pp(pic(d2,8.2),{jc:'center'}),TW-half,{nb:true}),300));
     // 2. 측정 항목별 결과
@@ -7013,9 +7014,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     // 5. 설비별 점검 결과
     if(judgedCats.length){
       body+=sec(`${vqList.length?'5':'4'}. 설비별 점검 결과`);
-      const W5=[3800,1450,1450,1450,TW-3800-1450*3];
-      let r5=tr(['설비','적합','부적합','미점검','적합율'].map((t,i)=>cell(t,W5[i],{bg:'D9D9D9',b:true})).join(''),380,true);
-      judgedCats.forEach(r=>{ const p=Math.round(r.good/(r.good+r.bad)*100); r5+=tr([r.label,r.good,r.bad,r.na,p+'%'].map((t,k)=>cell(String(t),W5[k],{jc:k===0?'left':'center',color:(k===2&&r.bad)||(k===4&&p<100)?'C00000':undefined})).join(''),340); });
+      const W5=[4400,1700,1700,TW-4400-1700*2];
+      let r5=tr(['설비','적합','부적합','적합율'].map((t,i)=>cell(t,W5[i],{bg:'D9D9D9',b:true})).join(''),380,true);
+      judgedCats.forEach(r=>{ const p=Math.round(r.good/(r.good+r.bad)*100); r5+=tr([r.label,r.good,r.bad,p+'%'].map((t,k)=>cell(String(t),W5[k],{jc:k===0?'left':'center',color:(k===2&&r.bad)||(k===3&&p<100)?'C00000':undefined})).join(''),340); });
       body+=tbl(W5,r5);
     }
     body+=pp(rn('※ 측정값은 현장 계측·휴대폰 측정 기준이며, 「(완화)」 표시는 휴대폰 측정을 고려한 참고 기준입니다.',{sz:15,color:'777777'}),{before:120});
@@ -7110,13 +7111,13 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     return new Promise(res=>{ const im=new Image(); im.onload=()=>{ const c=document.createElement('canvas'); c.width=w*scale; c.height=h*scale; const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(im,0,0,c.width,c.height); res(c); }; im.onerror=()=>res(null); im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); }); }
   /* ── 01~04 번호 요약 카드 (마우스/손가락 따라 기울어짐) ── */
   function mdKpiCardsHTML(ctx){
-    const {names,rowsN,judgedN,outN,okPct,prog,cg,cb,outItems}=ctx;
+    const {names,rowsN,judgedN,outN,okPct,cg,cb,outItems,locN,catN}=ctx;
     const k=(no,cls,lab,val,unit,sub)=>`<div class="md3-k ${cls}" data-tilt><div class="md3-kno">${no}</div><div class="md3-kl">${lab}</div><div class="md3-kv"><span data-count="${val}">0</span><small>${unit}</small></div><div class="md3-ks">${sub}</div><i class="md3-shine"></i></div>`;
     return `<div class="md3-ks4">
       ${k('01','c1','측정 항목',names.length,'종',`측정값 ${rowsN}건`)}
       ${k('02',okPct===100?'c2':'c2w','관리기준 충족',okPct==null?0:okPct,'%',`${judgedN-outN} / ${judgedN}건 기준 이내`)}
       ${k('03',outN?'c3':'c3ok','기준 이탈',outN,'건',outN?outItems.length+'개 항목 · 아래 빨간 표시':'이상 없음')}
-      ${k('04','c4','점검 진행률',prog==null?0:prog,'%',`판정 ${cg+cb}항목 · 부적합 ${cb}`)}
+      ${k('04',cb?'c3':'c4','점검 위치',locN,'곳',`설비 ${catN}종 · 판정 ${cg+cb}항목 · 부적합 ${cb}`)}
     </div>`;
   }
   function mdInitTilt(root){
@@ -7154,13 +7155,13 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const secs=[['summary','요약'],['items','측정 항목'],['charts','그래프'],...(hasVq?[['video','영상 품질']]:[]),...(judgedCats.length?[['equip','설비']]:[])];
     h = `<nav class="mdn">${secs.map(([k,l],i)=>`<button data-sec="${k}" class="${i?'':'on'}">${l}</button>`).join('')}</nav>`
       + `<div class="mdo-sh" id="md-sec-summary">요약</div>` + alertH
-      + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,prog,cg,cb,outItems});
+      + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,cg,cb,outItems,locN:(D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size),catN:D.catStat.filter(r=>r.good+r.bad>0).length});
     if(!names.length){
       h+=`<div class="mdv-empty" style="margin-top:12px">측정값이 입력된 항목이 없습니다.<br>접지저항·전압·온습도·수신감도 등 <b>측정값 칸</b>에 숫자를 넣으면 이 화면에 그래프로 나타납니다.<br>지난 점검은 <b>📂 엑셀 불러오기</b>, 영상 품질 검수 결과는 <b>🎥 영상 품질</b>로 불러옵니다.</div>`;
     } else {
       h+=mdOverviewHTML(names, items, A, {judgedN,outN,okPct,prog,cg,cb,cn,rowsN:rows.length,judgedCats,rows});
     }
-    if(mdView==='items' && names.length){ h = alertH + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,prog,cg,cb,outItems}) + mdItemGridHTML(names, items, A); }
+    if(mdView==='items' && names.length){ h = alertH + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,cg,cb,outItems,locN:(D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size),catN:D.catStat.filter(r=>r.good+r.bad>0).length}) + mdItemGridHTML(names, items, A); }
     ov.innerHTML = `<div class="mdv">
       <div class="mdv-top">
         <div class="mdv-brand"><div class="mdv-title">정보통신설비 측정 대시보드</div><div class="mdv-sub">${escapeHtml(D.title||'')}${D.date?' · '+escapeHtml(D.date):''}${D.type?' · '+escapeHtml(D.type):''} — <b>${escapeHtml(D.source||'')}</b></div></div>
@@ -7332,7 +7333,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         }));
         return {label:cat.name, good, bad, na};
       }).filter(r=>r.good+r.bad+r.na>0);
-      if(catStat.length){ await addChart(stackChart('③ 설비 종류별 적합 / 부적합', catStat)); }
+      if(catStat.some(r=>r.good+r.bad>0)){ await addChart(stackChart('③ 설비 종류별 적합 / 부적합', catStat.filter(r=>r.good+r.bad>0))); }
 
       // ④ 전체 진행률·통계 도넛
       let tGood=0,tBad=0,tNa=0;
@@ -7340,11 +7341,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         if(it.result==='양호'||it.result==='적합'||it.result==='정상') tGood++;
         else if(it.result==='불량') tBad++; else tNa++;
       })));
-      const totItems=tGood+tBad+tNa||1;
-      const pct=Math.round((tGood+tBad)/totItems*100);
-      await addChart(donutChart('④ 전체 점검 통계', [
-        {label:'적합',val:tGood,color:CH.good},{label:'부적합',val:tBad,color:CH.bad},{label:'미점검',val:tNa,color:'#C4CADB'}
-      ], pct+'%'));
+      const pct=(tGood+tBad)?Math.round(tGood/(tGood+tBad)*100):0;   // 판정한 항목 기준 적합율 (측정 범위 밖 항목은 제외)
+      await addChart(donutChart('④ 점검 결과 (판정 항목)', [
+        {label:'적합',val:tGood,color:CH.good},{label:'부적합',val:tBad,color:CH.bad}
+      ], pct+'%', '적합율'));
 
       /* ── 시트2: 측정값 데이터 ── */
       const wd=wb.addWorksheet('측정값 데이터');
@@ -7396,11 +7396,11 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
 
       /* ── 시트3: 설비별 적합율 ── */
       const wr=wb.addWorksheet('설비별 적합율');
-      ['설비','적합','부적합','미점검','적합율'].forEach((h,i)=>{ const c=wr.getCell(1,i+1); c.value=h;
+      ['설비','적합','부적합','적합율'].forEach((h,i)=>{ const c=wr.getCell(1,i+1); c.value=h;
         c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1A2540'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}};
         c.alignment={horizontal:'center'}; wr.getColumn(i+1).width=i===0?26:11; });
-      catStat.forEach((r,ri)=>{ const tot=r.good+r.bad+r.na||1; const p=Math.round(r.good/tot*100);
-        [r.label,r.good,r.bad,r.na,p+'%'].forEach((v,i)=>{ const c=wr.getCell(ri+2,i+1); c.value=v;
+      catStat.filter(r=>r.good+r.bad>0).forEach((r,ri)=>{ const tot=r.good+r.bad||1; const p=Math.round(r.good/tot*100);
+        [r.label,r.good,r.bad,p+'%'].forEach((v,i)=>{ const c=wr.getCell(ri+2,i+1); c.value=v;
           c.alignment={horizontal:i===0?'left':'center'}; });
       });
 
@@ -11536,7 +11536,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
 
   /* ============ Export ============ */
   function resultBadgeHtml(result){
-    if(!result || result==="미점검") return `<span class="rb rb-none">미점검</span>`;
+    if(!result || result==="미점검") return `<span class="rb rb-none">—</span>`;
     if(result==="양호") return `<span class="rb rb-ok">적합</span>`;
     if(result==="불량") return `<span class="rb rb-bad">부적합</span>`;
     if(result==="해당없음") return `<span class="rb rb-na">해당없음</span>`;
@@ -12959,6 +12959,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         loc.items.forEach(it=>{
           if(it.result==="불량") bad.push({cat:cat.name, item:it.name, note:it.note||""});
           else if(!it.result) unfinished.push({cat:cat.name, item:it.name});
+          else if(it.result==="양호"||it.result==="적합"||it.result==="정상") good.push(1);
         });
       });
     });
@@ -13017,11 +13018,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
 </div>
 
 <div class="summary-boxes">
-  <div class="sbox"><div class="sv">${p.total}</div><div class="sl">전체 항목</div></div>
-  <div class="sbox ok"><div class="sv">${p.done}</div><div class="sl">완료</div></div>
-  <div class="sbox"><div class="sv">${p.pct}%</div><div class="sl">진행률</div></div>
+  <div class="sbox"><div class="sv">${good.length+bad.length}</div><div class="sl">판정 항목</div></div>
+  <div class="sbox ok"><div class="sv">${good.length}</div><div class="sl">적합</div></div>
   <div class="sbox bad"><div class="sv">${bad.length}</div><div class="sl">부적합</div></div>
-  <div class="sbox na"><div class="sv">${unfinished.length}</div><div class="sl">미점검</div></div>
+  <div class="sbox"><div class="sv">${(good.length+bad.length)?Math.round(good.length/(good.length+bad.length)*100):0}%</div><div class="sl">적합율</div></div>
 </div>
 
 <div class="section-title">설비별 점검결과</div>

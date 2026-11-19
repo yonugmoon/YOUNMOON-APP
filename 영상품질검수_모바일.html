@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>영상 품질 검수</title>
+<style>
+:root{font-family:system-ui,"Malgun Gothic",sans-serif;color:#172937;background:#edf3f5}
+*{box-sizing:border-box}
+body{max-width:54rem;margin:auto;padding:clamp(14px,4vw,32px)}
+h1{margin:0 0 18px;letter-spacing:-.04em}
+h2{font-size:1.15rem;margin:0 0 12px}
+form{display:grid;gap:14px}
+section{background:#fff;border:1px solid #d4e0e4;border-radius:14px;padding:16px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+label{display:block;font-size:.9rem;font-weight:650}
+input,select,textarea,button{font:inherit;border-radius:8px;min-height:44px}
+input,select,textarea{display:block;width:100%;margin-top:5px;padding:8px;border:1px solid #aabec6;background:#fff;color:inherit}
+textarea{resize:vertical}
+button{border:0;padding:9px 16px;background:#09665e;color:white;font-weight:700;cursor:pointer}
+button.secondary{color:#07584f;background:#e0f0ec}
+button:disabled{opacity:.55;cursor:wait}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+p{line-height:1.55;font-size:.9rem;margin:10px 0}
+#status{position:sticky;bottom:8px;background:#193844;color:white;padding:10px 14px;border-radius:8px;margin:0}
+#status:empty{display:none}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:8px;border-bottom:1px solid #d4e0e4}
+.table{overflow:auto}
+pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.comparison:not(:empty){margin:12px 0;padding:12px;background:#101b2a;color:#f3f8ff;border:1px solid #258aa0;border-radius:10px;break-inside:avoid}
+.comparison h3{font-size:1rem;margin:0}
+.comparison p{margin:4px 0;font-size:.8rem;color:#bfcedf}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:7px 16px;margin:8px 0}
+.metric{padding:5px 0;border-bottom:1px solid #31455c;break-inside:avoid}
+.metric-label{display:flex;justify-content:space-between;gap:6px;font-size:.8rem}
+.metric-label strong{text-align:right}
+.metric-track{position:relative;height:6px;margin:5px 2px 4px;background:#31455c;border-radius:10px}
+.metric-fill{display:block;height:100%;background:#5de6fa;border-radius:10px}
+.metric-mark{position:absolute;top:-2px;height:10px;border-left:2px solid #ffa0a0}
+.metric small{color:#bfcedf;font-size:.72rem}
+.comparison .legend{display:flex;flex-wrap:wrap;gap:6px 16px}
+.comparison .measured{color:#5de6fa}
+.comparison .target{color:#ffa0a0}
+.result-details summary{font-weight:650;cursor:pointer;padding:5px 0}
+.results-table td:nth-child(2),.results-table td:nth-child(4),.results-table td:nth-child(5){white-space:nowrap}
+.results-table td:first-child{min-width:8rem}
+.results-table td:nth-child(3){min-width:5.5rem}
+.dash-header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
+.dash-counts{display:flex;flex-wrap:wrap;gap:5px;font-size:.75rem}
+.dash-counts span{padding:3px 7px;border:1px solid #405772;border-radius:6px}
+.dash-counts .pass{color:#8ce3bd}
+.dash-counts .fail{color:#ffa0a0}
+.dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,115px),1fr));gap:6px;margin:10px 0}
+.dash-kpi,.dash-viz{background:#172638;border:1px solid #31455c;border-radius:8px;padding:8px}
+.dash-kpi span{display:block;color:#bfcedf;font-size:.75rem}
+.dash-kpi strong{display:block;font-size:1.03rem;overflow-wrap:anywhere}
+.dash-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,255px),1fr));gap:8px;margin:8px 0}
+.dash-viz h4{margin:0 0 6px;font-size:.87rem}
+.color-strip{display:flex;overflow:hidden;height:12px;border-radius:4px;background:#31455c;margin:3px 0 6px}
+.color-strip span{flex-shrink:0}
+.color-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 5px;font-size:.72rem}
+.color-key{display:inline-block;width:.65em;height:.65em;margin-right:3px;border:1px solid #8194aa;border-radius:2px}
+.heat-cells{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.heat-cells span{padding:3px 0;text-align:center;font-size:.75rem;font-weight:650;border:1px solid #71829a;border-radius:3px}
+.comparison details{margin-top:8px}
+@media print{.dash-viz,.dash-kpi,.color-strip span,.color-key,.heat-cells span{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<h1>영상 품질 검수</h1>
+<p id="local-info" hidden>오프라인 파일 모드입니다. 영상은 기기 안에서 처리합니다. RTSP는 PC 연결 모드에서 사용할 수 있습니다.</p>
+<form id="form">
+<section>
+<label>설치 위치<input id="site" placeholder="예) 1층 출입구" autocomplete="off"></label>
+</section>
+<section>
+<h2>영상 분석</h2>
+<div class="grid">
+<label>입력 방식<select id="mode"><option value="file">영상 파일</option><option value="rtsp">RTSP</option></select></label>
+<label>정지 후보 최소 지속 시간(초)<input id="freeze" type="number" inputmode="decimal" min="0.01" step="any" value="2"></label>
+<label id="file-field">휴대폰에 저장된 영상<input id="video" type="file" accept="video/*,.avi,.mkv,.ts"></label>
+<label id="rtsp-field" hidden>RTSP 주소<input id="source" type="password" autocomplete="off" spellcheck="false" placeholder="rtsp://…"></label>
+<label id="seconds-field" hidden>RTSP 관측 시간(초)<input id="seconds" type="number" inputmode="decimal" min="1" max="120" value="30"></label>
+<label>영상 시험 조건<select id="video-pattern"><option value="scene">일반 영상</option><option value="white">흰색 시험 패턴 영상</option></select></label>
+</div>
+<p id="analysis-info">파일은 최대 250 MiB까지 분석합니다. 정적인 장면도 정지 후보로 표시될 수 있습니다.</p>
+<button id="analyze" type="button">영상 분석</button>
+<button id="play-measure" class="secondary" type="button" hidden>재생하며 화면 측정</button>
+<video id="local-video" playsinline muted hidden style="width:100%;margin-top:12px"></video>
+<button id="measure-still" type="button" hidden disabled style="margin-top:8px">정지·현재 화면 측정</button>
+</section>
+<section>
+<h2>사이니지·CCTV 사진 진단</h2>
+<div class="grid">
+<label>현장 사진<input id="photo" type="file" accept="image/*"></label>
+<label>시험 화면<select id="photo-mode">
+<option value="color">단색 패턴 · 색상 및 화소 이상 후보</option>
+<option value="grid">격자 패턴 · 선 간격 편차</option>
+<option value="quality">CCTV 단일 채널 · 사진 품질</option>
+</select></label>
+<label id="pattern-field">표출한 단색 패턴<select id="pattern">
+<option value="white">흰색</option><option value="black">검정</option>
+<option value="red">빨강</option><option value="green">초록</option><option value="blue">파랑</option>
+</select></label>
+</div>
+<p>화면이 사진을 채우도록 정면에서 촬영하세요. 사진 분석값은 반사, 노출, 촬영 거리의 영향을 받는 참고값입니다.</p>
+<button id="photo-run" type="button">사진 진단</button>
+<pre id="photo-result" aria-live="polite"></pre>
+</section>
+<section>
+<details class="result-details"><summary>합격 기준 설정</summary>
+<p>초기값은 실내 현장용 검수 예시입니다. 실제 검수에서는 계약·설계 시방서의 요구값을 입력하고 적용하지 않는 항목은 비워 두세요. 정지 후보 0건 기준은 움직이는 시험 영상에 적용하세요.</p>
+<div id="limits" class="grid"></div>
+<p>영상 기준 예시 중 총 픽셀 수는 Full HD의 픽셀 수이며, 흰색 시험 패턴의 상대 균일도는 초기 예시 80%를 사용합니다. 영상 밝기는 현장 기준이 있을 때 입력하세요.</p>
+<div class="grid">
+<label>최소 프레임당 총 픽셀 수(px)<input id="pixel-limit" type="number" inputmode="numeric" min="0" step="1" value="2073600"></label>
+<label>최소 영상 평균 밝기(0–255)<input id="brightness-limit" type="number" inputmode="decimal" min="0" max="255" step="any" placeholder="현장 기준이 있을 때 입력"></label>
+<label>최소 영상 밝기 표준편차<input id="contrast-limit" type="number" inputmode="decimal" min="0" max="127.5" step="any" placeholder="같은 시험 장면의 현장 기준"></label>
+<label>최소 영상 선명도 지수<input id="sharpness-limit" type="number" inputmode="decimal" min="0" step="any" placeholder="같은 시험 장면의 현장 기준"></label>
+<label>최소 흰색 패턴 상대 균일도(%)<input id="pattern-limit" type="number" inputmode="decimal" min="0" max="100" step="any" value="80"></label>
+</div>
+<button class="secondary" id="reset-limits" type="button">예시 기준 다시 적용</button>
+</details>
+</section>
+<section>
+<h2>결과·성적서</h2>
+<div class="actions">
+<button type="submit">판정 갱신</button>
+<button class="secondary" id="download" type="button">HTML 성적서 저장</button>
+<button class="secondary" id="backup" type="button">점검 기록 백업</button>
+<label>입력 기록 복원<input id="restore" type="file" accept=".json,application/json"></label>
+</div>
+<div id="comparison" class="comparison" aria-label="측정값과 기준값 비교"></div>
+<details id="result-details" class="result-details" hidden><summary>전체 수치·시험 기록</summary>
+<div id="result-values" class="table" hidden><table id="results" class="results-table" aria-label="전체 측정값과 기준">
+<thead><tr><th>항목</th><th>단위</th><th>측정값</th><th>기준</th><th>판정</th></tr></thead>
+<tbody></tbody>
+</table></div>
+<pre id="details"></pre>
+</details>
+</section>
+<p id="status" role="status" aria-live="polite"></p>
+</form>
+<script>
+const get = id => document.getElementById(id);
+const key = location.hash.slice(1);
+const local = !['http:', 'https:'].includes(location.protocol) ||
+    new URLSearchParams(location.search).has('offline');
+const fields = ['site'];
+const videoSettings = ['video-pattern', 'pixel-limit', 'brightness-limit', 'contrast-limit', 'sharpness-limit', 'pattern-limit'];
+const limits = ['최소 실측 프레임률(fps)', '최대 화면 정지 후보(건)'];
+const exampleLimits = ['25', '0'];
+let result = null;
+let photoEvidence = '';
+let photoRows = [];
+const colorLabels = {white:'흰색', black:'검정', red:'빨강', green:'초록', blue:'파랑', other:'기타'};
+
+if (local) {
+    get('local-info').hidden = false;
+    get('mode').options[1].disabled = true;
+    get('mode').value = 'file';
+    limits[0] = '최소 브라우저 표시 프레임률(fps)';
+    get('analysis-info').textContent =
+        '영상이 재생되는 동안 프레임을 측정합니다. 화면을 켜 두고 끝까지 재생하세요. 정적인 장면도 정지 후보에 포함됩니다.';
+}
+get('play-measure').hidden = local || get('mode').value !== 'file';
+
+limits.forEach((text, index) => {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    label.textContent = text;
+    input.id = 'limit' + index;
+    input.type = 'number';
+    input.min = '0';
+    input.step = 'any';
+    input.inputMode = 'decimal';
+    input.value = exampleLimits[index];
+    label.append(input);
+    get('limits').append(label);
+    fields.push(input.id);
+});
+
+get('mode').addEventListener('change', () => {
+    const file = get('mode').value === 'file';
+    get('file-field').hidden = !file;
+    get('rtsp-field').hidden = file;
+    get('seconds-field').hidden = file;
+    get('play-measure').hidden = local || !file;
+});
+
+async function request(path, body, extra = {}) {
+    if (!key) throw new Error('PC에 표시된 전체 접속 주소를 다시 여세요.');
+    const response = await fetch('/api/' + path, {
+        method: 'POST',
+        headers: {'X-Session-Key': key, ...extra},
+        body
+    });
+    if (!response.ok) throw new Error((await response.json()).error);
+    return response;
+}
+
+function payload() {
+    return JSON.stringify({
+        fields: Object.fromEntries(fields.map(id => [id, get(id).value])),
+        result, evidence: evidenceText()
+    });
+}
+
+async function update() {
+    const data = await measurements();
+    const table = get('results');
+    const rows = data.allRows.map(values => {
+        const row = document.createElement('tr');
+        values.forEach(value => { row.insertCell().textContent = value; });
+        return row;
+    });
+    table.tBodies[0].replaceChildren(...rows);
+    get('result-values').hidden = false;
+    get('result-details').hidden = false;
+    const comparison = get('comparison');
+    comparison.replaceChildren();
+    comparison.insertAdjacentHTML('afterbegin', dashboardMarkup(data));
+    get('details').textContent = data.details;
+}
+
+async function measurements() {
+    const data = local || result?.browser ? localMeasurements() : await (await request('measure', payload())).json();
+    const imageRows = videoImageRows(result);
+    const details = data.details + '\n' + videoImageNotes(result);
+    return {...data, details, chartRows: [...imageRows, ...data.rows], photoRows,
+        allRows: [...overviewRows(data.rows, imageRows, result), ...photoRows]};
+}
+
+function referenceRow(name, unit, value, verdict = '참고') {
+    return [name, unit, value == null ? '—' : typeof value === 'number' ? String(Number(value.toFixed(3))) : value,
+        '—', value == null ? '미측정' : verdict];
+}
+
+function pixelColor(r, g, b) {
+    const high = Math.max(r, g, b), low = Math.min(r, g, b);
+    return high <= 45 ? 'black' : low >= 200 && high - low <= 45 ? 'white'
+        : r >= 1.35 * Math.max(g,b) ? 'red' : g >= 1.35 * Math.max(r,b) ? 'green'
+        : b >= 1.35 * Math.max(r,g) ? 'blue' : 'other';
+}
+
+function colorRows(prefix, distribution) {
+    return Object.entries(colorLabels).map(([color, label]) =>
+        referenceRow(prefix + ' ' + label + ' 픽셀 비율', '%', distribution[color] ?? 0));
+}
+
+function videoImageRows(video) {
+    const metrics = video?.image_metrics;
+    const row = (name, unit, actual, field, ceiling) => {
+        const limit = field ? readNumber(field) : null;
+        if (ceiling != null && limit != null && limit > ceiling) throw new Error(name + ' 기준 범위를 확인하세요.');
+        const text = value => value == null ? '—' : String(Number(value.toFixed(3)));
+        const verdict = actual == null ? '미측정' : limit == null ? '기록' : actual >= limit ? '충족' : '미달';
+        return [name, unit, text(actual), limit == null ? '—' : '≥ ' + text(limit), verdict];
+    };
+    return [
+        row('프레임당 총 픽셀 수', 'px', video ? video.width * video.height : null, 'pixel-limit'),
+        row('영상 평균 밝기', '0–255', metrics?.brightness, 'brightness-limit', 255),
+        row('영상 밝기 표준편차 (대비)', '지수', metrics?.contrast, 'contrast-limit', 127.5),
+        row('영상 선명도 (라플라시안 분산)', '지수', metrics?.sharpness, 'sharpness-limit'),
+        row('흰색 패턴 상대 균일도', '%', get('video-pattern').value === 'white' ? metrics?.uniformity : null,
+            'pattern-limit', 100),
+        ...(metrics?.colors ? colorRows('영상', metrics.colors) : []),
+    ];
+}
+
+function videoImageNotes(video) {
+    const metrics = video?.image_metrics;
+    const condition = get('video-pattern').value === 'white' ? '흰색 시험 패턴' : '일반 영상';
+    const sampling = video?.snapshotAt != null ? '정지 버튼으로 선택한 프레임 한 장의 중앙 영역을 사용합니다.'
+        : '약 1초 간격, 축소 프레임 중앙 영역을 사용합니다.';
+    return '영상 기준 예시   총 픽셀 수 2,073,600 px (Full HD의 총 픽셀 수) / 흰색 패턴 상대 균일도 80%\n' +
+        '영상 시험 조건   ' + condition + '\n영상 화질 표본   ' + (metrics?.samples ?? '—') +
+        '프레임\n' + sampling + ' 영상 밝기는 0–255 디지털 값입니다.' +
+        '\n색상 비율은 축소 표본의 픽셀을 간단한 RGB 범주로 분류한 값입니다.' +
+        '\n상대 균일도는 흰색 패턴의 9구역 평균 중 최소 ÷ 최대입니다.';
+}
+
+function overviewRows(criteriaRows, imageRows, video) {
+    const format = value => value == null ? '—' : value.toLocaleString('ko-KR', {maximumFractionDigits: 3});
+    const record = (label, unit, value) => [label, unit, value, '—', value === '—' ? '미측정' : '기록'];
+    const dimensions = video ? video.width + ' × ' + video.height : '—';
+    return [
+        record('영상 해상도', 'px', dimensions),
+        ...imageRows,
+        ...criteriaRows,
+        ...(video?.snapshotAt != null ? [record('정지 측정 시점', '초', format(video.snapshotAt))] : []),
+        record(local || video?.browser ? '브라우저 표시 프레임 수' : '디코딩 프레임 수', '개', format(video?.frames)),
+        record('FPS 측정 구간', '초', format(video?.window))
+    ];
+}
+
+get('reset-limits').addEventListener('click', () => run('예시 기준을 적용하는 중…', async () => {
+    exampleLimits.forEach((value, index) => { get('limit' + index).value = value; });
+    get('pixel-limit').value = '2073600';
+    get('pattern-limit').value = '80';
+    get('brightness-limit').value = '';
+    get('contrast-limit').value = '';
+    get('sharpness-limit').value = '';
+    await update();
+    return '예시 기준을 적용했습니다.';
+}));
+
+async function run(message, task) {
+    const controls = document.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)');
+    controls.forEach(control => { control.disabled = true; });
+    get('status').textContent = message;
+    try {
+        get('status').textContent = await task();
+    } catch (error) {
+        get('status').textContent = error instanceof TypeError
+            ? 'PC 분석 서버에 연결하지 못했습니다. Wi-Fi와 서버 창을 확인하세요.'
+            : error.message;
+    } finally {
+        controls.forEach(control => { control.disabled = false; });
+    }
+}
+
+function hasLocation() {
+    const input = get('site');
+    if (input.value.trim()) return true;
+    get('status').textContent = '먼저 설치 위치를 입력하세요.';
+    input.focus();
+    return false;
+}
+
+function startAnalysis(inBrowser) {
+    if (!hasLocation()) return;
+    return run(inBrowser ? '재생 중 원하는 화면에서 정지·현재 화면 측정을 누르세요.' : 'PC에서 영상 분석 중…', async () => {
+        const headers = {'X-Freeze': get('freeze').value};
+        let response;
+        if (inBrowser) {
+            result = await analyzeLocal(get('video').files[0], readNumber('freeze', true));
+        } else if (get('mode').value === 'file') {
+            const file = get('video').files[0];
+            if (!file) throw new Error('영상 파일을 선택하세요.');
+            if (file.size > 250 * 1024 ** 2) throw new Error('250 MiB 이하의 영상을 선택하세요.');
+            headers['X-Video-Name'] = encodeURIComponent(file.name);
+            response = await request('file', file, headers);
+        } else {
+            response = await request('rtsp', JSON.stringify({
+                source: get('source').value, seconds: get('seconds').value
+            }), headers);
+        }
+        if (!inBrowser) result = await response.json();
+        await update();
+        get('comparison').scrollIntoView({block: 'start', behavior: 'smooth'});
+        return result.snapshotAt != null ? '정지 화면 측정 완료' : '영상 분석 완료';
+    });
+}
+
+get('analyze').addEventListener('click', () => startAnalysis(local));
+get('play-measure').addEventListener('click', () => startAnalysis(true));
+
+get('form').addEventListener('submit', event => {
+    event.preventDefault();
+    run('판정 계산 중…', async () => { await update(); return '판정 갱신 완료'; });
+});
+
+get('download').addEventListener('click', () => run('성적서 생성 중…', async () => {
+    const blob = makeReport(await measurements());
+    downloadBlob(blob, 'video-quality.html');
+    return '성적서 다운로드를 시작했습니다.';
+}));
+
+function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function evidenceText() {
+    const matches = exampleLimits.some((value, index) => {
+        const raw = get('limit' + index).value.trim();
+        return raw && Number(raw) === Number(value);
+    });
+    const criteria = matches ? '예시와 동일한 기준값은 현장 시방서의 요구값과 대조해 확인하세요.' : '';
+    return [criteria, photoEvidence].filter(Boolean).join('\n');
+}
+
+get('backup').addEventListener('click', () => run('기록을 저장하는 중…', async () => {
+    const record = JSON.parse(payload());
+    downloadBlob(new Blob([JSON.stringify({
+        format: 'video-quality-inspector', version: 1, savedAt: new Date().toISOString(),
+        fields: record.fields, video: record.result, photo: photoEvidence,
+        videoSettings: Object.fromEntries(videoSettings.map(id => [id, get(id).value]))
+    }, null, 2)], {type: 'application/json'}), 'inspection-backup.json');
+    return '점검 기록 다운로드를 시작했습니다.';
+}));
+
+get('restore').addEventListener('change', () => run('입력 기록을 불러오는 중…', async () => {
+    const file = get('restore').files[0];
+    get('restore').value = '';
+    if (!file) return '';
+    if (file.size > 2 * 1024 ** 2) throw new Error('2 MiB 이하의 점검 백업 파일을 선택하세요.');
+    let record;
+    try { record = JSON.parse(await file.text()); }
+    catch { throw new Error('JSON 파일을 읽을 수 없습니다.'); }
+    if (record?.format !== 'video-quality-inspector' || record.version !== 1 || !record.fields ||
+        fields.some(id => typeof record.fields[id] !== 'string')) {
+        throw new Error('이 프로그램에서 저장한 점검 백업 파일을 선택하세요.');
+    }
+    for (const id of fields) {
+        get(id).value = record.fields[id];
+    }
+    if (record.videoSettings) {
+        for (const id of videoSettings) {
+            if (typeof record.videoSettings[id] === 'string') get(id).value = record.videoSettings[id];
+        }
+    }
+    result = null;
+    clearOutput();
+    get('photo').value = '';
+    photoEvidence = '';
+    photoRows = [];
+    get('photo-result').textContent = '';
+    await update();
+    return '입력 기록을 복원했습니다. 영상과 사진은 다시 선택해 측정하세요.';
+}));
+
+function clearOutput() {
+    get('result-values').hidden = true;
+    get('result-details').hidden = true;
+    get('comparison').replaceChildren();
+    get('details').textContent = '';
+}
+
+get('site').addEventListener('change', () => {
+    result = null;
+    photoRows = [];
+    photoEvidence = '';
+    get('photo-result').textContent = '';
+    clearOutput();
+});
+
+for (const id of ['video', 'source', 'mode', 'freeze', 'seconds']) {
+    get(id).addEventListener('change', () => { result = null; clearOutput(); });
+}
+for (const id of ['photo', 'photo-mode', 'pattern']) {
+    get(id).addEventListener('change', () => {
+        get('pattern-field').hidden = get('photo-mode').value !== 'color';
+        photoEvidence = '';
+        photoRows = [];
+        get('photo-result').textContent = '';
+        clearOutput();
+    });
+}
+
+get('photo-run').addEventListener('click', () => hasLocation() && run('기기에서 사진을 분석하는 중…', async () => {
+    const photo = get('photo').files[0];
+    if (!photo) throw new Error('시험 화면을 촬영한 사진을 선택하세요.');
+    const image = await readPhoto(photo);
+    const mode = get('photo-mode').value;
+    const readings = [
+        referenceRow('사진 해상도', 'px', image.originalWidth + ' × ' + image.originalHeight),
+        referenceRow('사진 총 픽셀 수', 'px', image.originalWidth * image.originalHeight),
+    ];
+    const findings = photoMetrics(image, mode, get('pattern').value, readings);
+    photoRows = readings;
+    photoEvidence = ['사진 진단 (예비 참고)', photo.name + ' · 분석 영역 ' + image.width + ' × ' + image.height,
+        ...findings].join('\n');
+    get('photo-result').textContent = photoEvidence;
+    await update();
+    get('comparison').scrollIntoView({block: 'start', behavior: 'smooth'});
+    return '사진 진단 완료';
+}));
+
+async function readPhoto(file) {
+    const url = URL.createObjectURL(file);
+    try {
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        if (Math.min(image.naturalWidth, image.naturalHeight) < 30) {
+            throw new Error('가로·세로가 각각 30픽셀 이상인 사진을 선택하세요.');
+        }
+        const canvas = document.createElement('canvas');
+        const crop = 0.9;
+        const scale = Math.min(1, 960 / Math.max(image.naturalWidth, image.naturalHeight));
+        canvas.width = Math.max(3, Math.round(image.naturalWidth * crop * scale));
+        canvas.height = Math.max(3, Math.round(image.naturalHeight * crop * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, image.naturalWidth * .05, image.naturalHeight * .05,
+            image.naturalWidth * crop, image.naturalHeight * crop, 0, 0, canvas.width, canvas.height);
+        const {data, width, height} = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        return {data, width, height, originalWidth: image.naturalWidth, originalHeight: image.naturalHeight};
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+}
+
+function photoMetrics({data, width: w, height: h}, mode, pattern, readings = []) {
+    const count = w * h;
+    const gray = new Float32Array(count);
+    const rows = new Float64Array(h), cols = new Float64Array(w);
+    const zones = new Float64Array(9), zoneCounts = new Uint32Array(9);
+    const colors = new Map();
+    let sum = 0, squares = 0;
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const p = y * w + x, i = p * 4;
+            const r = data[i], g = data[i + 1], b = data[i + 2];
+            const value = gray[p] = 0.299 * r + 0.587 * g + 0.114 * b;
+            sum += value;
+            squares += value * value;
+            rows[y] += value / w;
+            cols[x] += value / h;
+            const zone = 3 * Math.floor(y * 3 / h) + Math.floor(x * 3 / w);
+            zones[zone] += value;
+            zoneCounts[zone]++;
+            const color = pixelColor(r, g, b);
+            colors.set(color, (colors.get(color) || 0) + 1);
+        }
+    }
+    const mean = sum / count;
+    const contrast = Math.sqrt(Math.max(0, squares/count-mean*mean));
+    readings.push(referenceRow('사진 평균 밝기', '0–255', mean),
+        referenceRow('사진 밝기 표준편차 (대비)', '지수', contrast),
+        ...colorRows('사진', Object.fromEntries([...colors].map(([color,n]) => [color, 100*n/count]))));
+    if (mode === 'grid') {
+        return ['격자 패턴 (사진 중앙 90%)', describeGrid(rows, '가로', readings), describeGrid(cols, '세로', readings),
+            '촬영 기울기와 화면의 실제 베젤을 현장에서 확인하세요.'];
+    }
+    if (mode === 'color') {
+        const match = 100 * (colors.get(pattern) || 0) / count;
+        const means = zones.map((value, index) => value / zoneCounts[index]);
+        const distribution = [...colors].sort((a,b) => b[1]-a[1])
+            .map(([color,n]) => colorLabels[color] + ' ' + (100*n/count).toFixed(1) + '%');
+        readings.push(referenceRow('사진 단색 패턴 일치율', '%', match));
+        for (const [index, value] of means.entries()) {
+            readings.push(referenceRow('사진 구역 ' + (index + 1) + ' 밝기', '0–255', value));
+        }
+        const lines = ['단색 패턴 ' + colorLabels[pattern] + ' · 일치율 ' + match.toFixed(1) + '%',
+            '색상 분포   ' + distribution.join(' / '),
+            '구역 평균 사진 밝기 (0–255)   ' + [...means].map(x => x.toFixed(1)).join(' / ')];
+        if (match < 85) return [...lines, '패턴 일치율이 85% 미만이어서 화소 이상 후보 분석을 보류했습니다.'];
+        const candidates = anomalyRegions(data, w, h, readings);
+        return [...lines, candidates, '사진 속 이상색 영역을 원본 화면에서 확인하세요.'];
+    }
+    let lapSum = 0, lapSquares = 0;
+    for (let y = 1; y < h-1; y++) {
+        for (let x = 1; x < w-1; x++) {
+            const p = y*w+x;
+            const lap = gray[p-1] + gray[p+1] + gray[p-w] + gray[p+w] - 4*gray[p];
+            lapSum += lap;
+            lapSquares += lap*lap;
+        }
+    }
+    const n = (w-2)*(h-2);
+    const sharpness = Math.max(0,lapSquares/n-(lapSum/n)**2);
+    readings.push(referenceRow('사진 선명도 (라플라시안 분산)', '지수', sharpness));
+    return ['CCTV 화면 사진 품질 (사진 중앙 90%)',
+        '평균 밝기 (0–255)   ' + mean.toFixed(1),
+        '밝기 표준편차   ' + contrast.toFixed(1),
+        '선명도 지수 (라플라시안 분산)   ' + sharpness.toFixed(1),
+        '같은 장면과 촬영 조건의 사진을 비교하세요.'];
+}
+
+function describeGrid(profile, axis, readings) {
+    const mean = profile.reduce((a,b) => a+b,0) / profile.length;
+    const sd = Math.sqrt(profile.reduce((sum,x) => sum+(x-mean)**2,0)/profile.length);
+    const threshold = mean - Math.max(12,sd);
+    const centers = [];
+    let start = -1;
+    for (let i = 0; i <= profile.length; i++) {
+        if (i < profile.length && profile[i] < threshold) {
+            if (start < 0) start = i;
+        } else if (start >= 0) {
+            if (start > 0 && i < profile.length) centers.push((start+i-1)/2);
+            start = -1;
+        }
+    }
+    readings.push(referenceRow('사진 ' + axis + ' 격자선', '개', centers.length));
+    if (centers.length < 3) return axis + '선 ' + centers.length + '개 · 간격 편차 미측정';
+    const gaps = centers.slice(1).map((x,i) => x-centers[i]);
+    const average = gaps.reduce((a,b) => a+b,0)/gaps.length;
+    const spread = Math.sqrt(gaps.reduce((sum,x) => sum+(x-average)**2,0)/gaps.length);
+    const variation = 100*spread/average;
+    readings.push(referenceRow('사진 ' + axis + ' 간격 변동계수', '%', variation));
+    return axis + '선 ' + centers.length + '개 · 간격 변동계수 ' + variation.toFixed(1) + '%';
+}
+
+function anomalyRegions(data, w, h, readings) {
+    const histograms = Array.from({length:3}, () => new Uint32Array(256));
+    for (let i = 0; i < data.length; i += 4) {
+        for (let j = 0; j < 3; j++) histograms[j][data[i+j]]++;
+    }
+    const base = histograms.map(hist => {
+        let accumulated = 0;
+        return hist.findIndex(value => (accumulated += value) >= w*h/2);
+    });
+    const flags = new Uint8Array(w*h);
+    let flagged = 0;
+    for (let p = 0; p < flags.length; p++) {
+        const i = p*4;
+        if (Math.abs(data[i]-base[0]) + Math.abs(data[i+1]-base[1]) + Math.abs(data[i+2]-base[2]) >= 150) {
+            flags[p] = 1;
+            flagged++;
+        }
+    }
+    if (flagged > flags.length*.05) return '이상색 면적이 5%를 넘어 작은 영역의 후보 검출을 보류했습니다.';
+    const locations = [];
+    let regions = 0;
+    for (let p = 0; p < flags.length; p++) {
+        if (!flags[p]) continue;
+        const pending = [p];
+        flags[p] = 0;
+        let count = 0, sx = 0, sy = 0;
+        while (pending.length) {
+            const q = pending.pop(), x = q%w;
+            count++;
+            sx += x;
+            sy += Math.floor(q/w);
+            for (const n of [x ? q-1 : -1, x+1<w ? q+1 : -1, q-w, q+w]) {
+                if (flags[n]) {
+                    flags[n] = 0;
+                    pending.push(n);
+                }
+            }
+        }
+        if (count < 2 || count > Math.max(4, flags.length*.002)) continue;
+        regions++;
+        if (locations.length < 8) locations.push('(' + Math.round(sx/count) + ', ' + Math.round(sy/count) + ')');
+    }
+    readings.push(referenceRow('사진 이상색 영역 후보', '개', regions));
+    return '작은 이상색 영역 ' + regions + '개' + (locations.length ? ' · 예시 좌표 ' + locations.join(', ') : '') +
+        ' (분석 사진 좌표)';
+}
+
+function readNumber(id, positive = false) {
+    const raw = get(id).value.trim();
+    if (!raw) {
+        if (positive) throw new Error('0보다 큰 값을 입력하세요.');
+        return null;
+    }
+    return checked(raw, positive);
+}
+
+function checked(raw, positive = false) {
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < 0 || (positive && value === 0)) {
+        throw new Error('계측값과 기준에 올바른 숫자를 입력하세요.');
+    }
+    return value;
+}
+
+function analyzeLocal(file, minimum) {
+    if (!file) throw new Error('영상 파일을 선택하세요.');
+    const video = get('local-video');
+    const stop = get('measure-still');
+    if (typeof video.requestVideoFrameCallback !== 'function') {
+        throw new Error('프레임 분석을 지원하는 최신 Chrome 또는 Safari에서 열어 주세요.');
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = 160;
+    canvas.height = 90;
+    const ctx = canvas.getContext('2d', {willReadFrequently: true});
+    if (!ctx) throw new Error('브라우저에서 영상 분석 화면을 초기화하지 못했습니다.');
+    const url = URL.createObjectURL(file);
+    const events = [];
+    let first, previous, priorPixels, latestRgba, freezeStart, callback;
+    let samples = 0, skippedCallbacks = 0;
+    const imageTotals = {brightness: 0, contrast: 0, sharpness: 0, uniformity: 0};
+    const colorCounts = Object.fromEntries(Object.keys(colorLabels).map(color => [color, 0]));
+    let colorPixels = 0;
+    let imageSamples = 0, uniformitySamples = 0, lastImageTime = -Infinity;
+
+    function endFreeze() {
+        if (freezeStart !== undefined && previous.mediaTime - freezeStart >= minimum) {
+            events.push([freezeStart, previous.mediaTime - freezeStart]);
+        }
+        freezeStart = undefined;
+    }
+
+    return new Promise((resolve, reject) => {
+        let finished = false;
+        function cleanup() {
+            finished = true;
+            stop.onclick = null;
+            stop.disabled = stop.hidden = true;
+            video.cancelVideoFrameCallback(callback);
+            video.onended = video.onerror = video.onseeking = video.onpause = null;
+            document.removeEventListener('visibilitychange', visibility);
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+            video.hidden = true;
+            URL.revokeObjectURL(url);
+        }
+        function fail(message) {
+            if (finished) return;
+            cleanup();
+            reject(new Error(message));
+        }
+        function visibility() {
+            if (document.hidden) fail('화면이 전환되어 측정을 중단했습니다. 다시 분석하세요.');
+        }
+        stop.onclick = () => {
+            if (!previous || finished) return;
+            const colorSample = countVideoColors(latestRgba);
+            const snapshot = {
+                label: file.name, width: video.videoWidth, height: video.videoHeight,
+                browser: true, snapshotAt: previous.mediaTime, frames: 1,
+                observed_fps: null, window: null, events: [],
+                image_metrics: {
+                    ...sampleVideoGray(priorPixels), samples: 1,
+                    colors: Object.fromEntries(Object.entries(colorSample.counts)
+                        .map(([color, n]) => [color, 100 * n / colorSample.total]))
+                }
+            };
+            cleanup();
+            resolve(snapshot);
+        };
+        function inspect(_now, frame) {
+            if (finished) return;
+            try {
+                ctx.drawImage(video, 0, 0, 160, 90);
+                const rgba = ctx.getImageData(0, 0, 160, 90).data;
+                const gray = new Uint8Array(160 * 90);
+                let difference = 0;
+                for (let i = 0, j = 0; i < gray.length; i++, j += 4) {
+                    gray[i] = (77 * rgba[j] + 150 * rgba[j + 1] + 29 * rgba[j + 2]) >> 8;
+                    if (priorPixels) difference += Math.abs(gray[i] - priorPixels[i]);
+                }
+                if (!first) first = frame;
+                if (frame.mediaTime - lastImageTime >= 1) {
+                    lastImageTime = frame.mediaTime;
+                    const reading = sampleVideoGray(gray);
+                    for (const key of ['brightness', 'contrast', 'sharpness']) imageTotals[key] += reading[key];
+                    if (reading.uniformity != null) {
+                        imageTotals.uniformity += reading.uniformity;
+                        uniformitySamples++;
+                    }
+                    const colorSample = countVideoColors(rgba);
+                    for (const [color, n] of Object.entries(colorSample.counts)) colorCounts[color] += n;
+                    colorPixels += colorSample.total;
+                    imageSamples++;
+                }
+                if (previous) {
+                    const gap = frame.presentedFrames - previous.presentedFrames;
+                    skippedCallbacks += Math.max(0, gap - 1);
+                    if (gap === 1 && difference / gray.length <= 0.5) {
+                        if (freezeStart === undefined) freezeStart = previous.mediaTime;
+                    } else {
+                        endFreeze();
+                    }
+                }
+                previous = frame;
+                priorPixels = gray;
+                latestRgba = rgba;
+                stop.disabled = false;
+                samples++;
+                callback = video.requestVideoFrameCallback(inspect);
+            } catch {
+                fail('영상 프레임을 읽지 못했습니다. 다른 파일로 다시 시도하세요.');
+            }
+        }
+        video.onended = () => {
+            if (samples < 2) return fail('측정할 수 있는 영상 프레임이 부족합니다.');
+            endFreeze();
+            const span = previous.mediaTime - first.mediaTime;
+            const frames = previous.presentedFrames - first.presentedFrames + 1;
+            const dropped = video.getVideoPlaybackQuality?.().droppedVideoFrames || 0;
+            const measurement = {
+                label: file.name, width: video.videoWidth, height: video.videoHeight, browser: true,
+                frames, observed_fps: span > 0 ? (frames - 1) / span : null,
+                window: span, events, freeze_seconds: minimum, skippedCallbacks, dropped,
+                image_metrics: {
+                    brightness: imageTotals.brightness / imageSamples,
+                    contrast: imageTotals.contrast / imageSamples,
+                    sharpness: imageTotals.sharpness / imageSamples,
+                    uniformity: uniformitySamples ? imageTotals.uniformity / uniformitySamples : null,
+                    samples: imageSamples,
+                    colors: Object.fromEntries(Object.entries(colorCounts).map(([color, n]) => [color, 100*n/colorPixels]))
+                }
+            };
+            cleanup();
+            resolve(measurement);
+        };
+        video.onerror = () => fail('브라우저에서 재생 가능한 영상인지 확인하세요. H.264 MP4를 사용할 수 있습니다.');
+        video.onseeking = () => fail('재생 위치가 바뀌어 측정을 중단했습니다. 다시 분석하세요.');
+        video.onpause = () => {
+            if (!video.ended) fail('재생이 중단됐습니다. 다시 분석하세요.');
+        };
+        document.addEventListener('visibilitychange', visibility);
+        video.hidden = false;
+        stop.hidden = false;
+        video.src = url;
+        callback = video.requestVideoFrameCallback(inspect);
+        video.play().catch(() => fail('영상을 재생하지 못했습니다. 파일 형식과 브라우저를 확인하세요.'));
+    });
+}
+
+function countVideoColors(rgba) {
+    const counts = Object.fromEntries(Object.keys(colorLabels).map(color => [color, 0]));
+    let total = 0;
+    for (let y = 5; y < 85; y += 2) {
+        for (let x = 8; x < 152; x += 2) {
+            const i = (y * 160 + x) * 4;
+            counts[pixelColor(rgba[i], rgba[i+1], rgba[i+2])]++;
+            total++;
+        }
+    }
+    return {counts, total};
+}
+
+function sampleVideoGray(gray) {
+    const zones = new Float64Array(9), zoneCounts = new Uint32Array(9);
+    let sum = 0, squares = 0, lapSum = 0, lapSquares = 0;
+    for (let y = 5; y < 85; y++) {
+        for (let x = 8; x < 152; x++) {
+            const p = y * 160 + x, value = gray[p];
+            sum += value;
+            squares += value * value;
+            const zone = (y < 31 ? 0 : y < 58 ? 3 : 6) + Math.floor((x - 8) / 48);
+            zones[zone] += value;
+            zoneCounts[zone]++;
+            if (x > 8 && x < 151 && y > 5 && y < 84) {
+                const lap = gray[p-1] + gray[p+1] + gray[p-160] + gray[p+160] - 4*value;
+                lapSum += lap;
+                lapSquares += lap * lap;
+            }
+        }
+    }
+    const count = 144 * 80, edges = 142 * 78;
+    const brightness = sum / count;
+    const means = zones.map((value, index) => value / zoneCounts[index]);
+    const peak = Math.max(...means);
+    return {
+        brightness,
+        contrast: Math.sqrt(Math.max(0, squares / count - brightness ** 2)),
+        sharpness: Math.max(0, lapSquares / edges - (lapSum / edges) ** 2),
+        uniformity: peak ? 100 * Math.min(...means) / peak : null
+    };
+}
+
+function localMeasurements() {
+    const missed = result && (result.skippedCallbacks || result.dropped);
+    const snapshot = result?.snapshotAt != null;
+    const values = [
+        result?.observed_fps, result && !missed && !snapshot ? result.events.length : null
+    ];
+    const names = ['브라우저 표시 프레임률', '화면 정지 후보'];
+    const units = ['fps', '건'];
+    const format = value => value == null ? '—' : String(Number(value.toPrecision(6)));
+    const rows = values.map((value, index) => {
+        const limit = readNumber('limit' + index);
+        const minimum = index === 0;
+        const pass = minimum ? value >= limit : value <= limit;
+        const verdict = value == null ? '미측정' : limit == null ? '기준 미입력' : pass ? '충족' : '미달';
+        return [names[index], units[index], format(value),
+            limit == null ? '—' : (minimum ? '≥ ' : '≤ ') + format(limit), verdict];
+    });
+    const lines = ['설치 위치   ' + (get('site').value.trim() || '—')];
+    if (snapshot) {
+        lines.push('영상 파일   ' + result.label, '정지 측정 시점   ' + result.snapshotAt.toFixed(3) + '초',
+            '선택한 프레임 1장을 측정했습니다. FPS와 영상 정지 후보 건수는 미측정입니다.');
+    } else if (result) {
+        lines.push('영상 파일   ' + result.label,
+            '영상 해상도   ' + result.width + ' × ' + result.height,
+            '브라우저 표시 프레임 수   ' + result.frames,
+            '정지 후보 최소 지속 시간(초)   ' + result.freeze_seconds,
+            '프레임률은 기기 브라우저의 표시 프레임을 기준으로 계산했습니다.');
+        if (missed) lines.push('프레임 표본 누락 또는 재생 중 드롭이 있어 정지 후보 건수 판정을 보류합니다.');
+        lines.push('표본 누락 ' + result.skippedCallbacks + ' / 재생 중 드롭 ' + result.dropped);
+        for (const [start, duration] of result.events) {
+            lines.push('정지 후보   시작 ' + start.toFixed(3) + '초 / 지속 ' + duration.toFixed(3) + '초');
+        }
+    }
+    lines.push(evidenceText());
+    return {rows, details: lines.join('\n')};
+}
+
+const escape = value => value.replace(/[&<>]/g, mark => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'})[mark]);
+
+function comparisonMarkup(rows) {
+    const cards = rows.map(([name, unit, reading, criterion, verdict]) => {
+        const value = reading === '—' ? null : Number(reading);
+        const limit = criterion === '—' ? null : Number(criterion.slice(2));
+        const axis = unit === '%' ? 100 : unit === '0–255' ? 255 : name.includes('표준편차') ? 127.5 : 0;
+        const scale = Math.max(axis, value ?? 0, limit == null ? 0 : limit * 1.15);
+        const position = number => scale > 0 ? Math.min(100, 100 * number / scale) : 0;
+        const fills = value != null ? '<span class="metric-fill" style="width:' + position(value) + '%"></span>' : '';
+        const marker = limit != null ? '<span class="metric-mark" style="left:' + position(limit) + '%"></span>' : '';
+        const track = (axis || limit != null) && (fills || marker)
+            ? '<div class="metric-track" aria-hidden="true">' + fills + marker + '</div>' : '';
+        const shown = reading === '—' ? reading : reading + (unit === '0–255' || unit === '지수' ? '' : ' ' + unit);
+        const status = criterion === '—' ? verdict : '기준 ' + criterion + ' · ' + verdict;
+        return '<div class="metric"><div class="metric-label"><span>' + escape(name) + '</span><strong>' +
+            escape(shown) + '</strong></div>' + track + '<small>' + escape(status) + '</small></div>';
+    });
+    return '<div class="metric-grid">' + cards.join('') + '</div>';
+}
+
+function colorDistribution(rows, source) {
+    const palette = ['#f6f8fc', '#10151e', '#ef6870', '#49b887', '#599aff', '#b49ad7'];
+    const entries = Object.values(colorLabels).flatMap((label, index) => {
+        const row = rows.find(item => item[0] === source + ' ' + label + ' 픽셀 비율');
+        return row && row[2] !== '—' ? [{label, value: Number(row[2]), color: palette[index]}] : [];
+    });
+    if (!entries.length) return '';
+    const total = entries.reduce((sum, entry) => sum + entry.value, 0);
+    const bars = entries.map(({value, color}) => '<span style="width:' + (total ? value / total * 100 : 0) +
+        '%;background:' + color + '"></span>').join('');
+    const keys = entries.map(({label, value, color}) => '<span><i class="color-key" style="background:' +
+        color + '"></i>' + label + ' ' + value.toFixed(1) + '%</span>').join('');
+    return '<div class="dash-viz"><h4>' + source + ' 색상 분포</h4><div class="color-strip" aria-hidden="true">' +
+        bars + '</div><div class="color-legend">' + keys + '</div></div>';
+}
+
+function brightnessHeatmap(rows) {
+    const values = Array.from({length: 9}, (_, index) => {
+        const row = rows.find(item => item[0] === '사진 구역 ' + (index + 1) + ' 밝기');
+        return row && row[2] !== '—' ? Number(row[2]) : null;
+    });
+    if (values.some(value => value === null)) return '';
+    const cells = values.map((value, index) => {
+        const code = Math.round(value);
+        return '<span style="background:rgb(' + code + ',' + code + ',' + code + ');color:' +
+            (code > 140 ? '#10151e' : '#fff') + '" aria-label="구역 ' + (index + 1) + ' 밝기 ' +
+            value.toFixed(1) + '">' + value.toFixed(1) + '</span>';
+    }).join('');
+    return '<div class="dash-viz"><h4>사진 밝기 9구역 · 0–255</h4><div class="heat-cells">' + cells + '</div></div>';
+}
+
+function dashboardMarkup({chartRows, photoRows, allRows}) {
+    const judged = chartRows.filter(row => row[3] !== '—');
+    const counts = ['충족', '미달', '미측정'].map((status, index) => {
+        const count = judged.filter(row => row[4] === status).length;
+        return '<span class="' + ['pass', 'fail', 'pending'][index] + '">' + status + ' ' + count + '</span>';
+    }).join('');
+    const picks = [
+        ['영상 해상도', '영상 해상도'], ['프레임당 총 픽셀 수', '영상 픽셀'],
+        ['브라우저 표시 프레임률', '프레임률'], ['실측 프레임률', '프레임률'],
+        ['정지 측정 시점', '정지 측정 시점'],
+        ['영상 평균 밝기', '영상 밝기'], ['사진 해상도', '사진 해상도'], ['사진 평균 밝기', '사진 밝기'],
+    ];
+    const kpis = picks.map(([name, label]) => {
+        const row = allRows.find(item => item[0] === name);
+        if (!row || row[2] === '—') return '';
+        const number = Number(row[2]);
+        const value = Number.isFinite(number) ? number.toLocaleString('ko-KR', {maximumFractionDigits: 2}) : row[2];
+        return '<div class="dash-kpi"><span>' + label + '</span><strong>' + escape(value) +
+            (['fps', '초'].includes(row[1]) ? ' ' + row[1] : '') + '</strong></div>';
+    }).join('');
+    const visuals = colorDistribution(chartRows, '영상') + colorDistribution(photoRows, '사진') +
+        brightnessHeatmap(photoRows);
+    const benchmarks = judged.length ? '<h4>기준 비교</h4>' + comparisonMarkup(judged) : '';
+    const photo = photoRows.length ? '<h4>사진 진단 · 참고</h4>' + comparisonMarkup(photoRows) : '';
+    return '<div class="dash-header"><h3>품질 대시보드</h3><div class="dash-counts">' + counts + '</div></div>' +
+        (kpis ? '<div class="dash-kpis">' + kpis + '</div>' : '') +
+        (visuals ? '<div class="dash-charts">' + visuals + '</div>' : '<p>영상이나 사진을 분석하면 그래프가 표시됩니다.</p>') +
+        '<details class="result-details"><summary>기준 비교·개별 그래프</summary>' +
+        '<p class="legend"><span class="measured">■ 측정값</span><span class="target">│ 기준값</span></p>' +
+        benchmarks + comparisonMarkup(chartRows.filter(row => row[3] === '—')) + photo + '</details>';
+}
+
+function makeReport(data) {
+    const {allRows, details} = data;
+    const content = allRows.map(row => '<tr>' + row.map(cell => '<td>' + escape(cell) + '</td>').join('') + '</tr>').join('');
+    return new Blob(['<!doctype html><html lang="ko"><meta charset="utf-8">' +
+        '<meta name="viewport" content="width=device-width"><title>영상 품질 검수 성적서</title>' +
+        '<style>' + document.querySelector('style').textContent + ' body{background:#fff} </style>' +
+        '<h1>영상 품질 검수 성적서</h1><p>' + escape(new Date().toLocaleString('ko-KR')) +
+        '</p><div class="comparison">' + dashboardMarkup(data) +
+        '</div><table><thead><tr><th>항목</th><th>단위</th><th>측정값</th><th>기준</th><th>판정</th></tr></thead><tbody>' +
+        content + '</tbody></table><h2>시험 기록</h2><pre>' + escape(details) + '</pre></html>'],
+        {type: 'text/html;charset=utf-8'});
+}
+
+if (local || key) {
+    update().catch(error => { get('status').textContent = error.message; });
+}
+</script>
+</body>
+</html>

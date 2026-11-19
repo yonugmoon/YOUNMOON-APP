@@ -225,6 +225,7 @@
   #mdash-modal .mdv-btn.vq{background:#FFF7ED;border-color:#FDBA74;color:#9A3412;}
   #mdash-modal .vq-add{width:100%;background:#0F172A;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;}
   #mdash-modal .vq-del{white-space:nowrap;flex-shrink:0;background:#FEF3F2;color:#B42318;border:1px solid #FECDCA;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;}
+  #mdash-modal .mdv-btn.word{background:#EFF6FF;border-color:#93C5FD;color:#1D4ED8;}
   #mdash-modal .mdv-btn.on{background:#1E3A8A;border-color:#1E3A8A;color:#fff;}
   #mdash-modal .mdv-x{background:#F1F5F9;border:none;color:#334155;width:36px;height:36px;border-radius:10px;font-size:15px;cursor:pointer;flex-shrink:0;}
   #mdash-modal .mdv-body{flex:1;overflow-y:auto;padding:12px 14px 40px;-webkit-overflow-scrolling:touch;}
@@ -6906,6 +6907,136 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     h+=`</div>`;
     return h;
   }
+  /* ════════════════════════════════════════════════════════════════
+     📄 측정 대시보드 → 워드(.docx) — 결과서 뒤에 붙일 수 있게 점검표 워드와 같은 A4·여백·글꼴·표 모양
+  ════════════════════════════════════════════════════════════════ */
+  /* 본문(OOXML)과 그림만 만든다 — 별도 워드 저장과 「내보내기 → 워드」 뒤 붙이기에 함께 쓴다 */
+  async function mdWordBody(D, bld, o){
+    o=o||{}; const idBase=o.idBase||0;
+    const rows = bld==='전체' ? D.rows : D.rows.filter(r=>r.bld===bld);
+    rows.forEach(r=>{ if(r._rg===undefined) r._rg=mdRange(r.itemName,r.std,r.fk); });
+    const items={}; rows.forEach(r=>{ if(r.vq && /(픽셀 비율|프레임 수|측정 구간)$/.test(r.itemName)) return; (items[r.itemName]=items[r.itemName]||[]).push(r); });
+    const A={}; Object.keys(items).forEach(n=>A[n]=mdAnalyze(items[n]));
+    const names=Object.keys(items).sort((a,b)=>(A[b].out.length?1:0)-(A[a].out.length?1:0) || (/접지저항/.test(b)?1:0)-(/접지저항/.test(a)?1:0) || items[b].length-items[a].length);
+    const judgedN=names.reduce((s,n)=>s+A[n].judged.length,0), outN=names.reduce((s,n)=>s+A[n].out.length,0);
+    const okPct=judgedN?Math.round((judgedN-outN)/judgedN*100):null;
+    let cg=0,cb=0,cn=0; D.catStat.forEach(c=>{ cg+=c.good; cb+=c.bad; cn+=c.na; }); const tot=cg+cb+cn; const prog=tot?Math.round((cg+cb)/tot*100):null;
+    const judgedCats=D.catStat.filter(r=>r.good+r.bad>0);
+    const NF=v=>{ if(v==null||v==='') return '-'; const n=typeof v==='number'?v:vqNum(v); if(n==null) return String(v); return Math.abs(n)>=10000? Math.round(n).toLocaleString('ko-KR') : String(+n.toFixed(2)); };
+    // ── OOXML 도우미 (점검표 워드와 같은 글꼴·테두리) ──
+    const X=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const FN='맑은 고딕';
+    const rn=(t,o={})=>`<w:r><w:rPr><w:rFonts w:ascii="${FN}" w:hAnsi="${FN}" w:eastAsia="${FN}" w:cs="${FN}"/>${o.b?'<w:b/><w:bCs/>':''}<w:sz w:val="${o.sz||18}"/><w:szCs w:val="${o.sz||18}"/>${o.color?`<w:color w:val="${o.color}"/>`:''}</w:rPr><w:t xml:space="preserve">${X(t)}</w:t></w:r>`;
+    const pp=(inner,o={})=>`<w:p><w:pPr>${o.pbb?'<w:pageBreakBefore/>':''}${o.keep?'<w:keepNext/>':''}<w:snapToGrid w:val="0"/><w:spacing w:before="${o.before||0}" w:after="${o.after==null?0:o.after}" w:line="240" w:lineRule="auto"/>${o.jc?`<w:jc w:val="${o.jc}"/>`:''}</w:pPr>${inner}</w:p>`;
+    const B='<w:tcBorders><w:top w:val="single" w:sz="4" w:color="000000"/><w:left w:val="single" w:sz="4" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:color="000000"/><w:right w:val="single" w:sz="4" w:color="000000"/></w:tcBorders>';
+    const NB='<w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/></w:tcBorders>';
+    const tc=(inner,w,o={})=>`<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${o.span?`<w:gridSpan w:val="${o.span}"/>`:''}${o.bg?`<w:shd w:val="clear" w:color="auto" w:fill="${o.bg}"/>`:''}${o.nb?NB:B}<w:tcMar><w:top w:w="40" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>${inner}</w:tc>`;
+    const tr=(inner,h,hdr)=>`<w:tr><w:trPr><w:cantSplit/>${hdr?'<w:tblHeader/>':''}<w:trHeight w:val="${h||360}"/></w:trPr>${inner}</w:tr>`;
+    const tbl=(widths,body)=>`<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a,b)=>a+b,0)}" w:type="dxa"/><w:jc w:val="center"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${widths.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${body}</w:tbl>`;
+    const TW=9752; // A4 21cm - 좌우 1077 ×2
+    const cell=(t,w,o={})=>tc(pp(rn(t,{sz:o.sz||17,b:o.b,color:o.color}),{jc:o.jc||'center'}),w,o);
+    const sec=(t,o={})=>pp(rn(t,{sz:22,b:true}),{before:o.first?0:200,after:100,keep:true,pbb:o.pbb});
+    // ── 그림(PNG) 넣기 ──
+    const media=[]; let seq=idBase;
+    const pic=(canvas, wCm)=>{ seq++; const bytes=canvasToBuf(canvas); const f=`dash${seq}.png`; media.push({f,bytes,rid:`rD${seq}`});
+      const cx=Math.round(wCm*360000), cy=Math.round(cx*canvas.height/canvas.width);
+      return `<w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${seq}" name="${f}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${seq}" name="${f}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rD${seq}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`; };
+    const site=(current&&current.siteName)||D.title||'', dt=(current&&current.date)||D.date||todayStr();
+    let body='';
+    // 제목
+    body+=pp(rn(o.title||'측정 결과 분석',{sz:28,b:true}),{jc:'center',after:60,pbb:!!o.pageBreak});
+    body+=pp(rn(`${site}${current&&current.buildingName&&current.buildingName!==site?' · '+current.buildingName:''} · ${dt}${bld!=='전체'?' · '+bld:''}${D.type?' · '+D.type.replace(/^\S+\s/,''):''}`,{sz:18,color:'555555'}),{jc:'center',after:160});
+    // 1. 요약
+    body+=sec('1. 측정 결과 요약',{first:true});
+    const kw=Math.floor(TW/6);
+    body+=tbl([kw,kw,kw,kw,kw,TW-kw*5],
+      tr(['측정 항목','측정값','관리기준 충족률','기준 이탈','점검 진행률','점검 적합율'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{bg:'D9D9D9',b:true})).join(''),380,false)+
+      tr([`${names.length}종`,`${rows.length}건`,okPct==null?'-':`${okPct}% (${judgedN-outN}/${judgedN})`,`${outN}건`,prog==null?'-':`${prog}%`,(cg+cb)?`${Math.round(cg/(cg+cb)*100)}% (부적합 ${cb})`:'-'].map((t,i)=>cell(t,i<5?kw:TW-kw*5,{b:true,sz:19,color:i===3&&outN?'C00000':undefined})).join(''),460));
+    body+=pp(rn(outN?`※ 관리기준을 벗어난 측정값 ${outN}건이 있습니다(3항 참고).`:`※ 판정 가능한 측정값 ${judgedN}건이 모두 관리기준 이내입니다.`,{sz:16,color:outN?'C00000':'375623'}),{before:60,after:120});
+    // 그림 2개(도넛) 나란히
+    const d1=donutChart('관리기준 충족',[{label:'기준 이내',val:judgedN-outN,color:CH.good},{label:'이탈',val:outN,color:CH.bad},{label:'기준 없음',val:rows.length-judgedN,color:'#C4CADB'}], okPct==null?'-':okPct+'%');
+    const d2=donutChart('점검 결과',[{label:'적합',val:cg,color:CH.blue},{label:'부적합',val:cb,color:CH.bad},{label:'미점검',val:cn,color:'#C4CADB'}], (cg+cb)?Math.round(cg/(cg+cb)*100)+'%':'-');
+    const half=Math.floor(TW/2);
+    body+=tbl([half,TW-half], tr(tc(pp(pic(d1,8.2),{jc:'center'}),half,{nb:true})+tc(pp(pic(d2,8.2),{jc:'center'}),TW-half,{nb:true}),300));
+    // 2. 측정 항목별 결과
+    if(names.length){
+      body+=sec('2. 측정 항목별 결과');
+      const W=[480,2950,820,1150,1650,1750,TW-480-2950-820-1150-1650-1750];
+      let rr=tr(['No','측정 항목','측정 수','평균','최소~최대','관리기준','판정'].map((t,i)=>cell(t,W[i],{bg:'D9D9D9',b:true})).join(''),380,true);
+      names.forEach((n,i)=>{ const a=A[n], st=a.st, u=a.unit;
+        rr+=tr([String(i+1),mdShort(n),`${a.vals.length}`,`${NF(st&&st.avg)}${u}`,`${NF(st&&st.min)}~${NF(st&&st.max)}`,a.rg?mdRangeText(a.rg,u).replace(/\d{5,}/g,m=>(+m).toLocaleString('ko-KR'))+(items[n].some(r=>r.soft)?' (완화)':''):'-',a.out.length?`이탈 ${a.out.length}`:a.rg?'적합':'-'].map((t,k)=>cell(t,W[k],{jc:k===1?'left':'center',color:k===6&&a.out.length?'C00000':undefined,b:k===6&&!!a.out.length})).join(''),340); });
+      body+=tbl(W,rr);
+      // 그래프: 항목별 충족률 + 층별 평균
+      const bl=names.filter(n=>A[n].judged.length).slice(0,14);
+      if(bl.length){ body+=pp(rn(''),{after:80}); body+=pp(pic(barChart('항목별 관리기준 충족률 (%)', bl.map(n=>mdShort(n).slice(0,8)), [{name:'충족률',color:CH.teal,data:bl.map(n=>Math.round((A[n].judged.length-A[n].out.length)/A[n].judged.length*100))}], {max:100,min:0,dec:0}),16.5),{jc:'center',after:80}); }
+      const fName=names.slice().sort((x,y)=>new Set(items[y].map(r=>r.floor)).size-new Set(items[x].map(r=>r.floor)).size || (/접지저항/.test(y)?1:0)-(/접지저항/.test(x)?1:0))[0];
+      if(fName){ const a=A[fName]; const fl=[...new Set(a.vals.map(r=>r.floor==null?-9999:r.floor))].sort((p,q)=>p-q);
+        if(fl.length>=2){ const thr=a.rg&&!a.rg.ac?(a.rg.max!=null?a.rg.max:a.rg.min):null;
+          body+=pp(pic(barChart(`층별 평균 — ${mdShort(fName)} (${a.unit})`, fl.map(f=>f===-9999?'-':mdFloorLabel(f)), [{name:mdShort(fName),color:CH.blue,data:fl.map(f=>{ const m=a.vals.filter(r=>(r.floor==null?-9999:r.floor)===f); return m.reduce((s,r)=>s+r.value,0)/m.length; })}], {threshold:thr,unit:a.unit,lowerBad:!!(a.rg&&a.rg.max==null),dec:2}),16.5),{jc:'center',after:80}); } }
+      // 3. 기준 이탈 상세
+      const outs=[]; names.forEach(n=>A[n].out.forEach(r=>outs.push({n,r,a:A[n]})));
+      body+=sec('3. 관리기준 이탈 내역');
+      if(outs.length){ const W3=[2600,2700,1300,1600,TW-2600-2700-1300-1600];
+        let r3=tr(['설치 위치','측정 항목','측정값','관리기준','설비'].map((t,i)=>cell(t,W3[i],{bg:'D9D9D9',b:true})).join(''),380,true);
+        outs.forEach(o=>{ r3+=tr([o.r.loc,mdShort(o.n),`${NF(o.r.raw)}${o.a.unit}`,mdRangeText(o.a.rg,o.a.unit).replace(/\d{5,}/g,m=>(+m).toLocaleString('ko-KR')),o.r.catName||''].map((t,k)=>cell(t,W3[k],{jc:k<2?'left':'center',color:k===2?'C00000':undefined,b:k===2})).join(''),340); });
+        body+=tbl(W3,r3);
+      } else body+=pp(rn('관리기준을 벗어난 측정값이 없습니다.',{sz:18}),{after:80});
+    }
+    // 4. 영상 품질 검수
+    const vqList=(current && D.source==='현재 점검')?(current.videoQuality||[]):[];
+    if(vqList.length){
+      body+=sec('4. 영상 품질 검수');
+      for(const rec of vqList){
+        body+=pp(rn(`■ ${rec.site} · ${rec.equip||'영상 품질 검수'}${rec.date?' · '+rec.date:''}`,{sz:18,b:true}),{before:80,after:60,keep:true});
+        const rs=vqWithDerived(rec).filter(r=>r.raw!==''&&r.raw!=='—'&&!/픽셀 비율$/.test(r.name));
+        const W4=[3600,2100,2300,TW-3600-2100-2300];
+        let r4=tr(['항목','측정값','기준','판정'].map((t,i)=>cell(t,W4[i],{bg:'D9D9D9',b:true})).join(''),360,true);
+        rs.forEach(r=>{ const soft=!r.std||vqIsExample(r); const std=soft?vqSoftStd(r.name):r.std; const v=soft?vqVerdict({raw:r.raw,std}):(r.verdict||vqVerdict({raw:r.raw,std}));
+          const u=r.unit==='0–255'?' (0–255)':r.unit==='지수'||r.unit==='개'?'':' '+r.unit;
+          r4+=tr([r.name,`${NF(r.raw)}${u}`,std?std.replace(/\d{5,}/g,m=>(+m).toLocaleString('ko-KR'))+(soft?' (완화)':''):'-',v||'참고'].map((t,k)=>cell(t,W4[k],{jc:k===0?'left':'center',color:k===3&&v==='미달'?'C00000':undefined,b:k===3&&v==='미달'})).join(''),320); });
+        body+=tbl(W4,r4);
+        const colors=rec.rows.filter(r=>/^영상 .+ 픽셀 비율$/.test(r.name)&&vqNum(r.raw)!=null);
+        if(colors.length) body+=pp(rn('영상 색상 비율: '+colors.map(r=>r.name.replace(/^영상 | 픽셀 비율$/g,'')+' '+NF(r.raw)+'%').join(' · '),{sz:16,color:'555555'}),{before:40});
+        // 첨부 이미지(최대 2장)
+        const ims=[]; for(const k of (rec.images||[]).slice(0,2)){ try{ const u=await sGet(k,false); if(u) ims.push(u); }catch(e){} }
+        if(ims.length){ const cvs=await Promise.all(ims.map(u=>new Promise(res=>{ const im=new Image(); im.onload=()=>{ const c=document.createElement('canvas'); const s2=Math.min(1,900/im.width); c.width=im.width*s2; c.height=im.height*s2; c.getContext('2d').drawImage(im,0,0,c.width,c.height); res(c); }; im.onerror=()=>res(null); im.src=u; })));
+          const ok=cvs.filter(Boolean); if(ok.length) body+=tbl([half,TW-half], tr(ok.map((c,i)=>tc(pp(pic(c, Math.min(7.5, 7.5*Math.min(1,(c.width/c.height)/0.75))),{jc:'center'}),i?TW-half:half,{nb:true})).join('')+(ok.length===1?tc(pp(rn('')),TW-half,{nb:true}):''),300)); }
+      }
+    }
+    // 5. 설비별 점검 결과
+    if(judgedCats.length){
+      body+=sec(`${vqList.length?'5':'4'}. 설비별 점검 결과`);
+      const W5=[3800,1450,1450,1450,TW-3800-1450*3];
+      let r5=tr(['설비','적합','부적합','미점검','적합율'].map((t,i)=>cell(t,W5[i],{bg:'D9D9D9',b:true})).join(''),380,true);
+      judgedCats.forEach(r=>{ const p=Math.round(r.good/(r.good+r.bad)*100); r5+=tr([r.label,r.good,r.bad,r.na,p+'%'].map((t,k)=>cell(String(t),W5[k],{jc:k===0?'left':'center',color:(k===2&&r.bad)||(k===4&&p<100)?'C00000':undefined})).join(''),340); });
+      body+=tbl(W5,r5);
+    }
+    body+=pp(rn('※ 측정값은 현장 계측·휴대폰 측정 기준이며, 「(완화)」 표시는 휴대폰 측정을 고려한 참고 기준입니다.',{sz:15,color:'777777'}),{before:120});
+    return { body, media };
+  }
+  async function exportDashboardWord(){
+    if(!mdData) return;
+    if(!window.JSZip){ alert('워드 생성 라이브러리를 불러오지 못했습니다. 인터넷 연결 후 새로고침해 주세요.'); return; }
+    const btn=document.getElementById('md-word'); const bt=btn?btn.textContent:''; if(btn){ btn.disabled=true; btn.textContent='생성 중…'; }
+    try{
+    const D=mdData; const { body, media } = await mdWordBody(D, mdBld);
+    const site=(current&&current.siteName)||D.title||'', dt=(current&&current.date)||D.date||todayStr();
+    // ── 패키지 ──
+    const isPf = current && current.inspType==='성능';
+    const docXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${isPf?1361:1440}" w:right="1077" w:bottom="${isPf?1361:1134}" w:left="1077" w:header="850" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Malgun Gothic" w:eastAsia="Malgun Gothic" w:hAnsi="Malgun Gothic" w:cs="Malgun Gothic"/><w:sz w:val="18"/><w:szCs w:val="18"/><w:lang w:val="en-US" w:eastAsia="ko-KR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`;
+    const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${media.map(m=>`<Relationship Id="${m.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${m.f}"/>`).join('')}</Relationships>`;
+    const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
+    const zip=new window.JSZip();
+    zip.file('[Content_Types].xml',ct); zip.file('_rels/.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
+    zip.file('word/document.xml',docXml); zip.file('word/styles.xml',styles); zip.file('word/_rels/document.xml.rels',rels);
+    media.forEach(m=>zip.file('word/media/'+m.f,m.bytes));
+    const blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',compression:'DEFLATE'});
+    await downloadFile(blob, `측정결과분석_${site||'점검'}_${dt}.docx`);
+    showToast('측정 결과 분석 워드가 저장됩니다. 결과서 자동병합에서 점검앱 워드 대신 넣거나 뒤에 붙여 쓰세요.');
+    }catch(e){ console.error(e); alert('워드 생성 오류: '+e.message); }
+    finally{ if(btn){ btn.disabled=false; btn.textContent=bt; } }
+  }
   /* ── 01~04 번호 요약 카드 (마우스/손가락 따라 기울어짐) ── */
   function mdKpiCardsHTML(ctx){
     const {names,rowsN,judgedN,outN,okPct,prog,cg,cb,outItems}=ctx;
@@ -6967,6 +7098,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           ${current?`<button class="mdv-btn vq" id="md-vq">🎥 영상 품질${(current.videoQuality||[]).length?' '+(current.videoQuality||[]).length:''}</button>`:''}
           <button class="mdv-btn" id="md-xlsx">📂 엑셀 불러오기</button>
           ${current?`<button class="mdv-btn" id="md-export">📈 엑셀 저장</button>`:''}
+          <button class="mdv-btn word" id="md-word">📄 워드 저장</button>
           <button class="mdv-x" id="md-close" aria-label="닫기">✕</button>
         </div>
         <input type="file" id="md-file" accept=".xlsx" style="display:none">
@@ -6986,6 +7118,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     ov.querySelectorAll('.mdv-body img[data-imgkey]').forEach(async im=>{ try{ const u=await sGet(im.dataset.imgkey,false); if(u){ im.src=u; im.onclick=()=>vqViewImage(u); } }catch(e){} });
     const curBtn=ov.querySelector('#md-cur'); if(curBtn) curBtn.onclick=()=>{ showMeasureDashboard(mdRowsFromInspection(current)); };
     const expBtn=ov.querySelector('#md-export'); if(expBtn) expBtn.onclick=()=>exportDashboardExcel();
+    const wdBtn=ov.querySelector('#md-word'); if(wdBtn) wdBtn.onclick=()=>exportDashboardWord();
     const fi=ov.querySelector('#md-file'); ov.querySelector('#md-xlsx').onclick=()=>fi.click();
     fi.onchange=async ev=>{ const f=ev.target.files[0]; if(!f) return;
       try{ const d=await mdRowsFromExcel(f); showMeasureDashboard(d); showToast(`엑셀에서 측정값 ${d.rows.length}건을 불러왔습니다.`); }
@@ -11356,6 +11489,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
             🎯 워드(.docx) — 선택 사진만
             <div style="font-size:11px;font-weight:400;margin-top:3px;opacity:.85;" id="exp-sel-count">각 설비에서 ✓ 표시한 사진만 포함</div>
           </button>
+          <label style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.5;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 12px;cursor:pointer;color:#1E3A8A;">
+            <input type="checkbox" id="exp-dash" style="margin-top:3px;"> <span><b>📊 측정 결과 분석(대시보드) 페이지를 워드 끝에 붙이기</b><br><span style="color:#475569;font-size:11.5px;">요약·항목별 결과·이탈 내역·영상 품질·설비별 결과 표와 그래프 — 결과서 자동병합 때 점검표 뒤에 그대로 들어갑니다.</span></span>
+          </label>
           <button class="primary-btn" id="exp-trend" style="padding:14px;background:#0E8C86;">
             📈 차수별 측정 추이 (겹쳐보기)
             <div style="font-size:11px;font-weight:400;margin-top:3px;opacity:.85;">유지보수 1·2차와 성능점검 측정값을 한 그래프에 · 엑셀 대시보드</div>
@@ -11373,6 +11509,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const enableAll  = ()=>{ ov.querySelectorAll("button").forEach(b=>b.disabled=false); };
 
     document.getElementById("exp-trend").onclick = ()=>{ ov.remove(); showTrendScreen(); };
+    { const cb=document.getElementById("exp-dash"); try{ cb.checked = localStorage.getItem("exp-dash")==="1"; }catch(e){}
+      cb.onchange=()=>{ try{ localStorage.setItem("exp-dash", cb.checked?"1":"0"); }catch(e){} }; }
 
     // ── HTML 방식 ──
     document.getElementById("exp-html").onclick = async ()=>{
@@ -11402,6 +11540,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     document.getElementById("exp-word").onclick = async ()=>{
       disableAll(); prog.textContent = "워드 파일 생성 중…";
       try{
+        window.__mdAppend = !!document.getElementById("exp-dash").checked;
         await buildWordReport((msg)=>{ prog.textContent = msg; }, false);
         ov.remove();
       }catch(e){ prog.textContent="오류: "+e.message; enableAll(); }
@@ -11417,6 +11556,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       if(selTotal===0){ prog.textContent = "먼저 각 설비에서 사진 오른쪽 아래 ✓를 눌러 선택하세요."; return; }
       disableAll(); prog.textContent = "선택 사진 워드 생성 중…";
       try{
+        window.__mdAppend = !!document.getElementById("exp-dash").checked;
         await buildWordReport((msg)=>{ prog.textContent = msg; }, true);
         ov.remove();
       }catch(e){ prog.textContent="오류: "+e.message; enableAll(); }
@@ -12508,6 +12648,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     body += pp(rn(`생성일시: ${new Date().toLocaleString("ko-KR")}  |  점검자: ${current.inspector||""}  |  현장: ${current.siteName}`,{sz:16,color:"AAAAAA"}),{after:0});
 
     // ── 매크로 안내 페이지 (페이지 나누기 후 추가) ──
+    const __macroAt = body.length;   // 측정 결과 분석 페이지는 이 앞(점검표 뒤, 매크로 안내 앞)에 넣는다
     body += `<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
 
     // 제목
@@ -12602,6 +12743,17 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     body += pp(rn("※ 이 매크로는 문서를 저장한 후 다시 열어도 이미지 위치가 유지됩니다.", {sz:18, color:"888888"}), {after:0});
 
 
+    // ── 측정 결과 분석(대시보드) 페이지 덧붙이기 (내보내기 창에서 선택한 경우) ──
+    if(window.__mdAppend){
+      try{
+        onProgress("측정 결과 분석 페이지 생성 중…");
+        const dash = await mdWordBody(mdRowsFromInspection(current), '전체', {pageBreak:true, idBase:5000});
+        body = body.slice(0, __macroAt) + dash.body + body.slice(__macroAt);
+        dash.media.forEach(m=>{ mediaFiles[m.f]=m.bytes; mediaFiles['__r'+m.rid]={rid:m.rid, fname:m.f}; });
+        if(dash.media.length) usedImgExt.png = true;
+      }catch(e){ console.warn('[대시보드 페이지] 생성 실패', e); }
+      window.__mdAppend = false;
+    }
     // ── Assemble OOXML package ──
     const imgRels=Object.keys(mediaFiles).filter(k=>k.startsWith("__r")).map(k=>mediaFiles[k]);
     const relXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\n`+

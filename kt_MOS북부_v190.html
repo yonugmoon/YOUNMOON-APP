@@ -6562,7 +6562,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     return `<svg viewBox="0 0 ${W} ${H}" class="mdl-svg">${band}${g}${lines}${area}<path d="${d}" pathLength="1" class="mdl-path"/>${dots}${xl}${callout}</svg>`;
   }
   /* 반원 게이지 — 상한형(이하) 항목: 바늘이 가장 나쁜 값(최대)을 가리킨다 */
-  function mdGaugeSVG(val, rg, unit){
+  function mdGaugeSVG(val, rg, unit, still){
     const lim=rg&&rg.max!=null?rg.max:null; let lo=Math.min(0,val,lim!=null?lim:0), hi=Math.max(lim!=null?lim*1.25:val*1.3, val*1.08); const nc=mdNice(lo,hi); lo=nc.lo; hi=nc.hi;
     const cx=110, cy=104, r=82; const A=v=>Math.PI*(1-(Math.min(Math.max(v,lo),hi)-lo)/(hi-lo)); const P=(v,rr)=>[cx+rr*Math.cos(A(v)), cy-rr*Math.sin(A(v))];
     const arc=(a,b,rr)=>{ const p1=P(a,rr), p2=P(b,rr); return `M${p1[0].toFixed(1)},${p1[1].toFixed(1)} A${rr},${rr} 0 0 1 ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`; };
@@ -6572,7 +6572,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const okArc = lim!=null ? `<path d="${arc(lo,Math.min(lim,hi),r)}" class="mdg-ok"/>` : '';
     const ang=(1-(Math.min(Math.max(val,lo),hi)-lo)/(hi-lo))*180; // 180=왼쪽, 0=오른쪽
     return `<svg viewBox="0 0 220 128" class="mdg-svg"><path d="${arc(lo,hi,r)}" class="mdg-bg"/>${okArc}<path d="${arc(lo,val,r)}" pathLength="1" class="mdg-val" style="stroke:${col}"/>${limMark}${ticks}
-      <g class="mdg-needle" style="--to:${(90-ang).toFixed(1)}deg"><line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy-r+16}" /><circle cx="${cx}" cy="${cy}" r="7"/></g></svg>`;
+      ${still?`<g class="mdg-needle" transform="rotate(${(90-ang).toFixed(1)} ${cx} ${cy})">`:`<g class="mdg-needle" style="--to:${(90-ang).toFixed(1)}deg">`}<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy-r+16}" /><circle cx="${cx}" cy="${cy}" r="7"/></g></svg>`;
   }
   /* 범위 게이지 — 하한~상한 띠 위에 위치별 점과 평균 표시 */
   function mdRangeHTML(pts, rg, unit, avg){
@@ -6961,6 +6961,12 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     // 2. 측정 항목별 결과
     if(names.length){
       body+=sec('2. 측정 항목별 결과');
+      if(o.style==='cards'){
+        body+=pp(rn('측정 항목마다 위치별 측정값을 게이지·범위·추이 그래프로 나타냈습니다. 초록 띠는 관리기준 범위, 빨간 점은 기준을 벗어난 위치입니다.',{sz:16,color:'555555'}),{after:80});
+        const imgs=[]; for(const n of names){ const c=await mdSvgToCanvas(mdCardSVG(n,A[n],mdSeries(items[n])),520,360,2); if(c) imgs.push(c); if(o.onProgress) o.onProgress(`항목 그래프 만드는 중… ${imgs.length}/${names.length}`); }
+        const hw=Math.floor(TW/2);
+        for(let k=0;k<imgs.length;k+=2){ body+=tbl([hw,TW-hw], `<w:tr><w:trPr><w:cantSplit/></w:trPr>`+tc(pp(pic(imgs[k],7.9),{jc:'center',after:60}),hw,{nb:true})+tc(imgs[k+1]?pp(pic(imgs[k+1],7.9),{jc:'center',after:60}):pp(rn('')),TW-hw,{nb:true})+`</w:tr>`); }
+      } else {
       const W=[480,2950,820,1150,1650,1750,TW-480-2950-820-1150-1650-1750];
       let rr=tr(['No','측정 항목','측정 수','평균','최소~최대','관리기준','판정'].map((t,i)=>cell(t,W[i],{bg:'D9D9D9',b:true})).join(''),380,true);
       names.forEach((n,i)=>{ const a=A[n], st=a.st, u=a.unit;
@@ -6973,6 +6979,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       if(fName){ const a=A[fName]; const fl=[...new Set(a.vals.map(r=>r.floor==null?-9999:r.floor))].sort((p,q)=>p-q);
         if(fl.length>=2){ const thr=a.rg&&!a.rg.ac?(a.rg.max!=null?a.rg.max:a.rg.min):null;
           body+=pp(pic(barChart(`층별 평균 — ${mdShort(fName)} (${a.unit})`, fl.map(f=>f===-9999?'-':mdFloorLabel(f)), [{name:mdShort(fName),color:CH.blue,data:fl.map(f=>{ const m=a.vals.filter(r=>(r.floor==null?-9999:r.floor)===f); return m.reduce((s,r)=>s+r.value,0)/m.length; })}], {threshold:thr,unit:a.unit,lowerBad:!!(a.rg&&a.rg.max==null),dec:2}),16.5),{jc:'center',after:80}); } }
+      }
       // 3. 기준 이탈 상세
       const outs=[]; names.forEach(n=>A[n].out.forEach(r=>outs.push({n,r,a:A[n]})));
       body+=sec('3. 관리기준 이탈 내역');
@@ -7019,7 +7026,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     if(!window.JSZip){ alert('워드 생성 라이브러리를 불러오지 못했습니다. 인터넷 연결 후 새로고침해 주세요.'); return; }
     const btn=document.getElementById('md-word'); const bt=btn?btn.textContent:''; if(btn){ btn.disabled=true; btn.textContent='생성 중…'; }
     try{
-    const D=mdData; const { body, media } = await mdWordBody(D, mdBld);
+    const D=mdData; const { body, media } = await mdWordBody(D, mdBld, {style: mdView==='items'?'cards':'table', onProgress:m=>{ if(btn) btn.textContent=m.replace(/만드는 중… /,''); }});
     const site=(current&&current.siteName)||D.title||'', dt=(current&&current.date)||D.date||todayStr();
     // ── 패키지 ──
     const isPf = current && current.inspType==='성능';
@@ -7037,6 +7044,70 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     }catch(e){ console.error(e); alert('워드 생성 오류: '+e.message); }
     finally{ if(btn){ btn.disabled=false; btn.textContent=bt; } }
   }
+  /* ── 🗂 항목별 보기: 측정 항목마다 게이지·범위·추이 카드 (화면) ── */
+  let mdView = (()=>{ try{ return localStorage.getItem('md-view3')||'all'; }catch(e){ return 'all'; } })();
+  function mdItemGridHTML(names, items, A){
+    let h=`<div class="mdv-grid">`;
+    names.forEach((n,ci)=>{
+      const a=A[n], pts=mdSeries(items[n]); const st=a.st; const icon=!a.rg?'<i class="mdv-ic none">–</i>':a.out.length?'<i class="mdv-ic bad">!</i>':'<i class="mdv-ic ok">✓</i>';
+      let chart='';
+      if(a.kind==='gauge' && pts.length) chart=mdGaugeSVG(a.rep, a.rg, a.unit)+`<div class="mdv-gv ${a.out.length?'bad':''}">${mdFmt(a.rep)}${escapeHtml(a.unit)} <span>${a.repLab}</span></div>`;
+      else if(a.kind==='range' && pts.length) chart=mdRangeHTML(pts, a.rg, a.unit, st.avg)+(pts.length>=3?`<div class="mdv-mini">${mdLineSVG(pts,a.rg,a.unit,{W:360,H:96})}</div>`:'');
+      else chart=mdLineSVG(pts, a.rg, a.unit, {W:360,H:170});
+      h+=`<button class="mdv-card ${a.out.length?'bad':''}" data-open="${escapeHtml(n)}" style="animation-delay:${(ci*0.04).toFixed(2)}s">
+        <div class="mdv-ch">${icon}<span class="mdv-ct" title="${escapeHtml(n)}">${escapeHtml(mdShort(n))}</span><span class="mdv-cv"><b data-count="${a.rep==null?'':a.rep}" data-dec="${a.rep!=null&&Math.abs(a.rep)<10?2:1}">${mdFmt(a.rep)}</b><small>${escapeHtml(a.unit)}</small></span></div>
+        <div class="mdv-cs"><span>${a.repLab} · ${a.vals.length}곳</span><span>${a.rg?'관리기준 '+escapeHtml(mdRangeText(a.rg,a.unit)):'관리기준 없음'}</span></div>
+        <div class="mdv-chart">${chart}</div>
+        <div class="mdv-cf">${a.out.length?`<span class="bad">이탈 ${a.out.length}곳</span>`:a.rg?`<span class="ok">정상 ${a.judged.length}/${a.judged.length}</span>`:'<span>판정 기준 없음</span>'}<span>자세히 ›</span></div>
+      </button>`;
+    });
+    return h+`</div>`;
+  }
+  /* ── 워드용: 항목 카드 한 장을 독립 SVG로 (애니메이션 없이 최종 모습) → PNG ── */
+  const MD_SVG_CSS = `text{font-family:'Malgun Gothic','맑은 고딕','Noto Sans KR','Apple SD Gothic Neo',sans-serif;}
+    .mdl-grid{stroke:#EEF2F6;stroke-width:1}.mdl-yl{font-size:9.5px;fill:#94A3B8;text-anchor:end}.mdl-xl{font-size:9.5px;fill:#64748B;text-anchor:middle}
+    .mdl-band{fill:#DCFCE7;opacity:.8}.mdl-lim{stroke:#16A34A;stroke-width:1.3;stroke-dasharray:5 4}.mdl-limt{font-size:9.5px;fill:#15803D;font-weight:700;text-anchor:end}
+    .mdl-area{fill:rgba(59,130,246,.10)}.mdl-path{fill:none;stroke:#2563EB;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+    .mdl-dot{fill:#fff;stroke:#2563EB;stroke-width:1.8}.mdl-dot.over{fill:#F04438;stroke:#fff;stroke-width:1.5}
+    .mdl-call rect{fill:#fff;stroke:#F04438;stroke-width:1.2}.mdl-call text{font-size:10.5px;font-weight:800;fill:#B42318;text-anchor:middle}
+    .mdg-bg{fill:none;stroke:#EEF2F6;stroke-width:16;stroke-linecap:round}.mdg-ok{fill:none;stroke:#DCFCE7;stroke-width:16}.mdg-val{fill:none;stroke-width:16;stroke-linecap:round}
+    .mdg-lim{stroke:#F04438;stroke-width:3}.mdg-tk{stroke:#CBD5E1;stroke-width:1.2}.mdg-tl{font-size:9.5px;fill:#64748B;text-anchor:middle}
+    .mdg-needle line{stroke:#0F172A;stroke-width:3.2;stroke-linecap:round}.mdg-needle circle{fill:#fff;stroke:#0F172A;stroke-width:3}`;
+  function mdNest(svg, x, y, w, h){ return svg.replace(/^<svg /,`<svg x="${x}" y="${y}" width="${w}" height="${h}" `).replace(/ class="[^"]*"(?=[^>]*>)/,''); }
+  function mdRangeSVG(pts, rg, unit, avg, W){
+    const vs=pts.map(p=>p.v); const ext=vs.concat([rg.min,rg.max].filter(v=>v!=null)); let lo=Math.min(...ext), hi=Math.max(...ext); const pad=(hi-lo||1)*0.25; const nc=mdNice(lo-pad,hi+pad); lo=nc.lo; hi=nc.hi;
+    const L=16, R=W-16, X=v=>L+(v-lo)/(hi-lo)*(R-L); const y=34; const a=rg.min!=null?rg.min:lo, b=rg.max!=null?rg.max:hi;
+    let t=`<text x="${(X(a)+X(b))/2}" y="12" text-anchor="middle" font-size="11" font-weight="800" fill="#15803D">관리기준 ${escapeHtml(mdRangeText(rg,unit))}</text><line x1="${X(a)}" x2="${X(b)}" y1="17" y2="17" stroke="#16A34A" stroke-dasharray="3 2"/>`;
+    t+=`<rect x="${L}" y="${y-7}" width="${R-L}" height="14" rx="7" fill="#E5E7EB"/><rect x="${X(a)}" y="${y-7}" width="${Math.max(X(b)-X(a),2)}" height="14" rx="7" fill="#BBF7D0"/>`;
+    pts.forEach(p=>{ t+=`<circle cx="${X(p.v)}" cy="${y}" r="${p.over?4.5:3.5}" fill="${p.over?'#F04438':'#64748B'}"/>`; });
+    const ov=mdIsOver({value:avg},rg); t+=`<circle cx="${X(avg)}" cy="${y}" r="9" fill="#fff" stroke="${ov?'#F04438':'#2563EB'}" stroke-width="4"/><rect x="${X(avg)-34}" y="${y+12}" width="68" height="18" rx="6" fill="#EFF6FF" stroke="#BFDBFE"/><text x="${X(avg)}" y="${y+25}" text-anchor="middle" font-size="11" font-weight="900" fill="#1D4ED8">${mdFmt(avg)}${escapeHtml(unit)}</text>`;
+    for(let v=lo; v<=hi+1e-9; v+=nc.step) t+=`<text x="${X(v)}" y="${y+46}" text-anchor="middle" font-size="9.5" fill="#94A3B8">${mdTick(v)}</text>`;
+    return t;
+  }
+  function mdCardSVG(n, a, pts){
+    const W=520, H=360, out=a.out.length, u=a.unit;
+    const icCol=!a.rg?'#94A3B8':out?'#F5A524':'#22B573', icTx=!a.rg?'–':out?'!':'✓';
+    const ttl=mdShort(n); const tShort=ttl.length>22?ttl.slice(0,21)+'…':ttl;
+    let body='';
+    if(a.kind==='gauge' && pts.length){ body+=mdNest(mdGaugeSVG(a.rep,a.rg,u,true),110,82,300,175);
+      body+=`<rect x="${W/2-70}" y="262" width="140" height="26" rx="8" fill="${out?'#FEF3F2':'#ECFDF3'}"/><text x="${W/2}" y="280" text-anchor="middle" font-size="14" font-weight="900" fill="${out?'#B42318':'#067647'}">${mdFmt(a.rep)}${escapeHtml(u)} <tspan font-size="10.5" font-weight="700">${a.repLab}</tspan></text>`; }
+    else if(a.kind==='range' && pts.length){ body+=`<g transform="translate(10,86)">${mdRangeSVG(pts,a.rg,u,a.st.avg,W-20)}</g>`;
+      if(pts.length>=3) body+=mdNest(mdLineSVG(pts,a.rg,u,{W:360,H:96}),14,184,W-28,128); }
+    else body+=mdNest(mdLineSVG(pts,a.rg,u,{W:360,H:170}),12,80,W-24,236);
+    const foot = out?`<tspan fill="#D92D20" font-weight="800">이탈 ${out}곳</tspan>`:a.rg?`<tspan fill="#067647" font-weight="800">정상 ${a.judged.length}/${a.judged.length}</tspan>`:'판정 기준 없음';
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><style>${MD_SVG_CSS}</style>
+      <rect x="1.5" y="1.5" width="${W-3}" height="${H-3}" rx="16" fill="#fff" stroke="${out?'#FDA29B':'#E2E8F0'}" stroke-width="${out?2.5:1.5}"/>
+      <circle cx="30" cy="33" r="11" fill="${icCol}"/><text x="30" y="38" text-anchor="middle" font-size="13" font-weight="900" fill="#fff">${icTx}</text>
+      <text x="50" y="39" font-size="16.5" font-weight="800" fill="#0F172A">${escapeHtml(tShort)}</text>
+      <text x="${W-18}" y="41" text-anchor="end" font-size="25" font-weight="900" fill="${out?'#D92D20':'#0F172A'}">${mdFmt(a.rep)}<tspan font-size="12" font-weight="700" fill="#475569"> ${escapeHtml(u)}</tspan></text>
+      <text x="50" y="64" font-size="11.5" fill="#64748B">${a.repLab} · ${a.vals.length}곳</text>
+      <text x="${W-18}" y="64" text-anchor="end" font-size="11.5" fill="#64748B">${a.rg?'관리기준 '+escapeHtml(mdRangeText(a.rg,u)):'관리기준 없음'}</text>
+      ${body}
+      <line x1="18" x2="${W-18}" y1="326" y2="326" stroke="#E2E8F0" stroke-dasharray="4 3"/>
+      <text x="20" y="347" font-size="12" fill="#64748B">${foot}</text><text x="${W-18}" y="347" text-anchor="end" font-size="11" fill="#94A3B8">위치별 ${pts.length}곳</text></svg>`;
+  }
+  function mdSvgToCanvas(svg, w, h, scale){ scale=scale||2;
+    return new Promise(res=>{ const im=new Image(); im.onload=()=>{ const c=document.createElement('canvas'); c.width=w*scale; c.height=h*scale; const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(im,0,0,c.width,c.height); res(c); }; im.onerror=()=>res(null); im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); }); }
   /* ── 01~04 번호 요약 카드 (마우스/손가락 따라 기울어짐) ── */
   function mdKpiCardsHTML(ctx){
     const {names,rowsN,judgedN,outN,okPct,prog,cg,cb,outItems}=ctx;
@@ -7089,11 +7160,13 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     } else {
       h+=mdOverviewHTML(names, items, A, {judgedN,outN,okPct,prog,cg,cb,cn,rowsN:rows.length,judgedCats,rows});
     }
+    if(mdView==='items' && names.length){ h = alertH + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,prog,cg,cb,outItems}) + mdItemGridHTML(names, items, A); }
     ov.innerHTML = `<div class="mdv">
       <div class="mdv-top">
         <div class="mdv-brand"><div class="mdv-title">정보통신설비 측정 대시보드</div><div class="mdv-sub">${escapeHtml(D.title||'')}${D.date?' · '+escapeHtml(D.date):''}${D.type?' · '+escapeHtml(D.type):''} — <b>${escapeHtml(D.source||'')}</b></div></div>
         <div class="mdv-acts">
           ${bldAll.length>1?`<select class="mdv-sel" id="md-bld">${['전체',...bldAll].map(b=>`<option ${b===mdBld?'selected':''}>${escapeHtml(b)}</option>`).join('')}</select>`:''}
+          ${names.length?`<div class="mdv-seg">${[['all','📊 통합'],['items','🗂 항목별']].map(([k,l])=>`<button data-view="${k}" class="${mdView===k?'on':''}">${l}</button>`).join('')}</div>`:''}
           ${current?`<button class="mdv-btn ${D.source==='현재 점검'?'on':''}" id="md-cur">📋 현재 점검</button>`:''}
           ${current?`<button class="mdv-btn vq" id="md-vq">🎥 영상 품질${(current.videoQuality||[]).length?' '+(current.videoQuality||[]).length:''}</button>`:''}
           <button class="mdv-btn" id="md-xlsx">📂 엑셀 불러오기</button>
@@ -7109,6 +7182,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     requestAnimationFrame(()=>requestAnimationFrame(()=>ov.querySelector('.mdv')&&ov.querySelector('.mdv').classList.add('go')));
     ov.querySelector('#md-close').onclick=()=>ov.remove();
     mdInitTilt(ov);
+    ov.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ mdView=b.dataset.view; try{ localStorage.setItem('md-view3',mdView); }catch(e){} showMeasureDashboard(); const bd=document.querySelector('#mdash-modal .mdv-body'); if(bd) bd.scrollTop=0; });
     { const body=ov.querySelector('.mdv-body'); const btns=[...ov.querySelectorAll('.mdn [data-sec]')]; const yOf=t=>t.getBoundingClientRect().top-body.getBoundingClientRect().top+body.scrollTop;
       btns.forEach(b=>b.onclick=()=>{ const t=ov.querySelector('#md-sec-'+b.dataset.sec); if(t) body.scrollTo({top:Math.max(0,yOf(t)-58),behavior:'smooth'}); });
       body.addEventListener('scroll',()=>{ let cur=btns[0]; btns.forEach(b=>{ const t=ov.querySelector('#md-sec-'+b.dataset.sec); if(t && yOf(t)-80<=body.scrollTop) cur=b; }); if(body.scrollTop+body.clientHeight>=body.scrollHeight-4) cur=btns[btns.length-1]; btns.forEach(b=>b.classList.toggle('on',b===cur)); },{passive:true}); }
@@ -11490,7 +11564,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
             <div style="font-size:11px;font-weight:400;margin-top:3px;opacity:.85;" id="exp-sel-count">각 설비에서 ✓ 표시한 사진만 포함</div>
           </button>
           <label style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.5;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 12px;cursor:pointer;color:#1E3A8A;">
-            <input type="checkbox" id="exp-dash" style="margin-top:3px;"> <span><b>📊 측정 결과 분석(대시보드) 페이지를 워드 끝에 붙이기</b><br><span style="color:#475569;font-size:11.5px;">요약·항목별 결과·이탈 내역·영상 품질·설비별 결과 표와 그래프 — 결과서 자동병합 때 점검표 뒤에 그대로 들어갑니다.</span></span>
+            <input type="checkbox" id="exp-dash" style="margin-top:3px;"> <span><b>📊 측정 결과 분석(대시보드) 페이지를 워드 끝에 붙이기</b><br><span style="color:#475569;font-size:11.5px;">요약·항목별 결과·이탈 내역·영상 품질·설비별 결과 표와 그래프 — 결과서 자동병합 때 점검표 뒤에 그대로 들어갑니다.</span>
+            <span style="display:flex;gap:6px;margin-top:6px;align-items:center;">형식 <select id="exp-dash-style" style="flex:1;border:1px solid #93C5FD;border-radius:8px;padding:5px 6px;font-size:12.5px;"><option value="table">📊 통합 (표·그래프)</option><option value="cards">🗂 항목별 (항목마다 그래프 카드)</option></select></span></span>
           </label>
           <button class="primary-btn" id="exp-trend" style="padding:14px;background:#0E8C86;">
             📈 차수별 측정 추이 (겹쳐보기)
@@ -11510,7 +11585,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
 
     document.getElementById("exp-trend").onclick = ()=>{ ov.remove(); showTrendScreen(); };
     { const cb=document.getElementById("exp-dash"); try{ cb.checked = localStorage.getItem("exp-dash")==="1"; }catch(e){}
-      cb.onchange=()=>{ try{ localStorage.setItem("exp-dash", cb.checked?"1":"0"); }catch(e){} }; }
+      cb.onchange=()=>{ try{ localStorage.setItem("exp-dash", cb.checked?"1":"0"); }catch(e){} };
+      const ss=document.getElementById("exp-dash-style"); try{ ss.value = localStorage.getItem("exp-dash-style")||"table"; }catch(e){}
+      ss.onchange=()=>{ try{ localStorage.setItem("exp-dash-style", ss.value); }catch(e){} }; }
 
     // ── HTML 방식 ──
     document.getElementById("exp-html").onclick = async ()=>{
@@ -11540,7 +11617,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     document.getElementById("exp-word").onclick = async ()=>{
       disableAll(); prog.textContent = "워드 파일 생성 중…";
       try{
-        window.__mdAppend = !!document.getElementById("exp-dash").checked;
+        window.__mdAppend = !!document.getElementById("exp-dash").checked; window.__mdStyle = document.getElementById("exp-dash-style").value;
         await buildWordReport((msg)=>{ prog.textContent = msg; }, false);
         ov.remove();
       }catch(e){ prog.textContent="오류: "+e.message; enableAll(); }
@@ -11556,7 +11633,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       if(selTotal===0){ prog.textContent = "먼저 각 설비에서 사진 오른쪽 아래 ✓를 눌러 선택하세요."; return; }
       disableAll(); prog.textContent = "선택 사진 워드 생성 중…";
       try{
-        window.__mdAppend = !!document.getElementById("exp-dash").checked;
+        window.__mdAppend = !!document.getElementById("exp-dash").checked; window.__mdStyle = document.getElementById("exp-dash-style").value;
         await buildWordReport((msg)=>{ prog.textContent = msg; }, true);
         ov.remove();
       }catch(e){ prog.textContent="오류: "+e.message; enableAll(); }
@@ -12747,7 +12824,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     if(window.__mdAppend){
       try{
         onProgress("측정 결과 분석 페이지 생성 중…");
-        const dash = await mdWordBody(mdRowsFromInspection(current), '전체', {pageBreak:true, idBase:5000});
+        const dash = await mdWordBody(mdRowsFromInspection(current), '전체', {pageBreak:true, idBase:5000, style:window.__mdStyle||'table', onProgress});
         body = body.slice(0, __macroAt) + dash.body + body.slice(__macroAt);
         dash.media.forEach(m=>{ mediaFiles[m.f]=m.bytes; mediaFiles['__r'+m.rid]={rid:m.rid, fname:m.f}; });
         if(dash.media.length) usedImgExt.png = true;

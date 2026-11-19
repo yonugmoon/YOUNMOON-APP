@@ -78,9 +78,6 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 .history-table button{min-height:36px;padding:5px 10px;font-size:.82rem}
 .history-pass{color:#0b7a4f;font-weight:700}
 .history-fail{color:#b3303e;font-weight:700}
-.report-meta{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:.9rem;margin:0 0 12px}
-.report-meta dt{font-weight:700}
-.report-meta dd{margin:0;white-space:pre-wrap}
 @media print{.dash-viz,.dash-kpi,.color-strip span,.color-key,.heat-cells span,.verdict,.timeline,.timeline span{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 </style>
 </head>
@@ -147,14 +144,13 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 </details>
 </section>
 <section>
-<h2>결과·성적서</h2>
+<h2>결과·내보내기</h2>
 <div class="actions">
 <button type="submit">판정 갱신</button>
-<button class="secondary" id="download" type="button">HTML 성적서 저장</button>
-<button class="secondary" id="csv" type="button">CSV 저장</button>
+<button class="secondary" id="excel" type="button">엑셀(.xlsx) 저장</button>
+<button class="secondary" id="json" type="button">JSON 저장</button>
 <button class="secondary" id="save-history" type="button">점검 이력에 추가</button>
-<button class="secondary" id="backup" type="button">점검 기록 백업</button>
-<label>입력 기록 복원<input id="restore" type="file" accept=".json,application/json"></label>
+<label>JSON 불러오기(복원)<input id="restore" type="file" accept=".json,application/json"></label>
 </div>
 <div id="comparison" class="comparison" aria-label="측정값과 기준값 비교"></div>
 <details id="result-details" class="result-details" hidden><summary>전체 수치·시험 기록</summary>
@@ -173,7 +169,8 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 <tbody></tbody>
 </table></div>
 <div class="actions">
-<button class="secondary" id="history-csv" type="button">이력 CSV 저장</button>
+<button class="secondary" id="history-excel" type="button">이력 엑셀 저장</button>
+<button class="secondary" id="history-json" type="button">이력 JSON 저장</button>
 <button class="secondary" id="history-clear" type="button">이력 비우기</button>
 </div>
 </section>
@@ -438,21 +435,49 @@ get('form').addEventListener('submit', event => {
     run('판정 계산 중…', async () => { await update(); return '판정 갱신 완료'; });
 });
 
-get('download').addEventListener('click', () => run('성적서 생성 중…', async () => {
+get('excel').addEventListener('click', () => run('엑셀 파일 생성 중…', async () => {
     const data = await measurements();
-    downloadBlob(makeReport(data, reportInfo(), photoThumb), fileName('video-quality-report', 'html'));
-    return '성적서 다운로드를 시작했습니다.';
+    downloadBlob(inspectionWorkbook(data, reportInfo()), fileName('video-quality', 'xlsx'));
+    return '엑셀 파일 다운로드를 시작했습니다.';
 }));
 
-get('csv').addEventListener('click', () => run('CSV 생성 중…', async () => {
+// JSON 결과 파일은 ‘입력 기록 복원’으로 다시 불러올 수 있는 백업 형식을 겸합니다.
+get('json').addEventListener('click', () => run('JSON 파일 생성 중…', async () => {
     const data = await measurements();
-    const info = reportInfo();
-    const head = [['설치 위치', info.site], ['점검자', info.inspector], ['점검 일시', info.date],
-        ['종합 판정', data.verdict.label + ' (' + data.verdict.note + ')'], ['비고', info.memo], []];
-    const rows = [...head, ['항목', '단위', '측정값', '기준', '판정'], ...data.allRows];
-    downloadBlob(csvBlob(rows), fileName('video-quality-values', 'csv'));
-    return 'CSV 다운로드를 시작했습니다.';
+    const record = resultRecord(data, reportInfo(), inputSnapshot(), photoEvidence, photoThumb);
+    downloadBlob(jsonBlob(record), fileName('video-quality', 'json'));
+    return 'JSON 파일 다운로드를 시작했습니다.';
 }));
+
+function inputSnapshot() {
+    const values = ids => Object.fromEntries(ids.map(id => [id, get(id).value]));
+    return {fields: values(fields), videoSettings: values(videoSettings), report: values(reportFields)};
+}
+
+// 숫자로만 된 측정값은 엑셀·JSON에서 숫자로 저장해 바로 계산할 수 있게 합니다.
+function numeric(value) {
+    return typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value) ? Number(value) : value;
+}
+
+function resultRecord(data, info, input, evidence = '', thumb = '') {
+    return {
+        format: 'video-quality-inspector', version: 1, savedAt: new Date().toISOString(),
+        ...(input || {}),
+        video: data.video ?? null, photo: evidence,
+        inspection: {
+            site: info.site, inspector: info.inspector, memo: info.memo, date: info.date,
+            verdict: data.verdict,
+            items: data.allRows.map(([name, unit, value, criterion, verdict]) =>
+                ({name, unit, value: value === '—' ? null : numeric(value), criterion: criterion === '—' ? null : criterion, verdict})),
+            log: String(data.details || '').split('\n').filter(line => line.trim()),
+            photoImage: thumb || null
+        }
+    };
+}
+
+function jsonBlob(value) {
+    return new Blob([JSON.stringify(value, null, 2)], {type: 'application/json'});
+}
 
 function reportInfo(savedAt = new Date()) {
     return {
@@ -471,13 +496,196 @@ function fileName(prefix, extension, site = get('site').value.trim(), when = new
     return [prefix, safeSite, stamp].filter(Boolean).join('_') + '.' + extension;
 }
 
-function csvBlob(rows) {
-    const cell = value => {
-        const text = String(value ?? '');
-        return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
-    };
-    // BOM을 붙여 엑셀에서 한글이 깨지지 않게 합니다.
-    return new Blob(['﻿' + rows.map(row => row.map(cell).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'});
+// ── 엑셀(.xlsx) 생성 ──────────────────────────────────────────
+// 외부 라이브러리 없이 기기 안에서 만들므로 오프라인에서도 동작합니다.
+// .xlsx는 XML 파일 몇 개를 ZIP(무압축)으로 묶은 형식입니다.
+const XLSX_STYLE = {header: 1, pass: 2, fail: 3, bold: 4, wrap: 5};
+
+const CRC_TABLE = (() => {
+    const table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+        table[n] = c >>> 0;
+    }
+    return table;
+})();
+
+function crc32(bytes) {
+    let c = 0xffffffff;
+    for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 255] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+}
+
+function zipBlob(files, type) {
+    const encoder = new TextEncoder();
+    const parts = [], central = [];
+    let offset = 0;
+    for (const file of files) {
+        const name = encoder.encode(file.name), data = encoder.encode(file.text), crc = crc32(data);
+        const header = new DataView(new ArrayBuffer(30));
+        header.setUint32(0, 0x04034b50, true);
+        header.setUint16(4, 20, true);
+        header.setUint16(6, 0x0800, true);           // UTF-8 파일 이름
+        header.setUint16(12, 0x21, true);            // 1980-01-01
+        header.setUint32(14, crc, true);
+        header.setUint32(18, data.length, true);
+        header.setUint32(22, data.length, true);
+        header.setUint16(26, name.length, true);
+        parts.push(header, name, data);
+        const entry = new DataView(new ArrayBuffer(46));
+        entry.setUint32(0, 0x02014b50, true);
+        entry.setUint16(4, 20, true);
+        entry.setUint16(6, 20, true);
+        entry.setUint16(8, 0x0800, true);
+        entry.setUint16(14, 0x21, true);
+        entry.setUint32(16, crc, true);
+        entry.setUint32(20, data.length, true);
+        entry.setUint32(24, data.length, true);
+        entry.setUint16(28, name.length, true);
+        entry.setUint32(42, offset, true);
+        central.push(entry, name);
+        offset += 30 + name.length + data.length;
+    }
+    const size = central.reduce((sum, part) => sum + part.byteLength, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true);
+    end.setUint16(8, files.length, true);
+    end.setUint16(10, files.length, true);
+    end.setUint32(12, size, true);
+    end.setUint32(16, offset, true);
+    return new Blob([...parts, ...central, end], {type});
+}
+
+const xmlText = value => String(value ?? '')
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '')
+    .replace(/[&<>"]/g, mark => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[mark]);
+
+function columnName(index) {
+    let name = '';
+    for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + (n - 1) % 26) + name;
+    return name;
+}
+
+// rows: 셀 배열의 배열. 셀은 값 또는 {v: 값, s: 스타일 번호}.
+function sheetXml({rows, widths = [], freeze = 0, filter = 0}) {
+    const body = rows.map((row, r) => '<row r="' + (r + 1) + '">' + row.map((cell, c) => {
+        const {v, s = 0} = cell !== null && typeof cell === 'object' ? cell : {v: cell};
+        if (v == null || v === '') return '';
+        const attrs = ' r="' + columnName(c) + (r + 1) + '"' + (s ? ' s="' + s + '"' : '');
+        return typeof v === 'number' && Number.isFinite(v)
+            ? '<c' + attrs + '><v>' + v + '</v></c>'
+            : '<c' + attrs + ' t="inlineStr"><is><t xml:space="preserve">' + xmlText(v) + '</t></is></c>';
+    }).join('') + '</row>').join('');
+    const view = freeze ? '<sheetViews><sheetView workbookViewId="0"><pane ySplit="' + freeze + '" topLeftCell="A' +
+        (freeze + 1) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' : '';
+    const cols = widths.length ? '<cols>' + widths.map((width, i) =>
+        '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + width + '" customWidth="1"/>').join('') + '</cols>' : '';
+    const lastColumn = columnName(Math.max(1, ...rows.map(row => row.length)) - 1);
+    const autoFilter = filter && rows.length > filter ? '<autoFilter ref="A' + filter + ':' + lastColumn + rows.length + '"/>' : '';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        view + cols + '<sheetData>' + body + '</sheetData>' + autoFilter + '</worksheet>';
+}
+
+function workbookBlob(sheets) {
+    const main = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+    const rel = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    const head = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    const font = (extra = '') => '<font>' + extra + '<sz val="11"/><name val="맑은 고딕"/></font>';
+    const xf = (fontId, fillId = 0, extra = '') => '<xf numFmtId="0" fontId="' + fontId + '" fillId="' + fillId +
+        '" borderId="0" xfId="0"' + (fontId ? ' applyFont="1"' : '') + (fillId ? ' applyFill="1"' : '') +
+        (extra ? ' applyAlignment="1">' + extra + '</xf>' : '/>');
+    const styles = head + '<styleSheet xmlns="' + main + '">' +
+        '<fonts count="4">' + font() + font('<b/>') + font('<b/><color rgb="FF0B7A4F"/>') + font('<b/><color rgb="FFB3303E"/>') + '</fonts>' +
+        '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFE0F0EC"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+        '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+        '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+        '<cellXfs count="6">' + xf(0) + xf(1, 2) + xf(2) + xf(3) + xf(1) +
+        xf(0, 0, '<alignment wrapText="1" vertical="top"/>') + '</cellXfs>' +
+        '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+    const safeName = name => name.replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 31);
+    const files = [
+        {name: '[Content_Types].xml', text: head + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+            '<Default Extension="xml" ContentType="application/xml"/>' +
+            '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+            '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+            sheets.map((_, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) +
+                '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('') + '</Types>'},
+        {name: '_rels/.rels', text: head + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+            '<Relationship Id="rId1" Type="' + rel + '/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+        {name: 'xl/workbook.xml', text: head + '<workbook xmlns="' + main + '" xmlns:r="' + rel + '"><sheets>' +
+            sheets.map((sheet, i) => '<sheet name="' + xmlText(safeName(sheet.name)) + '" sheetId="' + (i + 1) +
+                '" r:id="rId' + (i + 1) + '"/>').join('') + '</sheets></workbook>'},
+        {name: 'xl/_rels/workbook.xml.rels', text: head + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+            sheets.map((_, i) => '<Relationship Id="rId' + (i + 1) + '" Type="' + rel + '/worksheet" Target="worksheets/sheet' +
+                (i + 1) + '.xml"/>').join('') +
+            '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + rel + '/styles" Target="styles.xml"/></Relationships>'},
+        {name: 'xl/styles.xml', text: styles},
+        ...sheets.map((sheet, i) => ({name: 'xl/worksheets/sheet' + (i + 1) + '.xml', text: sheetXml(sheet)}))
+    ];
+    return zipBlob(files, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+}
+
+function verdictStyle(verdict) {
+    return ['충족', '합격'].includes(verdict) ? XLSX_STYLE.pass : ['미달', '불합격'].includes(verdict) ? XLSX_STYLE.fail : 0;
+}
+
+const headerRow = labels => labels.map(label => ({v: label, s: XLSX_STYLE.header}));
+
+// 점검 1건: 요약 / 측정값 / 시험 기록 시트
+function inspectionWorkbook(data, info) {
+    const {bold, wrap} = XLSX_STYLE;
+    const verdict = data.verdict || overallVerdict(data.chartRows || []);
+    const judged = (data.chartRows || []).filter(row => row[3] !== '—');
+    const label = text => ({v: text, s: bold});
+    const summary = [
+        [{v: '영상 품질 검수 결과', s: bold}], [],
+        [label('설치 위치'), info.site || '—'],
+        [label('점검자'), info.inspector || '—'],
+        [label('점검 일시'), info.date],
+        [label('종합 판정'), {v: verdict.label, s: verdictStyle(verdict.label)}],
+        [label('판정 사유'), {v: verdict.note, s: wrap}],
+        [label('비고'), {v: info.memo || '—', s: wrap}],
+        [],
+        [label('기준 항목 판정 건수')],
+        ...['충족', '미달', '미측정'].map(status =>
+            [{v: status, s: verdictStyle(status)}, judged.filter(row => row[4] === status).length]),
+        [],
+        ['점검자 확인(서명)', '']
+    ];
+    const values = [headerRow(['항목', '단위', '측정값', '기준', '판정']),
+        ...data.allRows.map(([name, unit, value, criterion, result]) =>
+            [name, unit, numeric(value), criterion, {v: result, s: verdictStyle(result)}])];
+    const log = [headerRow(['시험 기록']),
+        ...String(data.details || '').split('\n').filter(line => line.trim()).map(line => [line])];
+    return workbookBlob([
+        {name: '요약', rows: summary, widths: [22, 70]},
+        {name: '측정값', rows: values, widths: [36, 9, 16, 16, 11], freeze: 1, filter: 1},
+        {name: '시험 기록', rows: log, widths: [120]}
+    ]);
+}
+
+// 점검 이력 전체: 이력 요약 / 전체 측정값 시트
+function historyWorkbook(history) {
+    const base = entry => [new Date(entry.savedAt).toLocaleString('ko-KR'), entry.info?.site || '—',
+        entry.info?.inspector || '—'];
+    const summary = [headerRow(['저장 일시', '설치 위치', '점검자', '종합 판정', '판정 사유', '비고']),
+        ...history.map(entry => [...base(entry), {v: entry.verdict?.label || '—', s: verdictStyle(entry.verdict?.label)},
+            entry.verdict?.note || '', entry.info?.memo || ''])];
+    const values = [headerRow(['저장 일시', '설치 위치', '점검자', '종합 판정', '항목', '단위', '측정값', '기준', '판정'])];
+    for (const entry of history) {
+        for (const [name, unit, value, criterion, result] of entry.data?.allRows || []) {
+            values.push([...base(entry), entry.verdict?.label || '—', name, unit, numeric(value), criterion,
+                {v: result, s: verdictStyle(result)}]);
+        }
+    }
+    return workbookBlob([
+        {name: '이력 요약', rows: summary, widths: [22, 22, 12, 11, 50, 30], freeze: 1, filter: 1},
+        {name: '전체 측정값', rows: values, widths: [22, 22, 12, 11, 36, 9, 16, 16, 11], freeze: 1, filter: 1}
+    ]);
 }
 
 function readStore(name, fallback) {
@@ -518,12 +726,13 @@ get('save-history').addEventListener('click', () => hasLocation() && run('점검
     history.unshift({
         id: savedAt.getTime() + '-' + Math.random().toString(36).slice(2, 7),
         savedAt: savedAt.toISOString(), info: reportInfo(savedAt), verdict: data.verdict,
+        input: inputSnapshot(), photo: photoEvidence,
         data: {chartRows: data.chartRows, photoRows: data.photoRows, allRows: data.allRows,
             details: data.details, verdict: data.verdict, video: data.video}
     });
     history.length = Math.min(history.length, HISTORY_LIMIT);
     if (!writeStore(HISTORY_KEY, history)) {
-        throw new Error('기기 저장 공간이 부족하거나 저장이 차단되어 이력을 저장하지 못했습니다. CSV나 성적서로 보관하세요.');
+        throw new Error('기기 저장 공간이 부족하거나 저장이 차단되어 이력을 저장하지 못했습니다. 엑셀이나 JSON으로 보관하세요.');
     }
     renderHistory();
     return '점검 이력에 저장했습니다. (' + history.length + '건)';
@@ -543,43 +752,52 @@ function renderHistory() {
         verdict.textContent = entry.verdict?.label || '—';
         verdict.className = entry.verdict?.code === 'pass' ? 'history-pass' : entry.verdict?.code === 'fail' ? 'history-fail' : '';
         const actions = row.insertCell();
-        const report = document.createElement('button');
-        report.type = 'button';
-        report.className = 'secondary';
-        report.textContent = '성적서';
-        report.addEventListener('click', () => {
-            downloadBlob(makeReport(entry.data, entry.info), fileName('video-quality-report', 'html', entry.info?.site || '', new Date(entry.savedAt)));
-        });
-        const remove = document.createElement('button');
-        remove.type = 'button';
-        remove.className = 'secondary';
-        remove.textContent = '삭제';
-        remove.style.marginLeft = '4px';
-        remove.addEventListener('click', () => {
-            if (!confirm((entry.info?.site || '이') + ' 점검 이력을 삭제할까요?')) return;
-            writeStore(HISTORY_KEY, readStore(HISTORY_KEY, []).filter(item => item.id !== entry.id));
-            renderHistory();
-        });
-        actions.append(report, remove);
+        const when = new Date(entry.savedAt);
+        const button = (text, action) => {
+            const element = document.createElement('button');
+            element.type = 'button';
+            element.className = 'secondary';
+            element.textContent = text;
+            element.style.marginLeft = '4px';
+            element.addEventListener('click', action);
+            return element;
+        };
+        actions.append(
+            button('엑셀', () => downloadBlob(inspectionWorkbook(entry.data, entry.info),
+                fileName('video-quality', 'xlsx', entry.info?.site || '', when))),
+            button('JSON', () => downloadBlob(jsonBlob(resultRecord(entry.data, entry.info, entry.input, entry.photo || '')),
+                fileName('video-quality', 'json', entry.info?.site || '', when))),
+            button('삭제', () => {
+                if (!confirm((entry.info?.site || '이') + ' 점검 이력을 삭제할까요?')) return;
+                writeStore(HISTORY_KEY, readStore(HISTORY_KEY, []).filter(item => item.id !== entry.id));
+                renderHistory();
+            })
+        );
+        actions.firstChild.style.marginLeft = '0';
         return row;
     }));
 }
 
-get('history-csv').addEventListener('click', () => {
+function exportHistory(kind) {
     const history = readStore(HISTORY_KEY, []);
     if (!history.length) {
         get('status').textContent = '저장된 점검 이력이 없습니다.';
         return;
     }
-    const rows = [['저장 일시', '설치 위치', '점검자', '종합 판정', '판정 사유', '비고', '항목', '단위', '측정값', '기준', '판정']];
-    for (const entry of history) {
-        const base = [new Date(entry.savedAt).toLocaleString('ko-KR'), entry.info?.site, entry.info?.inspector,
-            entry.verdict?.label, entry.verdict?.note, entry.info?.memo];
-        for (const item of entry.data?.allRows || []) rows.push([...base, ...item]);
+    if (kind === 'xlsx') {
+        downloadBlob(historyWorkbook(history), fileName('video-quality-history', 'xlsx', ''));
+    } else {
+        downloadBlob(jsonBlob({
+            format: 'video-quality-inspector-history', version: 1, exportedAt: new Date().toISOString(),
+            count: history.length,
+            inspections: history.map(entry => resultRecord(entry.data, entry.info, entry.input, entry.photo || ''))
+        }), fileName('video-quality-history', 'json', ''));
     }
-    downloadBlob(csvBlob(rows), fileName('video-quality-history', 'csv', ''));
-    get('status').textContent = '이력 CSV 다운로드를 시작했습니다.';
-});
+    get('status').textContent = '이력 ' + (kind === 'xlsx' ? '엑셀' : 'JSON') + ' 다운로드를 시작했습니다. (' + history.length + '건)';
+}
+
+get('history-excel').addEventListener('click', () => exportHistory('xlsx'));
+get('history-json').addEventListener('click', () => exportHistory('json'));
 
 get('history-clear').addEventListener('click', () => {
     if (!readStore(HISTORY_KEY, []).length || !confirm('저장된 점검 이력을 모두 삭제할까요?')) return;
@@ -607,17 +825,6 @@ function evidenceText() {
     const criteria = matches ? '예시와 동일한 기준값은 현장 시방서의 요구값과 대조해 확인하세요.' : '';
     return [criteria, photoEvidence].filter(Boolean).join('\n');
 }
-
-get('backup').addEventListener('click', () => run('기록을 저장하는 중…', async () => {
-    const record = JSON.parse(payload());
-    downloadBlob(new Blob([JSON.stringify({
-        format: 'video-quality-inspector', version: 1, savedAt: new Date().toISOString(),
-        fields: record.fields, video: record.result, photo: photoEvidence,
-        videoSettings: Object.fromEntries(videoSettings.map(id => [id, get(id).value])),
-        report: Object.fromEntries(reportFields.map(id => [id, get(id).value]))
-    }, null, 2)], {type: 'application/json'}), fileName('inspection-backup', 'json'));
-    return '점검 기록 다운로드를 시작했습니다.';
-}));
 
 get('restore').addEventListener('change', () => run('입력 기록을 불러오는 중…', async () => {
     const file = get('restore').files[0];
@@ -741,7 +948,7 @@ async function readPhoto(file) {
     }
 }
 
-// 성적서에 넣을 증빙 사진(최대 640px JPEG)을 만들고 이상색 후보 위치에 빨간 원을 표시합니다.
+// JSON 결과에 넣을 증빙 사진(최대 640px JPEG)을 만들고 이상색 후보 위치에 빨간 원을 표시합니다.
 function evidenceThumbnail(source, points) {
     const scale = Math.min(1, 640 / Math.max(source.width, source.height));
     const canvas = document.createElement('canvas');
@@ -1272,27 +1479,6 @@ function dashboardMarkup({chartRows, photoRows, allRows, verdict, video}, option
         '<details class="result-details"' + (options.open ? ' open' : '') + '><summary>기준 비교·개별 그래프</summary>' +
         '<p class="legend"><span class="measured">■ 측정값</span><span class="target">│ 기준값</span></p>' +
         benchmarks + comparisonMarkup(chartRows.filter(row => row[3] === '—')) + photo + '</details>';
-}
-
-function makeReport(data, info = reportInfo(), thumb = '') {
-    const {allRows, details} = data;
-    const content = allRows.map(row => '<tr>' + row.map(cell => '<td>' + escape(cell) + '</td>').join('') + '</tr>').join('');
-    const meta = [['설치 위치', info.site], ['점검자', info.inspector], ['점검 일시', info.date], ['비고', info.memo]]
-        .map(([label, value]) => '<dt>' + label + '</dt><dd>' + escape(value || '—') + '</dd>').join('');
-    const evidence = thumb && /^data:image\/jpeg;base64,/.test(thumb)
-        ? '<h2>사진 증빙</h2><img class="photo-preview" src="' + thumb + '" alt="분석 사진 영역(빨간 원: 이상색 후보)">' +
-            '<p>빨간 원은 이상색 영역 후보 위치입니다. 원본 화면에서 확인하세요.</p>'
-        : '';
-    return new Blob(['<!doctype html><html lang="ko"><meta charset="utf-8">' +
-        '<meta name="viewport" content="width=device-width"><title>영상 품질 검수 성적서' +
-        (info.site ? ' - ' + escape(info.site) : '') + '</title>' +
-        '<style>' + document.querySelector('style').textContent + ' body{background:#fff} </style>' +
-        '<h1>영상 품질 검수 성적서</h1><dl class="report-meta">' + meta + '</dl>' +
-        '<div class="comparison">' + dashboardMarkup(data, {open: true}) +
-        '</div><table><thead><tr><th>항목</th><th>단위</th><th>측정값</th><th>기준</th><th>판정</th></tr></thead><tbody>' +
-        content + '</tbody></table>' + evidence + '<h2>시험 기록</h2><pre>' + escape(details) + '</pre>' +
-        '<p>점검자 확인: ________________ (서명)</p></html>'],
-        {type: 'text/html;charset=utf-8'});
 }
 
 loadDraft();

@@ -459,7 +459,7 @@
   #mdash-modal .mdv-seg{display:inline-flex;background:#F1F5F9;border-radius:10px;padding:3px;gap:2px;}
   #mdash-modal .mdv-seg button{border:none;background:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:800;color:#475569;cursor:pointer;white-space:nowrap;}
   #mdash-modal .mdv-seg button.on{background:#fff;color:#1E3A8A;box-shadow:0 1px 3px rgba(15,23,42,.15);}
-  /* 🎠 3D 보기 */
+  /* 01~04 번호 요약 카드 */
   #mdash-modal .md3-ks4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:6px;}
   @media (max-width:760px){ #mdash-modal .md3-ks4{grid-template-columns:1fr 1fr;} }
   #mdash-modal .md3-k{position:relative;overflow:hidden;border-radius:18px;padding:14px 16px;color:#fff;min-height:118px;box-shadow:0 10px 24px rgba(15,23,42,.18);transition:transform .25s ease-out,box-shadow .25s;transform-style:preserve-3d;animation:md3Up .6s ease both;}
@@ -476,36 +476,14 @@
   #mdash-modal .md3-kv{font-size:32px;font-weight:900;line-height:1.1;} #mdash-modal .md3-kv small{font-size:14px;margin-left:2px;opacity:.85;}
   #mdash-modal .md3-ks{font-size:11px;opacity:.85;margin-top:2px;}
   #mdash-modal .md3-shine{position:absolute;inset:0;background:radial-gradient(240px circle at var(--sx,30%) var(--sy,0%),rgba(255,255,255,.28),transparent 60%);pointer-events:none;}
-  #mdash-modal .md3-sec{font-size:14px;font-weight:900;color:#0F172A;margin:18px 2px 6px;}
-  #mdash-modal .md3-sec span{font-size:11.5px;color:#64748B;font-weight:600;margin-left:6px;}
-  #mdash-modal .md3-stage{position:relative;height:400px;perspective:1300px;perspective-origin:50% 35%;overflow:hidden;border-radius:20px;background:radial-gradient(ellipse at 50% 30%,#FFFFFF 0%,#EEF2F7 55%,#DCE3EE 100%);touch-action:pan-y;user-select:none;cursor:grab;}
-  #mdash-modal .md3-stage:active{cursor:grabbing;}
-  #mdash-modal .md3-floor{position:absolute;left:10%;right:10%;bottom:34px;height:46px;border-radius:50%;background:radial-gradient(ellipse,rgba(15,23,42,.18),transparent 70%);filter:blur(6px);}
-  #mdash-modal .md3-ring{position:absolute;left:50%;top:44%;width:0;height:0;transform-style:preserve-3d;}
-  #mdash-modal .md3-card{position:absolute;width:var(--cw,200px);left:calc(var(--cw,200px) / -2);top:-118px;box-sizing:border-box;border-radius:16px;padding:12px 13px 10px;color:#fff;backface-visibility:visible;box-shadow:0 14px 28px rgba(15,23,42,.28);transition:opacity .2s;cursor:pointer;}
-  #mdash-modal .md3-card.ok{background:linear-gradient(150deg,#1E3A8A 0%,#2563EB 45%,#0D9488 100%);}
-  #mdash-modal .md3-card.bad{background:linear-gradient(150deg,#7F1D1D 0%,#DC2626 50%,#F97316 100%);}
-  #mdash-modal .md3-card.none{background:linear-gradient(150deg,#1F2937 0%,#334155 55%,#64748B 100%);}
-  #mdash-modal .md3-card.front{box-shadow:0 22px 40px rgba(15,23,42,.38),0 0 0 2px rgba(255,255,255,.75) inset;}
-  #mdash-modal .md3-no{font-size:12px;font-weight:900;opacity:.75;}
-  #mdash-modal .md3-nm{font-size:12.5px;font-weight:800;line-height:1.3;height:33px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:2px;}
-  #mdash-modal .md3-val{font-size:28px;font-weight:900;margin-top:4px;} #mdash-modal .md3-val small{font-size:12px;margin-left:3px;opacity:.85;}
-  #mdash-modal .md3-rl{font-size:10.5px;opacity:.8;}
-  #mdash-modal .md3-spark{width:100%;height:auto;display:block;margin:6px 0 4px;}
-  #mdash-modal .md3-ft{display:flex;justify-content:space-between;gap:6px;font-size:10px;border-top:1px solid rgba(255,255,255,.25);padding-top:6px;}
-  #mdash-modal .md3-ft span{opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} #mdash-modal .md3-ft b{white-space:nowrap;}
-  #mdash-modal .md3-nav{position:absolute;top:44%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.9);box-shadow:0 4px 12px rgba(15,23,42,.18);font-size:22px;font-weight:700;color:#1E293B;cursor:pointer;z-index:300;}
-  #mdash-modal .md3-nav.l{left:10px;} #mdash-modal .md3-nav.r{right:10px;}
-  #mdash-modal .md3-play{position:absolute;right:12px;bottom:10px;z-index:300;border:none;background:#0F172A;color:#fff;border-radius:999px;padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;opacity:.85;}
-  #mdash-modal .md3-flow{position:relative;height:200px;perspective:1000px;transform-style:preserve-3d;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#B45309,#C2410C 50%,#9A3412);touch-action:pan-y;user-select:none;}
-  #mdash-modal .md3-fc{position:absolute;left:50%;top:22px;width:150px;box-sizing:border-box;border-radius:16px;padding:12px 10px;text-align:center;color:#fff;background:rgba(15,23,42,.88);box-shadow:0 12px 26px rgba(0,0,0,.35);transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s;cursor:pointer;}
-  #mdash-modal .md3-fc.on{background:#fff;color:#0F172A;}
-  #mdash-modal .md3-fc.on .md3-fr circle:nth-child(1){stroke:#E2E8F0;} #mdash-modal .md3-fc.on .md3-fr circle:nth-child(2){stroke:#16A34A;} #mdash-modal .md3-fc.on.y .md3-fr circle:nth-child(2){stroke:#F59E0B;} #mdash-modal .md3-fc.on.r .md3-fr circle:nth-child(2){stroke:#DC2626;} #mdash-modal .md3-fc.on .md3-fr text{fill:#0F172A;}
-  #mdash-modal .md3-fr{width:70px;height:70px;}
-  #mdash-modal .md3-fn{font-size:12.5px;font-weight:800;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  #mdash-modal .md3-fs{font-size:10.5px;opacity:.75;margin-top:2px;}
-  #mdash-modal .md3-flow .md3-nav{top:50%;}
-  @media (max-width:520px){ #mdash-modal .md3-stage{height:330px;perspective:900px;} #mdash-modal .md3-card{top:-104px;padding:10px;} #mdash-modal .md3-val{font-size:22px;} #mdash-modal .md3-fc{width:120px;} }
+
+  #mdash-modal .mdn{position:sticky;top:-12px;z-index:50;display:flex;gap:6px;overflow-x:auto;margin:-12px -14px 8px;padding:10px 14px;background:rgba(244,246,250,.94);backdrop-filter:blur(6px);border-bottom:1px solid #E2E8F0;}
+  #mdash-modal .mdn button{flex-shrink:0;border:1px solid #CBD5E1;background:#fff;color:#334155;border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:800;cursor:pointer;}
+  #mdash-modal .mdn button.on{background:#1E3A8A;border-color:#1E3A8A;color:#fff;}
+  #mdash-modal .mdo-sh{grid-column:span 12;font-size:16px;font-weight:900;color:#0F172A;margin:14px 2px 2px;padding-left:10px;border-left:4px solid #2563EB;scroll-margin-top:60px;}
+  #mdash-modal .mdo-sh span{font-size:11.5px;font-weight:600;color:#64748B;margin-left:6px;}
+  #mdash-modal #md-sec-summary{margin-top:0;}
+  #mdash-modal .md3-ks4{margin:10px 0 12px;}
   @media (prefers-reduced-motion:reduce){ #mdash-modal *{animation-duration:.01s !important;transition-duration:.01s !important;} }
   .cmp-banner-btn{width:100%;background:#EEF3FF;border:1px solid #C9DBFF;color:#155EEF;border-radius:12px;padding:11px 14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;-webkit-tap-highlight-color:transparent;}
   .cmp-banner-btn:active{background:#e2ecff;}
@@ -6889,10 +6867,12 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const gNames=names.filter(n=>A[n].kind==='gauge').slice(0,2);
     h+=`<div class="mdo-p s4"><div class="mdo-t">주요 게이지 <span>최고값 기준</span></div><div class="mdo-gs">${gNames.length?gNames.map(n=>{ const a=A[n]; return `<div class="mdo-g" data-open="${escapeHtml(n)}">${mdGaugeSVG(a.rep,a.rg,a.unit)}<div class="mdo-gl"><b class="${a.out.length?'bad':''}">${mdFmt(a.rep)}${escapeHtml(a.unit)}</b> ${escapeHtml(mdShort(n))}</div></div>`; }).join(''):'<div class="mdo-none">상한 기준 항목 없음</div>'}</div></div>`;
     // ③ 항목별 스파크라인 표 (모든 측정값 한눈에)
+    h+=`<div class="mdo-sh s12" id="md-sec-items">측정 항목 <span>줄을 누르면 위치별 그래프·분석 결과</span></div>`;
     h+=`<div class="mdo-p s12"><div class="mdo-t">측정 항목 한눈에 보기 <span>${names.length}개 항목 · 줄을 누르면 상세 분석</span></div><div class="mdo-tw"><table class="mdo-tbl"><thead><tr><th></th><th>측정 항목</th><th>위치별 추이</th><th class="r">평균</th><th class="r">최소~최대</th><th>기준 대비 분포</th><th>관리기준</th><th class="c">상태</th></tr></thead><tbody>${names.map((n,i)=>{ const a=A[n]; const pts=mdSeries(items[n]); const st=a.st;
       return `<tr data-open="${escapeHtml(n)}" style="animation-delay:${(i*0.03).toFixed(2)}s"><td><i class="mdo-dot ${a.out.length?'bad':a.rg?'ok':'none'}"></i></td><td class="nm" title="${escapeHtml(n)}">${escapeHtml(mdShort(n))}<small>${a.vals.length}곳 · 최소~최대 ${mdFmt(st&&st.min)}~${mdFmt(st&&st.max)}${a.rg?' · 기준 '+escapeHtml(mdRangeText(a.rg,a.unit)):''}</small></td><td class="sp">${mdSparkL(pts,a.rg)}</td><td class="r big">${mdFmt(st&&st.avg)}<small>${escapeHtml(a.unit)}</small></td><td class="r">${mdFmt(st&&st.min)}~${mdFmt(st&&st.max)}</td><td class="bl">${mdBullet(st,a.rg)}</td><td class="std">${a.rg?escapeHtml(mdRangeText(a.rg,a.unit)):'-'}</td><td class="c">${a.out.length?`<span class="mdo-st bad">이탈 ${a.out.length}</span>`:a.rg?'<span class="mdo-st ok">정상</span>':'<span class="mdo-st none">-</span>'}</td></tr>`; }).join('')}</tbody></table></div>
       <div class="mdo-lg" style="margin-top:6px"><span><i style="background:#DCFCE7"></i>관리기준 범위</span><span><i style="background:#334155;height:4px"></i>최소~최대</span><span><i style="background:#2563EB;border-radius:50%"></i>평균</span><span><i style="background:#F04438;border-radius:50%"></i>이탈 위치</span></div></div>`;
     // ④ 항목별 기준 충족률 (막대)
+    h+=`<div class="mdo-sh s12" id="md-sec-charts">그래프</div>`;
     const bl=names.filter(n=>A[n].judged.length).map(n=>{ const a=A[n]; const p=Math.round((a.judged.length-a.out.length)/a.judged.length*100); return {key:n,label:mdShort(n),value:p,color:p===100?'#22B573':p>=80?'#F5A524':'#F04438'}; });
     if(bl.length) h+=`<div class="mdo-p s6"><div class="mdo-t">항목별 기준 충족률 (%) <span>막대를 누르면 상세</span></div>${mdBarsSVG(bl)}</div>`;
     // ⑤ 층별 꺾은선 (위치가 가장 많은 항목)
@@ -6906,6 +6886,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     // ⑥-2 영상 품질 검수 (설치 위치별 해상도·프레임률·색상 분포·9구역 밝기)
     const vqList = (mdData && mdData.source==='현재 점검' && current) ? (current.videoQuality||[]) : [];
     if(vqList.length){
+      h+=`<div class="mdo-sh s12" id="md-sec-video">영상 품질</div>`;
       const pal={흰색:'#F8FAFC',검정:'#111827',빨강:'#EF4444',초록:'#22C55E',파랑:'#3B82F6',기타:'#A78BFA'};
       const find=(rec,nm)=>rec.rows.find(r=>r.name===nm);
       const strip=(rec,src)=>{ const es=Object.keys(pal).map(k=>{ const r=find(rec,src+' '+k+' 픽셀 비율'); return r&&vqNum(r.raw)!=null?{k,v:vqNum(r.raw)}:null; }).filter(Boolean); if(!es.length) return '';
@@ -6919,94 +6900,29 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           ${strip(rec,'영상')}${strip(rec,'사진')}${heat(rec)}${(rec.images||[]).length?`<div class="vqp-l">첨부 이미지 ${rec.images.length}장</div><div class="vq-thumbs">${rec.images.map(k=>`<div class="vq-th"><img data-imgkey="${k}" alt="첨부 이미지"></div>`).join('')}</div>`:''}</div>`; }).join('')}</div></div>`;
     }
     // ⑦ 설비별 적합율 (가로 누적 막대)
+    if(judgedCats.length) h+=`<div class="mdo-sh s12" id="md-sec-equip">설비</div>`;
     if(judgedCats.length) h+=`<div class="mdo-p s12"><div class="mdo-t">설비별 점검 결과 <span>판정된 ${judgedCats.length}종</span></div><div class="mdo-cs">${judgedCats.map((r,i)=>{ const t=r.good+r.bad+r.na||1; const p=Math.round(r.good/(r.good+r.bad)*100);
       return `<div class="mdo-cr"><div class="mdo-cn" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</div><div class="mdo-ct" style="--d:${(i*0.04).toFixed(2)}s"><i style="width:${(r.good/t*100).toFixed(1)}%;background:#3B82F6"></i><i style="width:${(r.bad/t*100).toFixed(1)}%;background:#F04438"></i><i style="width:${(r.na/t*100).toFixed(1)}%;background:#E2E8F0"></i></div><div class="mdo-cp" style="color:${p>=90?'#16A34A':p>=70?'#D97706':'#DC2626'}">${p}%</div></div>`; }).join('')}</div></div>`;
     h+=`</div>`;
     return h;
   }
-  /* ── 🎠 3D 보기: 번호 그라데이션 카드 · 측정 항목 3D 회전 링 · 설비 적합율 커버플로 ── */
-  let mdView = (()=>{ try{ return localStorage.getItem('md-view2')||'overview'; }catch(e){ return 'overview'; } })();
-  let md3dRAF = 0;
-  function mdSpark(pts, rg){
-    if(pts.length<2) return '';
-    const vs=pts.map(p=>p.v); let lo=Math.min(...vs), hi=Math.max(...vs); if(rg&&!rg.ac){ if(rg.min!=null) lo=Math.min(lo,rg.min); if(rg.max!=null) hi=Math.max(hi,rg.max); } if(hi===lo){ hi+=1; lo-=1; }
-    const W=180,H=44, X=i=>4+(W-8)*i/(pts.length-1), Y=v=>H-4-(v-lo)/(hi-lo)*(H-8);
-    const lim = rg&&!rg.ac ? [rg.min,rg.max].filter(v=>v!=null).map(v=>`<line x1="0" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(255,255,255,.55)" stroke-dasharray="3 3"/>`).join('') : '';
-    return `<svg viewBox="0 0 ${W} ${H}" class="md3-spark">${lim}<polyline points="${pts.map((p,i)=>X(i).toFixed(1)+','+Y(p.v).toFixed(1)).join(' ')}" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>${pts.filter(p=>p.over).map(p=>`<circle cx="${X(pts.indexOf(p))}" cy="${Y(p.v)}" r="3.2" fill="#FFD166" stroke="#7A1E00"/>`).join('')}</svg>`;
-  }
-  function md3dHTML(names, items, A, ctx){
-    const {judgedN,outN,okPct,prog,cg,cb,rowsN,judgedCats}=ctx;
-    let h='';
-    // 01~04 번호 카드 (마우스/손가락 따라 기울어짐)
+  /* ── 01~04 번호 요약 카드 (마우스/손가락 따라 기울어짐) ── */
+  function mdKpiCardsHTML(ctx){
+    const {names,rowsN,judgedN,outN,okPct,prog,cg,cb,outItems}=ctx;
     const k=(no,cls,lab,val,unit,sub)=>`<div class="md3-k ${cls}" data-tilt><div class="md3-kno">${no}</div><div class="md3-kl">${lab}</div><div class="md3-kv"><span data-count="${val}">0</span><small>${unit}</small></div><div class="md3-ks">${sub}</div><i class="md3-shine"></i></div>`;
-    h+=`<div class="md3-ks4">
+    return `<div class="md3-ks4">
       ${k('01','c1','측정 항목',names.length,'종',`측정값 ${rowsN}건`)}
       ${k('02',okPct===100?'c2':'c2w','관리기준 충족',okPct==null?0:okPct,'%',`${judgedN-outN} / ${judgedN}건 기준 이내`)}
-      ${k('03',outN?'c3':'c3ok','기준 이탈',outN,'건',outN?'카드 링의 빨간 카드 확인':'이상 없음')}
+      ${k('03',outN?'c3':'c3ok','기준 이탈',outN,'건',outN?outItems.length+'개 항목 · 아래 빨간 표시':'이상 없음')}
       ${k('04','c4','점검 진행률',prog==null?0:prog,'%',`판정 ${cg+cb}항목 · 부적합 ${cb}`)}
     </div>`;
-    // 3D 회전 링
-    h+=`<div class="md3-sec">측정 항목 3D 링 <span>끌어서 돌리기 · 카드를 누르면 앞으로, 앞 카드를 누르면 상세 분석</span></div>
-      <div class="md3-stage" id="md3-stage"><div class="md3-floor"></div><div class="md3-ring" id="md3-ring">${names.map((n,i)=>{ const a=A[n]; const pts=mdSeries(items[n]); const cls=a.out.length?'bad':!a.rg?'none':'ok';
-        return `<div class="md3-card ${cls}" data-i="${i}" data-name="${escapeHtml(n)}"><div class="md3-no">${String(i+1).padStart(2,'0')}</div>
-          <div class="md3-nm">${escapeHtml(mdShort(n))}</div>
-          <div class="md3-val">${mdFmt(a.rep)}<small>${escapeHtml(a.unit)}</small></div>
-          <div class="md3-rl">${a.repLab} · ${a.vals.length}곳</div>
-          ${mdSpark(pts,a.rg)}
-          <div class="md3-ft"><span>${a.rg?'기준 '+escapeHtml(mdRangeText(a.rg,a.unit)):'기준 없음'}</span><b>${a.out.length?'이탈 '+a.out.length:a.rg?'정상':'-'}</b></div></div>`; }).join('')}</div>
-        <button class="md3-nav l" id="md3-prev" aria-label="이전">‹</button><button class="md3-nav r" id="md3-next" aria-label="다음">›</button>
-        <button class="md3-play" id="md3-play">⏸ 자동 회전</button></div>`;
-    // 설비 적합율 커버플로
-    if(judgedCats.length){
-      h+=`<div class="md3-sec">설비별 적합율 <span>좌우로 넘겨 보기</span></div><div class="md3-flow" id="md3-flow">${judgedCats.map((r,i)=>{ const p=Math.round(r.good/(r.good+r.bad)*100); const C=2*Math.PI*30;
-        return `<div class="md3-fc ${p>=90?'g':p>=70?'y':'r'}" data-i="${i}"><svg viewBox="0 0 76 76" class="md3-fr"><circle cx="38" cy="38" r="30" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="8"/><circle cx="38" cy="38" r="30" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(C*p/100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 38 38)"/><text x="38" y="44" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">${p}%</text></svg><div class="md3-fn">${escapeHtml(r.label)}</div><div class="md3-fs">적합 ${r.good} · 부적합 ${r.bad}${r.na?` · 미점검 ${r.na}`:''}</div></div>`; }).join('')}
-        <button class="md3-nav l" id="md3-fprev">‹</button><button class="md3-nav r" id="md3-fnext">›</button></div>`;
-    }
-    return h;
   }
-  function mdInit3D(ov, names, items, A){
-    cancelAnimationFrame(md3dRAF);
-    // 번호 카드 기울기
-    ov.querySelectorAll('[data-tilt]').forEach(el=>{
+  function mdInitTilt(root){
+    root.querySelectorAll('[data-tilt]').forEach(el=>{
       el.addEventListener('pointermove',e=>{ const r=el.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5;
-        el.style.transform=`perspective(700px) rotateY(${x*16}deg) rotateX(${-y*14}deg) translateY(-4px)`; el.style.setProperty('--sx',(x+.5)*100+'%'); el.style.setProperty('--sy',(y+.5)*100+'%'); });
+        el.style.transform=`perspective(700px) rotateY(${x*14}deg) rotateX(${-y*12}deg) translateY(-3px)`; el.style.setProperty('--sx',(x+.5)*100+'%'); el.style.setProperty('--sy',(y+.5)*100+'%'); });
       el.addEventListener('pointerleave',()=>{ el.style.transform=''; });
     });
-    // 3D 링
-    const stage=ov.querySelector('#md3-stage'), ring=ov.querySelector('#md3-ring'); if(!stage||!ring) return;
-    const cards=[...ring.children]; const n=cards.length; const step=360/n;
-    const cw=stage.clientWidth<520?150:200;
-    let R=Math.max(cw*0.9, (cw/2)/Math.tan(Math.PI/Math.max(n,3))*1.08);
-    const narrow=stage.clientWidth<520; if(narrow) R=Math.min(R, 520); const maxR=stage.clientWidth*0.42; const sc=narrow?1:Math.min(1, maxR/R);
-    ring.style.setProperty('--cw',cw+'px');
-    cards.forEach((c,i)=>{ c.style.transform=`rotateY(${i*step}deg) translateZ(${R}px)`; });
-    let ang=0, target=null, auto=true, drag=null, vel=0, last=performance.now();
-    const front=()=>{ const k=Math.round(-ang/step); return ((k%n)+n)%n; };
-    const paint=()=>{ ring.style.transform=`translateZ(${-R*sc}px) scale(${sc}) rotateX(-9deg) rotateY(${ang}deg)`;
-      const f=front(); cards.forEach((c,i)=>{ let rel=((i*step+ang)%360+540)%360-180; const cos=Math.cos(rel*Math.PI/180); c.style.opacity=(0.25+0.75*Math.max(0,(cos+0.35)/1.35)).toFixed(2); c.style.filter=cos<0?'blur(1px) saturate(.7)':''; c.classList.toggle('front', i===f); }); };
-    const tick=t=>{ const dt=Math.min(50,t-last); last=t;
-      if(!document.body.contains(ring)){ return; }
-      if(drag){ } else if(target!=null){ const d=target-ang; if(Math.abs(d)<0.05){ ang=target; target=null; } else ang+=d*Math.min(1,dt/140); }
-      else if(Math.abs(vel)>0.01){ ang+=vel*dt; vel*=0.94; }
-      else if(auto){ ang-=dt*0.012; }
-      paint(); md3dRAF=requestAnimationFrame(tick); };
-    md3dRAF=requestAnimationFrame(tick);
-    const goTo=i=>{ let tgt=-i*step; const d=((tgt-ang)%360+540)%360-180; target=ang+d; };
-    stage.addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; drag={x:e.clientX,a:ang,t:performance.now(),moved:false}; vel=0; target=null; stage.setPointerCapture(e.pointerId); });
-    stage.addEventListener('pointermove',e=>{ if(!drag) return; const dx=e.clientX-drag.x; if(Math.abs(dx)>4) drag.moved=true; const na=drag.a+dx*0.35; const now=performance.now(); vel=(na-ang)/Math.max(8,now-drag.t); drag.t=now; ang=na; });
-    stage.addEventListener('pointerup',e=>{ if(!drag) return; const moved=drag.moved; drag=null;
-      if(!moved){ const el=document.elementFromPoint(e.clientX,e.clientY); const c=el&&el.closest('.md3-card'); if(c){ const i=+c.dataset.i; if(i===front() && Math.abs(vel)<0.05){ const nm=c.dataset.name; mdOpenDetail(nm, items[nm], A[nm]); } else goTo(i); } } });
-    ov.querySelector('#md3-prev').onclick=()=>goTo((front()-1+n)%n);
-    ov.querySelector('#md3-next').onclick=()=>goTo((front()+1)%n);
-    const pb=ov.querySelector('#md3-play'); pb.onclick=()=>{ auto=!auto; pb.textContent=auto?'⏸ 자동 회전':'▶ 자동 회전'; };
-    // 이탈 항목이 있으면 그 카드를 앞으로
-    const bi=names.findIndex(nm=>A[nm].out.length); if(bi>0) setTimeout(()=>goTo(bi), 700);
-    // 커버플로
-    const flow=ov.querySelector('#md3-flow'); if(flow){ const fc=[...flow.querySelectorAll('.md3-fc')]; let c=Math.floor((fc.length-1)/2);
-      const lay=()=>{ const sm=flow.clientWidth<520; fc.forEach((el,i)=>{ const d=i-c, ad=Math.abs(d); el.style.transform=`translateX(calc(-50% + ${d*(sm?92:130)}px)) translateZ(${-ad*(sm?70:90)}px) rotateY(${Math.max(-55,Math.min(55,-d*28))}deg)`; el.style.zIndex=100-ad; el.style.opacity=ad>4?0:1-ad*0.13; el.classList.toggle('on',d===0); }); };
-      lay(); fc.forEach((el,i)=>el.onclick=()=>{ c=i; lay(); });
-      ov.querySelector('#md3-fprev').onclick=()=>{ c=Math.max(0,c-1); lay(); }; ov.querySelector('#md3-fnext').onclick=()=>{ c=Math.min(fc.length-1,c+1); lay(); };
-      let sx=null; flow.addEventListener('pointerdown',e=>{ sx=e.clientX; }); flow.addEventListener('pointerup',e=>{ if(sx==null) return; const dx=e.clientX-sx; sx=null; if(Math.abs(dx)>30){ c=Math.max(0,Math.min(fc.length-1,c+(dx<0?1:-1))); lay(); } }); }
   }
   let mdData = null, mdBld = '전체', mdDetail = null;
   function showMeasureDashboard(data){
@@ -7031,47 +6947,22 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       ? `<button class="mdv-alert bad" data-open="${escapeHtml(outItems[0])}">⚠️ 확인 필요 · ${outItems.map(n=>`${escapeHtml(mdShort(n))} ${A[n].out.length}건`).slice(0,3).join(' · ')}${outItems.length>3?` 외 ${outItems.length-3}개 항목`:''} <span>상세 ›</span></button>`
       : `<div class="mdv-alert ok">✅ 측정값 ${judgedN}건 모두 관리기준 이내${judgedN<rows.length?` · 기준 없는 값 ${rows.length-judgedN}건`:''}</div>`;
     const alertH=h;
-    // KPI
-    const ring=(p,col)=>{ const C=2*Math.PI*30; return `<svg viewBox="0 0 76 76" class="mdv-ring"><circle cx="38" cy="38" r="30" class="mdv-rbg"/><circle cx="38" cy="38" r="30" class="mdv-rfg" style="stroke:${col};--len:${(C*(p||0)/100).toFixed(1)};--c:${C.toFixed(1)}" transform="rotate(-90 38 38)"/><text x="38" y="44" text-anchor="middle" class="mdv-rt">${p==null?'-':p+'%'}</text></svg>`; };
-    h+=`<div class="mdv-kpis">
-      <div class="mdv-k"><div class="mdv-kl">측정 항목</div><div class="mdv-kv"><span data-count="${names.length}">0</span><small>종</small></div><div class="mdv-ks">측정값 ${rows.length}건</div></div>
-      <div class="mdv-k ring">${ring(okPct, outN?'#F5A524':'#22B573')}<div><div class="mdv-kl">관리기준 충족</div><div class="mdv-ks">${judgedN-outN} / ${judgedN}건</div></div></div>
-      <div class="mdv-k ${outN?'warn':''}"><div class="mdv-kl">기준 이탈</div><div class="mdv-kv" style="color:${outN?'#E5484D':'#16A34A'}"><span data-count="${outN}">0</span><small>건</small></div><div class="mdv-ks">${outN?outItems.length+'개 항목':'이상 없음'}</div></div>
-      <div class="mdv-k ring">${ring(prog,'#3B82F6')}<div><div class="mdv-kl">점검 진행률</div><div class="mdv-ks">판정 ${cg+cb} / ${tot}항목 · 부적합 ${cb}</div></div></div>
-    </div>`;
-    if(!names.length){
-      h+=`<div class="mdv-empty">측정값이 입력된 항목이 없습니다.<br>접지저항·전압·온습도·수신감도 등 <b>측정값 칸</b>에 숫자를 넣으면 이 화면에 차트로 나타납니다.<br>지난 점검은 <b>📂 엑셀 불러오기</b>로 대시보드 엑셀을 열어 보세요.<br>영상 품질 검수 프로그램의 결과는 <b>🎥 영상 품질</b>로 불러옵니다.</div>`;
-    } else {
-      h+=`<div class="mdv-grid">`;
-      names.forEach((n,ci)=>{
-        const a=A[n], pts=mdSeries(items[n]); const st=a.st; const icon=!a.rg?'<i class="mdv-ic none">–</i>':a.out.length?'<i class="mdv-ic bad">!</i>':'<i class="mdv-ic ok">✓</i>';
-        let chart='';
-        if(a.kind==='gauge' && pts.length) chart=mdGaugeSVG(a.rep, a.rg, a.unit)+`<div class="mdv-gv ${a.out.length?'bad':''}">${mdFmt(a.rep)}${escapeHtml(a.unit)} <span>${a.repLab}</span></div>`;
-        else if(a.kind==='range' && pts.length) chart=mdRangeHTML(pts, a.rg, a.unit, st.avg)+(pts.length>=3?`<div class="mdv-mini">${mdLineSVG(pts,a.rg,a.unit,{W:360,H:96})}</div>`:'');
-        else chart=mdLineSVG(pts, a.rg, a.unit, {W:360,H:170});
-        h+=`<button class="mdv-card ${a.out.length?'bad':''}" data-open="${escapeHtml(n)}" style="animation-delay:${(ci*0.04).toFixed(2)}s">
-          <div class="mdv-ch">${icon}<span class="mdv-ct" title="${escapeHtml(n)}">${escapeHtml(mdShort(n))}</span><span class="mdv-cv"><b data-count="${a.rep==null?'':a.rep}" data-dec="${a.rep!=null&&Math.abs(a.rep)<10?2:1}">${mdFmt(a.rep)}</b><small>${escapeHtml(a.unit)}</small></span></div>
-          <div class="mdv-cs"><span>${a.repLab} · ${a.vals.length}곳</span><span>${a.rg?'관리기준 '+escapeHtml(mdRangeText(a.rg,a.unit)):'관리기준 없음'}</span></div>
-          <div class="mdv-chart">${chart}</div>
-          <div class="mdv-cf">${a.out.length?`<span class="bad">이탈 ${a.out.length}곳</span>`:a.rg?`<span class="ok">정상 ${a.judged.length}/${a.judged.length}</span>`:'<span>판정 기준 없음</span>'}<span>자세히 ›</span></div>
-        </button>`;
-      });
-      h+=`</div>`;
-    }
-    // 점검 결과 · 설비별 적합율 (링)
     const judgedCats=D.catStat.filter(r=>r.good+r.bad>0);
-    if(judgedCats.length){
-      h+=`<div class="mdv-sec">설비별 적합율 <span>판정된 ${judgedCats.length}종</span></div><div class="mdv-rings">${judgedCats.map(r=>{ const p=Math.round(r.good/(r.good+r.bad)*100); return `<div class="mdv-rc">${ring(p,p>=90?'#22B573':p>=70?'#F5A524':'#E5484D')}<div class="mdv-rn" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</div><div class="mdv-ks">적합 ${r.good} · 부적합 ${r.bad}</div></div>`; }).join('')}</div>`;
+    const hasVq = !!(current && D.source==='현재 점검' && (current.videoQuality||[]).length);
+    const secs=[['summary','요약'],['items','측정 항목'],['charts','그래프'],...(hasVq?[['video','영상 품질']]:[]),...(judgedCats.length?[['equip','설비']]:[])];
+    h = `<nav class="mdn">${secs.map(([k,l],i)=>`<button data-sec="${k}" class="${i?'':'on'}">${l}</button>`).join('')}</nav>`
+      + `<div class="mdo-sh" id="md-sec-summary">요약</div>` + alertH
+      + mdKpiCardsHTML({names,rowsN:rows.length,judgedN,outN,okPct,prog,cg,cb,outItems});
+    if(!names.length){
+      h+=`<div class="mdv-empty" style="margin-top:12px">측정값이 입력된 항목이 없습니다.<br>접지저항·전압·온습도·수신감도 등 <b>측정값 칸</b>에 숫자를 넣으면 이 화면에 그래프로 나타납니다.<br>지난 점검은 <b>📂 엑셀 불러오기</b>, 영상 품질 검수 결과는 <b>🎥 영상 품질</b>로 불러옵니다.</div>`;
+    } else {
+      h+=mdOverviewHTML(names, items, A, {judgedN,outN,okPct,prog,cg,cb,cn,rowsN:rows.length,judgedCats,rows});
     }
-    if(mdView==='3d' && names.length){ h = alertH + md3dHTML(names, items, A, {judgedN,outN,okPct,prog,cg,cb,rowsN:rows.length,judgedCats}); }
-    else if(mdView==='overview' && names.length){ h = alertH + mdOverviewHTML(names, items, A, {judgedN,outN,okPct,prog,cg,cb,cn,rowsN:rows.length,judgedCats,rows}); }
-    cancelAnimationFrame(md3dRAF);
     ov.innerHTML = `<div class="mdv">
       <div class="mdv-top">
         <div class="mdv-brand"><div class="mdv-title">정보통신설비 측정 대시보드</div><div class="mdv-sub">${escapeHtml(D.title||'')}${D.date?' · '+escapeHtml(D.date):''}${D.type?' · '+escapeHtml(D.type):''} — <b>${escapeHtml(D.source||'')}</b></div></div>
         <div class="mdv-acts">
           ${bldAll.length>1?`<select class="mdv-sel" id="md-bld">${['전체',...bldAll].map(b=>`<option ${b===mdBld?'selected':''}>${escapeHtml(b)}</option>`).join('')}</select>`:''}
-          ${names.length?`<div class="mdv-seg">${[['overview','📈 한눈에'],['chart','📊 항목별'],['3d','🎠 3D']].map(([k,l])=>`<button data-view="${k}" class="${mdView===k?'on':''}">${l}</button>`).join('')}</div>`:''}
           ${current?`<button class="mdv-btn ${D.source==='현재 점검'?'on':''}" id="md-cur">📋 현재 점검</button>`:''}
           ${current?`<button class="mdv-btn vq" id="md-vq">🎥 영상 품질${(current.videoQuality||[]).length?' '+(current.videoQuality||[]).length:''}</button>`:''}
           <button class="mdv-btn" id="md-xlsx">📂 엑셀 불러오기</button>
@@ -7084,9 +6975,11 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       <div class="mdv-dwrap" id="md-dwrap"></div></div>`;
     mdCountUp(ov.querySelector('.mdv-body'));
     requestAnimationFrame(()=>requestAnimationFrame(()=>ov.querySelector('.mdv')&&ov.querySelector('.mdv').classList.add('go')));
-    ov.querySelector('#md-close').onclick=()=>{ cancelAnimationFrame(md3dRAF); ov.remove(); };
-    ov.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ mdView=b.dataset.view; try{ localStorage.setItem('md-view2',mdView); }catch(e){} showMeasureDashboard(); const bd=document.querySelector('#mdash-modal .mdv-body'); if(bd) bd.scrollTop=0; });
-    if(mdView==='3d' && names.length) mdInit3D(ov, names, items, A);
+    ov.querySelector('#md-close').onclick=()=>ov.remove();
+    mdInitTilt(ov);
+    { const body=ov.querySelector('.mdv-body'); const btns=[...ov.querySelectorAll('.mdn [data-sec]')]; const yOf=t=>t.getBoundingClientRect().top-body.getBoundingClientRect().top+body.scrollTop;
+      btns.forEach(b=>b.onclick=()=>{ const t=ov.querySelector('#md-sec-'+b.dataset.sec); if(t) body.scrollTo({top:Math.max(0,yOf(t)-58),behavior:'smooth'}); });
+      body.addEventListener('scroll',()=>{ let cur=btns[0]; btns.forEach(b=>{ const t=ov.querySelector('#md-sec-'+b.dataset.sec); if(t && yOf(t)-80<=body.scrollTop) cur=b; }); if(body.scrollTop+body.clientHeight>=body.scrollHeight-4) cur=btns[btns.length-1]; btns.forEach(b=>b.classList.toggle('on',b===cur)); },{passive:true}); }
     ov.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>mdOpenDetail(b.dataset.open, items[b.dataset.open], A[b.dataset.open]));
     const bs=ov.querySelector('#md-bld'); if(bs) bs.onchange=()=>{ mdBld=bs.value; showMeasureDashboard(); };
     const vqb=ov.querySelector('#md-vq'); if(vqb) vqb.onclick=vqOpenPanel;

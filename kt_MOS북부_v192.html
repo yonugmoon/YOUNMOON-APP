@@ -1154,6 +1154,20 @@
     font-size:12.5px;font-weight:600;color:var(--muted);}
 
   /* ══ 설비 그룹 헤더 (통신/방송/정보/기타) ══ */
+  .eq-total-btn{flex-shrink:0;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;}
+  .eq-total-btn:active{background:rgba(255,255,255,.3);}
+  .eql{max-width:620px;width:100%;max-height:88vh;display:flex;flex-direction:column;}
+  .eql-x{background:#F1F5F9;border:none;border-radius:8px;width:32px;height:32px;font-size:14px;cursor:pointer;}
+  .eql-site{font-size:12.5px;color:var(--muted);margin:-4px 0 10px;}
+  .eql-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
+  .eql-kpis div{background:#F1F5FF;border-radius:10px;padding:8px 4px;text-align:center;} .eql-kpis b{display:block;font-size:20px;color:#1E3A8A;} .eql-kpis span{font-size:10.5px;color:var(--muted);}
+  .eql-note{font-size:11.5px;color:#92400E;background:#FFFBEB;border-radius:8px;padding:6px 10px;margin-bottom:8px;}
+  .eql-list{overflow-y:auto;flex:1;min-height:0;}
+  .eql-gh{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;border-left:4px solid;border-radius:8px;padding:7px 10px;margin:10px 0 4px;} .eql-gh span{font-size:11.5px;font-weight:700;opacity:.85;}
+  .eql-row{display:grid;grid-template-columns:24px minmax(0,1fr) 62px 62px 42px;gap:6px;align-items:center;width:100%;text-align:left;background:#fff;border:none;border-bottom:1px solid #EEF1F5;padding:8px 4px;font:inherit;cursor:pointer;}
+  .eql-row:active{background:#F8FAFC;}
+  .eql-no{font-size:11px;color:var(--muted);text-align:center;} .eql-nm{font-size:13px;font-weight:700;color:#0F172A;min-width:0;} .eql-nm small{display:block;font-size:10.5px;color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .eql-c{font-size:11.5px;color:#475569;text-align:center;white-space:nowrap;} .eql-c b{font-size:13px;color:#0F172A;} .eql-c em{display:block;font-style:normal;font-size:10px;color:var(--accent);}
   .cat-group-head{display:flex;align-items:center;gap:8px;margin:14px 0 8px;padding:9px 14px;
     border-radius:10px;font-weight:800;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;}
   .cat-group-head:first-child{margin-top:2px;}
@@ -9124,7 +9138,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           <div style="display:flex;align-items:center;gap:4px;min-width:0;">
             <button class="back-btn" id="back-btn">‹</button>
             <div style="min-width:0;">
-              <div class="brand brand-edit" id="site-edit-btn" style="font-size:14.5px;" title="현장명 수정"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(current.siteName)}</span><span class="brand-pen">✏️</span></div>
+              <div style="display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap;">
+                <div class="brand brand-edit" id="site-edit-btn" style="font-size:14.5px;min-width:0;" title="현장명 수정"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(current.siteName)}</span><span class="brand-pen">✏️</span></div>
+                ${(()=>{ const t=eqTotals(current); return `<button class="eq-total-btn" id="eq-total-btn" title="점검 대상 설비 목록">🗂 설비 ${t.cats}종 · ${t.locs}개소</button>`; })()}
+              </div>
               <div class="site-line">${escapeHtml(current.date||"")}${current.inspector?" · "+escapeHtml(current.inspector):""}
                 <span style="margin-left:6px;background:${current.inspType==="유지보수"?"#1a8754":"#155eef"};color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;">${current.inspType==="유지보수"?"🔧 유지보수":"📊 성능"}</span>
               </div>
@@ -9158,6 +9175,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       if(activeCatId){ activeCatId=null; renderDetail(); window.scrollTo({top:0, behavior:"auto"}); return; }
       current=null; cmpBase=null; deleteConfirmId=null; renderList();
     };
+    { const eb=document.getElementById("eq-total-btn"); if(eb) eb.onclick=(e)=>{ e.stopPropagation(); showEquipListSheet(); }; }
     const siteEditBtn = document.getElementById("site-edit-btn");
     if(siteEditBtn) siteEditBtn.onclick = ()=> openSiteEditSheet();
     const defectBanner = document.getElementById("defect-banner-btn");
@@ -9205,6 +9223,44 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     { key:"정보", label:"정보 설비",  color:"#1A8754", bg:"#E9F7EF", ids:["c10","c11","c12","c13","c14","c15","c16","c17","c18","c19","c20","c21","c22","c23","c24","c25","c26","c27","c28","c29","c30","c31","c32"] },
     { key:"기타", label:"기타 설비",  color:"#D97706", bg:"#FEF3E2", ids:["c33","c34"] },
   ];
+  /* ── 🗂 총 설비 — 점검 대상 설비 수·개소 수와 그룹별 목록 ── */
+  /* 개소로 세는 위치: 대기(⏸) 아님 + 이름이 있거나 점검 내용이 있는 위치 (설비만 고르고 비워 둔 빈 위치는 제외) */
+  function eqActLocs(c){ return (c.locations||[]).filter(l=>!l.pending && ((l.name&&String(l.name).trim()) || locHasData(l))); }
+  function eqTotals(insp){
+    let cats=0, locs=0, pend=0, items=0, photos=0, good=0, bad=0;
+    (insp.categories||[]).forEach(c=>{ const L=(c.locations||[]); const act=eqActLocs(c); if(!L.length) return; cats++;
+      locs+=act.length; pend+=L.filter(l=>l.pending).length;
+      act.forEach(l=>{ items+=(l.items||[]).length; photos+=(l.photos||[]).length; (l.items||[]).forEach(it=>{ if(it.result==='불량') bad++; else if(it.result==='양호'||it.result==='적합'||it.result==='정상') good++; }); }); });
+    return { cats, locs, pend, items, photos, good, bad };
+  }
+  function showEquipListSheet(){
+    if(!current) return;
+    const T=eqTotals(current);
+    const groups=[...CAT_GROUPS.map(g=>({key:g.key,label:g.label,color:g.color,bg:g.bg,list:[]})), {key:'추가',label:'추가 설비',color:'#475569',bg:'#F1F5F9',list:[]}];
+    (current.categories||[]).forEach(c=>{ if(!(c.locations||[]).length) return; const k=groupKeyOfCat(c.id); (groups.find(g=>g.key===k)||groups[groups.length-1]).list.push(c); });
+    const rowOf=(c,i)=>{ const L=c.locations||[]; const act=eqActLocs(c); let good=0,bad=0,ph=0; act.forEach(l=>{ ph+=(l.photos||[]).length; (l.items||[]).forEach(it=>{ if(it.result==='불량') bad++; else if(it.result==='양호'||it.result==='적합'||it.result==='정상') good++; }); });
+      const pend=L.filter(l=>l.pending).length;
+      return `<button class="eql-row" data-cat="${c.id}"><span class="eql-no">${i}</span><span class="eql-nm">${escapeHtml(c.name)}<small>${act.map(l=>escapeHtml(l.name||'위치 미입력')).slice(0,4).join(' · ')}${act.length>4?` 외 ${act.length-4}곳`:''}</small></span>
+        <span class="eql-c"><b>${act.length}</b>개소${pend?`<em>⏸${pend}</em>`:''}</span><span class="eql-c">${bad?`<b style="color:#D92D20">부적합 ${bad}</b>`:`<b style="color:#067647">${good?'적합':'-'}</b>`}</span><span class="eql-c">📷${ph}</span></button>`; };
+    let no=0;
+    const ov=document.createElement('div'); ov.className='overlay center top-layer'; ov.id='eql-ov';
+    ov.innerHTML=`<div class="sheet eql">
+      <div class="sheet-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span>🗂 점검 대상 설비</span><button class="eql-x" id="eql-x">✕</button></div>
+      <div class="eql-site">${escapeHtml(current.siteName||'')}${current.buildingName&&current.buildingName!==current.siteName?' · '+escapeHtml(current.buildingName):''}</div>
+      <div class="eql-kpis"><div><b>${T.cats}</b><span>설비(종)</span></div><div><b>${T.locs}</b><span>점검 위치(개소)</span></div><div><b>${T.items}</b><span>점검항목</span></div><div><b>${T.photos}</b><span>사진(장)</span></div></div>
+      ${T.pend?`<div class="eql-note">⏸ 대기 위치 ${T.pend}곳은 개소 수에서 뺐습니다(활성화하면 포함).</div>`:''}
+      <div class="eql-list">${groups.filter(g=>g.list.length).map(g=>`<div class="eql-gh" style="color:${g.color};background:${g.bg};border-left-color:${g.color}">${g.label}<span>${g.list.length}종 · ${g.list.reduce((s,c)=>s+eqActLocs(c).length,0)}개소</span></div>${g.list.map(c=>rowOf(c,++no)).join('')}`).join('')}</div>
+      <div style="display:flex;gap:8px;margin-top:12px;"><button class="outline-btn" id="eql-copy" style="flex:1;">📋 목록 복사</button><button class="primary-btn" id="eql-close" style="flex:1;">닫기</button></div>
+    </div>`;
+    document.body.appendChild(ov);
+    const close=()=>ov.remove();
+    ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
+    ov.querySelector('#eql-x').onclick=close; ov.querySelector('#eql-close').onclick=close;
+    ov.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{ close(); activeCatId=b.dataset.cat; openCategoryIds.add(b.dataset.cat); renderDetail(); window.scrollTo({top:0,behavior:'auto'}); });
+    ov.querySelector('#eql-copy').onclick=async()=>{ let n=0; const lines=[`${current.siteName||''} 점검 대상 설비 — 총 ${T.cats}종 · ${T.locs}개소`];
+      groups.filter(g=>g.list.length).forEach(g=>{ lines.push(`[${g.label}]`); g.list.forEach(c=>{ const act=eqActLocs(c); lines.push(`${++n}. ${c.name} (${act.length}개소): ${act.map(l=>l.name||'위치 미입력').join(', ')}`); }); });
+      try{ await navigator.clipboard.writeText(lines.join('\n')); showToast('설비 목록을 복사했습니다.'); }catch(e){ prompt('아래 내용을 복사하세요', lines.join(' / ')); } };
+  }
   function groupOfCat(catId){
     const g = CAT_GROUPS.find(g=> g.ids.includes(catId));
     return g || CAT_GROUPS[CAT_GROUPS.length-1];

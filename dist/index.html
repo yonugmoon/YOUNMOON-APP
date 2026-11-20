@@ -12645,7 +12645,7 @@ const LS_KEY = "ar-insp.v1";
 const QR_PREFIX = "YM:";
 let S = load();
 function blankState(){
-  return { settings:{apiKey:"", model:"gemini-2.5-flash", tts:true, voice:true, inspector:"", site:""},
+  return { settings:{apiKey:"", model:"", tts:true, voice:true, inspector:"", site:""},
            equips:[], inspections:[], checklists:{}, tab:"home" };
 }
 function load(){
@@ -12685,7 +12685,7 @@ function newEquipId(){
   return base+String(n).padStart(3,"0");
 }
 let toastT;
-function toast(msg,kind=""){ const t=$("#toast"); t.textContent=msg; t.className="on "+kind; clearTimeout(toastT); toastT=setTimeout(()=>t.className="",2600); }
+function toast(msg,kind=""){ const t=$("#toast"); t.textContent=msg; t.className="on "+kind; clearTimeout(toastT); toastT=setTimeout(()=>t.className="",kind==="bad"?6000:2600); }
 function checksOf(type){ return (S.checklists[type]&&S.checklists[type].length)? S.checklists[type] : (TYPES[type]||TYPES.etc).checks; }
 function typeName(t){ return (TYPES[t]||TYPES.etc).name; }
 function typeIc(t){ return (TYPES[t]||TYPES.etc).ic; }
@@ -12725,14 +12725,51 @@ function parseCSV(text){
 /* ============================================================
    4. AI (Gemini Vision) — 기존 RepiQ 앱과 같은 키/방식 사용
    ============================================================ */
-async function callGemini(prompt, imageBlobs){
+const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
+/* 이 키로 쓸 수 있는 모델 목록을 조회해 가장 적합한 모델을 고름
+   (Google이 모델을 자주 교체/중단하므로 하드코딩하지 않고 자동 선택) */
+async function listModels(){
+  const r=await fetch(`${GEMINI}/models?pageSize=200&key=${encodeURIComponent(S.settings.apiKey)}`);
+  if(!r.ok){ const t=await r.text(); throw new Error(r.status===400||r.status===403? "API 키가 올바르지 않습니다. 설정에서 키를 확인하세요." : `모델 목록 조회 실패 ${r.status}: ${t.slice(0,120)}`); }
+  const j=await r.json();
+  return (j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace(/^models\//,""));
+}
+function rankModel(n){
+  if(!/gemini/.test(n) || /(image|tts|audio|live|embedding|aqa|robotics|computer|thinking-exp|learnlm|gemma)/.test(n)) return -1;
+  let sc=0;
+  const v=n.match(/gemini-(\d+(?:\.\d+)?)/); if(v) sc+=parseFloat(v[1])*100;
+  if(/flash/.test(n)) sc+=50;            // 빠르고 저렴 → 현장용 우선
+  if(/lite/.test(n)) sc-=30;
+  if(/pro/.test(n)) sc+=10;
+  if(/latest/.test(n)) sc+=5;
+  if(/(preview|exp)/.test(n)) sc-=40;    // 미리보기 버전은 후순위
+  return sc;
+}
+async function autoPickModel(){
+  const names=await listModels();
+  const best=names.map(n=>[n,rankModel(n)]).filter(x=>x[1]>=0).sort((a,b)=>b[1]-a[1])[0];
+  if(!best) throw new Error("이 키로 사용할 수 있는 Gemini 모델이 없습니다.");
+  S.settings.model=best[0]; S.settings.models=names.filter(n=>rankModel(n)>=0); save();
+  return best[0];
+}
+async function callGemini(prompt, imageBlobs, _retried){
   if(!S.settings.apiKey) throw new Error("API 키가 없습니다. 설정에서 Gemini 키를 등록하세요.");
+  if(!S.settings.model) await autoPickModel();
   const parts=[{text:prompt}];
   for(const b of (imageBlobs||[])) parts.push({inline_data:{mime_type:"image/jpeg", data:await blobToBase64(b)}});
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.settings.model)}:generateContent?key=${encodeURIComponent(S.settings.apiKey)}`;
-  const body={contents:[{role:"user",parts}], generationConfig:{temperature:0.1, maxOutputTokens:2048, responseMimeType:"application/json"}};
+  const url=`${GEMINI}/models/${encodeURIComponent(S.settings.model)}:generateContent?key=${encodeURIComponent(S.settings.apiKey)}`;
+  const body={contents:[{role:"user",parts}], generationConfig:{temperature:0.1, maxOutputTokens:4096, responseMimeType:"application/json"}};
   const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  if(!r.ok){ const t=await r.text(); throw new Error(`AI 오류 ${r.status}: ${t.slice(0,160)}`); }
+  if(!r.ok){
+    const t=await r.text();
+    // 모델 중단/미지원(404 등) → 사용 가능한 모델로 자동 교체 후 1회 재시도
+    if(!_retried && (r.status===404 || /no longer available|not found|not supported|deprecated/i.test(t))){
+      const old=S.settings.model, m=await autoPickModel();
+      if(m!==old){ toast(`AI 모델 자동 변경: ${m}`,"good"); return callGemini(prompt, imageBlobs, true); }
+    }
+    if(r.status===429) throw new Error("AI 사용 한도 초과(429). 잠시 후 다시 시도하거나 결제 설정을 확인하세요.");
+    throw new Error(`AI 오류 ${r.status}: ${t.slice(0,160)}`);
+  }
   const j=await r.json();
   const txt=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
   return parseJSON(txt);
@@ -13201,8 +13238,9 @@ function renderSet(){
   </div></div>
   <div class="card"><div class="card-h"><h2>AI (Gemini Vision)</h2></div><div class="card-b">
     <label class="f">API 키<input class="inp" id="sKey" type="password" placeholder="AIza..." value="${esc(st.apiKey)}"></label>
-    <label class="f">모델<input class="inp" id="sModel" list="models" value="${esc(st.model)}"></label>
-    <datalist id="models"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"><option value="gemini-2.0-flash"></datalist>
+    <label class="f">모델 (비워두면 자동 선택)<input class="inp" id="sModel" list="models" value="${esc(st.model)}" placeholder="자동"></label>
+    <datalist id="models">${(st.models||[]).map(m=>`<option value="${esc(m)}">`).join("")}</datalist>
+    <button class="btn block" style="margin-bottom:11px" onclick="ui.pickModel()">🔄 사용 가능한 모델 자동 선택 / 키 확인</button>
     <p class="note">키는 이 휴대폰에만 저장되며 백업 파일에도 포함되지 않습니다. 키 발급: Google AI Studio.</p>
   </div></div>
   <div class="card"><div class="card-h"><h2>음성 (핸즈프리)</h2></div><div class="card-b">
@@ -13355,8 +13393,13 @@ const ui = {
   delInsp(id){ if(!confirm("이 점검 기록을 삭제할까요?")) return; S.inspections=S.inspections.filter(e=>e.id!==id); save(); this.closeSheet(); render(); },
   saveSettings(){
     const st=S.settings; st.inspector=$("#sInsp").value.trim(); st.site=$("#sSite").value.trim();
-    st.apiKey=$("#sKey").value.trim(); st.model=$("#sModel").value.trim()||"gemini-2.5-flash";
+    st.apiKey=$("#sKey").value.trim(); const nm=$("#sModel").value.trim(); if(nm!==st.model) st.model=nm;
     st.tts=$("#sTts").checked; st.voice=$("#sVoice").checked; save(); render(); toast("설정 저장됨","good");
+  },
+  async pickModel(){
+    S.settings.apiKey=$("#sKey").value.trim(); if(!S.settings.apiKey){ toast("API 키를 먼저 입력하세요","bad"); return; }
+    try{ const m=await autoPickModel(); save(); render(); toast(`키 정상 · 모델: ${m}`,"good"); }
+    catch(e){ toast(e.message,"bad"); }
   },
   async importCSV(){
     const f=await pickFile(".csv,text/csv"); if(!f) return;

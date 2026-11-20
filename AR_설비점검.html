@@ -113,7 +113,7 @@ nav button.ar i{background:linear-gradient(135deg,var(--brand),var(--brand-2));c
 #arCanvas{position:absolute;inset:0;width:100%;height:100%}
 #arVideo{display:none}
 .ar-top{position:absolute;top:0;left:0;right:0;display:flex;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:linear-gradient(180deg,rgba(0,0,0,.6),transparent)}
-.ar-top .btn{min-height:38px;padding:6px 11px;font-size:13px;background:rgba(17,26,46,.75);backdrop-filter:blur(6px)}
+.ar-top .btn{white-space:nowrap;min-height:38px;padding:6px 11px;font-size:13px;background:rgba(17,26,46,.75);backdrop-filter:blur(6px)}
 .ar-top .btn.on{border-color:var(--brand);color:var(--brand)}
 .ar-top .sp{flex:1}
 .ar-bottom{position:absolute;left:0;right:0;bottom:0;padding:10px 12px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(0deg,rgba(0,0,0,.7),transparent);display:flex;flex-direction:column;gap:8px}
@@ -185,12 +185,13 @@ nav button.ar i{background:linear-gradient(135deg,var(--brand),var(--brand-2));c
   <canvas id="arCanvas"></canvas>
   <div id="arHint">카메라 준비 중…</div>
   <div class="ar-top">
-    <button class="btn" onclick="AR.close()">✕ 닫기</button>
-    <button class="btn hide-g" onclick="AR.pickEquip()">설비선택</button>
+    <button class="btn" onclick="AR.close()" title="닫기">✕</button>
+    <button class="btn hide-g" onclick="AR.pickEquip()">📋 선택</button>
     <span class="sp"></span>
+    <button class="btn" id="btnLive" onclick="AR.toggleLive()">🧠 AI</button>
     <button class="btn" id="btnMic" onclick="AR.toggleVoice()">🎤</button>
     <button class="btn" id="btnTorch" onclick="AR.toggleTorch()">🔦</button>
-    <button class="btn" id="btnGlasses" onclick="AR.toggleGlasses()">👓 안경모드</button>
+    <button class="btn" id="btnGlasses" onclick="AR.toggleGlasses()">👓</button>
   </div>
   <div class="ar-bottom">
     <div class="row" id="arExtra"></div>
@@ -241,7 +242,7 @@ const LS_KEY = "ar-insp.v1";
 const QR_PREFIX = "YM:";
 let S = load();
 function blankState(){
-  return { settings:{apiKey:"", model:"", tts:true, voice:true, inspector:"", site:""},
+  return { settings:{apiKey:"", model:"", tts:true, voice:true, liveAI:true, liveSec:4, inspector:"", site:""},
            equips:[], inspections:[], checklists:{}, tab:"home" };
 }
 function load(){
@@ -394,6 +395,69 @@ JSON만 출력:
  "otherItems":[{"no":1,"status":"정상|주의|불량","note":""}]}`;
 
 /* ============================================================
+   4-1. QR 없는 실시간 AI 인식 — 여러 프레임 투표 + 설비대장 대조
+   ============================================================ */
+const PROMPT_LIVE = (cands) => `당신은 통신·전기 설비 현장 인식 AI입니다. 사진 중앙의 설비 1대를 식별합니다.
+규칙:
+- 실제로 보이는 글자만 읽기. 추측 금지. 안 보이면 "".
+- 명판·라벨·로고·LCD/표시창 글자를 우선 판독(시리얼은 한 글자씩 정확히).
+- 설비 종류(type) 키: ${Object.entries(TYPES).map(([k,v])=>`${k}(${v.name})`).join(", ")}
+${cands.length?`- 아래 설비대장 후보 중 같은 설비가 있으면 match.id. 같은 모델이 여러 대이면 시리얼·라벨 근거가 있을 때만 선택, 아니면 "".
+설비대장(id|종류|명칭|제조사|모델|시리얼|위치):
+${cands.join("\n")}`:"- 설비대장 후보 없음: match.id는 \"\"."}
+- box_2d: 그 설비의 위치 [ymin,xmin,ymax,xmax], 0~1000 정규화.
+- quality: 판독 조건(좋음|흐림|멀다|반사|어두움), tip: 정확도를 높이기 위한 촬영 안내 한 문장.
+JSON만 출력:
+{"found":true,"box_2d":[0,0,0,0],"type":"","name":"","maker":"","model":"","serial":"","rating":"",
+ "texts":[],"status":"LED/표시 상태 한 줄","match":{"id":"","confidence":0.0,"reason":""},"quality":"","tip":""}`;
+const norm = v => String(v||"").toUpperCase().replace(/[^0-9A-Z가-힣]/g,"");
+/* 시리얼 비교용: 흔한 오독(O↔0, I/L↔1, S↔5 아님 주의) 보정 */
+const normSN = v => norm(v).replace(/O/g,"0").replace(/[IL]/g,"1");
+/* 제조사·정격은 포함관계면 같은 값으로 봄 (LS ↔ LS ELECTRIC) */
+const sameLoose = (a,b) => { a=norm(a); b=norm(b); return !!a && !!b && (a===b || (Math.min(a.length,b.length)>=2 && (a.startsWith(b)||b.startsWith(a)))); };
+const LIVE_FIELDS = ["type","maker","model","serial","rating","name"];
+/* 여러 프레임 결과를 필드별 다수결로 합침 */
+function fuseObs(obs){
+  const f={n:obs.length, agree:{}, votes:{}};
+  for(const k of LIVE_FIELDS){
+    const tally={};
+    obs.forEach(o=>{ const v=(o[k]||"").trim(); if(!v) return; const key=k==="name"?v:k==="serial"?normSN(v):norm(v); (tally[key]=tally[key]||{v,c:0}).c++; });
+    const best=Object.values(tally).sort((a,b)=>b.c-a.c)[0];
+    if(best){ f[k]=best.v; f.agree[k]=best.c; }
+  }
+  obs.forEach(o=>{ const id=o.match&&o.match.id; if(id&&findEquip(id)) f.votes[id]=(f.votes[id]||0)+1+(o.match.confidence||0); });
+  const last=obs[obs.length-1]||{}; f.box=last.box_2d; f.status=last.status; f.tip=last.tip; f.quality=last.quality;
+  return f;
+}
+/* 설비대장과 대조해 점수 계산 (시리얼 일치가 가장 강한 근거) */
+function matchLedger(f){
+  const out=S.equips.map(e=>{
+    let sc=0; const why=[];
+    if(f.serial && norm(e.serial) && normSN(e.serial)===normSN(f.serial)){ sc+=6; why.push("시리얼 일치"); }
+    if(f.model && norm(e.model)){ if(norm(e.model)===norm(f.model)){ sc+=2; why.push("모델 일치"); } else if(norm(f.model).length>=4 && (norm(e.model).includes(norm(f.model))||norm(f.model).includes(norm(e.model)))){ sc+=1; why.push("모델 유사"); } }
+    if(f.maker && sameLoose(e.maker,f.maker)){ sc+=1; why.push("제조사"); }
+    if(f.type && f.type===e.type) sc+=0.5;
+    const v=f.votes[e.id]||0; if(v){ sc+=v*1.5; why.push(`AI ${v.toFixed(1)}표`); }
+    return {e,sc,why};
+  }).filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc);
+  const top=out[0], second=out[1];
+  let lock=false, ambiguous=false;
+  if(top){
+    const serialHit=top.why.includes("시리얼 일치");
+    ambiguous = !serialHit && second && second.sc>=top.sc-0.5;
+    lock = !ambiguous && (serialHit || (top.sc>=5 && f.n>=2));
+  }
+  return {top, second, lock, ambiguous, list:out};
+}
+/* 대장값과 현장(AI) 판독값 차이 */
+function ledgerDiff(e,f){
+  const L={maker:"제조사",model:"모델",serial:"시리얼",rating:"정격"}, d=[];
+  for(const k in L){ const same = k==="serial"? normSN(f[k])===normSN(e[k]) : (k==="maker"||k==="rating")? sameLoose(f[k],e[k]) : norm(f[k])===norm(e[k]);
+    if(f[k] && e[k] && !same && (f.agree[k]||0)>=Math.min(2,f.n)) d.push({k,label:L[k],ledger:e[k],field:f[k]}); }
+  return d;
+}
+
+/* ============================================================
    5. 음성 (TTS + 음성명령) — 손이 자유로운 '안경' 사용감
    ============================================================ */
 const Voice = {
@@ -434,6 +498,8 @@ const VOICE_CMDS = [
   [/적용|확정/,        ()=>AR.applyAI()],
   [/촬영|사진|찍어/,   ()=>AR.photo()],
   [/현행화|확인완료|일치/, ()=>AR.verify()],
+  [/인식|찾아/,        ()=>AR.liveNow()],
+  [/갱신|업데이트/,    ()=>AR.applyDiff()],
   [/읽어|다시/,        ()=>AR.speakStep()],
   [/완료|종료|끝/,     ()=>AR.finish()],
 ];
@@ -445,6 +511,8 @@ const AR = {
   stream:null, track:null, video:null, canvas:null, ctx:null, running:false, glasses:false, torch:false,
   detector:null, scanCv:null, lastScan:0, qr:null,
   equip:null, session:null, step:0, lastAI:null, busy:false, flash:0, msg:"", msgUntil:0,
+  live:{on:true, busy:false, lastAt:0, obs:[], fused:null, match:null, sig:null, backoff:0, ver:0, blob:null, status:"", said:""},
+  liveDiff:[],
 
   async open(equipId){
     ui.closeSheet();
@@ -461,8 +529,9 @@ const AR = {
     $("#arHint").textContent="";
     if("BarcodeDetector" in window){ try{ this.detector=new BarcodeDetector({formats:["qr_code"]}); }catch(_){ this.detector=null; } }
     this.scanCv=document.createElement("canvas");
+    this.live.on=!!S.settings.liveAI; this.liveReset(); $("#btnLive").classList.toggle("on",this.live.on);
     if(equipId) this.setEquip(findEquip(equipId));
-    else if(!this.equip) this.say("설비 QR 코드를 비춰 주세요");
+    else if(!this.equip) this.say(this.live.on&&S.settings.apiKey? "설비를 비추면 AI가 인식합니다" : "설비 QR 코드를 비춰 주세요");
     if(S.settings.voice && Voice.supported() && !Voice.on) this.toggleVoice(true);
     this.running=true; this.resize(); requestAnimationFrame(()=>this.loop());
     window.addEventListener("resize", this._rs=()=>this.resize());
@@ -488,6 +557,9 @@ const AR = {
     if(!this.running) return;
     const now=performance.now();
     if(now-this.lastScan>220 && this.video.readyState>=2){ this.lastScan=now; this.scan(); }
+    const L=this.live;
+    if(L.on && !this.equip && !L.busy && S.settings.apiKey && this.video.readyState>=2 && Date.now()>L.backoff
+       && Date.now()-L.lastAt > Math.max(2,+S.settings.liveSec||4)*1000) this.liveTick();
     this.draw();
     requestAnimationFrame(()=>this.loop());
   },
@@ -520,6 +592,7 @@ const AR = {
   setEquip(eq){
     if(!eq) return;
     this.equip=eq; this._unk=null; this.lastAI=null; this.step=0;
+    this.liveDiff = this.live.fused? ledgerDiff(eq,this.live.fused) : [];
     const checks=checksOf(eq.type);
     this.session={ id:uid("IN"), equipId:eq.id, equipName:eq.name, type:eq.type, inspector:S.settings.inspector, site:S.settings.site,
                    startedAt:Date.now(), items:checks.map(c=>({label:c, result:null, note:"", photo:null, ai:null})) };
@@ -558,7 +631,7 @@ const AR = {
     const eq=findEquip(s.equipId); if(eq){ eq.lastInspected=s.endedAt; eq.health=s.overall; }
     save();
     this.say(`점검 저장 완료. 종합 판정 ${s.overall}`);
-    this.session=null; this.equip=null; this.lastAI=null; this.qr=null; this.renderExtra();
+    this.session=null; this.equip=null; this.lastAI=null; this.qr=null; this.liveDiff=[]; this.liveReset(); this.renderExtra();
   },
 
   /* ---- 캡처 / 사진 / AI ---- */
@@ -596,8 +669,69 @@ const AR = {
   },
   verify(){
     if(!this.equip){ this.say("설비를 먼저 인식하세요"); return; }
-    this.equip.sync="일치"; this.equip.verifiedAt=Date.now(); this.equip.verifiedBy=S.settings.inspector; save();
-    this.say("현행화 확인 완료"); this.flash=Date.now();
+    const e=this.equip, d=this.liveDiff||[];
+    e.verifiedAt=Date.now(); e.verifiedBy=S.settings.inspector;
+    if(d.length){ e.sync="불일치"; e.memo=[e.memo, "현장확인 "+fmt(Date.now()).slice(0,10)+": "+d.map(x=>`${x.label} 대장=${x.ledger} 현장=${x.field}`).join(", ")].filter(Boolean).join(" / ");
+      save(); this.say(`현행화 불일치 ${d.length}건 기록. 갱신이라고 말하면 대장을 현장값으로 고칩니다`); }
+    else { e.sync="일치"; save(); this.say("현행화 확인 완료"); }
+    this.flash=Date.now(); this.live.ver++;
+  },
+  applyDiff(){
+    const e=this.equip, d=this.liveDiff||[]; if(!e||!d.length){ this.say("갱신할 차이가 없습니다"); return; }
+    d.forEach(x=>e[x.k]=x.field); e.sync="일치"; e.verifiedAt=Date.now(); e.verifiedBy=S.settings.inspector; e.updatedAt=Date.now();
+    e.memo=[e.memo,"대장 갱신 "+fmt(Date.now()).slice(0,10)+": "+d.map(x=>`${x.label} ${x.ledger}→${x.field}`).join(", ")].filter(Boolean).join(" / ");
+    this.liveDiff=[]; save(); this.say("대장을 현장값으로 갱신했습니다"); this.live.ver++;
+  },
+
+  /* ---- QR 없는 실시간 AI 인식 ---- */
+  liveReset(){ const L=this.live; L.obs=[]; L.fused=null; L.match=null; L.sig=null; L.blob=null; L.status=""; L.said=""; L.lastAt=0; L.ver++; },
+  liveNow(){ if(this.equip){ this.say("현재 설비 점검 중입니다"); return; } if(!S.settings.apiKey){ this.say("AI 키가 없습니다"); return; } this.live.lastAt=0; this.live.backoff=0; this.live.sig=null; },
+  toggleLive(){
+    this.live.on=!this.live.on; $("#btnLive").classList.toggle("on",this.live.on);
+    if(this.live.on && !S.settings.apiKey){ toast("실시간 AI 인식은 API 키가 필요합니다","bad"); }
+    this.toast(this.live.on?"실시간 AI 인식 켜짐":"실시간 AI 인식 꺼짐"); this.live.ver++;
+  },
+  frameSig(){
+    const c=this.sigCv||(this.sigCv=document.createElement("canvas")); c.width=32; c.height=18;
+    const x=c.getContext("2d",{willReadFrequently:true}); x.drawImage(this.video,0,0,32,18);
+    const d=x.getImageData(0,0,32,18).data, a=new Uint8Array(576);
+    for(let i=0;i<576;i++) a[i]=(d[i*4]+d[i*4+1]+d[i*4+2])/3; return a;
+  },
+  async liveTick(){
+    const L=this.live; L.lastAt=Date.now();
+    // 장면 변화 감지: 크게 바뀌면 새 설비로 보고 누적 초기화, 거의 같고 이미 충분히 판독했으면 호출 생략(사용량 절약)
+    const sig=this.frameSig();
+    if(L.sig){ let df=0; for(let i=0;i<576;i++) df+=Math.abs(sig[i]-L.sig[i]); df/=576;
+      if(df>28){ L.obs=[]; L.fused=null; L.match=null; L.said=""; L.blob=null; }
+      else if(df<5 && L.obs.length>=4){ L.status="같은 장면 — 충분히 판독됨 (다른 각도/명판을 비추면 재분석)"; L.sig=sig; return; } }
+    L.sig=sig; L.busy=true; L.status=L.obs.length?`AI 판독 중… (${L.obs.length+1}번째 프레임)`:"AI 판독 중…";
+    try{
+      const blob=await resizeImage(this.video,1024,0.78);
+      const cands=S.equips.slice(0,200).map(e=>[e.id,typeName(e.type),e.name,e.maker,e.model,e.serial,e.location].map(v=>String(v||"").replace(/\|/g,"/")).join("|"));
+      const r=await callGemini(PROMPT_LIVE(cands),[blob]);
+      if(this.equip){ L.busy=false; return; }               // 그 사이 QR로 잡혔으면 무시
+      if(r && r.found!==false && (r.maker||r.model||r.serial||r.type||r.name)){
+        r.at=Date.now(); L.obs.push(r); if(L.obs.length>6) L.obs.shift();
+        if(r.quality==="좋음"||!L.blob) L.blob=blob;
+        L.fused=fuseObs(L.obs); L.match=matchLedger(L.fused);
+        const m=L.match;
+        if(m.lock){ L.status=""; this.setEquip(m.top.e);
+          Voice.say(`AI 인식: ${m.top.e.name||typeName(m.top.e.type)}. ${m.top.why.join(", ")}. ${this.liveDiff.length?`대장과 다른 항목 ${this.liveDiff.length}개`:""}`); }
+        else if(m.ambiguous){ L.status=`후보 ${m.list.filter(x=>x.sc>=m.top.sc-0.5).length}대 — 시리얼/명판을 가까이 비추세요`; if(L.said!=="amb"){ L.said="amb"; Voice.say("같은 모델 후보가 여러 대입니다. 시리얼이 보이게 비춰 주세요"); } }
+        else if(!m.top && L.obs.length>=2){ L.status="대장에 없는 설비 — 신규 등록 가능"; if(L.said!=="new"){ L.said="new"; Voice.say(`${L.fused.maker||""} ${typeName(L.fused.type)}. 대장에 없는 설비입니다. 신규 등록 버튼을 누르세요`); } }
+        else L.status=r.tip? "💡 "+r.tip : "판독값 누적 중…";
+      }else{ L.status = r&&r.tip? "💡 "+r.tip : "설비가 보이지 않습니다 — 설비/명판을 화면 중앙에"; }
+    }catch(e){
+      if(/429|한도/.test(e.message)){ L.backoff=Date.now()+30000; L.status="AI 사용 한도 — 30초 후 재시도"; }
+      else { L.backoff=Date.now()+8000; L.status="AI 오류: "+e.message.slice(0,60); }
+    }
+    L.busy=false; L.ver++;
+  },
+  async registerFromLive(){
+    const f=this.live.fused||{}; let photo=null;
+    if(this.live.blob){ photo=uid("PH"); await DB.put(photo,this.live.blob); }
+    ui.openSheet("equipEdit",{prefill:{type:TYPES[f.type]?f.type:"etc", name:f.name||"", maker:f.maker||"", model:f.model||"", serial:f.serial||"", rating:f.rating||"", photo, sync:"신규",
+      memo:"AI 실시간 판독("+(f.n||0)+"프레임)"}});
   },
   async toggleTorch(){
     if(!this.track) return;
@@ -623,6 +757,14 @@ const AR = {
   renderExtra(finishing){
     const el=$("#arExtra"); let h="";
     if(this._unk && !this.equip) h+=`<button class="btn blue" onclick="ui.newEquip('${esc(this._unk).replace(/'/g,"")}')">＋ 이 QR로 설비 등록</button>`;
+    const L=this.live;
+    if(!this.equip && L.fused){
+      const m=L.match||{};
+      if(m.top && !m.lock) h+=`<button class="btn blue" onclick="AR.setEquip(findEquip('${esc(m.top.e.id)}'))">이 설비 맞음: ${esc((m.top.e.name||m.top.e.id).slice(0,14))}</button>`;
+      if(!m.lock && L.obs.length>=1) h+=`<button class="btn blue" onclick="AR.registerFromLive()">＋ 신규 등록(AI 판독값)</button>`;
+      h+=`<button class="btn" onclick="AR.liveReset()">🔁 다시 인식</button>`;
+    }
+    if(this.equip && this.liveDiff.length) h+=`<button class="btn blue" onclick="AR.applyDiff()">대장을 현장값으로 갱신(${this.liveDiff.length})</button>`;
     if(this.lastAI && RESULT_RANK[this.lastAI.status]!=null) h+=`<button class="btn" onclick="AR.applyAI()">AI 판정 적용(${esc(this.lastAI.status)})</button>`;
     if(this.session && (finishing || this.session.items.some(i=>i.result))) h+=`<button class="btn blue" onclick="AR.finish()">💾 점검 완료·저장</button>`;
     el.innerHTML=h; el.style.display=h?"flex":"none";
@@ -635,7 +777,7 @@ const AR = {
     if(this.glasses){ this.view(x,0,0,W/2,H); this.view(x,W/2,0,W/2,H); x.fillStyle="#000"; x.fillRect(W/2-2,0,4,H); }
     else this.view(x,0,0,W,H);
     // AI 버튼 상태가 바뀌면 하단 버튼 갱신
-    const k=(this.lastAI?this.lastAI.at:0)+":"+(this.session?this.session.items.filter(i=>i.result).length:-1)+":"+(this._unk||"")+":"+(this.equip?this.equip.id:"");
+    const k=(this.lastAI?this.lastAI.at:0)+":"+(this.session?this.session.items.filter(i=>i.result).length:-1)+":"+(this._unk||"")+":"+(this.equip?this.equip.id:"")+":"+this.live.ver;
     if(k!==this._k){ this._k=k; this.renderExtra(); }
   },
   /* 한쪽 화면(일반모드는 전체, 안경모드는 좌/우 눈) */
@@ -648,9 +790,26 @@ const AR = {
     const map=p=>({x:X+(p.x-sx)*sc, y:Y+(p.y-sy)*sc});
 
     // 조준선
-    if(!this.equip){ x.strokeStyle="rgba(59,214,198,.7)"; x.lineWidth=2*u; const s=70*u, cx=X+W/2, cy=Y+H/2;
+    const L=this.live, F=L.fused, liveOn=L.on&&S.settings.apiKey;
+    const showBox = !this.equip && F && F.box && F.box.length===4 && F.box[2]>F.box[0] && vw;
+    if(!this.equip && !showBox){ x.strokeStyle="rgba(59,214,198,.7)"; x.lineWidth=2*u; const s=70*u, cx=X+W/2, cy=Y+H/2;
       [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([a,b])=>{ x.beginPath(); x.moveTo(cx+a*s,cy+b*s-b*18*u); x.lineTo(cx+a*s,cy+b*s); x.lineTo(cx+a*s-a*18*u,cy+b*s); x.stroke(); });
-      this.text(x,"설비 QR 코드를 비춰 주세요",X+W/2,cy+s+26*u,14*u,"#cfe9e6","center"); }
+      this.text(x, liveOn?"설비를 비추세요 — AI 실시간 인식 (QR도 가능)":"설비 QR 코드를 비춰 주세요",X+W/2,cy+s+26*u,14*u,"#cfe9e6","center"); }
+    // 실시간 AI 인식 결과: 설비 위치 박스 + 프레임 누적 판독값(✓n/m = n개 프레임에서 같은 값)
+    if(showBox){
+      const [y0,x0,y1,x1]=F.box, A=map({x:x0/1000*vw,y:y0/1000*vh}), B=map({x:x1/1000*vw,y:y1/1000*vh});
+      const age=Date.now()-(L.obs[L.obs.length-1]||{}).at, col="#a78bfa";
+      x.save(); x.globalAlpha=age<5000?1:0.45; x.strokeStyle=col; x.lineWidth=3*u; x.setLineDash([10*u,6*u]); x.strokeRect(A.x,A.y,B.x-A.x,B.y-A.y); x.restore();
+      const ag=k=>F[k]?` ✓${F.agree[k]}/${F.n}`:"";
+      const m=L.match||{};
+      const lines=[`🧠 ${F.name||typeName(F.type)}`, F.maker?`제조사 ${F.maker}${ag("maker")}`:"", F.model?`모델 ${F.model}${ag("model")}`:"", F.serial?`S/N ${F.serial}${ag("serial")}`:"",
+        F.status?`상태 ${F.status}`:"", m.top? `대장 후보: ${m.top.e.name||m.top.e.id} (${m.top.why.join("·")})` : (F.n>=2?"대장에 없음 → 신규 등록 가능":"")];
+      this.panel(x,Math.max(X+12*u,Math.min(A.x,X+W-232*u)),Math.max(Y+(this.glasses?60:110)*u,A.y-8*u),lines,u,col,"topleft");
+    }
+    if(!this.equip && liveOn){
+      const st=(L.busy?"⏳ ":"🧠 ")+(L.status||"실시간 AI 인식 대기");
+      this.panel(x,X+W/2,Y+(this.glasses?14:64)*u,[st],u*0.9,"#a78bfa","top",W-24*u);
+    }
 
     // QR 위치 표시 + 설비 라벨(공간 앵커)
     const q=this.qr;
@@ -716,7 +875,7 @@ const AR = {
     L=L.slice(0,9);
     const w=Math.min(maxW, Math.max(...L.map(l=>x.measureText(l.t).width))+padd*2), h=L.length*lh+padd*2-(lh-fs);
     let X=ax, Y=ay;
-    if(anchor==="topright") X=ax-w; else if(anchor==="bottom"){ X=ax-w/2; Y=ay-h; } else if(anchor==="center"){ X=ax-w/2; Y=ay-h/2; }
+    if(anchor==="topright") X=ax-w; else if(anchor==="bottom"){ X=ax-w/2; Y=ay-h; } else if(anchor==="center"){ X=ax-w/2; Y=ay-h/2; } else if(anchor==="top"){ X=ax-w/2; }
     x.fillStyle="rgba(8,14,26,.78)"; this.rr(x,X,Y,w,h,8*u); x.fill();
     x.fillStyle=col; this.rr(x,X,Y,4*u,h,2*u); x.fill();
     x.textAlign="left";
@@ -759,8 +918,9 @@ function renderHome(){
     <ol style="margin:0;padding-left:20px;line-height:1.9">
       <li><b>설정</b>에서 점검자·사업장, Gemini API 키 입력</li>
       <li><b>설비 현행화</b> → 기존 대장 CSV 가져오기 또는 명판 촬영으로 AI 자동등록</li>
-      <li><b>QR 라벨 인쇄</b> 후 설비에 부착</li>
-      <li><b>AR 점검</b> → QR 비추기 → 화면 안내대로 정상/주의/불량 (음성 가능)</li>
+      <li><b>AR 점검</b> → 설비를 비추면 <b>🧠 AI가 실시간 인식</b>(QR 없이) → 대장과 자동 대조</li>
+      <li>대장에 없으면 <b>신규 등록</b>, 다르면 <b>대장 갱신</b> → QR 라벨 인쇄·부착(이후엔 QR로 즉시 인식)</li>
+      <li>화면 안내대로 정상/주의/불량 판정 (음성 가능)</li>
       <li>애매하면 <b>AI 진단</b> → "적용"이라고 말하면 반영</li>
       <li><b>👓 안경모드</b>: 휴대폰을 VR 헤드마운트에 끼우면 양손이 자유로운 시제품 AI안경</li>
     </ol>
@@ -837,12 +997,14 @@ function renderSet(){
     <label class="f">모델 (비워두면 자동 선택)<input class="inp" id="sModel" list="models" value="${esc(st.model)}" placeholder="자동"></label>
     <datalist id="models">${(st.models||[]).map(m=>`<option value="${esc(m)}">`).join("")}</datalist>
     <button class="btn block" style="margin-bottom:11px" onclick="ui.pickModel()">🔄 사용 가능한 모델 자동 선택 / 키 확인</button>
+    <label class="chk"><input type="checkbox" id="sLive" ${st.liveAI?"checked":""}> AR 화면에서 QR 없이 실시간 AI 인식</label>
+    <label class="f">실시간 인식 간격(초) — 짧을수록 빠르지만 사용량 증가<input class="inp" id="sLiveSec" type="number" min="2" max="30" value="${esc(st.liveSec||4)}"></label>
     <p class="note">키는 이 휴대폰에만 저장되며 백업 파일에도 포함되지 않습니다. 키 발급: Google AI Studio.</p>
   </div></div>
   <div class="card"><div class="card-h"><h2>음성 (핸즈프리)</h2></div><div class="card-b">
     <label class="chk"><input type="checkbox" id="sTts" ${st.tts?"checked":""}> 음성 안내(TTS)</label>
     <label class="chk"><input type="checkbox" id="sVoice" ${st.voice?"checked":""}> AR 시작 시 음성명령 자동 켜기</label>
-    <p class="note">명령어: <b>정상 · 주의 · 불량 · 다음 · 이전 · 진단 · 적용 · 촬영 · 현행화 · 다시 · 완료</b></p>
+    <p class="note">명령어: <b>정상 · 주의 · 불량 · 다음 · 이전 · 진단 · 적용 · 촬영 · 현행화 · 갱신 · 인식 · 다시 · 완료</b></p>
   </div></div>
   <div class="row" style="margin-top:14px"><button class="btn pri" onclick="ui.saveSettings()">설정 저장</button></div>
   <div class="card" style="margin-top:14px"><div class="card-h"><h2>점검항목 편집</h2></div><div class="card-b">
@@ -859,11 +1021,12 @@ function renderSet(){
    ============================================================ */
 const sheets = {
   equipEdit(b, arg){
-    const e = arg.id && findEquip(arg.id) || {id:arg.newId||newEquipId(), type:"rack", sync:"신규", isNew:true};
+    const e = arg.id && findEquip(arg.id) || {id:arg.newId||newEquipId(), type:"rack", sync:"신규", ...(arg.prefill||{}), isNew:true};
     const opt=Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${e.type===k?"selected":""}>${v.ic} ${v.name}</option>`).join("");
     b.innerHTML=`
       <button class="btn blue block" id="btnNP" style="margin-bottom:12px">📸 명판 촬영 → AI 자동입력</button>
-      <div id="npPrev"></div>
+      <div id="npPrev">${e.photo?`<img data-photo="${esc(e.photo)}" style="width:100%;border-radius:10px;margin-bottom:10px">`:""}</div>
+      ${arg.prefill?`<p class="note" style="margin:0 0 11px">🧠 AI 실시간 판독값이 채워졌습니다. 현장 명판과 대조 후 저장하세요.</p>`:""}
       <label class="f">설비 ID (QR 내용)<input class="inp mono" id="eId" value="${esc(e.id)}" ${e.isNew?"":"readonly"}></label>
       <label class="f">종류<select class="inp" id="eType">${opt}</select></label>
       <label class="f">명칭<input class="inp" id="eName" value="${esc(e.name)}" placeholder="예: UPS 30kVA #1"></label>
@@ -878,6 +1041,7 @@ const sheets = {
       <label class="f">위치 (층/실/랙)<input class="inp" id="eLoc" value="${esc(e.location)}" placeholder="3F 전송실 R-05"></label>
       <label class="f">비고<textarea class="inp" id="eMemo" rows="2">${esc(e.memo)}</textarea></label>
       <div class="row"><button class="btn pri" id="eSave">저장</button></div>`;
+    hydratePhotos(b);
     let photoId=e.photo||null;
     b.querySelector("#btnNP").onclick=async()=>{
       const f=await pickFile("image/*",true); if(!f) return;
@@ -904,7 +1068,7 @@ const sheets = {
       delete rec.isNew;
       if(e.isNew){ rec.createdAt=Date.now(); S.equips.unshift(rec); } else Object.assign(findEquip(e.id),rec);
       save(); ui.closeSheet(); toast("저장됨","good");
-      if(AR.running){ AR._unk=null; AR.setEquip(findEquip(id)); } else render();
+      if(AR.running){ AR._unk=null; AR.liveReset(); AR.setEquip(findEquip(id)); } else render();
     };
   },
   equipView(b, id){
@@ -990,7 +1154,7 @@ const ui = {
   saveSettings(){
     const st=S.settings; st.inspector=$("#sInsp").value.trim(); st.site=$("#sSite").value.trim();
     st.apiKey=$("#sKey").value.trim(); const nm=$("#sModel").value.trim(); if(nm!==st.model) st.model=nm;
-    st.tts=$("#sTts").checked; st.voice=$("#sVoice").checked; save(); render(); toast("설정 저장됨","good");
+    st.tts=$("#sTts").checked; st.voice=$("#sVoice").checked; st.liveAI=$("#sLive").checked; st.liveSec=Math.max(2,Math.min(30,+$("#sLiveSec").value||4)); save(); render(); toast("설정 저장됨","good");
   },
   async pickModel(){
     S.settings.apiKey=$("#sKey").value.trim(); if(!S.settings.apiKey){ toast("API 키를 먼저 입력하세요","bad"); return; }

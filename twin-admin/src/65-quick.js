@@ -433,6 +433,7 @@
         (ul ? '<div class="tx-wb-file"><b>' + esc(ul.name || '도면 사진') + '</b><span>' + ul.w + '×' + ul.h + 'px · 1px = ' + ul.tf.s.toFixed(2) + 'mm · 도면 ' + (ul.w * ul.tf.s / 1000).toFixed(1) + '×' + (ul.h * ul.tf.s / 1000).toFixed(1) + 'm</span></div>' : '') +
         '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn ' + (ul ? '' : 'tx-wb-pri') + '" data-q="photo">' + (ul ? '도면 교체' : '도면 올리기 (사진·PDF)') + '</button>' +
         (ul ? '<button type="button" class="tx-wb-btn tx-wb-pri" data-q="scale">치수로 축척 맞춤</button><button type="button" class="tx-wb-btn" data-q="rot">90° 회전</button>' : '') + '</div>' +
+        tiltRow() +
         '<label class="tx-qk-lbl">실측 거리 (mm)<input type="number" min="100" step="10" data-q="dist" value="' + (tool.dist || '') + '" placeholder="예: 12000 (복도 12m)"></label>' +
         (ul ? '<label class="tx-wb-rng">사진 투명도 <input type="range" min="10" max="100" step="5" data-q="op" value="' + Math.round(ul.opacity * 100) + '"><output>' + Math.round(ul.opacity * 100) + '%</output></label>' : '') +
         '<p class="tx-wb-help">실측 치수가 없으면 종이도면의 치수 표기나 표준 문 폭(약 900mm)을 기준으로 사용해도 됩니다. PDF 도면은 선택한 페이지를 고해상도 이미지로 바꿔 올립니다.</p>' +
@@ -450,7 +451,7 @@
         '<div class="tx-wb-row2"><label>실 이름<input type="text" data-q="rname" value="' + esc(tool.roomName) + '" placeholder="예: 7층 EPS실"></label>' +
         '<label>유형<select data-q="rkind">' + ROOM_TYPES.map(function (t) { return '<option' + (t[0] === tool.roomKind ? ' selected' : '') + '>' + t[0] + '</option>'; }).join('') + '</select></label></div>' +
         '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn ' + (cap && cap.mode === 'room' ? 'tx-wb-pri' : '') + '" data-q="rtool">' + (cap && cap.mode === 'room' ? '■ 그리기 중지' : '✎ 실 그리기 시작') + '</button></div>' +
-        edPanel() +
+        edPanel() + (ed ? '' : tiltRow()) +
         '<h5>이 층의 실 <span class="tx-count">' + rs.length + '</span></h5>' +
         (rs.length ? '<ul class="tx-wb-list">' + rs.map(function (r) { return '<li><span><input type="text" class="tx-qk-rin" data-q="rren" data-id="' + esc(r.id) + '" value="' + esc(r.name) + '"><small>' + esc(r.kind) + ' · ' + (r.w / 1000).toFixed(1) + '×' + (r.h / 1000).toFixed(1) + 'm · ' + esc(r.id) + '</small></span><button type="button" class="tx-wb-link' + (ed && ed.id === r.id ? ' is-on' : '') + '" data-q="red" data-id="' + esc(r.id) + '">' + (ed && ed.id === r.id ? '편집 중' : '형틀·문 편집') + '</button><button type="button" class="tx-wb-link tx-wb-danger" data-q="rdel" data-id="' + esc(r.id) + '">삭제</button></li>'; }).join('') + '</ul>' : '<p class="tx-wb-empty">아직 없음 · 통신실·EPS·복도·계단 위주로 그리면 충분합니다</p>');
     } else if (step === 4) {
@@ -650,6 +651,8 @@
       else if (a === 'rot') { var c = curFloor(); if (TX.workbench && TX.underlay.get(c)) { var r = TX.underlay.get(c); TX.underlay.update(c, { tf: { rot: r.tf.rot + Math.PI / 2 } }); } renderPanel(); }
       else if (a === 'rtool') { if (cap && cap.mode === 'room') stopTool(); else startTool('room'); renderPanel(); }
       else if (a === 'red') openEd(id);
+      else if (a === 'straight') { closeEd(true); startTool('straight'); renderPanel(); }
+      else if (a === 'tilt') { rotUnderlay(parseFloat(b.getAttribute('data-k')) * Math.PI / 180); renderPanel(); }
       else if (a === 'ed-close') { closeEd(); toast('실 편집을 마쳤습니다 (자동 저장됨)', 'success'); }
       else if (a === 'ed-undo') edUndo();
       else if (a === 'ed-rot') { var er = edRoom(); if (er) { var cx = er.x + er.w / 2, cy = er.y + er.h / 2; edCommit({ x: Math.max(0, Math.round((cx - er.h / 2) / 100) * 100), y: Math.max(0, Math.round((cy - er.w / 2) / 100) * 100), w: er.h, h: er.w }); } }
@@ -688,6 +691,7 @@
       else if (a === 'rkind') { tool.roomKind = t.value; if (!tool.roomName) tool.roomName = ''; }
       else if (a === 'rname') tool.roomName = t.value.trim();
       else if (a === 'rren') { var r = D.rooms.find(function (q) { return q.id === t.getAttribute('data-id'); }); if (r) { r.name = t.value.trim() || r.name; var pn = autoPlaceRoom(r); save(); apply(); if (pn) toast('위치가 「' + r.name + '」인 설비 ' + pn + '대를 자동 배치했습니다', 'success'); } }
+      else if (a === 'tiltdeg') { var dv = parseFloat(t.value); if (isFinite(dv)) { rotUnderlay((dv - ulDeg()) * Math.PI / 180); renderPanel(); } }
       else if (a && a.indexOf('ed-') === 0) edField(a.slice(3), t.value, t);
       else if (a === 'dist') tool.dist = parseFloat(t.value) || null;
       else if (a === 'auto') { D.autoLinks = t.checked; autoLink(); save(); apply(); }
@@ -755,6 +759,7 @@
       if (cap.d0 && Math.abs(e.clientX - cap.d0.x) + Math.abs(e.clientY - cap.d0.y) > 5) return;
       var mm = TX.cad2d.screenToMm(e.clientX, e.clientY); if (!mm) return;
       if (cap.mode === 'room') { var hit = D.rooms.filter(function (q) { return q.floor === curFloor() && mm.x >= q.x && mm.x <= q.x + q.w && mm.y >= q.y && mm.y <= q.y + q.h; }).sort(function (p, q) { return p.w * p.h - q.w * q.h; })[0]; if (hit) openEd(hit.id); return; }
+      if (cap.mode === 'straight') { cap.pts.push(mm); mark(e.clientX, e.clientY, cap.pts.length); if (cap.pts.length === 2) finishStraight(); else updateBar(); return; }
       if (cap.mode === 'scale') {
         cap.pts.push(mm); mark(e.clientX, e.clientY, cap.pts.length);
         if (cap.pts.length === 2) finishScale(); else updateBar();
@@ -779,6 +784,7 @@
   function updateBar() {
     if (!cap) return;
     var t = cap.mode === 'align' ? ['A: 현재 그려진 실(데이터)의 기준점(예: 외곽 실 모서리)을 클릭', "A': 그 점이 도면 사진에서 있어야 할 위치를 클릭", 'B: 멀리 떨어진 두 번째 데이터 기준점을 클릭', "B': 그 점의 도면상 위치를 클릭"][cap.pts.length]
+      : cap.mode === 'straight' ? (cap.pts.length ? '② 같은 벽의 다른 끝을 클릭하세요' : '① 기울어진 벽(직선)의 한쪽 끝을 클릭하세요')
       : cap.mode === 'scale' ? (cap.pts.length ? '② 같은 치수의 다른 끝점을 클릭하세요' : '① 길이를 아는 구간의 한쪽 끝을 클릭하세요')
       : cap.mode === 'room' ? '실 그리기: 모서리에서 대각선으로 끌기 · 「' + (tool.roomName || '이름 미정') + '」 (' + tool.roomKind + ')'
       : '배치: 「' + ((D.assets.find(function (a) { return a.id === tool.placeId; }) || {}).name || '') + '」 설치 위치를 클릭';
@@ -792,6 +798,30 @@
     var w = Math.abs(b.x - a.x) / 1000, h = Math.abs(b.y - a.y) / 1000;
     cap.svg.innerHTML = '<rect x="' + (p.x - hr.left) + '" y="' + (p.y - hr.top) + '" width="' + (q.x - p.x) + '" height="' + (q.y - p.y) + '" fill="#3e63db" fill-opacity="0.18" stroke="#93c5fd" stroke-width="2" stroke-dasharray="6 4"/>' +
       '<text x="' + (q.x - hr.left + 8) + '" y="' + (q.y - hr.top) + '" fill="#dbeafe" font-size="12" font-weight="700" style="paint-order:stroke;stroke:#0b1220;stroke-width:3px">' + w.toFixed(1) + ' × ' + h.toFixed(1) + ' m</text>';
+  }
+  /** 도면 사진 회전: 기준점(px,py mm)을 중심으로 d 라디안 (실·설비 좌표는 그대로, 도면만 돌림) */
+  function rotUnderlay(d, px, py) {
+    var code = curFloor(), u = TX.underlay && TX.underlay.get(code); if (!u) return false;
+    var t = u.tf, c0 = Math.cos(t.rot), s0 = Math.sin(t.rot);
+    if (px == null) { px = t.tx + t.s * (c0 * u.w / 2 - s0 * u.h / 2); py = t.ty + t.s * (s0 * u.w / 2 + c0 * u.h / 2); }
+    var c = Math.cos(d), sn = Math.sin(d), dx = t.tx - px, dy = t.ty - py;
+    TX.underlay.update(code, { tf: { rot: t.rot + d, tx: px + c * dx - sn * dy, ty: py + sn * dx + c * dy } });
+    return true;
+  }
+  function ulDeg() { var u = TX.underlay && TX.underlay.get(curFloor()); if (!u) return 0; var d = u.tf.rot * 180 / Math.PI % 360; if (d > 180) d -= 360; if (d <= -180) d += 360; return Math.round(d * 10) / 10; }
+  function tiltRow() {
+    if (!(TX.underlay && TX.underlay.get(curFloor()))) return '';
+    return '<div class="tx-qk-alt tx-qk-tilt"><b>도면이 기울어져 있나요?</b><span>실은 가로·세로 사각형으로 그려지므로 <b>도면을 똑바로 세운 뒤</b> 맞추세요. 「벽 2점으로 바로잡기」를 누르고 <b>기울어진 벽 한 줄의 양 끝</b>을 차례로 클릭하면 그 벽이 수평/수직이 되도록 도면이 돌아갑니다. 이미 그린 실은 그대로 있으니 이후 흰 손잡이로 다시 맞추면 됩니다.</span>' +
+      '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn tx-wb-pri" data-q="straight">벽 2점으로 바로잡기</button><button type="button" class="tx-wb-btn" data-q="tilt" data-k="-1">왼쪽 1°</button><button type="button" class="tx-wb-btn" data-q="tilt" data-k="-0.2">왼쪽 0.2°</button><button type="button" class="tx-wb-btn" data-q="tilt" data-k="0.2">오른쪽 0.2°</button><button type="button" class="tx-wb-btn" data-q="tilt" data-k="1">오른쪽 1°</button></div>' +
+      '<label class="tx-qk-lbl">도면 회전 각도 (°)<input type="number" step="0.1" data-q="tiltdeg" value="' + ulDeg() + '"></label></div>';
+  }
+  function finishStraight() {
+    var a = cap.pts[0], b = cap.pts[1]; stopTool();
+    var ang = Math.atan2(b.y - a.y, b.x - a.x), tgt = Math.round(ang / (Math.PI / 2)) * (Math.PI / 2), d = tgt - ang;
+    if (Math.hypot(b.x - a.x, b.y - a.y) < 300) { toast('두 점이 너무 가깝습니다. 벽의 양 끝을 멀리 찍어 주세요', 'warn'); renderPanel(); return; }
+    rotUnderlay(d, (a.x + b.x) / 2, (a.y + b.y) / 2);
+    renderPanel(); if (step === 3) startTool('room');
+    toast('도면을 ' + (d * 180 / Math.PI).toFixed(1) + '° 돌려 벽을 ' + (Math.abs(Math.sin(tgt)) > 0.5 ? '수직' : '수평') + '으로 맞췄습니다', 'success');
   }
   function startScale() {
     var dist = tool.dist || parseFloat((P.querySelector('[data-q="dist"]') || {}).value);

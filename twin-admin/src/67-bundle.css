@@ -49,3 +49,14 @@
 .tx-qk-pvt table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
 .tx-qk-pvt th { position: sticky; top: 0; background: #0f2a4a; color: #fff; padding: 4px 6px; text-align: left; }
 .tx-qk-pvt td { padding: 3px 6px; border-top: 1px solid #eef2f7; }
+/* 실 형틀·출입문 편집 */
+.tx-qk-edsvg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 29; }
+.tx-qk-edsvg [data-h] { pointer-events: all; touch-action: none; }
+.tx-qk-editing .tx-cad-tip { display: none !important; }
+.tx-qk-ed { margin: 10px 0; padding: 10px 12px; border: 1.5px solid #38bdf8; border-radius: 10px; background: #f0f9ff; display: flex; flex-direction: column; gap: 7px; font-size: 12px; }
+.tx-qk-ed-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tx-qk-ed small { color: #475569; line-height: 1.45; }
+.tx-qk-ed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+.tx-qk-ed-grid label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: #334155; }
+.tx-qk-ed-grid input, .tx-qk-ed-grid select { width: 100%; box-sizing: border-box; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; }
+.tx-wb-link.is-on { color: #0284c7; font-weight: 700; }

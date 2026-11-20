@@ -6485,6 +6485,17 @@ html:not(.ict-light-ms) table.v14-fault tbody tr.v14-ok { background: transparen
 .tx-qk-pvt table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
 .tx-qk-pvt th { position: sticky; top: 0; background: #0f2a4a; color: #fff; padding: 4px 6px; text-align: left; }
 .tx-qk-pvt td { padding: 3px 6px; border-top: 1px solid #eef2f7; }
+/* 실 형틀·출입문 편집 */
+.tx-qk-edsvg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 29; }
+.tx-qk-edsvg [data-h] { pointer-events: all; touch-action: none; }
+.tx-qk-editing .tx-cad-tip { display: none !important; }
+.tx-qk-ed { margin: 10px 0; padding: 10px 12px; border: 1.5px solid #38bdf8; border-radius: 10px; background: #f0f9ff; display: flex; flex-direction: column; gap: 7px; font-size: 12px; }
+.tx-qk-ed-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tx-qk-ed small { color: #475569; line-height: 1.45; }
+.tx-qk-ed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+.tx-qk-ed-grid label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: #334155; }
+.tx-qk-ed-grid input, .tx-qk-ed-grid select { width: 100%; box-sizing: border-box; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; }
+.tx-wb-link.is-on { color: #0284c7; font-weight: 700; }
 
 /* ---- 68-fusion.css ---- */
 /* 68-fusion: ADMIN 디지털 트윈 화면 안에 뷰어 도킹 */
@@ -13523,10 +13534,11 @@ tr.tx-dr-low td:first-child { color: #64748b; }
     if (TX.state.view === '3d') TX.setState({ view: '2d' });
     renderPanel(); startTool();
   }
-  function close(keep) { if (P) { P.remove(); P = null; } stopTool(); if (!keep && D.active && !window.TWINX_STANDALONE) setActive(false); }
+  function close(keep) { closeEd(true); if (P) { P.remove(); P = null; } stopTool(); if (!keep && D.active && !window.TWINX_STANDALONE) setActive(false); }
   var STEPS = ['현행화·사진', '도면 확보', '실 그리기', '설비 배치', '검증·내보내기'];
   function renderPanel() {
     if (!P) return;
+    if (ed && step !== 3) closeEd(true);
     var f = fl(), code = f && f.code;
     var placed = D.assets.filter(function (a) { return a.room; }).length;
     var h = '<div class="tx-wb-hd"><div><small>' + (window.TWINX_STANDALONE ? '설비·도면 등록 · 단독 운영판' : '간이 현행화 모드 · 초안 (ADMIN 등록 전)') + '</small><b>' + esc(D.site || '사업장 미정') + '</b><span class="tx-qk-saved" data-r="saved">' + savedText() + '</span></div><button type="button" class="tx-wb-x" data-q="close" aria-label="닫기">✕</button></div>' +
@@ -13564,12 +13576,13 @@ tr.tx-dr-low td:first-child { color: #64748b; }
         '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn" data-q="autodraw">이 층 자동 작도</button><button type="button" class="tx-wb-btn" data-q="autodrawall">전체 층 자동 작도</button></div></div>';
     } else if (step === 3) {
       var rs = D.rooms.filter(function (r) { return r.floor === code; });
-      h += '<p class="tx-wb-guide">도면 위에서 <b>실의 한 모서리에서 대각선 모서리까지 끌어서</b> 사각형을 그립니다(100mm 단위 정렬). 그리기 전에 실 이름·유형을 정하세요. 도면 이동은 「그리기 중지」 후 드래그.</p>' +
+      h += '<p class="tx-wb-guide">도면 위에서 <b>실의 한 모서리에서 대각선 모서리까지 끌어서</b> 사각형을 그립니다(100mm 단위 정렬). 그리기 전에 실 이름·유형을 정하세요. 도면 이동은 「그리기 중지」 후 드래그. <b>그린 실을 클릭</b>하면 형틀 크기·위치와 출입문을 고칠 수 있습니다.</p>' +
         '<div class="tx-wb-row2"><label>실 이름<input type="text" data-q="rname" value="' + esc(tool.roomName) + '" placeholder="예: 7층 EPS실"></label>' +
         '<label>유형<select data-q="rkind">' + ROOM_TYPES.map(function (t) { return '<option' + (t[0] === tool.roomKind ? ' selected' : '') + '>' + t[0] + '</option>'; }).join('') + '</select></label></div>' +
         '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn ' + (cap && cap.mode === 'room' ? 'tx-wb-pri' : '') + '" data-q="rtool">' + (cap && cap.mode === 'room' ? '■ 그리기 중지' : '✎ 실 그리기 시작') + '</button></div>' +
+        edPanel() +
         '<h5>이 층의 실 <span class="tx-count">' + rs.length + '</span></h5>' +
-        (rs.length ? '<ul class="tx-wb-list">' + rs.map(function (r) { return '<li><span><input type="text" class="tx-qk-rin" data-q="rren" data-id="' + esc(r.id) + '" value="' + esc(r.name) + '"><small>' + esc(r.kind) + ' · ' + (r.w / 1000).toFixed(1) + '×' + (r.h / 1000).toFixed(1) + 'm · ' + esc(r.id) + '</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-q="rdel" data-id="' + esc(r.id) + '">삭제</button></li>'; }).join('') + '</ul>' : '<p class="tx-wb-empty">아직 없음 · 통신실·EPS·복도·계단 위주로 그리면 충분합니다</p>');
+        (rs.length ? '<ul class="tx-wb-list">' + rs.map(function (r) { return '<li><span><input type="text" class="tx-qk-rin" data-q="rren" data-id="' + esc(r.id) + '" value="' + esc(r.name) + '"><small>' + esc(r.kind) + ' · ' + (r.w / 1000).toFixed(1) + '×' + (r.h / 1000).toFixed(1) + 'm · ' + esc(r.id) + '</small></span><button type="button" class="tx-wb-link' + (ed && ed.id === r.id ? ' is-on' : '') + '" data-q="red" data-id="' + esc(r.id) + '">' + (ed && ed.id === r.id ? '편집 중' : '형틀·문 편집') + '</button><button type="button" class="tx-wb-link tx-wb-danger" data-q="rdel" data-id="' + esc(r.id) + '">삭제</button></li>'; }).join('') + '</ul>' : '<p class="tx-wb-empty">아직 없음 · 통신실·EPS·복도·계단 위주로 그리면 충분합니다</p>');
     } else if (step === 4) {
       var seenB = {}, as = D.assets.filter(function (a) { if (a.floor !== code) return false; if (!a.bundle) return true; if (seenB[a.bundle]) { seenB[a.bundle]++; return false; } seenB[a.bundle] = 1; return true; });
       h += '<p class="tx-wb-guide">목록에서 설비를 고른 뒤 <b>도면의 설치 위치를 클릭</b>하세요(실 안). 배치하면 다음 미배치 설비가 자동 선택됩니다.</p>' +
@@ -13766,7 +13779,11 @@ tr.tx-dr-low td:first-child { color: #64748b; }
       else if (a === 'scale') startScale();
       else if (a === 'rot') { var c = curFloor(); if (TX.workbench && TX.underlay.get(c)) { var r = TX.underlay.get(c); TX.underlay.update(c, { tf: { rot: r.tf.rot + Math.PI / 2 } }); } renderPanel(); }
       else if (a === 'rtool') { if (cap && cap.mode === 'room') stopTool(); else startTool('room'); renderPanel(); }
-      else if (a === 'rdel') { D.rooms = D.rooms.filter(function (r) { return r.id !== id; }); D.assets.forEach(function (x) { if (x.room === id) { x.room = null; x.x = x.y = null; } }); save(); apply(); }
+      else if (a === 'red') openEd(id);
+      else if (a === 'ed-close') { closeEd(); toast('실 편집을 마쳤습니다 (자동 저장됨)', 'success'); }
+      else if (a === 'ed-undo') edUndo();
+      else if (a === 'ed-rot') { var er = edRoom(); if (er) { var cx = er.x + er.w / 2, cy = er.y + er.h / 2; edCommit({ x: Math.max(0, Math.round((cx - er.h / 2) / 100) * 100), y: Math.max(0, Math.round((cy - er.w / 2) / 100) * 100), w: er.h, h: er.w }); } }
+      else if (a === 'rdel') { if (ed && ed.id === id) closeEd(true); doorWrite(id, null); D.rooms = D.rooms.filter(function (r) { return r.id !== id; }); D.assets.forEach(function (x) { if (x.room === id) { x.room = null; x.x = x.y = null; } }); save(); apply(); }
       else if (a === 'pick') { tool.placeId = id; startTool('place'); renderPanel(); }
       else if (a === 'ldel') { D.links = D.links.filter(function (l) { return l.id !== id; }); save(); apply(); }
       else if (a === 'export') exportXlsx();
@@ -13801,6 +13818,7 @@ tr.tx-dr-low td:first-child { color: #64748b; }
       else if (a === 'rkind') { tool.roomKind = t.value; if (!tool.roomName) tool.roomName = ''; }
       else if (a === 'rname') tool.roomName = t.value.trim();
       else if (a === 'rren') { var r = D.rooms.find(function (q) { return q.id === t.getAttribute('data-id'); }); if (r) { r.name = t.value.trim() || r.name; var pn = autoPlaceRoom(r); save(); apply(); if (pn) toast('위치가 「' + r.name + '」인 설비 ' + pn + '대를 자동 배치했습니다', 'success'); } }
+      else if (a && a.indexOf('ed-') === 0) edField(a.slice(3), t.value, t);
       else if (a === 'dist') tool.dist = parseFloat(t.value) || null;
       else if (a === 'auto') { D.autoLinks = t.checked; autoLink(); save(); apply(); }
       else if (a === 'bundleQty') { D.bundleQty = t.checked; save(); }
@@ -13811,7 +13829,7 @@ tr.tx-dr-low td:first-child { color: #64748b; }
       else if (a === 'pvroom') tool.pv.room = t.value;
       else if (a === 'pvforce') { tool.pv.forceLoc = t.checked; renderPanel(); }
     });
-    P.addEventListener('input', function (e) { var t = e.target; if (t.getAttribute('data-q') === 'op') { TX.underlay.update(curFloor(), { opacity: +t.value / 100 }); var o = t.parentNode.querySelector('output'); if (o) o.textContent = t.value + '%'; } });
+    P.addEventListener('input', function (e) { var t = e.target; if (t.getAttribute('data-q') === 'ed-dpos') { var o2 = t.parentNode.querySelector('output'); if (o2) o2.textContent = t.value + '%'; } if (t.getAttribute('data-q') === 'op') { TX.underlay.update(curFloor(), { opacity: +t.value / 100 }); var o = t.parentNode.querySelector('output'); if (o) o.textContent = t.value + '%'; } });
     P.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); if (cap && cap.mode) { stopTool(); renderPanel(); } else close(true); } });
   }
   function pickFile(accept, cb) { var i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.style.display = 'none'; i.onchange = function () { var f = i.files && i.files[0]; i.remove(); if (f) cb(f); }; document.body.appendChild(i); i.click(); }
@@ -13843,7 +13861,7 @@ tr.tx-dr-low td:first-child { color: #64748b; }
     cap.bar = U.el('div', 'tx-wb-calbar'); host.appendChild(cap.bar); updateBar();
     host.classList.add('tx-wb-calib');
     cap.down = function (e) {
-      if (cap.bar.contains(e.target) || e.button !== 0) return;
+      if (cap.bar.contains(e.target) || e.button !== 0 || (ed && ed.svg.contains(e.target))) return;
       cap.d0 = { x: e.clientX, y: e.clientY };
       if (cap.mode === 'room') { e.stopPropagation(); e.preventDefault(); cap.r0 = TX.cad2d.screenToMm(e.clientX, e.clientY); host.setPointerCapture && host.setPointerCapture(e.pointerId); }
     };
@@ -13855,16 +13873,18 @@ tr.tx-dr-low td:first-child { color: #64748b; }
         e.stopPropagation();
         var a = cap.r0, b = TX.cad2d.screenToMm(e.clientX, e.clientY); cap.r0 = null; cap.svg.innerHTML = '';
         if (!b) return;
+        if (cap.d0 && Math.abs(e.clientX - cap.d0.x) + Math.abs(e.clientY - cap.d0.y) <= 5) return; // 클릭은 실 선택(편집)으로 처리
         var x0 = Math.round(Math.min(a.x, b.x) / 100) * 100, y0 = Math.round(Math.min(a.y, b.y) / 100) * 100, x1 = Math.round(Math.max(a.x, b.x) / 100) * 100, y1 = Math.round(Math.max(a.y, b.y) / 100) * 100;
         if (x1 - x0 < 600 || y1 - y0 < 600) { toast('실은 0.6m 이상 크기로 끌어서 그려 주세요', 'warn'); return; }
         addRoom(Math.max(0, x0), Math.max(0, y0), x1 - Math.max(0, x0), y1 - Math.max(0, y0));
       }
     };
     cap.click = function (e) {
-      if (cap.bar.contains(e.target)) return;
+      if (cap.bar.contains(e.target) || (ed && ed.svg.contains(e.target))) return;
       e.stopPropagation(); e.preventDefault();
       if (cap.d0 && Math.abs(e.clientX - cap.d0.x) + Math.abs(e.clientY - cap.d0.y) > 5) return;
       var mm = TX.cad2d.screenToMm(e.clientX, e.clientY); if (!mm) return;
+      if (cap.mode === 'room') { var hit = D.rooms.filter(function (q) { return q.floor === curFloor() && mm.x >= q.x && mm.x <= q.x + q.w && mm.y >= q.y && mm.y <= q.y + q.h; }).sort(function (p, q) { return p.w * p.h - q.w * q.h; })[0]; if (hit) openEd(hit.id); return; }
       if (cap.mode === 'scale') {
         cap.pts.push(mm); mark(e.clientX, e.clientY, cap.pts.length);
         if (cap.pts.length === 2) finishScale(); else updateBar();
@@ -13967,9 +13987,172 @@ tr.tx-dr-low td:first-child { color: #64748b; }
     D.rooms.push({ id: id, floor: code, name: name, kind: tool.roomKind, x: x, y: y, w: w, h: h });
     tool.roomName = '';
     var placedN = autoPlaceRoom(D.rooms[D.rooms.length - 1]);
-    save(); apply(); startTool('room');
-    toast('「' + name + '」 실을 추가했습니다 (' + (w / 1000).toFixed(1) + '×' + (h / 1000).toFixed(1) + 'm)' + (placedN ? ' · 위치가 「' + name + '」인 설비 ' + placedN + '대 자동 배치' : ''), 'success');
+    save(); apply(); startTool('room'); openEd(id);
+    toast('「' + name + '」 실을 추가했습니다 (' + (w / 1000).toFixed(1) + '×' + (h / 1000).toFixed(1) + 'm) · 흰 손잡이로 도면에 맞추고 주황 「문」으로 출입문 위치 조정' + (placedN ? ' · 위치가 「' + name + '」인 설비 ' + placedN + '대 자동 배치' : ''), 'success');
   }
+  /* ---------- 실 형틀·출입문 편집: 모서리/변 끌어 크기, 안쪽 끌어 이동, 주황 문 손잡이를 벽 따라 끌기 ---------- */
+  var ed = null;
+  var SIDE_KO = { N: '위(북)', E: '오른쪽(동)', S: '아래(남)', W: '왼쪽(서)', none: '문 없음' };
+  function geomAll() { try { var g = JSON.parse(localStorage.getItem('twinx_geom_v1') || '{}') || {}; g.doors = g.doors || {}; return g; } catch (e) { return { doors: {} }; } }
+  function doorGet(id) { return geomAll().doors[id] || null; }
+  function doorWrite(id, d) { var g = geomAll(); if (d) g.doors[id] = d; else delete g.doors[id]; try { localStorage.setItem('twinx_geom_v1', JSON.stringify(g)); } catch (e) { } }
+  function edRoom() { return ed && D.rooms.find(function (r) { return r.id === ed.id; }); }
+  function wallSpan(g, side) { var along = side === 'N' || side === 'S'; return { along: along, lo: along ? g.x : g.y, len: along ? g.w : g.h }; }
+  function fitDoor(d, g) {
+    if (!d || d.side === 'none' || !d.side) return d;
+    var s = wallSpan(g, d.side), w = Math.max(500, Math.min(d.w || 900, s.len - 200)), at = d.at == null ? s.lo + s.len / 2 : d.at;
+    return { side: d.side, w: Math.round(w), at: Math.round(U.clamp(at, s.lo + w / 2 + 50, s.lo + s.len - w / 2 - 50)) };
+  }
+  function doorPt(d, g) {
+    var s = wallSpan(g, d.side), at = d.at == null ? s.lo + s.len / 2 : d.at;
+    return d.side === 'N' ? [at, g.y] : d.side === 'S' ? [at, g.y + g.h] : d.side === 'W' ? [g.x, at] : [g.x + g.w, at];
+  }
+  function openEd(id) {
+    var r = D.rooms.find(function (q) { return q.id === id; }); if (!r) return;
+    var host = TX.ui && TX.ui.view2d; if (!host || !TX.cad2d || !TX.cad2d.mmToScreen) return;
+    if (ed && ed.id === id) return;
+    closeEd(true);
+    if (TX.state.view === '3d') TX.setState({ view: '2d' });
+    ed = { id: id, host: host, undo: [], key: '' };
+    ed.svg = U.svg('svg', { class: 'tx-qk-edsvg' }); host.appendChild(ed.svg); host.classList.add('tx-qk-editing');
+    ed.svg.addEventListener('pointerdown', edDown);
+    var loop = function () { if (!ed) return; edPaint(); ed.raf = requestAnimationFrame(loop); }; loop();
+    renderPanel();
+  }
+  function closeEd(silent) {
+    if (!ed) return;
+    cancelAnimationFrame(ed.raf); ed.svg.remove(); ed.host.classList.remove('tx-qk-editing'); ed = null;
+    window.removeEventListener('pointermove', edMove); window.removeEventListener('pointerup', edUp);
+    if (!silent) renderPanel();
+  }
+  function edPaint() {
+    var r = edRoom(), host = TX.ui && TX.ui.view2d;
+    if (!r || !host || TX.state.view === '3d' || r.floor !== curFloor()) { closeEd(); return; }
+    if (ed.svg.parentNode !== host) { host.appendChild(ed.svg); ed.host = host; host.classList.add('tx-qk-editing'); }
+    var dg = ed.drag && ed.drag.g, g = dg || r, door = ed.drag && ed.drag.door !== undefined ? ed.drag.door : doorGet(r.id);
+    var hr = host.getBoundingClientRect(), a = TX.cad2d.mmToScreen(g.x, g.y), b = TX.cad2d.mmToScreen(g.x + g.w, g.y + g.h); if (!a || !b) return;
+    var x0 = Math.min(a.x, b.x) - hr.left, y0 = Math.min(a.y, b.y) - hr.top, x1 = Math.max(a.x, b.x) - hr.left, y1 = Math.max(a.y, b.y) - hr.top;
+    var key = [x0, y0, x1, y1].map(function (v) { return Math.round(v); }).join(',') + JSON.stringify(door) + (ed.drag ? 1 : 0);
+    if (key === ed.key) return; ed.key = key;
+    var xm = (x0 + x1) / 2, ym = (y0 + y1) / 2, H = 12, o = [];
+    o.push('<rect data-h="move" x="' + x0 + '" y="' + y0 + '" width="' + (x1 - x0) + '" height="' + (y1 - y0) + '" fill="#38bdf8" fill-opacity="0.10" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="7 4" style="cursor:move"/>');
+    [['nw', x0, y0, 'nwse'], ['n', xm, y0, 'ns'], ['ne', x1, y0, 'nesw'], ['e', x1, ym, 'ew'], ['se', x1, y1, 'nwse'], ['s', xm, y1, 'ns'], ['sw', x0, y1, 'nesw'], ['w', x0, ym, 'ew']].forEach(function (h) {
+      o.push('<rect data-h="' + h[0] + '" x="' + (h[1] - H / 2) + '" y="' + (h[2] - H / 2) + '" width="' + H + '" height="' + H + '" rx="2" fill="#fff" stroke="#0284c7" stroke-width="2" style="cursor:' + h[3] + '-resize"/>');
+    });
+    var lab = (g.w / 1000).toFixed(2) + ' × ' + (g.h / 1000).toFixed(2) + ' m';
+    o.push('<text x="' + xm + '" y="' + (y0 - 10) + '" text-anchor="middle" fill="#e0f2fe" font-size="12" font-weight="700" style="paint-order:stroke;stroke:#0b1220;stroke-width:3px;pointer-events:none">' + esc(r.name) + ' · ' + lab + '</text>');
+    var dd = door && door.side && door.side !== 'none' ? door : { side: 'S', at: null, w: 900, ghost: true };
+    if (!(door && door.side === 'none')) {
+      var p = doorPt(dd, g), sp = TX.cad2d.mmToScreen(p[0], p[1]), s = wallSpan(g, dd.side), kk = (x1 - x0) / (g.w || 1), half = (dd.w || 900) / 2 * kk;
+      if (sp) {
+        var px = sp.x - hr.left, py = sp.y - hr.top;
+        if (!dd.ghost) o.push('<line x1="' + (s.along ? px - half : px) + '" y1="' + (s.along ? py : py - half) + '" x2="' + (s.along ? px + half : px) + '" y2="' + (s.along ? py : py + half) + '" stroke="#f97316" stroke-width="6" stroke-linecap="round" style="pointer-events:none"/>');
+        o.push('<circle data-h="door" cx="' + px + '" cy="' + py + '" r="10" fill="' + (dd.ghost ? '#0b1220' : '#f97316') + '" stroke="#fed7aa" stroke-width="2"' + (dd.ghost ? ' stroke-dasharray="3 2"' : '') + ' style="cursor:grab"/>' +
+          '<text x="' + px + '" y="' + (py + 4) + '" text-anchor="middle" fill="#fff" font-size="10" font-weight="800" style="pointer-events:none">문</text>');
+      }
+    }
+    ed.svg.innerHTML = o.join('');
+  }
+  function snapV(v, e) { var k = e && e.altKey ? 10 : 100; return Math.round(v / k) * k; }
+  function edDown(e) {
+    var h = e.target.getAttribute && e.target.getAttribute('data-h'); if (!h || e.button !== 0) return;
+    e.stopPropagation(); e.preventDefault();
+    var r = edRoom(); if (!r) return;
+    ed.drag = { h: h, s0: TX.cad2d.screenToMm(e.clientX, e.clientY), c0: [e.clientX, e.clientY], r0: { x: r.x, y: r.y, w: r.w, h: r.h }, g: { x: r.x, y: r.y, w: r.w, h: r.h }, moved: false };
+    if (h === 'door') ed.drag.door = doorGet(r.id) || null;
+    window.addEventListener('pointermove', edMove); window.addEventListener('pointerup', edUp);
+  }
+  function edMove(e) {
+    var d = ed && ed.drag; if (!d || !d.s0) return;
+    if (!d.moved && Math.abs(e.clientX - d.c0[0]) + Math.abs(e.clientY - d.c0[1]) < 3) return;
+    d.moved = true;
+    var p = TX.cad2d.screenToMm(e.clientX, e.clientY); if (!p) return;
+    var dx = p.x - d.s0.x, dy = p.y - d.s0.y, r0 = d.r0, X0 = r0.x, Y0 = r0.y, X1 = r0.x + r0.w, Y1 = r0.y + r0.h, MIN = 600;
+    if (d.h === 'move') { d.g = { x: Math.max(0, snapV(X0 + dx, e)), y: Math.max(0, snapV(Y0 + dy, e)), w: r0.w, h: r0.h }; return; }
+    if (d.h === 'door') {
+      var g = r0, c = [['N', Math.abs(p.y - g.y)], ['S', Math.abs(p.y - (g.y + g.h))], ['W', Math.abs(p.x - g.x)], ['E', Math.abs(p.x - (g.x + g.w))]].sort(function (a, b) { return a[1] - b[1]; })[0][0];
+      var k = e.altKey ? 10 : 50, along = c === 'N' || c === 'S';
+      d.door = fitDoor({ side: c, w: (d.door && d.door.w) || 900, at: Math.round((along ? p.x : p.y) / k) * k }, g); return;
+    }
+    if (d.h.indexOf('w') >= 0) X0 = Math.min(Math.max(0, snapV(r0.x + dx, e)), X1 - MIN);
+    if (d.h.indexOf('e') >= 0) X1 = Math.max(snapV(r0.x + r0.w + dx, e), X0 + MIN);
+    if (d.h.indexOf('n') >= 0) Y0 = Math.min(Math.max(0, snapV(r0.y + dy, e)), Y1 - MIN);
+    if (d.h.indexOf('s') >= 0) Y1 = Math.max(snapV(r0.y + r0.h + dy, e), Y0 + MIN);
+    d.g = { x: X0, y: Y0, w: X1 - X0, h: Y1 - Y0 };
+  }
+  function edUp() {
+    window.removeEventListener('pointermove', edMove); window.removeEventListener('pointerup', edUp);
+    var d = ed && ed.drag; if (!d) return; ed.drag = null; ed.key = '';
+    if (!d.moved) return;
+    if (d.h === 'door') edCommit(null, d.door);
+    else edCommit(d.g);
+  }
+  /** 형틀(g)·문(door) 변경을 저장: 이동이면 실 안 설비·문도 함께 이동, 크기 변경이면 설비·문을 실 안으로 */
+  function edCommit(g, door) {
+    var r = edRoom(); if (!r) return;
+    var cur = doorGet(r.id);
+    if (g && g.x === r.x && g.y === r.y && g.w === r.w && g.h === r.h) g = null;
+    if (door !== undefined && JSON.stringify(door || null) === JSON.stringify(cur || null)) door = undefined;
+    if (!g && door === undefined) return; // 변경 없음 → 되돌리기 기록도 남기지 않음
+    ed.undo.push({ r: { x: r.x, y: r.y, w: r.w, h: r.h }, door: cur ? JSON.parse(JSON.stringify(cur)) : null, a: D.assets.filter(function (a) { return a.room === r.id; }).map(function (a) { return [a.id, a.x, a.y]; }) });
+    if (ed.undo.length > 30) ed.undo.shift();
+    if (g) {
+      var dx = g.x - r.x, dy = g.y - r.y, moveOnly = g.w === r.w && g.h === r.h;
+      D.assets.forEach(function (a) {
+        if (a.room !== r.id || a.x == null) return;
+        if (moveOnly) { a.x += dx; a.y += dy; }
+        else { a.x = Math.round(U.clamp(a.x, g.x + 200, g.x + g.w - 200)); a.y = Math.round(U.clamp(a.y, g.y + 200, g.y + g.h - 200)); }
+      });
+      if (cur && cur.side && cur.side !== 'none') {
+        var nd = Object.assign({}, cur);
+        if (moveOnly && nd.at != null) nd.at += (nd.side === 'N' || nd.side === 'S') ? dx : dy;
+        door = fitDoor(nd, g);
+      }
+      r.x = g.x; r.y = g.y; r.w = g.w; r.h = g.h;
+      var f = fl(); if (f) { f.w = Math.max(f.w, r.x + r.w + 2000); f.h = Math.max(f.h, r.y + r.h + 2000); }
+    }
+    if (door !== undefined) doorWrite(r.id, door);
+    save(); apply();
+  }
+  function edUndo() {
+    var r = edRoom(), u = ed && ed.undo.pop(); if (!r || !u) return;
+    Object.assign(r, u.r); doorWrite(r.id, u.door);
+    u.a.forEach(function (x) { var a = D.assets.find(function (q) { return q.id === x[0]; }); if (a) { a.x = x[1]; a.y = x[2]; } });
+    save(); apply(); toast('직전 편집을 되돌렸습니다', 'info');
+  }
+  function edPanel() {
+    var r = edRoom(); if (!r) return '';
+    var d = doorGet(r.id), side = d ? d.side : '', s = d && d.side !== 'none' ? wallSpan(r, d.side) : null;
+    var pos = s && d.at != null ? Math.round((d.at - s.lo) / s.len * 100) : 50;
+    var num = function (k, lab, v) { return '<label>' + lab + '<input type="number" step="100" min="0" data-q="ed-' + k + '" value="' + Math.round(v) + '"></label>'; };
+    return '<div class="tx-qk-ed"><div class="tx-qk-ed-hd"><b>✎ 실 편집 · ' + esc(r.name) + '</b><button type="button" class="tx-wb-link" data-q="ed-close">편집 끝</button></div>' +
+      '<small>도면 위 <b>흰 손잡이</b>(모서리·변)를 끌면 크기, <b>점선 안쪽</b>을 끌면 이동, <b>주황 「문」</b>을 벽을 따라 끌면 출입문 위치가 바뀝니다. 다른 벽으로 끌면 그 벽으로 옮겨집니다. (100mm 단위 · Alt 누르면 10mm 정밀)</small>' +
+      '<div class="tx-qk-ed-grid">' + num('x', '왼쪽 X (mm)', r.x) + num('y', '위쪽 Y (mm)', r.y) + num('w', '가로 (mm)', r.w) + num('h', '세로 (mm)', r.h) + '</div>' +
+      '<div class="tx-qk-ed-grid"><label>출입문 벽<select data-q="ed-dside"><option value="">자동 추정</option>' + ['N', 'E', 'S', 'W', 'none'].map(function (k) { return '<option value="' + k + '"' + (k === side ? ' selected' : '') + '>' + SIDE_KO[k] + '</option>'; }).join('') + '</select></label>' +
+      '<label>문 폭 (mm)<input type="number" min="500" max="3000" step="50" data-q="ed-dw" value="' + ((d && d.w) || 900) + '"' + (s ? '' : ' disabled') + '></label></div>' +
+      (s ? '<label class="tx-wb-rng">벽 위 문 위치 <input type="range" min="0" max="100" step="1" data-q="ed-dpos" value="' + pos + '"><output>' + pos + '%</output></label>' : '') +
+      '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn" data-q="ed-rot">가로↔세로 바꾸기</button><button type="button" class="tx-wb-btn" data-q="ed-undo"' + (ed.undo.length ? '' : ' disabled') + '>↶ 되돌리기' + (ed.undo.length ? ' (' + ed.undo.length + ')' : '') + '</button><button type="button" class="tx-wb-btn tx-wb-pri" data-q="ed-close">✔ 편집 완료</button></div></div>';
+  }
+  function edField(k, v, el) {
+    var r = edRoom(); if (!r) return;
+    if (k === 'x' || k === 'y' || k === 'w' || k === 'h') {
+      var g = { x: r.x, y: r.y, w: r.w, h: r.h }; v = Math.round(+v); if (!isFinite(v)) return;
+      g[k] = (k === 'w' || k === 'h') ? Math.max(600, v) : Math.max(0, v); edCommit(g); return;
+    }
+    var d = doorGet(r.id);
+    if (k === 'dside') { if (!v) edCommit(null, null); else if (v === 'none') edCommit(null, { side: 'none' }); else edCommit(null, fitDoor({ side: v, w: (d && d.w) || 900, at: d && d.side === v ? d.at : null }, r)); }
+    else if (k === 'dw' && d && d.side !== 'none') edCommit(null, fitDoor(Object.assign({}, d, { w: +v || 900 }), r));
+    else if (k === 'dpos' && d && d.side !== 'none') { var s = wallSpan(r, d.side); edCommit(null, fitDoor(Object.assign({}, d, { at: s.lo + s.len * (+v) / 100 }), r)); }
+  }
+  document.addEventListener('keydown', function (e) {
+    if (!ed || !P) return;
+    var t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+    var r = edRoom(); if (!r) return;
+    if (e.key === 'Escape') { closeEd(); return; }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); edUndo(); return; }
+    var k = e.shiftKey ? 10 : 100, m = { ArrowLeft: [-k, 0], ArrowRight: [k, 0], ArrowUp: [0, -k], ArrowDown: [0, k] }[e.key]; if (!m) return;
+    e.preventDefault(); edCommit({ x: Math.max(0, r.x + m[0]), y: Math.max(0, r.y + m[1]), w: r.w, h: r.h });
+  });
   /** 엑셀 「위치」의 실 이름과 같은 실을 그리면, 그 층의 미배치 설비를 실 안에 자동 배치 (묶음은 한 자리) */
   function nm(s) { return String(s || '').replace(/\s+/g, '').replace(/^(지하)?\d+층|^B\d+F?|^\d+F/i, '').toLowerCase(); }
   function autoPlaceRoom(r) {
@@ -14012,6 +14195,7 @@ tr.tx-dr-low td:first-child { color: #64748b; }
   }
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-act="wb-menu"]')) setTimeout(injectMenu, 0); });
   TX.on('state', function (p) { var ch = (p && p.changed) || []; if (P && ch.indexOf('floor') >= 0) { stopTool(); renderPanel(); startTool(); } });
+  TX.on('state', function (p) { var ch = (p && p.changed) || []; if (P && step === 3 && ch.indexOf('room') >= 0 && TX.state.room && D.rooms.some(function (q) { return q.id === TX.state.room; })) openEd(TX.state.room); });
   TX.on('close', function () { close(true); });
   TX.on('open', function () { if (D.active && D.floors.length) setTimeout(function () { TX.setModel(toModel()); }, 50); });
 

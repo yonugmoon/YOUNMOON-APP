@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>AR 설비점검 · 1차 휴대폰형 AI안경</title>
+<!-- 오프라인 동작을 위해 라이브러리를 저장소에 포함(lib/) -->
+<script src="lib/jsQR.js"></script>
+<script src="lib/qrcode.js"></script>
+<style>
+:root{
+  --bg:#0b1220; --panel:#111a2e; --panel-2:#0e1626; --line:#1e2b45;
+  --ink:#e8edf7; --ink-dim:#9fb0cc; --ink-faint:#64748b;
+  --brand:#3bd6c6; --brand-2:#2a9df4; --warn:#f4b740; --bad:#f4685f; --good:#4ad991;
+  --chip:#16233c; --shadow:0 8px 30px rgba(0,0,0,.35);
+  --r:14px; --r-sm:10px;
+  --mono:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;overscroll-behavior-y:none}
+body{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:15px}
+.muted{color:var(--ink-dim)} .faint{color:var(--ink-faint)} .mono{font-family:var(--mono)}
+
+header{position:sticky;top:0;z-index:40;background:linear-gradient(180deg,#0d1526,#0b1220);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:10px;padding:12px 16px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.02em;font-size:18px}
+.logo .dot{width:11px;height:11px;border-radius:3px;background:conic-gradient(from 210deg,var(--brand),var(--brand-2));box-shadow:0 0 14px var(--brand)}
+.logo small{font-weight:600;color:var(--ink-dim);font-size:11px;letter-spacing:.06em}
+.key-pill{margin-left:auto;font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--line);background:var(--chip);white-space:nowrap}
+.key-pill.ok{color:var(--good);border-color:#1c3d33} .key-pill.no{color:var(--warn);border-color:#3d341c}
+
+main{max-width:820px;margin:0 auto;padding:14px 16px 0}
+.pages{display:none} .pages.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.card + .card{margin-top:14px}
+.card-h{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line)}
+.card-h h2{font-size:15.5px} .card-h .sub{margin-left:auto;font-size:12px;color:var(--ink-dim)}
+.card-b{padding:14px 15px}
+
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:560px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px}
+.stat b{display:block;font-size:24px;font-family:var(--mono);letter-spacing:-.02em}
+.stat span{font-size:12px;color:var(--ink-dim)}
+.bar-prog{height:8px;border-radius:8px;background:var(--chip);overflow:hidden;margin-top:8px}
+.bar-prog i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand-2))}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 14px;border-radius:var(--r-sm);background:var(--chip);border:1px solid var(--line);font-weight:600;font-size:14px;min-height:44px}
+.btn.pri{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#04121a;border:none}
+.btn.blue{background:#13325a;border-color:#1f4b80;color:#cfe5ff}
+.btn.bad{background:#3a1a1a;border-color:#5a2626;color:#ffc9c4}
+.btn.sm{min-height:34px;padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.block{width:100%}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row > .btn{flex:1}
+.big-cta{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.big-cta .btn{min-height:76px;flex-direction:column;font-size:14px}
+.big-cta .btn em{font-style:normal;font-size:24px}
+
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:12px;align-items:center;padding:12px 15px;border-top:1px solid var(--line)}
+.item:first-child{border-top:none}
+.item .ic{width:40px;height:40px;border-radius:10px;background:var(--chip);display:grid;place-items:center;font-size:20px;flex:none;overflow:hidden}
+.item .ic img{width:100%;height:100%;object-fit:cover}
+.item .tx{flex:1;min-width:0}
+.item .tx b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14.5px}
+.item .tx span{display:block;font-size:12px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--chip);border:1px solid var(--line);white-space:nowrap;flex:none}
+.tag.good{color:var(--good);border-color:#1c3d33} .tag.warn{color:var(--warn);border-color:#3d341c} .tag.bad{color:var(--bad);border-color:#4a2222} .tag.blue{color:#8ec5ff;border-color:#1f4b80}
+.empty{padding:28px 15px;text-align:center;color:var(--ink-faint);font-size:14px}
+
+.inp{width:100%;padding:11px 12px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--panel-2);color:var(--ink);outline:none}
+.inp:focus{border-color:var(--brand)}
+label.f{display:block;margin-bottom:11px;font-size:12.5px;color:var(--ink-dim)}
+label.f .inp{margin-top:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.note{font-size:13px;color:var(--ink-dim);background:var(--panel-2);border:1px dashed var(--line);padding:10px 12px;border-radius:var(--r-sm)}
+.toolbar{display:flex;gap:8px;margin-bottom:12px}
+.toolbar .inp{flex:1}
+.chk{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px}
+.chk input{width:20px;height:20px;accent-color:var(--brand)}
+
+nav{position:fixed;left:0;right:0;bottom:0;z-index:45;background:#0d1526;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:9px 0 10px;font-size:11px;color:var(--ink-faint);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button i{font-style:normal;font-size:19px}
+nav button.on{color:var(--brand)}
+nav button.ar i{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#04121a;width:44px;height:30px;border-radius:10px;display:grid;place-items:center}
+
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;opacity:0;pointer-events:none;transition:.2s}
+#scrim.on{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--panel);border-top-left-radius:18px;border-top-right-radius:18px;max-height:90vh;display:flex;flex-direction:column;transform:translateY(105%);transition:.25s;max-width:820px;margin:0 auto;border:1px solid var(--line)}
+#sheet.on{transform:none}
+#sheet .sh{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+#sheet .sh h3{font-size:16px}
+#sheet .sh button{margin-left:auto;font-size:22px;color:var(--ink-dim);width:40px;height:40px}
+#sheetBody{overflow:auto;padding:14px 16px calc(20px + env(safe-area-inset-bottom))}
+
+#toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:#1a2742;border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:12px;font-size:14px;z-index:200;opacity:0;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%)}
+#toast.good{border-color:#1c3d33;color:var(--good)} #toast.bad{border-color:#4a2222;color:var(--bad)}
+
+/* ---------- AR 화면 ---------- */
+#ar{position:fixed;inset:0;z-index:100;background:#000;display:none;touch-action:manipulation}
+#ar.on{display:block}
+#arCanvas{position:absolute;inset:0;width:100%;height:100%}
+#arVideo{display:none}
+.ar-top{position:absolute;top:0;left:0;right:0;display:flex;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:linear-gradient(180deg,rgba(0,0,0,.6),transparent)}
+.ar-top .btn{min-height:38px;padding:6px 11px;font-size:13px;background:rgba(17,26,46,.75);backdrop-filter:blur(6px)}
+.ar-top .btn.on{border-color:var(--brand);color:var(--brand)}
+.ar-top .sp{flex:1}
+.ar-bottom{position:absolute;left:0;right:0;bottom:0;padding:10px 12px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(0deg,rgba(0,0,0,.7),transparent);display:flex;flex-direction:column;gap:8px}
+.ar-bottom .row .btn{background:rgba(17,26,46,.8);backdrop-filter:blur(6px);min-height:52px;font-size:15px}
+.ar-bottom .row .btn.g{color:var(--good);border-color:#1c5a43}
+.ar-bottom .row .btn.w{color:var(--warn);border-color:#5a4a1c}
+.ar-bottom .row .btn.b{color:var(--bad);border-color:#5a2626}
+.ar-bottom .row .btn.ai{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#04121a;border:none}
+#ar.glasses .ar-top, #ar.glasses .ar-bottom{display:none}
+#ar.glasses.showctl .ar-top, #ar.glasses.showctl .ar-bottom{display:flex}
+#ar.glasses .ar-top .hide-g{display:none}
+#arHint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--ink-dim);font-size:14px;text-align:center;pointer-events:none}
+
+/* ---------- 인쇄(QR 라벨/보고서) ---------- */
+#print{display:none}
+@media print{
+  @page{margin:8mm}
+  body{background:#fff;color:#000;padding:0}
+  header,main,nav,#sheet,#scrim,#toast,#ar{display:none!important}
+  #print{display:block}
+  .labels{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm}
+  .label{border:1px solid #000;border-radius:2mm;padding:3mm;display:flex;gap:3mm;align-items:center;break-inside:avoid;font-size:9pt}
+  .label svg{width:26mm;height:26mm;flex:none}
+  .label b{display:block;font-size:10pt}
+  .rep h1{font-size:16pt;margin-bottom:4mm}
+  .rep table{width:100%;border-collapse:collapse;font-size:10pt}
+  .rep td,.rep th{border:1px solid #444;padding:2mm;text-align:left;vertical-align:top}
+  .rep img{max-width:45mm;max-height:35mm}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="logo"><span class="dot"></span><div>AR 설비점검<br><small>1차 · 휴대폰형 AI안경</small></div></div>
+    <button class="key-pill no" id="keyPill" onclick="ui.openSheet('settings')">API 키 없음</button>
+  </div>
+</header>
+
+<main>
+  <!-- 홈 -->
+  <section class="pages on" id="page-home"></section>
+  <!-- 설비(현행화) -->
+  <section class="pages" id="page-equip"></section>
+  <!-- 이력 -->
+  <section class="pages" id="page-hist"></section>
+  <!-- 설정 -->
+  <section class="pages" id="page-set"></section>
+</main>
+
+<nav>
+  <button data-tab="home" class="on" onclick="ui.tab('home')"><i>🏠</i>홈</button>
+  <button data-tab="equip" onclick="ui.tab('equip')"><i>🗂️</i>설비 현행화</button>
+  <button class="ar" onclick="AR.open()"><i>AR</i>AR 점검</button>
+  <button data-tab="hist" onclick="ui.tab('hist')"><i>📋</i>점검 이력</button>
+  <button data-tab="set" onclick="ui.tab('set')"><i>⚙️</i>설정</button>
+</nav>
+
+<div id="scrim" onclick="ui.closeSheet()"></div>
+<div id="sheet"><div class="sh"><h3 id="sheetTitle"></h3><button onclick="ui.closeSheet()">×</button></div><div id="sheetBody"></div></div>
+<div id="toast"></div>
+<input type="file" id="filePick" accept="image/*" capture="environment" hidden>
+<input type="file" id="filePickAny" hidden>
+
+<!-- AR 점검 화면 -->
+<div id="ar">
+  <video id="arVideo" playsinline muted autoplay></video>
+  <canvas id="arCanvas"></canvas>
+  <div id="arHint">카메라 준비 중…</div>
+  <div class="ar-top">
+    <button class="btn" onclick="AR.close()">✕ 닫기</button>
+    <button class="btn hide-g" onclick="AR.pickEquip()">설비선택</button>
+    <span class="sp"></span>
+    <button class="btn" id="btnMic" onclick="AR.toggleVoice()">🎤</button>
+    <button class="btn" id="btnTorch" onclick="AR.toggleTorch()">🔦</button>
+    <button class="btn" id="btnGlasses" onclick="AR.toggleGlasses()">👓 안경모드</button>
+  </div>
+  <div class="ar-bottom">
+    <div class="row" id="arExtra"></div>
+    <div class="row">
+      <button class="btn" onclick="AR.prev()">◀</button>
+      <button class="btn g" onclick="AR.mark('정상')">정상</button>
+      <button class="btn w" onclick="AR.mark('주의')">주의</button>
+      <button class="btn b" onclick="AR.mark('불량')">불량</button>
+      <button class="btn" onclick="AR.next()">▶</button>
+    </div>
+    <div class="row">
+      <button class="btn" onclick="AR.photo()">📷 촬영</button>
+      <button class="btn" onclick="AR.verify()">✔ 현행화</button>
+      <button class="btn ai" onclick="AR.diagnose()">🤖 AI 진단</button>
+    </div>
+  </div>
+</div>
+
+<div id="print"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   1. 설비 종류 / 기본 점검항목 (정보통신설비 기준)
+   - 설정 > 점검항목 편집에서 종류별로 바꿀 수 있음
+   ============================================================ */
+const TYPES = {
+  rack:      {name:"통신랙/서버랙",   ic:"🗄️", checks:["랙 외관·도어 잠금 상태","케이블 정리·라벨 부착","팬/환기 동작 및 이물질","장비 LED 경보 유무","접지선 체결 상태"]},
+  transport: {name:"전송/광단국 장비", ic:"📡", checks:["전원·알람 LED 상태","광 커넥터 청결·체결","광 케이블 곡률·손상","포트 라벨 부착","팬 필터 오염"]},
+  ups:       {name:"UPS",             ic:"🔋", checks:["운전상태 표시(정상/바이패스)","입력·출력 전압 및 부하율","배터리 상태·경보 이력","냉각팬 소음·발열","외함 청결·누유 여부"]},
+  rectifier: {name:"정류기",          ic:"⚡", checks:["출력 전압·전류 표시","모듈 경보 LED","모듈 부하 분담 상태","차단기(MCCB) 상태","팬 동작·먼지"]},
+  battery:   {name:"축전지",          ic:"🪫", checks:["외관 변형·누액·부풀음","단자 부식·체결 상태","셀 전압 편차","표면 온도","연결 케이블 상태"]},
+  hvac:      {name:"항온항습기",      ic:"❄️", checks:["설정/실내 온도·습도 표시","경보 표시 유무","필터 오염","배수·누수","실외기 동작"]},
+  panel:     {name:"분전반",          ic:"🔌", checks:["차단기 ON/OFF·트립 여부","단자 과열·변색","회로 명칭표 부착","누전차단기 시험버튼 동작","외함 접지"]},
+  mdf:       {name:"MDF/IDF 단자함",  ic:"🧷", checks:["단자 체결·피복 손상","점퍼선 정리 상태","보안기 상태","번호 표기","함체 잠금·습기"]},
+  cctv:      {name:"CCTV/방송설비",   ic:"📹", checks:["영상 출력 상태","렌즈 오염·각도","전원/PoE 상태","녹화 동작","케이블·브라켓 고정"]},
+  ground:    {name:"접지설비",        ic:"⏚",  checks:["접지선 단선·부식","접지단자함 체결","표지 부착","접지저항 측정값 기록"]},
+  etc:       {name:"기타",            ic:"🔧", checks:["외관 상태","동작 상태","경보 유무","청결 상태"]},
+};
+const FONT = `-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif`;
+const RESULT_RANK = {"정상":0,"주의":1,"불량":2};
+const SYNC = ["미확인","일치","불일치","신규"];   // 현행화 상태
+
+/* ============================================================
+   2. 저장소 : localStorage(메타) + IndexedDB(사진)
+   ============================================================ */
+const LS_KEY = "ar-insp.v1";
+const QR_PREFIX = "YM:";
+let S = load();
+function blankState(){
+  return { settings:{apiKey:"", model:"gemini-2.5-flash", tts:true, voice:true, inspector:"", site:""},
+           equips:[], inspections:[], checklists:{}, tab:"home" };
+}
+function load(){
+  try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const d=JSON.parse(raw); const b=blankState(); return {...b, ...d, settings:{...b.settings, ...(d.settings||{})}}; } }catch(e){}
+  return blankState();
+}
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){ toast("저장공간 부족","bad"); } }
+
+const DB = {
+  _db:null,
+  open(){ if(this._db) return Promise.resolve(this._db);
+    return new Promise((res,rej)=>{ const r=indexedDB.open("ar-insp-photos",1);
+      r.onupgradeneeded=()=>r.result.createObjectStore("p");
+      r.onsuccess=()=>{this._db=r.result;res(this._db)}; r.onerror=()=>rej(r.error); }); },
+  async put(id,blob){ const db=await this.open(); return new Promise((res,rej)=>{ const t=db.transaction("p","readwrite"); t.objectStore("p").put(blob,id); t.oncomplete=()=>res(id); t.onerror=()=>rej(t.error); }); },
+  async get(id){ if(!id) return null; const db=await this.open(); return new Promise((res)=>{ const r=db.transaction("p").objectStore("p").get(id); r.onsuccess=()=>res(r.result||null); r.onerror=()=>res(null); }); },
+  async clear(){ const db=await this.open(); return new Promise(res=>{ const t=db.transaction("p","readwrite"); t.objectStore("p").clear(); t.oncomplete=()=>res(); }); },
+};
+const urlCache = {};
+async function photoURL(id){ if(!id) return ""; if(urlCache[id]) return urlCache[id]; const b=await DB.get(id); if(!b) return ""; return (urlCache[id]=URL.createObjectURL(b)); }
+async function hydratePhotos(root){
+  for(const img of root.querySelectorAll("img[data-photo]")){ const u=await photoURL(img.dataset.photo); if(u) img.src=u; else img.remove(); }
+}
+
+/* ============================================================
+   3. 유틸
+   ============================================================ */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+function fmt(t){ if(!t) return "-"; const d=new Date(t); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function today(){ const d=new Date(); return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`; }
+function uid(p){ return p+"-"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function newEquipId(){
+  const base="EQ-"+today()+"-"; let n=1;
+  while(S.equips.some(e=>e.id===base+String(n).padStart(3,"0"))) n++;
+  return base+String(n).padStart(3,"0");
+}
+let toastT;
+function toast(msg,kind=""){ const t=$("#toast"); t.textContent=msg; t.className="on "+kind; clearTimeout(toastT); toastT=setTimeout(()=>t.className="",2600); }
+function checksOf(type){ return (S.checklists[type]&&S.checklists[type].length)? S.checklists[type] : (TYPES[type]||TYPES.etc).checks; }
+function typeName(t){ return (TYPES[t]||TYPES.etc).name; }
+function typeIc(t){ return (TYPES[t]||TYPES.etc).ic; }
+function resTag(r){ return r? `<span class="tag ${r==="정상"?"good":r==="주의"?"warn":"bad"}">${esc(r)}</span>` : `<span class="tag">미점검</span>`; }
+function syncTag(s){ return `<span class="tag ${s==="일치"?"good":s==="불일치"?"bad":s==="신규"?"blue":""}">${esc(s||"미확인")}</span>`; }
+function findEquip(id){ return S.equips.find(e=>e.id===id); }
+function parseQR(text){ text=(text||"").trim(); return text.startsWith(QR_PREFIX)? text.slice(QR_PREFIX.length) : text; }
+
+/* 이미지 축소(전송량·저장공간 절약) */
+function resizeImage(src, max=1280, q=0.82){
+  return new Promise((res,rej)=>{
+    const draw=(el,w,h)=>{ const s=Math.min(1,max/Math.max(w,h)); const c=document.createElement("canvas"); c.width=Math.round(w*s); c.height=Math.round(h*s);
+      c.getContext("2d").drawImage(el,0,0,c.width,c.height); c.toBlob(b=>b?res(b):rej(new Error("이미지 변환 실패")),"image/jpeg",q); };
+    if(src instanceof HTMLVideoElement){ draw(src,src.videoWidth,src.videoHeight); return; }
+    const img=new Image(); img.onload=()=>{ draw(img,img.naturalWidth,img.naturalHeight); URL.revokeObjectURL(img.src); }; img.onerror=()=>rej(new Error("이미지 열기 실패")); img.src=URL.createObjectURL(src);
+  });
+}
+function blobToBase64(b){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]); r.readAsDataURL(b); }); }
+function download(name, text, mime="text/plain"){
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([text],{type:mime})); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function pickFile(accept, capture){
+  return new Promise(res=>{ const el=capture? $("#filePick") : $("#filePickAny"); el.accept=accept; el.value="";
+    el.onchange=()=>res(el.files[0]||null); el.click(); });
+}
+function csvCell(v){ v=String(v??""); return /[",\n]/.test(v)? '"'+v.replace(/"/g,'""')+'"' : v; }
+function toCSV(rows){ return "﻿"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n"); }
+function parseCSV(text){
+  const rows=[]; let row=[], cell="", q=false; text=text.replace(/^﻿/,"");
+  for(let i=0;i<text.length;i++){ const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true; else if(c===','){row.push(cell);cell="";} else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell="";} else if(c!=='\r') cell+=c; }
+  if(cell!==""||row.length){row.push(cell);rows.push(row);}
+  return rows.filter(r=>r.some(x=>x.trim()!==""));
+}
+
+/* ============================================================
+   4. AI (Gemini Vision) — 기존 RepiQ 앱과 같은 키/방식 사용
+   ============================================================ */
+async function callGemini(prompt, imageBlobs){
+  if(!S.settings.apiKey) throw new Error("API 키가 없습니다. 설정에서 Gemini 키를 등록하세요.");
+  const parts=[{text:prompt}];
+  for(const b of (imageBlobs||[])) parts.push({inline_data:{mime_type:"image/jpeg", data:await blobToBase64(b)}});
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.settings.model)}:generateContent?key=${encodeURIComponent(S.settings.apiKey)}`;
+  const body={contents:[{role:"user",parts}], generationConfig:{temperature:0.1, maxOutputTokens:2048, responseMimeType:"application/json"}};
+  const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok){ const t=await r.text(); throw new Error(`AI 오류 ${r.status}: ${t.slice(0,160)}`); }
+  const j=await r.json();
+  const txt=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
+  return parseJSON(txt);
+}
+function parseJSON(txt){
+  let t=(txt||"").trim().replace(/^```json/i,"").replace(/^```/,"").replace(/```$/,"").trim();
+  try{ return JSON.parse(t); }catch(e){ const m=t.match(/\{[\s\S]*\}/); if(m){ try{ return JSON.parse(m[0]); }catch(_){} } throw new Error("AI 응답 파싱 실패"); }
+}
+const PROMPT_NAMEPLATE = () => `당신은 정보통신·전기설비 대장 현행화 담당자입니다.
+사진은 설비 또는 설비의 명판(네임플레이트)입니다. 보이는 정보만 읽고, 보이지 않으면 빈 문자열로 두세요. 추측 금지.
+설비 종류(type)는 다음 키 중 하나: ${Object.entries(TYPES).map(([k,v])=>`${k}(${v.name})`).join(", ")}
+JSON만 출력:
+{"type":"", "name":"설비 명칭(예: UPS 30kVA #1)", "maker":"제조사", "model":"모델명", "serial":"시리얼번호",
+ "rating":"정격(전압/용량/전류 등)", "mfgDate":"제조일자", "memo":"그 밖에 읽힌 중요한 표기", "confidence":0.0}`;
+const PROMPT_DIAG = (eq, checks, idx) => `당신은 정보통신설비 현장점검 전문가입니다. 휴대폰 카메라로 찍은 현장 사진을 보고 점검합니다.
+설비: ${typeName(eq.type)} / ${eq.name||""} / ${eq.maker||""} ${eq.model||""}
+점검항목 목록: ${checks.map((c,i)=>`${i+1}.${c}`).join(" ")}
+지금 집중할 항목: ${idx+1}. ${checks[idx]}
+규칙:
+- 사진에서 실제로 보이는 근거로만 판단. 보이지 않으면 status를 "판단불가"로.
+- LED 색, 표시창 숫자, 경보 문구, 변색·부식·누액·먼지·케이블 상태 등을 구체적으로 적기.
+- 표시창 수치가 보이면 readings에 기록.
+JSON만 출력:
+{"status":"정상|주의|불량|판단불가", "summary":"한 문장 요약(음성 안내용, 40자 이내)",
+ "findings":["근거1","근거2"], "actions":["조치 권고1"], "readings":[{"name":"","value":"","unit":""}],
+ "otherItems":[{"no":1,"status":"정상|주의|불량","note":""}]}`;
+
+/* ============================================================
+   5. 음성 (TTS + 음성명령) — 손이 자유로운 '안경' 사용감
+   ============================================================ */
+const Voice = {
+  rec:null, on:false, quietUntil:0,
+  say(text){
+    if(!S.settings.tts || !window.speechSynthesis || !text) return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text); u.lang="ko-KR"; u.rate=1.05;
+    this.quietUntil=Date.now()+60000;               // 말하는 동안 음성명령 무시(자기 목소리 인식 방지)
+    u.onend=u.onerror=()=>{ this.quietUntil=Date.now()+700; };
+    speechSynthesis.speak(u);
+  },
+  supported(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); },
+  start(onCmd){
+    if(!this.supported()){ toast("이 브라우저는 음성명령을 지원하지 않습니다(안드로이드 Chrome 권장)"); return false; }
+    const R=window.SpeechRecognition||window.webkitSpeechRecognition;
+    this.rec=new R(); this.rec.lang="ko-KR"; this.rec.continuous=true; this.rec.interimResults=false;
+    this.rec.onresult=e=>{
+      if(Date.now()<this.quietUntil) return;
+      const t=e.results[e.results.length-1][0].transcript.replace(/\s/g,"");
+      onCmd(t);
+    };
+    this.rec.onend=()=>{ if(this.on){ try{ this.rec.start(); }catch(_){} } };
+    this.rec.onerror=e=>{ if(e.error==="not-allowed"){ this.on=false; toast("마이크 권한이 필요합니다","bad"); } };
+    this.on=true; try{ this.rec.start(); }catch(_){}
+    return true;
+  },
+  stop(){ this.on=false; try{ this.rec&&this.rec.stop(); }catch(_){} this.rec=null; }
+};
+/* 음성명령 단어표 */
+const VOICE_CMDS = [
+  [/정상|양호|오케이/, ()=>AR.mark("정상")],
+  [/주의|경고/,        ()=>AR.mark("주의")],
+  [/불량|이상|고장/,   ()=>AR.mark("불량")],
+  [/다음/,             ()=>AR.next()],
+  [/이전|뒤로/,        ()=>AR.prev()],
+  [/진단|분석|에이아이|AI/i, ()=>AR.diagnose()],
+  [/적용|확정/,        ()=>AR.applyAI()],
+  [/촬영|사진|찍어/,   ()=>AR.photo()],
+  [/현행화|확인완료|일치/, ()=>AR.verify()],
+  [/읽어|다시/,        ()=>AR.speakStep()],
+  [/완료|종료|끝/,     ()=>AR.finish()],
+];
+
+/* ============================================================
+   6. AR 점검 엔진 — 카메라 + QR 인식 + 화면 오버레이(HUD)
+   ============================================================ */
+const AR = {
+  stream:null, track:null, video:null, canvas:null, ctx:null, running:false, glasses:false, torch:false,
+  detector:null, scanCv:null, lastScan:0, qr:null,
+  equip:null, session:null, step:0, lastAI:null, busy:false, flash:0, msg:"", msgUntil:0,
+
+  async open(equipId){
+    ui.closeSheet();
+    $("#ar").classList.add("on"); $("#arHint").textContent="카메라 준비 중…";
+    this.video=$("#arVideo"); this.canvas=$("#arCanvas"); this.ctx=this.canvas.getContext("2d");
+    try{
+      this.stream=await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:"environment"}, width:{ideal:1280}, height:{ideal:720}}});
+    }catch(e){
+      $("#arHint").innerHTML="카메라를 열 수 없습니다.<br>· HTTPS 주소(GitHub Pages)로 접속했는지<br>· 브라우저 카메라 권한을 허용했는지 확인하세요.";
+      return;
+    }
+    this.track=this.stream.getVideoTracks()[0];
+    this.video.srcObject=this.stream; await this.video.play().catch(()=>{});
+    $("#arHint").textContent="";
+    if("BarcodeDetector" in window){ try{ this.detector=new BarcodeDetector({formats:["qr_code"]}); }catch(_){ this.detector=null; } }
+    this.scanCv=document.createElement("canvas");
+    if(equipId) this.setEquip(findEquip(equipId));
+    else if(!this.equip) this.say("설비 QR 코드를 비춰 주세요");
+    if(S.settings.voice && Voice.supported() && !Voice.on) this.toggleVoice(true);
+    this.running=true; this.resize(); requestAnimationFrame(()=>this.loop());
+    window.addEventListener("resize", this._rs=()=>this.resize());
+    this.canvas.onclick=()=>{ if(this.glasses) $("#ar").classList.toggle("showctl"); };
+    this.renderExtra();
+  },
+  close(){
+    if(this.session && this.session.items.some(i=>i.result) && !confirm("진행 중인 점검을 저장하지 않고 닫을까요?\n(취소 → 계속 점검, '완료' 버튼/음성으로 저장)")) return;
+    this.running=false; Voice.stop(); $("#btnMic").classList.remove("on");
+    if(window.speechSynthesis) speechSynthesis.cancel();
+    if(this.stream) this.stream.getTracks().forEach(t=>t.stop());
+    this.stream=null; this.session=null; this.equip=null; this.lastAI=null; this.qr=null; this.torch=false;
+    if(this.glasses) this.toggleGlasses();
+    window.removeEventListener("resize", this._rs);
+    $("#ar").classList.remove("on"); render();
+  },
+  resize(){ const d=Math.min(window.devicePixelRatio||1,2); this.canvas.width=innerWidth*d; this.canvas.height=innerHeight*d; },
+  say(t){ Voice.say(t); this.toast(t); },
+  toast(t){ this.msg=t; this.msgUntil=Date.now()+3500; },
+
+  /* ---- 메인 루프 ---- */
+  loop(){
+    if(!this.running) return;
+    const now=performance.now();
+    if(now-this.lastScan>220 && this.video.readyState>=2){ this.lastScan=now; this.scan(); }
+    this.draw();
+    requestAnimationFrame(()=>this.loop());
+  },
+  async scan(){
+    const v=this.video; if(!v.videoWidth) return;
+    let hit=null;
+    try{
+      if(this.detector){
+        const r=await this.detector.detect(v);
+        if(r[0]) hit={text:r[0].rawValue, pts:r[0].cornerPoints.map(p=>({x:p.x,y:p.y}))};
+      }else if(window.jsQR){
+        const s=Math.min(1,640/v.videoWidth), w=Math.round(v.videoWidth*s), h=Math.round(v.videoHeight*s);
+        const c=this.scanCv; c.width=w; c.height=h; const x=c.getContext("2d",{willReadFrequently:true}); x.drawImage(v,0,0,w,h);
+        const r=jsQR(x.getImageData(0,0,w,h).data,w,h,{inversionAttempts:"dontInvert"});
+        if(r){ const L=r.location; hit={text:r.data, pts:[L.topLeftCorner,L.topRightCorner,L.bottomRightCorner,L.bottomLeftCorner].map(p=>({x:p.x/s,y:p.y/s}))}; }
+      }
+    }catch(_){}
+    if(hit){ hit.t=Date.now(); this.qr=hit; this.onQR(hit.text); }
+  },
+  onQR(text){
+    const id=parseQR(text), eq=findEquip(id);
+    if(eq){
+      if(this.equip && this.equip.id===eq.id) return;
+      if(this.session && this.session.items.some(i=>i.result)){ this.toast(`다른 설비(${eq.name}) 인식 — 현재 점검 완료 후 전환`); return; }
+      this.setEquip(eq);
+    }else{
+      if(this._unk!==id){ this._unk=id; this.say("미등록 설비입니다. 등록 버튼을 누르세요"); this.renderExtra(); }
+    }
+  },
+  setEquip(eq){
+    if(!eq) return;
+    this.equip=eq; this._unk=null; this.lastAI=null; this.step=0;
+    const checks=checksOf(eq.type);
+    this.session={ id:uid("IN"), equipId:eq.id, equipName:eq.name, type:eq.type, inspector:S.settings.inspector, site:S.settings.site,
+                   startedAt:Date.now(), items:checks.map(c=>({label:c, result:null, note:"", photo:null, ai:null})) };
+    this.flash=Date.now();
+    Voice.say(`${eq.name||typeName(eq.type)} 인식. 점검항목 ${checks.length}개. 첫 번째, ${checks[0]}`);
+    this.toast(`${eq.name} 인식됨`);
+    this.renderExtra();
+  },
+  pickEquip(){
+    if(!S.equips.length){ toast("등록된 설비가 없습니다. 먼저 설비를 등록하세요"); return; }
+    ui.openSheet("pickEquip");
+  },
+
+  /* ---- 점검 진행 ---- */
+  cur(){ return this.session? this.session.items[this.step] : null; },
+  speakStep(){ const it=this.cur(); if(it) Voice.say(`${this.step+1}번. ${it.label}`); },
+  next(){ if(!this.session) return; if(this.step<this.session.items.length-1){ this.step++; this.lastAI=null; this.speakStep(); } else this.askFinish(); },
+  prev(){ if(!this.session) return; if(this.step>0){ this.step--; this.lastAI=this.cur().ai; this.speakStep(); } },
+  mark(r){
+    const it=this.cur(); if(!it){ this.say("먼저 설비 QR을 비춰 주세요"); return; }
+    it.result=r; it.at=Date.now(); this.flash=Date.now();
+    if(this.step<this.session.items.length-1){ this.step++; this.lastAI=null; const n=this.cur(); Voice.say(`${r}. 다음, ${n.label}`); }
+    else this.askFinish(r);
+  },
+  askFinish(prefix){
+    const left=this.session.items.filter(i=>!i.result).length;
+    Voice.say(`${prefix?prefix+". ":""}${left? `미점검 ${left}개가 남았습니다.` : "모든 항목 점검 완료."} 완료라고 말하거나 완료 버튼을 누르세요`);
+    this.renderExtra(true);
+  },
+  finish(){
+    const s=this.session; if(!s){ return; }
+    if(!s.items.some(i=>i.result)){ this.say("점검 결과가 없습니다"); return; }
+    s.endedAt=Date.now();
+    s.overall=s.items.reduce((m,i)=> i.result && RESULT_RANK[i.result]>RESULT_RANK[m]? i.result : m, "정상");
+    S.inspections.unshift(s);
+    const eq=findEquip(s.equipId); if(eq){ eq.lastInspected=s.endedAt; eq.health=s.overall; }
+    save();
+    this.say(`점검 저장 완료. 종합 판정 ${s.overall}`);
+    this.session=null; this.equip=null; this.lastAI=null; this.qr=null; this.renderExtra();
+  },
+
+  /* ---- 캡처 / 사진 / AI ---- */
+  async capture(){ if(!this.video.videoWidth) throw new Error("카메라 영상 없음"); return resizeImage(this.video,1280,0.82); },
+  async photo(){
+    const it=this.cur();
+    try{
+      const b=await this.capture(); const id=uid("PH"); await DB.put(id,b);
+      if(it){ it.photo=id; this.say("사진 저장"); }
+      else if(this.equip){ this.equip.photo=id; save(); this.say("설비 사진 저장"); }
+      else this.say("설비를 먼저 인식하세요");
+      this.flash=Date.now();
+    }catch(e){ toast(e.message,"bad"); }
+  },
+  async diagnose(){
+    if(this.busy) return;
+    if(!this.session){ this.say("먼저 설비 QR을 비춰 주세요"); return; }
+    if(!S.settings.apiKey){ this.say("AI 키가 없습니다. 설정에서 등록하세요"); return; }
+    this.busy=true; this.say("AI 진단 중");
+    try{
+      const b=await this.capture(); const id=uid("PH"); await DB.put(id,b);
+      const checks=this.session.items.map(i=>i.label);
+      const r=await callGemini(PROMPT_DIAG(this.equip,checks,this.step),[b]);
+      r.photo=id; r.step=this.step; r.at=Date.now();
+      const it=this.cur(); it.ai=r; if(!it.photo) it.photo=id;
+      this.lastAI=r;
+      Voice.say(`AI 판정 ${r.status||"판단불가"}. ${r.summary||""}. ${RESULT_RANK[r.status]!=null?"적용이라고 말하면 반영합니다":""}`);
+    }catch(e){ this.say("AI 진단 실패"); toast(e.message,"bad"); }
+    this.busy=false;
+  },
+  applyAI(){
+    const r=this.lastAI; if(!r || RESULT_RANK[r.status]==null){ this.say("적용할 AI 판정이 없습니다"); return; }
+    const it=this.cur(); if(it) it.note=[it.note, (r.findings||[]).join(" / ")].filter(Boolean).join(" | ");
+    this.mark(r.status);
+  },
+  verify(){
+    if(!this.equip){ this.say("설비를 먼저 인식하세요"); return; }
+    this.equip.sync="일치"; this.equip.verifiedAt=Date.now(); this.equip.verifiedBy=S.settings.inspector; save();
+    this.say("현행화 확인 완료"); this.flash=Date.now();
+  },
+  async toggleTorch(){
+    if(!this.track) return;
+    try{ this.torch=!this.torch; await this.track.applyConstraints({advanced:[{torch:this.torch}]}); $("#btnTorch").classList.toggle("on",this.torch); }
+    catch(_){ this.torch=false; toast("이 기기는 손전등 제어를 지원하지 않습니다"); }
+  },
+  toggleVoice(force){
+    if(Voice.on && force!==true){ Voice.stop(); $("#btnMic").classList.remove("on"); this.toast("음성명령 꺼짐"); return; }
+    if(Voice.on) return;
+    const ok=Voice.start(t=>{ for(const [re,fn] of VOICE_CMDS){ if(re.test(t)){ this.toast("🎤 "+t); fn(); return; } } });
+    $("#btnMic").classList.toggle("on",ok);
+  },
+  async toggleGlasses(){
+    this.glasses=!this.glasses;
+    $("#ar").classList.toggle("glasses",this.glasses); $("#ar").classList.remove("showctl");
+    $("#btnGlasses").classList.toggle("on",this.glasses);
+    try{
+      if(this.glasses){ await document.documentElement.requestFullscreen?.(); await screen.orientation?.lock?.("landscape"); }
+      else { screen.orientation?.unlock?.(); if(document.fullscreenElement) await document.exitFullscreen(); }
+    }catch(_){}
+    if(this.glasses) this.toast("안경모드: 화면 탭 → 버튼 표시 / 음성명령 사용");
+  },
+  renderExtra(finishing){
+    const el=$("#arExtra"); let h="";
+    if(this._unk && !this.equip) h+=`<button class="btn blue" onclick="ui.newEquip('${esc(this._unk).replace(/'/g,"")}')">＋ 이 QR로 설비 등록</button>`;
+    if(this.lastAI && RESULT_RANK[this.lastAI.status]!=null) h+=`<button class="btn" onclick="AR.applyAI()">AI 판정 적용(${esc(this.lastAI.status)})</button>`;
+    if(this.session && (finishing || this.session.items.some(i=>i.result))) h+=`<button class="btn blue" onclick="AR.finish()">💾 점검 완료·저장</button>`;
+    el.innerHTML=h; el.style.display=h?"flex":"none";
+  },
+
+  /* ---- 그리기 ---- */
+  draw(){
+    const c=this.canvas, x=this.ctx, W=c.width, H=c.height;
+    x.fillStyle="#000"; x.fillRect(0,0,W,H);
+    if(this.glasses){ this.view(x,0,0,W/2,H); this.view(x,W/2,0,W/2,H); x.fillStyle="#000"; x.fillRect(W/2-2,0,4,H); }
+    else this.view(x,0,0,W,H);
+    // AI 버튼 상태가 바뀌면 하단 버튼 갱신
+    const k=(this.lastAI?this.lastAI.at:0)+":"+(this.session?this.session.items.filter(i=>i.result).length:-1)+":"+(this._unk||"")+":"+(this.equip?this.equip.id:"");
+    if(k!==this._k){ this._k=k; this.renderExtra(); }
+  },
+  /* 한쪽 화면(일반모드는 전체, 안경모드는 좌/우 눈) */
+  view(x,X,Y,W,H){
+    const v=this.video, vw=v.videoWidth, vh=v.videoHeight;
+    x.save(); x.beginPath(); x.rect(X,Y,W,H); x.clip();
+    let sx=0,sy=0,sw=vw,sh=vh,sc=1;
+    if(vw){ const ra=W/H; if(vw/vh>ra){ sw=vh*ra; sx=(vw-sw)/2; } else { sh=vw/ra; sy=(vh-sh)/2; } sc=W/sw; x.drawImage(v,sx,sy,sw,sh,X,Y,W,H); }
+    const u=Math.max(1, Math.min(W,H)/360)*(this.glasses?0.72:1);   // 글자 크기 기준
+    const map=p=>({x:X+(p.x-sx)*sc, y:Y+(p.y-sy)*sc});
+
+    // 조준선
+    if(!this.equip){ x.strokeStyle="rgba(59,214,198,.7)"; x.lineWidth=2*u; const s=70*u, cx=X+W/2, cy=Y+H/2;
+      [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([a,b])=>{ x.beginPath(); x.moveTo(cx+a*s,cy+b*s-b*18*u); x.lineTo(cx+a*s,cy+b*s); x.lineTo(cx+a*s-a*18*u,cy+b*s); x.stroke(); });
+      this.text(x,"설비 QR 코드를 비춰 주세요",X+W/2,cy+s+26*u,14*u,"#cfe9e6","center"); }
+
+    // QR 위치 표시 + 설비 라벨(공간 앵커)
+    const q=this.qr;
+    if(q && Date.now()-q.t<700 && vw){
+      const P=q.pts.map(map), eq=findEquip(parseQR(q.text));
+      x.strokeStyle=eq?"#3bd6c6":"#f4b740"; x.lineWidth=3*u; x.beginPath(); P.forEach((p,i)=>i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y)); x.closePath(); x.stroke();
+      const top=P.reduce((a,p)=>p.y<a.y?p:a), cx=P.reduce((a,p)=>a+p.x,0)/4;
+      // 이미 점검 중인 설비면 테두리만, 다른/미등록 설비면 공간 라벨 표시
+      if(!(eq && this.equip && eq.id===this.equip.id)){
+        const lines= eq? [eq.name||typeName(eq.type), `${eq.id} · ${eq.location||""}`, `최근점검 ${eq.lastInspected?fmt(eq.lastInspected).slice(0,10):"없음"} · ${eq.health||"-"}`]
+                       : ["미등록 설비", parseQR(q.text).slice(0,28)];
+        this.panel(x,cx,top.y-10*u,lines,u,eq?"#3bd6c6":"#f4b740","bottom");
+      }
+    }
+
+    // 상단 HUD: 설비 정보
+    let yy=Y+(this.glasses?14:64)*u;
+    if(this.equip){
+      const e=this.equip;
+      this.panel(x,X+12*u,yy,[`${typeIc(e.type)} ${e.name||typeName(e.type)}`,`${e.maker||""} ${e.model||""}`.trim()||typeName(e.type),`${e.location||"위치 미입력"}`,`현행화: ${e.sync||"미확인"}`],u,"#2a9df4","topleft");
+    }
+    // 진행률
+    if(this.session){
+      const s=this.session, n=s.items.length, done=s.items.filter(i=>i.result).length;
+      const bw=W*0.36, bx=X+W-bw-12*u, by=yy;
+      x.fillStyle="rgba(11,18,32,.75)"; this.rr(x,bx,by,bw,22*u,6*u); x.fill();
+      x.fillStyle="#3bd6c6"; this.rr(x,bx,by,bw*done/n,22*u,6*u); x.fill();
+      this.text(x,`${done}/${n} 점검`,bx+bw/2,by+15.5*u,12*u,"#fff","center");
+      // 항목 점 표시
+      s.items.forEach((it,i)=>{ const cx=bx+(i+.5)*bw/n, cy=by+32*u; x.beginPath(); x.arc(cx,cy,(i===this.step?5:3.5)*u,0,7);
+        x.fillStyle=it.result==="정상"?"#4ad991":it.result==="주의"?"#f4b740":it.result==="불량"?"#f4685f":"rgba(255,255,255,.4)"; x.fill(); });
+    }
+    // 현재 점검항목(하단 카드)
+    const bottomPad=this.glasses?16*u:170*u;
+    let msgY=Y+H-bottomPad-8*u;
+    if(this.session){
+      const it=this.cur();
+      const lines=[`${this.step+1}. ${it.label}`, it.result?`결과: ${it.result}`:"정상 / 주의 / 불량 을 말하거나 누르세요"];
+      if(it.photo) lines[1]+="  📷";
+      msgY-=this.panel(x,X+W/2,Y+H-bottomPad,lines,u*1.15,"#3bd6c6","bottom",W-24*u);
+    }
+    // AI 결과
+    const a=this.lastAI;
+    if(a){
+      const col=a.status==="정상"?"#4ad991":a.status==="주의"?"#f4b740":a.status==="불량"?"#f4685f":"#9fb0cc";
+      const lines=[`🤖 AI: ${a.status||"판단불가"}`, a.summary||"", ...(a.findings||[]).slice(0,3).map(f=>"· "+f), ...(a.actions||[]).slice(0,2).map(f=>"→ "+f), ...(a.readings||[]).filter(r=>r.value).slice(0,3).map(r=>`▣ ${r.name} ${r.value}${r.unit||""}`)];
+      this.panel(x,X+W-12*u,Y+H*0.30,lines,u*0.95,col,"topright",W*0.62);
+    }
+    if(this.busy){ this.text(x,"AI 분석 중…",X+W/2,Y+H*0.45,16*u,"#3bd6c6","center"); }
+    if(this.msg && Date.now()<this.msgUntil){ this.panel(x,X+W/2,msgY,[this.msg],u,"#9fb0cc","bottom",W-40*u); }
+    // 셔터/판정 플래시
+    const f=Date.now()-this.flash; if(f<250){ x.fillStyle=`rgba(255,255,255,${.25*(1-f/250)})`; x.fillRect(X,Y,W,H); }
+    x.restore();
+  },
+  rr(x,X,Y,W,H,r){ x.beginPath(); x.moveTo(X+r,Y); x.arcTo(X+W,Y,X+W,Y+H,r); x.arcTo(X+W,Y+H,X,Y+H,r); x.arcTo(X,Y+H,X,Y,r); x.arcTo(X,Y,X+W,Y,r); x.closePath(); },
+  text(x,t,X,Y,size,col,align="left"){ x.font=`600 ${size}px ${FONT}`; x.textAlign=align; x.fillStyle="rgba(0,0,0,.6)"; x.fillText(t,X+1,Y+1); x.fillStyle=col; x.fillText(t,X,Y); },
+  wrap(x,t,maxW){ const out=[]; let line=""; for(const ch of String(t)){ if(x.measureText(line+ch).width>maxW && line){ out.push(line); line=ch; } else line+=ch; } if(line) out.push(line); return out; },
+  /* 반투명 정보 패널. anchor: topleft | topright | bottom | center */
+  panel(x,ax,ay,lines,u,col,anchor,maxW){
+    const fs=13*u, lh=fs*1.38, padd=9*u; maxW=maxW||220*u;
+    x.font=`600 ${fs}px ${FONT}`;
+    let L=[]; lines.filter(l=>l!=="" && l!=null).forEach((l,i)=>this.wrap(x,l,maxW-padd*2).forEach(w=>L.push({t:w,first:i===0})));
+    L=L.slice(0,9);
+    const w=Math.min(maxW, Math.max(...L.map(l=>x.measureText(l.t).width))+padd*2), h=L.length*lh+padd*2-(lh-fs);
+    let X=ax, Y=ay;
+    if(anchor==="topright") X=ax-w; else if(anchor==="bottom"){ X=ax-w/2; Y=ay-h; } else if(anchor==="center"){ X=ax-w/2; Y=ay-h/2; }
+    x.fillStyle="rgba(8,14,26,.78)"; this.rr(x,X,Y,w,h,8*u); x.fill();
+    x.fillStyle=col; this.rr(x,X,Y,4*u,h,2*u); x.fill();
+    x.textAlign="left";
+    L.forEach((l,i)=>{ x.fillStyle=l.first?col:"#e8edf7"; x.fillText(l.t,X+padd+2*u,Y+padd+fs*0.85+i*lh); });
+    return h;
+  },
+};
+window.AR=AR;
+
+/* ============================================================
+   7. 화면 렌더링
+   ============================================================ */
+function render(){
+  const k=$("#keyPill"); if(S.settings.apiKey){ k.className="key-pill ok"; k.textContent="AI 연결됨"; } else { k.className="key-pill no"; k.textContent="API 키 없음"; }
+  ({home:renderHome, equip:renderEquip, hist:renderHist, set:renderSet})[S.tab]?.();
+}
+function renderHome(){
+  const n=S.equips.length, ver=S.equips.filter(e=>e.sync==="일치"||e.sync==="신규").length, mis=S.equips.filter(e=>e.sync==="불일치").length;
+  const t0=new Date(); t0.setHours(0,0,0,0);
+  const todayN=S.inspections.filter(i=>i.endedAt>=+t0).length, bad=S.equips.filter(e=>e.health==="불량"||e.health==="주의").length;
+  const rate=n?Math.round(ver/n*100):0;
+  $("#page-home").innerHTML=`
+  <div class="card"><div class="card-b">
+    <div class="big-cta">
+      <button class="btn pri" onclick="AR.open()"><em>🕶️</em>AR 점검 시작</button>
+      <button class="btn blue" onclick="ui.newEquip()"><em>＋</em>새 설비 등록</button>
+    </div>
+  </div></div>
+  <div class="card"><div class="card-h"><h2>1차 목표 · 설비 현행화</h2><span class="sub">${esc(S.settings.site||"사업장 미설정")}</span></div><div class="card-b">
+    <div class="stats">
+      <div class="stat"><b>${n}</b><span>등록 설비</span></div>
+      <div class="stat"><b>${rate}%</b><span>현행화율 (${ver}/${n})</span></div>
+      <div class="stat"><b>${todayN}</b><span>오늘 점검</span></div>
+      <div class="stat"><b style="color:${bad?"var(--bad)":"inherit"}">${bad}</b><span>주의·불량 설비</span></div>
+    </div>
+    <div class="bar-prog"><i style="width:${rate}%"></i></div>
+    ${mis?`<p class="muted" style="margin:10px 0 0;font-size:13px">⚠️ 대장과 현장이 다른 설비 ${mis}건 — 설비 현행화 탭에서 확인하세요.</p>`:""}
+  </div></div>
+  <div class="card"><div class="card-h"><h2>사용 순서</h2></div><div class="card-b" style="font-size:14px">
+    <ol style="margin:0;padding-left:20px;line-height:1.9">
+      <li><b>설정</b>에서 점검자·사업장, Gemini API 키 입력</li>
+      <li><b>설비 현행화</b> → 기존 대장 CSV 가져오기 또는 명판 촬영으로 AI 자동등록</li>
+      <li><b>QR 라벨 인쇄</b> 후 설비에 부착</li>
+      <li><b>AR 점검</b> → QR 비추기 → 화면 안내대로 정상/주의/불량 (음성 가능)</li>
+      <li>애매하면 <b>AI 진단</b> → "적용"이라고 말하면 반영</li>
+      <li><b>👓 안경모드</b>: 휴대폰을 VR 헤드마운트에 끼우면 양손이 자유로운 시제품 AI안경</li>
+    </ol>
+  </div></div>
+  <div class="card"><div class="card-h"><h2>최근 점검</h2><span class="sub"><button class="btn sm" onclick="ui.tab('hist')">전체</button></span></div>
+    <div class="list">${S.inspections.slice(0,5).map(histItem).join("")||`<div class="empty">아직 점검 기록이 없습니다</div>`}</div></div>`;
+}
+function equipItem(e){
+  return `<div class="item" onclick="ui.openSheet('equipView','${esc(e.id)}')">
+    <div class="ic">${e.photo?`<img data-photo="${esc(e.photo)}" alt="">`:typeIc(e.type)}</div>
+    <div class="tx"><b>${esc(e.name||typeName(e.type))}</b><span class="mono">${esc(e.id)} · ${esc(e.location||"위치 미입력")}</span></div>
+    ${syncTag(e.sync)} ${e.health?resTag(e.health):""}
+  </div>`;
+}
+let equipFilter={q:"", sync:""};
+function renderEquip(){
+  const q=equipFilter.q.toLowerCase();
+  const list=S.equips.filter(e=>(!equipFilter.sync||(e.sync||"미확인")===equipFilter.sync) &&
+    (!q||[e.id,e.name,e.maker,e.model,e.serial,e.location,typeName(e.type)].join(" ").toLowerCase().includes(q)));
+  $("#page-equip").innerHTML=`
+  <div class="card"><div class="card-b">
+    <div class="row">
+      <button class="btn pri" onclick="ui.newEquip()">＋ 설비 등록</button>
+      <button class="btn" onclick="ui.importCSV()">📥 대장 CSV 가져오기</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" onclick="ui.printLabels()">🏷️ QR 라벨 인쇄</button>
+      <button class="btn" onclick="ui.exportEquips()">📤 현행화 결과 CSV</button>
+    </div>
+  </div></div>
+  <div class="card">
+    <div class="card-b" style="padding-bottom:0">
+      <div class="toolbar">
+        <input class="inp" placeholder="ID·명칭·모델·위치 검색" value="${esc(equipFilter.q)}" oninput="equipFilter.q=this.value;renderEquipList()">
+        <select class="inp" style="flex:0 0 110px" onchange="equipFilter.sync=this.value;renderEquipList()">
+          <option value="">전체</option>${SYNC.map(s=>`<option ${equipFilter.sync===s?"selected":""}>${s}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <div class="list" id="equipList"></div>
+  </div>`;
+  renderEquipList(list);
+}
+function renderEquipList(list){
+  if(!list){ const q=equipFilter.q.toLowerCase();
+    list=S.equips.filter(e=>(!equipFilter.sync||(e.sync||"미확인")===equipFilter.sync) && (!q||[e.id,e.name,e.maker,e.model,e.serial,e.location,typeName(e.type)].join(" ").toLowerCase().includes(q))); }
+  const el=$("#equipList"); if(!el) return;
+  el.innerHTML=list.map(equipItem).join("")||`<div class="empty">${S.equips.length?"검색 결과 없음":"등록된 설비가 없습니다.<br>기존 설비대장 CSV를 가져오거나 새로 등록하세요."}</div>`;
+  hydratePhotos(el);
+}
+function histItem(s){
+  const done=s.items.filter(i=>i.result).length;
+  return `<div class="item" onclick="ui.openSheet('inspView','${esc(s.id)}')">
+    <div class="ic">${typeIc(s.type)}</div>
+    <div class="tx"><b>${esc(s.equipName||s.equipId)}</b><span>${fmt(s.endedAt)} · ${done}/${s.items.length}항목 · ${esc(s.inspector||"")}</span></div>
+    ${resTag(s.overall)}</div>`;
+}
+function renderHist(){
+  $("#page-hist").innerHTML=`
+  <div class="card"><div class="card-b"><div class="row">
+    <button class="btn" onclick="ui.exportInsp()">📤 점검결과 CSV</button>
+  </div></div></div>
+  <div class="card"><div class="list">${S.inspections.map(histItem).join("")||`<div class="empty">점검 기록이 없습니다</div>`}</div></div>`;
+}
+function renderSet(){
+  const st=S.settings;
+  $("#page-set").innerHTML=`
+  <div class="card"><div class="card-h"><h2>점검자 / 사업장</h2></div><div class="card-b">
+    <label class="f">점검자<input class="inp" id="sInsp" value="${esc(st.inspector)}" placeholder="홍길동"></label>
+    <label class="f">사업장(국사)명<input class="inp" id="sSite" value="${esc(st.site)}" placeholder="○○국사"></label>
+  </div></div>
+  <div class="card"><div class="card-h"><h2>AI (Gemini Vision)</h2></div><div class="card-b">
+    <label class="f">API 키<input class="inp" id="sKey" type="password" placeholder="AIza..." value="${esc(st.apiKey)}"></label>
+    <label class="f">모델<input class="inp" id="sModel" list="models" value="${esc(st.model)}"></label>
+    <datalist id="models"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"><option value="gemini-2.0-flash"></datalist>
+    <p class="note">키는 이 휴대폰에만 저장되며 백업 파일에도 포함되지 않습니다. 키 발급: Google AI Studio.</p>
+  </div></div>
+  <div class="card"><div class="card-h"><h2>음성 (핸즈프리)</h2></div><div class="card-b">
+    <label class="chk"><input type="checkbox" id="sTts" ${st.tts?"checked":""}> 음성 안내(TTS)</label>
+    <label class="chk"><input type="checkbox" id="sVoice" ${st.voice?"checked":""}> AR 시작 시 음성명령 자동 켜기</label>
+    <p class="note">명령어: <b>정상 · 주의 · 불량 · 다음 · 이전 · 진단 · 적용 · 촬영 · 현행화 · 다시 · 완료</b></p>
+  </div></div>
+  <div class="row" style="margin-top:14px"><button class="btn pri" onclick="ui.saveSettings()">설정 저장</button></div>
+  <div class="card" style="margin-top:14px"><div class="card-h"><h2>점검항목 편집</h2></div><div class="card-b">
+    <button class="btn block" onclick="ui.openSheet('checklist')">설비 종류별 점검항목 편집</button>
+  </div></div>
+  <div class="card"><div class="card-h"><h2>데이터</h2></div><div class="card-b">
+    <div class="row"><button class="btn" onclick="ui.backup()">💾 백업(JSON)</button><button class="btn" onclick="ui.restore()">📂 복원</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn bad" onclick="ui.reset()">전체 초기화</button></div>
+  </div></div>`;
+}
+
+/* ============================================================
+   8. 시트(팝업) 화면
+   ============================================================ */
+const sheets = {
+  equipEdit(b, arg){
+    const e = arg.id && findEquip(arg.id) || {id:arg.newId||newEquipId(), type:"rack", sync:"신규", isNew:true};
+    const opt=Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${e.type===k?"selected":""}>${v.ic} ${v.name}</option>`).join("");
+    b.innerHTML=`
+      <button class="btn blue block" id="btnNP" style="margin-bottom:12px">📸 명판 촬영 → AI 자동입력</button>
+      <div id="npPrev"></div>
+      <label class="f">설비 ID (QR 내용)<input class="inp mono" id="eId" value="${esc(e.id)}" ${e.isNew?"":"readonly"}></label>
+      <label class="f">종류<select class="inp" id="eType">${opt}</select></label>
+      <label class="f">명칭<input class="inp" id="eName" value="${esc(e.name)}" placeholder="예: UPS 30kVA #1"></label>
+      <div class="grid2">
+        <label class="f">제조사<input class="inp" id="eMaker" value="${esc(e.maker)}"></label>
+        <label class="f">모델<input class="inp" id="eModel" value="${esc(e.model)}"></label>
+        <label class="f">시리얼<input class="inp" id="eSerial" value="${esc(e.serial)}"></label>
+        <label class="f">정격<input class="inp" id="eRating" value="${esc(e.rating)}"></label>
+        <label class="f">설치일<input class="inp" id="eInst" type="date" value="${esc(e.installed)}"></label>
+        <label class="f">현행화 상태<select class="inp" id="eSync">${SYNC.map(s=>`<option ${(e.sync||"미확인")===s?"selected":""}>${s}</option>`).join("")}</select></label>
+      </div>
+      <label class="f">위치 (층/실/랙)<input class="inp" id="eLoc" value="${esc(e.location)}" placeholder="3F 전송실 R-05"></label>
+      <label class="f">비고<textarea class="inp" id="eMemo" rows="2">${esc(e.memo)}</textarea></label>
+      <div class="row"><button class="btn pri" id="eSave">저장</button></div>`;
+    let photoId=e.photo||null;
+    b.querySelector("#btnNP").onclick=async()=>{
+      const f=await pickFile("image/*",true); if(!f) return;
+      const blob=await resizeImage(f,1600,0.85); photoId=uid("PH"); await DB.put(photoId,blob);
+      b.querySelector("#npPrev").innerHTML=`<img src="${URL.createObjectURL(blob)}" style="width:100%;border-radius:10px;margin-bottom:10px">`;
+      if(!S.settings.apiKey){ toast("사진은 저장됨. AI 자동입력은 API 키 필요"); return; }
+      const btn=b.querySelector("#btnNP"); btn.disabled=true; btn.textContent="AI 판독 중…";
+      try{
+        const r=await callGemini(PROMPT_NAMEPLATE(),[blob]);
+        const set=(id,v)=>{ if(v) b.querySelector(id).value=v; };
+        if(r.type && TYPES[r.type]) b.querySelector("#eType").value=r.type;
+        set("#eName",r.name); set("#eMaker",r.maker); set("#eModel",r.model); set("#eSerial",r.serial); set("#eRating",r.rating);
+        if(r.memo||r.mfgDate) b.querySelector("#eMemo").value=[b.querySelector("#eMemo").value, r.mfgDate?"제조일 "+r.mfgDate:"", r.memo].filter(Boolean).join(" / ");
+        toast(`AI 판독 완료 (신뢰도 ${Math.round((r.confidence||0)*100)}%) — 확인 후 저장`,"good");
+      }catch(err){ toast(err.message,"bad"); }
+      btn.disabled=false; btn.textContent="📸 명판 다시 촬영";
+    };
+    b.querySelector("#eSave").onclick=()=>{
+      const v=id=>b.querySelector(id).value.trim();
+      const id=v("#eId"); if(!id){ toast("설비 ID를 입력하세요","bad"); return; }
+      if(e.isNew && findEquip(id)){ toast("이미 있는 ID입니다","bad"); return; }
+      const rec={...e, id, type:v("#eType"), name:v("#eName"), maker:v("#eMaker"), model:v("#eModel"), serial:v("#eSerial"), rating:v("#eRating"),
+        installed:v("#eInst"), sync:v("#eSync"), location:v("#eLoc"), memo:v("#eMemo"), photo:photoId, updatedAt:Date.now()};
+      delete rec.isNew;
+      if(e.isNew){ rec.createdAt=Date.now(); S.equips.unshift(rec); } else Object.assign(findEquip(e.id),rec);
+      save(); ui.closeSheet(); toast("저장됨","good");
+      if(AR.running){ AR._unk=null; AR.setEquip(findEquip(id)); } else render();
+    };
+  },
+  equipView(b, id){
+    const e=findEquip(id); if(!e) return;
+    const ins=S.inspections.filter(i=>i.equipId===id);
+    const qr=qrcode(0,"M"); qr.addData(QR_PREFIX+e.id); qr.make();
+    b.innerHTML=`
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+        <div style="background:#fff;padding:6px;border-radius:8px;width:96px;flex:none">${qr.createSvgTag({cellSize:3,margin:0,scalable:true})}</div>
+        <div><b style="font-size:16px">${esc(e.name||typeName(e.type))}</b><div class="mono muted" style="font-size:12px">${esc(e.id)}</div><div style="margin-top:4px">${syncTag(e.sync)} ${e.health?resTag(e.health):""}</div></div>
+      </div>
+      ${e.photo?`<img data-photo="${esc(e.photo)}" style="width:100%;border-radius:10px;margin-bottom:10px">`:""}
+      <table style="width:100%;font-size:13.5px;border-collapse:collapse">
+        ${[["종류",typeName(e.type)],["제조사/모델",`${e.maker||"-"} / ${e.model||"-"}`],["시리얼",e.serial],["정격",e.rating],["위치",e.location],["설치일",e.installed],["현행화 확인",e.verifiedAt?`${fmt(e.verifiedAt)} ${e.verifiedBy||""}`:"-"],["최근 점검",fmt(e.lastInspected)],["비고",e.memo]]
+          .map(([k,v])=>`<tr><td class="muted" style="padding:5px 0;width:96px;vertical-align:top">${k}</td><td style="padding:5px 0">${esc(v||"-")}</td></tr>`).join("")}
+      </table>
+      <div class="row" style="margin-top:12px">
+        <button class="btn pri" onclick="AR.open('${esc(e.id)}')">🕶️ AR 점검</button>
+        <button class="btn" onclick="ui.openSheet('equipEdit',{id:'${esc(e.id)}'})">수정</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" onclick="ui.setSync('${esc(e.id)}','일치')">✔ 현행화 일치</button>
+        <button class="btn" onclick="ui.setSync('${esc(e.id)}','불일치')">✖ 불일치</button>
+        <button class="btn bad" onclick="ui.delEquip('${esc(e.id)}')">삭제</button>
+      </div>
+      <h3 style="font-size:14px;margin:16px 0 4px">점검 이력 (${ins.length})</h3>
+      <div class="list card" style="box-shadow:none">${ins.map(histItem).join("")||`<div class="empty">없음</div>`}</div>`;
+    hydratePhotos(b);
+  },
+  inspView(b, id){
+    const s=S.inspections.find(i=>i.id===id); if(!s) return;
+    b.innerHTML=`
+      <div style="margin-bottom:10px"><b style="font-size:16px">${esc(s.equipName)}</b> ${resTag(s.overall)}
+        <div class="muted" style="font-size:12.5px">${esc(s.equipId)} · ${fmt(s.startedAt)} ~ ${fmt(s.endedAt).slice(11)} · ${esc(s.inspector||"")}</div></div>
+      ${s.items.map((it,i)=>`<div class="card" style="box-shadow:none;margin-top:8px"><div class="card-b" style="padding:10px 12px">
+        <div style="display:flex;gap:8px;align-items:center"><b style="flex:1;font-size:14px">${i+1}. ${esc(it.label)}</b>${resTag(it.result)}</div>
+        ${it.note?`<div class="muted" style="font-size:12.5px;margin-top:4px">${esc(it.note)}</div>`:""}
+        ${it.ai?`<div style="font-size:12.5px;margin-top:6px">🤖 <b>${esc(it.ai.status)}</b> ${esc(it.ai.summary||"")}<br><span class="muted">${(it.ai.findings||[]).map(esc).join(" / ")}</span>${(it.ai.actions||[]).length?`<br>→ ${(it.ai.actions).map(esc).join(" / ")}`:""}</div>`:""}
+        ${it.photo?`<img data-photo="${esc(it.photo)}" style="width:100%;border-radius:8px;margin-top:8px">`:""}
+      </div></div>`).join("")}
+      <div class="row" style="margin-top:12px"><button class="btn" onclick="ui.printReport('${esc(s.id)}')">🖨️ 보고서 인쇄/PDF</button><button class="btn bad" onclick="ui.delInsp('${esc(s.id)}')">삭제</button></div>`;
+    hydratePhotos(b);
+  },
+  pickEquip(b){
+    b.innerHTML=`<input class="inp" placeholder="검색" id="pq" style="margin-bottom:10px"><div class="list card" id="pl" style="box-shadow:none"></div>`;
+    const draw=()=>{ const q=b.querySelector("#pq").value.toLowerCase();
+      b.querySelector("#pl").innerHTML=S.equips.filter(e=>!q||[e.id,e.name,e.location].join(" ").toLowerCase().includes(q)).map(e=>
+        `<div class="item" onclick="ui.closeSheet();AR.setEquip(findEquip('${esc(e.id)}'))"><div class="ic">${typeIc(e.type)}</div><div class="tx"><b>${esc(e.name||typeName(e.type))}</b><span>${esc(e.id)} · ${esc(e.location||"")}</span></div></div>`).join(""); };
+    b.querySelector("#pq").oninput=draw; draw();
+  },
+  checklist(b){
+    const opt=Object.entries(TYPES).map(([k,v])=>`<option value="${k}">${v.ic} ${v.name}</option>`).join("");
+    b.innerHTML=`<label class="f">설비 종류<select class="inp" id="cT">${opt}</select></label>
+      <label class="f">점검항목 (한 줄에 하나)<textarea class="inp" id="cL" rows="9"></textarea></label>
+      <div class="row"><button class="btn" id="cR">기본값으로</button><button class="btn pri" id="cS">저장</button></div>`;
+    const T=b.querySelector("#cT"), L=b.querySelector("#cL");
+    const load=()=>L.value=checksOf(T.value).join("\n"); T.onchange=load; load();
+    b.querySelector("#cR").onclick=()=>{ delete S.checklists[T.value]; save(); load(); toast("기본값 복원"); };
+    b.querySelector("#cS").onclick=()=>{ const a=L.value.split("\n").map(s=>s.trim()).filter(Boolean); if(!a.length) return toast("항목을 입력하세요","bad"); S.checklists[T.value]=a; save(); toast("저장됨","good"); };
+  },
+};
+
+/* ============================================================
+   9. UI 동작
+   ============================================================ */
+const ui = {
+  tab(name){ S.tab=name; save(); document.querySelectorAll(".pages").forEach(p=>p.classList.toggle("on",p.id==="page-"+name));
+    document.querySelectorAll("nav button[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===name)); render(); scrollTo(0,0); },
+  openSheet(kind,arg){
+    const titles={equipEdit:"설비 등록/수정", equipView:"설비 정보", inspView:"점검 결과", pickEquip:"점검할 설비 선택", checklist:"점검항목 편집", settings:"설정"};
+    if(kind==="settings"){ this.tab("set"); return; }
+    $("#sheetTitle").textContent=titles[kind]||""; const b=$("#sheetBody"); b.innerHTML=""; b.scrollTop=0; sheets[kind](b,arg);
+    $("#scrim").classList.add("on"); $("#sheet").classList.add("on");
+    // AR 화면 위에서도 시트가 보이도록
+    $("#scrim").style.zIndex=$("#sheet").style.zIndex=AR.running?150:"";
+    if(AR.running) $("#sheet").style.zIndex=151;
+  },
+  closeSheet(){ $("#scrim").classList.remove("on"); $("#sheet").classList.remove("on"); },
+  newEquip(newId){ this.openSheet("equipEdit",{newId}); },
+  setSync(id,s){ const e=findEquip(id); e.sync=s; e.verifiedAt=Date.now(); e.verifiedBy=S.settings.inspector; save(); this.openSheet("equipView",id); render(); toast(`현행화: ${s}`); },
+  delEquip(id){ if(!confirm("이 설비를 삭제할까요? (점검 이력은 유지)")) return; S.equips=S.equips.filter(e=>e.id!==id); save(); this.closeSheet(); render(); },
+  delInsp(id){ if(!confirm("이 점검 기록을 삭제할까요?")) return; S.inspections=S.inspections.filter(e=>e.id!==id); save(); this.closeSheet(); render(); },
+  saveSettings(){
+    const st=S.settings; st.inspector=$("#sInsp").value.trim(); st.site=$("#sSite").value.trim();
+    st.apiKey=$("#sKey").value.trim(); st.model=$("#sModel").value.trim()||"gemini-2.5-flash";
+    st.tts=$("#sTts").checked; st.voice=$("#sVoice").checked; save(); render(); toast("설정 저장됨","good");
+  },
+  async importCSV(){
+    const f=await pickFile(".csv,text/csv"); if(!f) return;
+    let text=await f.text();
+    if(text.includes(" ")){ text=new TextDecoder("euc-kr").decode(await f.arrayBuffer()); }   // 엑셀 기본 저장(EUC-KR) 대응
+    const rows=parseCSV(text); if(rows.length<2){ toast("데이터가 없습니다","bad"); return; }
+    const hd=rows[0].map(h=>h.trim());
+    const col=(...names)=>hd.findIndex(h=>names.some(n=>h.includes(n)));
+    const C={id:col("설비ID","ID","관리번호","자산번호"), type:col("종류","구분"), name:col("명칭","설비명","장비명"), maker:col("제조사"), model:col("모델"), serial:col("시리얼","S/N","제조번호"), loc:col("위치","설치장소"), inst:col("설치일")};
+    const guessType=s=>{ s=s||""; const e=Object.entries(TYPES).find(([k,v])=>s.includes(v.name)||s.toLowerCase().includes(k)||v.name.split("/").some(n=>n&&s.includes(n))); return e?e[0]:"etc"; };
+    let add=0, upd=0;
+    for(const r of rows.slice(1)){
+      const g=i=>i>=0?(r[i]||"").trim():"";
+      const id=g(C.id)||newEquipId();
+      const rec={id, type:guessType(g(C.type)||g(C.name)), name:g(C.name), maker:g(C.maker), model:g(C.model), serial:g(C.serial), location:g(C.loc), installed:g(C.inst)};
+      const ex=findEquip(id);
+      if(ex){ Object.keys(rec).forEach(k=>{ if(rec[k]) ex[k]=rec[k]; }); upd++; }
+      else { S.equips.push({...rec, sync:"미확인", createdAt:Date.now()}); add++; }
+    }
+    save(); render(); toast(`가져오기: 신규 ${add} · 갱신 ${upd}`,"good");
+  },
+  exportEquips(){
+    const rows=[["설비ID","종류","명칭","제조사","모델","시리얼","정격","위치","설치일","현행화상태","현행화확인일","확인자","최근점검","최근판정","비고"]];
+    S.equips.forEach(e=>rows.push([e.id,typeName(e.type),e.name,e.maker,e.model,e.serial,e.rating,e.location,e.installed,e.sync||"미확인",fmt(e.verifiedAt),e.verifiedBy,fmt(e.lastInspected),e.health,e.memo]));
+    download(`설비현행화_${today()}.csv`, toCSV(rows), "text/csv");
+  },
+  exportInsp(){
+    const rows=[["점검ID","설비ID","설비명","종류","점검자","시작","종료","종합","항목번호","점검항목","결과","비고","AI판정","AI요약","AI근거","AI조치"]];
+    S.inspections.forEach(s=>s.items.forEach((it,i)=>rows.push([s.id,s.equipId,s.equipName,typeName(s.type),s.inspector,fmt(s.startedAt),fmt(s.endedAt),s.overall,i+1,it.label,it.result||"미점검",it.note,it.ai?.status,it.ai?.summary,(it.ai?.findings||[]).join(" / "),(it.ai?.actions||[]).join(" / ")])));
+    download(`점검결과_${today()}.csv`, toCSV(rows), "text/csv");
+  },
+  printLabels(){
+    const list=S.equips; if(!list.length){ toast("설비가 없습니다"); return; }
+    $("#print").innerHTML=`<div class="labels">${list.map(e=>{ const q=qrcode(0,"M"); q.addData(QR_PREFIX+e.id); q.make();
+      return `<div class="label">${q.createSvgTag({cellSize:2,margin:0,scalable:true})}<div><b>${esc(e.name||typeName(e.type))}</b>${esc(e.id)}<br>${esc(e.location||"")}</div></div>`; }).join("")}</div>`;
+    setTimeout(()=>window.print(),100);
+  },
+  async printReport(id){
+    const s=S.inspections.find(i=>i.id===id); const e=findEquip(s.equipId)||{};
+    $("#print").innerHTML=`<div class="rep"><h1>설비 점검 보고서</h1>
+      <table><tr><th>설비</th><td>${esc(s.equipName)} (${esc(s.equipId)})</td><th>종류</th><td>${esc(typeName(s.type))}</td></tr>
+      <tr><th>위치</th><td>${esc(e.location||"")}</td><th>사업장</th><td>${esc(s.site||"")}</td></tr>
+      <tr><th>점검자</th><td>${esc(s.inspector||"")}</td><th>일시</th><td>${fmt(s.startedAt)} ~ ${fmt(s.endedAt).slice(11)}</td></tr>
+      <tr><th>종합판정</th><td colspan="3"><b>${esc(s.overall)}</b></td></tr></table><br>
+      <table><tr><th>#</th><th>점검항목</th><th>결과</th><th>비고 / AI 진단</th><th>사진</th></tr>
+      ${s.items.map((it,i)=>`<tr><td>${i+1}</td><td>${esc(it.label)}</td><td>${esc(it.result||"미점검")}</td>
+        <td>${esc(it.note||"")}${it.ai?`<br>AI: ${esc(it.ai.status)} — ${esc(it.ai.summary||"")}${(it.ai.actions||[]).length?"<br>조치: "+(it.ai.actions).map(esc).join(", "):""}`:""}</td>
+        <td>${it.photo?`<img data-photo="${esc(it.photo)}">`:""}</td></tr>`).join("")}</table></div>`;
+    await hydratePhotos($("#print")); setTimeout(()=>window.print(),300);
+  },
+  backup(){ const d={...S, settings:{...S.settings, apiKey:""}}; download(`AR점검_백업_${today()}.json`, JSON.stringify(d,null,1), "application/json"); toast("사진은 백업에 포함되지 않습니다"); },
+  async restore(){
+    const f=await pickFile(".json,application/json"); if(!f) return;
+    try{ const d=JSON.parse(await f.text()); if(!Array.isArray(d.equips)) throw 0; const key=S.settings.apiKey;
+      S={...blankState(), ...d, settings:{...blankState().settings, ...d.settings, apiKey:key}}; save(); render(); toast("복원 완료","good"); }
+    catch(_){ toast("올바른 백업 파일이 아닙니다","bad"); }
+  },
+  async reset(){ if(!confirm("모든 설비·점검·사진 데이터를 삭제합니다. 계속할까요?")) return; const key=S.settings.apiKey; S=blankState(); S.settings.apiKey=key; save(); await DB.clear(); render(); toast("초기화됨"); },
+};
+window.ui=ui;
+
+/* 시작 */
+ui.tab(S.tab==="ar"?"home":(S.tab||"home"));
+if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+</script>
+</body>
+</html>

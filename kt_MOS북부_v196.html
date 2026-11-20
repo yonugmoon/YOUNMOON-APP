@@ -1231,6 +1231,9 @@
   .cat.drillin .cat-body{border-radius:0 0 12px 12px;}
   /* 설비 바 안 아이콘 (작게) */
   .cat-ic{width:22px;height:22px;object-fit:contain;vertical-align:-5px;margin-right:7px;}
+  #mdash-modal .md-wmenu{background:#fff;border:1px solid #CBD5E1;border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.18);padding:6px;min-width:260px;}
+  #mdash-modal .md-wmenu button{display:block;width:100%;text-align:left;background:none;border:none;border-radius:8px;padding:9px 12px;cursor:pointer;}
+  #mdash-modal .md-wmenu button:hover{background:#F1F5F9;} #mdash-modal .md-wmenu b{display:block;font-size:13.5px;color:#0F172A;} #mdash-modal .md-wmenu span{font-size:11.5px;color:#64748B;}
   /* v195: 상단 압축 */
   #mdash-modal .mdv-top{padding:8px 12px;gap:8px;row-gap:6px;}
   #mdash-modal .mdv-brand{flex:0 1 auto;min-width:180px;}
@@ -6984,6 +6987,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       const cx=Math.round(wCm*360000), cy=Math.round(cx*canvas.height/canvas.width);
       return `<w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${seq}" name="${f}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${seq}" name="${f}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rD${seq}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`; };
     const site=(current&&current.siteName)||D.title||'', dt=(current&&current.date)||D.date||todayStr();
+    if(o.style==='viz'){ const svgs=mdVizPages(D,bld); let vb='';
+      for(let i=0;i<svgs.length;i++){ if(o.onProgress) o.onProgress(`데이터 시각화 페이지 만드는 중… ${i+1}/${svgs.length}`); const c=await mdSvgToCanvas(svgs[i],VZ.W,VZ.H,2); if(c) vb+=pp(pic(c,16.9),{jc:'center',pbb:i>0||!!o.pageBreak}); }
+      return { body:vb, media }; }
     let body='';
     // 제목
     body+=pp(rn(o.title||'측정 결과 분석',{sz:28,b:true}),{jc:'center',after:60,pbb:!!o.pageBreak});
@@ -7064,12 +7070,233 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     body+=pp(rn('※ 측정값은 현장 계측·휴대폰 측정 기준이며, 「(완화)」 표시는 휴대폰 측정을 고려한 참고 기준입니다.',{sz:15,color:'777777'}),{before:120});
     return { body, media };
   }
-  async function exportDashboardWord(){
+  /* ── 📈 데이터 시각화 보고서 페이지 (결과서 맨 마지막장용) — 페이지마다 SVG 한 장 → PNG ── */
+  const VZ = { W:1000, H:1390, g1:'#1F4D3A', g2:'#2E6B4F', g3:'#4F8A6B', g4:'#A9C9B5', g5:'#EAF2EC', or:'#C2571A', or2:'#F2B279', or5:'#FCEFE3', rd:'#C0392B', rd5:'#FBE9E7', gy:'#6B7280', gy2:'#9CA3AF', gy5:'#F3F4F6', ln:'#E5E7EB', tx:'#111827' };
+  const VZF = `font-family="'Malgun Gothic','맑은 고딕','Noto Sans KR','Apple SD Gothic Neo',sans-serif"`;
+  function vzW(s, fs){ let w=0; for(const ch of String(s)){ w += /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(ch)?fs*0.96 : /[A-Z0-9%#@]/.test(ch)?fs*0.63 : /\s/.test(ch)?fs*0.3 : /[.,·:;()\[\]'|]/.test(ch)?fs*0.32 : fs*0.55; } return w; }
+  function vzFit(s, fs, max){ s=String(s==null?'':s); if(vzW(s,fs)<=max) return s; while(s.length>1 && vzW(s+'…',fs)>max) s=s.slice(0,-1); return s+'…'; }
+  function vzWrap(s, fs, max, maxLines){ const out=[]; let line=''; for(const w of String(s).split(/(\s+)/)){ if(!w) continue; const t=line+w; if(vzW(t,fs)<=max || !line.trim()){ if(vzW(t,fs)<=max) line=t; else { for(const ch of w){ if(vzW(line+ch,fs)>max){ out.push(line); line=''; } line+=ch; } } } else { out.push(line.trim()); line=w.trim(); } } if(line.trim()) out.push(line.trim()); if(maxLines && out.length>maxLines){ const k=out.slice(0,maxLines); k[maxLines-1]=vzFit(k[maxLines-1]+' '+out.slice(maxLines).join(' '),fs,max); return k; } return out; }
+  function vzT(x,y,s,o){ o=o||{}; return `<text x="${x}" y="${y}" font-size="${o.fs||18}" ${o.b?`font-weight="${o.b===true?800:o.b}"`:''} fill="${o.c||VZ.tx}" ${o.a?`text-anchor="${o.a}"`:''} ${o.ls?`letter-spacing="${o.ls}"`:''}>${escapeHtml(o.max?vzFit(s,o.fs||18,o.max):String(s))}</text>`; }
+  function vzTL(x,y,s,o){ o=o||{}; const fs=o.fs||18, lh=o.lh||fs*1.45; return vzWrap(s,fs,o.max||400,o.lines).map((l,i)=>vzT(x,y+i*lh,l,Object.assign({},o,{max:0}))).join(''); }
+  function vzBox(x,y,w,h,o){ o=o||{}; return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${o.r==null?14:o.r}" fill="${o.f||'#fff'}" ${o.s?`stroke="${o.s}" stroke-width="${o.sw||1.5}"`:''}/>`; }
+  function vzPage(no, tag, title, sub, inner, M){
+    let tfs=36; while(vzW(title,tfs)>M.W-88 && tfs>27) tfs--; const tl=vzWrap(title,tfs,M.W-88,2);
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${VZ.W}" height="${VZ.H}" viewBox="0 0 ${VZ.W} ${VZ.H}" ${VZF}>
+      <rect width="${VZ.W}" height="${VZ.H}" fill="#fff"/>
+      <rect x="0" y="0" width="${VZ.W}" height="10" fill="${VZ.g1}"/>
+      <rect x="44" y="44" width="10" height="10" rx="2" fill="${VZ.or}"/>${vzT(62,54,`${String(no).padStart(2,'0')}  ${tag}`,{fs:15,b:800,c:VZ.g2,ls:1})}
+      ${tl.map((l,i)=>vzT(44,104+i*46,l,{fs:tfs,b:900,c:VZ.tx})).join('')}
+      ${sub?vzT(44,104+(tl.length-1)*46+40,sub,{fs:17,c:VZ.gy,max:VZ.W-88}):''}
+      <g transform="translate(0,${(tl.length-1)*46})">${inner}</g>
+      <line x1="44" x2="${VZ.W-44}" y1="${VZ.H-52}" y2="${VZ.H-52}" stroke="${VZ.ln}"/>
+      ${vzT(44,VZ.H-24,vzFit(`정보통신설비 데이터 시각화 · ${M.site}${M.dt?' · '+M.dt:''}`,14,VZ.W-200),{fs:14,c:VZ.gy2})}${vzT(VZ.W-44,VZ.H-24,`${no} / ${M.total}`,{fs:14,c:VZ.gy2,a:'end'})}
+    </svg>`;
+  }
+  function vzKpi(x,y,w,h,lab,val,unit,sub,o){ o=o||{};
+    return vzBox(x,y,w,h,{f:o.f||VZ.g5}) + `<circle cx="${x+30}" cy="${y+32}" r="12" fill="${o.ic||VZ.g2}"/>` + vzT(x+30,y+38,o.icT||'✓',{fs:14,b:900,c:'#fff',a:'middle'})
+      + `<text x="${x+20}" y="${y+h*0.58}" font-size="${o.vfs||42}" font-weight="900" fill="${o.c||VZ.g1}">${escapeHtml(String(val))}<tspan font-size="18" font-weight="700" fill="${VZ.gy}"> ${escapeHtml(unit||'')}</tspan></text>`
+      + vzT(x+20,y+h*0.58+30,lab,{fs:16,b:800,c:VZ.tx,max:w-34}) + (sub?vzT(x+20,y+h*0.58+54,sub,{fs:13.5,c:VZ.gy,max:w-34}):'');
+  }
+  function vzDonut(cx,cy,r,segs,center,sub,o){ o=o||{}; const sw=o.sw||r*0.36; const tot=segs.reduce((s,g)=>s+g.v,0)||1; let a=-Math.PI/2, h=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${VZ.gy5}" stroke-width="${sw}"/>`;
+    segs.filter(g=>g.v>0).forEach(g=>{ const da=g.v/tot*Math.PI*2; if(da>=Math.PI*2-1e-6){ h+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${g.c}" stroke-width="${sw}"/>`; } else { const x1=cx+r*Math.cos(a), y1=cy+r*Math.sin(a), x2=cx+r*Math.cos(a+da), y2=cy+r*Math.sin(a+da); h+=`<path d="M${x1} ${y1} A${r} ${r} 0 ${da>Math.PI?1:0} 1 ${x2} ${y2}" fill="none" stroke="${g.c}" stroke-width="${sw}"/>`; } a+=da; });
+    return h + vzT(cx,cy+(sub?6:12),center,{fs:o.cfs||40,b:900,c:VZ.tx,a:'middle'}) + (sub?vzT(cx,cy+32,sub,{fs:15,c:VZ.gy,a:'middle'}):'');
+  }
+  function vzLegend(x,y,segs,o){ o=o||{}; return segs.map((g,i)=>`<rect x="${x}" y="${y+i*(o.gap||34)-13}" width="16" height="16" rx="4" fill="${g.c}"/>`+vzT(x+26,y+i*(o.gap||34),g.l,{fs:o.fs||16,c:'#374151',max:o.max||220})+vzT(x+(o.vx||250),y+i*(o.gap||34),g.vt!=null?g.vt:g.v,{fs:o.fs||16,b:900,a:'end'})).join(''); }
+  function vzNice(lo,hi,n){ const span=hi-lo||Math.abs(hi)||1; const raw=span/(n||5); const p=Math.pow(10,Math.floor(Math.log10(raw))); const st=[1,2,2.5,5,10].map(k=>k*p).find(k=>k>=raw)||10*p; return {lo:Math.floor(lo/st)*st, hi:Math.ceil(hi/st)*st, step:st}; }
+  function vzNum(v){ return mdFmt(v); }
+  function mdVizData(D, bld){
+    const rows = bld==='전체' ? D.rows : D.rows.filter(r=>r.bld===bld);
+    rows.forEach(r=>{ if(r._rg===undefined) r._rg=mdRange(r.itemName,r.std,r.fk); });
+    const items={}; rows.forEach(r=>{ if(r.vq) return; (items[r.itemName]=items[r.itemName]||[]).push(r); });
+    const A={}; Object.keys(items).forEach(n=>A[n]=mdAnalyze(items[n]));
+    const names=Object.keys(items).filter(n=>A[n].vals.length).sort((a,b)=>(A[b].bad.length-A[a].bad.length) || (A[b].out.length?1:0)-(A[a].out.length?1:0) || (/접지저항/.test(b)?1:0)-(/접지저항/.test(a)?1:0) || items[b].length-items[a].length);
+    const judgedN=names.reduce((s,n)=>s+A[n].judged.length,0), outN=names.reduce((s,n)=>s+A[n].out.length,0), valN=names.reduce((s,n)=>s+A[n].vals.length,0);
+    let cg=0,cb=0; D.catStat.forEach(c=>{ cg+=c.good; cb+=c.bad; });
+    const pass=(cg+cb)?cg/(cg+cb)*100:null;
+    const grade = pass==null?'-' : pass>=95?'S':pass>=85?'A':'B';
+    const site=(current&&current.siteName)||D.title||'', dt=(current&&current.date)||D.date||todayStr();
+    return { rows, items, A, names, judgedN, outN, valN, cg, cb, pass, grade, judgedCats:D.catStat.filter(r=>r.good+r.bad>0), site, dt,
+      locN:D.locN!=null?D.locN:new Set(rows.map(r=>r.loc)).size, eqN:D.eqN!=null?D.eqN:D.catStat.length,
+      vq:(current && D.source==='현재 점검')?(current.videoQuality||[]):[] };
+  }
+  function mdVizPages(D, bld){
+    const V=mdVizData(D,bld); const {A,items,names}=V; const pages=[]; const W=VZ.W, L=44, R=W-44, CW=R-L;
+    const pctS=v=>v==null?'-':(Math.round(v*10)/10).toString().replace(/\.0$/,'');
+    const gradeTxt={S:'S (우수)',A:'A (양호)',B:'B (보통)','-':'-'}[V.grade];
+    // ── 1. 종합 진단 ──
+    { let h='';
+      const y0=190, kw=(CW-36)/4;
+      h+=vzKpi(L,y0,kw,170,'체크리스트 적합률',pctS(V.pass),'%',`${V.cg+V.cb}건 판정 · 부적합 ${V.cb}`,{ic:V.cb?VZ.rd:VZ.g2,icT:V.cb?'!':'✓',c:V.cb?VZ.rd:VZ.g1});
+      h+=vzKpi(L+(kw+12),y0,kw,170,'종합 설비 건강도',V.grade,'등급',gradeTxt,{icT:'★'});
+      h+=vzKpi(L+(kw+12)*2,y0,kw,170,'사내 참고범위 이내',V.judgedN?pctS((V.judgedN-V.outN)/V.judgedN*100):'-','%',`${V.judgedN-V.outN} / ${V.judgedN}건`,{ic:V.outN?VZ.or:VZ.g2,icT:V.outN?'~':'✓'});
+      h+=vzKpi(L+(kw+12)*3,y0,kw,170,'점검 설비 · 위치',V.eqN,'종',`점검 위치 ${V.locN}곳 · 측정 ${V.names.length}종`,{icT:'#'});
+      // 도넛 2개
+      const py=390, pw=(CW-20)/2, ph=380;
+      h+=vzBox(L,py,pw,ph,{s:VZ.ln}) + vzT(L+24,py+42,'점검 결과 (적합 / 부적합)',{fs:19,b:800});
+      const s1=[{l:'적합',v:V.cg,c:VZ.g2},{l:'부적합',v:V.cb,c:VZ.rd}];
+      h+=vzDonut(L+130,py+210,98,s1,pctS(V.pass)+'%','적합률') + vzLegend(L+262,py+186,s1,{vx:190,max:120});
+      const s2=[{l:'범위 이내',v:V.judgedN-V.outN,c:VZ.g3},{l:'범위 밖(환경 편차)',v:V.outN,c:VZ.or},{l:'참고기준 없음',v:V.valN-V.judgedN,c:'#D1D5DB'}];
+      h+=vzBox(L+pw+20,py,pw,ph,{s:VZ.ln}) + vzT(L+pw+44,py+42,`사내 참고범위 (측정값 ${V.valN}건)`,{fs:19,b:800});
+      h+=vzDonut(L+pw+150,py+210,98,s2,V.judgedN?pctS((V.judgedN-V.outN)/V.judgedN*100)+'%':'-','범위 이내') + vzLegend(L+pw+272,py+176,s2,{vx:180,max:150,fs:15});
+      // 등급 눈금
+      const gy=py+ph+30; h+=vzBox(L,gy,CW,170,{f:VZ.gy5}) + vzT(L+24,gy+40,'종합 등급 기준',{fs:18,b:800}) + vzT(L+170,gy+40,'체크리스트 적합률 기준',{fs:14,c:VZ.gy});
+      const bx=L+24, bw=CW-48, X=v=>bx+bw*(v-70)/30, segs=[[70,85,'B (보통) 85% 미만','#E5E7EB','#6B7280'],[85,95,'A (양호) 85~95%',VZ.g4,VZ.g1],[95,100,'S (우수) 95% 이상',VZ.g2,'#fff']];
+      segs.forEach(([a,b,t,f,c])=>{ h+=`<rect x="${X(a)}" y="${gy+70}" width="${X(b)-X(a)-3}" height="40" rx="8" fill="${f}"/>`+vzT((X(a)+X(b))/2,gy+97,t,{fs:15,b:800,c,a:'middle',max:X(b)-X(a)-10}); });
+      if(V.pass!=null){ const px=X(Math.max(70,V.pass)); h+=`<path d="M${px-10} ${gy+58} L${px+10} ${gy+58} L${px} ${gy+70} Z" fill="${VZ.or}"/>`+vzT(px,gy+52,`${pctS(V.pass)}%`,{fs:15,b:900,c:VZ.or,a:px>R-60?'end':'middle'}); }
+      [70,85,95,100].forEach(v=>h+=vzT(X(v),gy+136,v+'%',{fs:13,c:VZ.gy,a:v===70?'start':v===100?'end':'middle'}));
+      // 요약 소견
+      const fy=gy+200; const f=[];
+      f.push(V.cb?`체크리스트 ${V.cg+V.cb}건 중 부적합 ${V.cb}건이 있어 해당 설비의 조치가 필요합니다.`:`체크리스트 ${V.cg}건이 모두 적합으로, 부적합 판정은 없습니다.`);
+      if(V.judgedN) f.push(V.outN?`사내 참고기준이 있는 측정값 ${V.judgedN}건 중 ${V.outN}건이 참고범위 밖입니다. 공간·환경에 따른 편차로 부적합이 아닙니다.`:`사내 참고기준이 있는 측정값 ${V.judgedN}건이 모두 참고범위 이내입니다.`);
+      const ge=names.find(n=>/접지저항/.test(n)); if(ge&&A[ge].st) f.push(`접지저항은 ${A[ge].vals.length}곳 평균 ${vzNum(A[ge].st.avg)}${A[ge].unit}, 최고 ${vzNum(A[ge].st.max)}${A[ge].unit}입니다.`);
+      if(V.vq.length) f.push(`영상 품질 검수 ${V.vq.length}건의 결과를 함께 정리했습니다 (영상 품질 페이지).`);
+      h+=vzBox(L,fy,CW,VZ.H-52-30-fy,{f:'#fff',s:VZ.g4}) + vzT(L+24,fy+40,'진단 요약',{fs:19,b:800,c:VZ.g1});
+      let yy=fy+80; f.forEach(t=>{ h+=`<circle cx="${L+32}" cy="${yy-6}" r="5" fill="${VZ.g3}"/>`; const ls=vzWrap(t,17,CW-80,2); ls.forEach((l,i)=>h+=vzT(L+48,yy+i*26,l,{fs:17,c:'#374151'})); yy+=ls.length*26+16; });
+      pages.push({tag:'종합 진단', title: V.cb?`적합률 ${pctS(V.pass)}% · 부적합 ${V.cb}건 조치 필요 — 종합 ${V.grade} 등급`:`전 항목 적합률 ${pctS(V.pass)}%, 종합 설비 건강도 ${V.grade} 등급`, sub:`체크리스트 ${V.cg+V.cb}건 · 측정값 ${V.valN}건 · 점검 설비 ${V.eqN}종 · 점검 위치 ${V.locN}곳`, h});
+    }
+    // ── 2. 설비군별 결과 ──
+    if(V.judgedCats.length){ let h='';
+      const cats=V.judgedCats.slice().sort((a,b)=>(b.good+b.bad)-(a.good+a.bad)).slice(0,18);
+      const y0=200, lw=250, bx=L+lw, bw=CW-lw-260, rowH=Math.min(62,Math.floor(800/cats.length)), mx=Math.max(...cats.map(c=>c.good+c.bad));
+      const nc=vzNice(0,mx,5);
+      h+=vzBox(L-10,y0-20,CW-240,cats.length*rowH+90,{s:VZ.ln});
+      for(let v=0; v<=nc.hi+1e-9; v+=nc.step){ const x=bx+bw*v/nc.hi; h+=`<line x1="${x}" x2="${x}" y1="${y0}" y2="${y0+cats.length*rowH}" stroke="${VZ.ln}"/>`+vzT(x,y0+cats.length*rowH+26,v,{fs:13,c:VZ.gy2,a:'middle'}); }
+      cats.forEach((c,i)=>{ const y=y0+i*rowH+rowH*0.18, bh=rowH*0.62, w1=bw*c.good/nc.hi, w2=bw*c.bad/nc.hi;
+        h+=vzT(bx-12,y+bh*0.7,c.label,{fs:15,c:'#374151',a:'end',max:lw-20});
+        h+=`<rect x="${bx}" y="${y}" width="${Math.max(w1,1)}" height="${bh}" rx="4" fill="${VZ.g2}"/>`; if(c.bad) h+=`<rect x="${bx+w1}" y="${y}" width="${Math.max(w2,3)}" height="${bh}" rx="3" fill="${VZ.rd}"/>`;
+        h+=vzT(bx+w1+w2+8,y+bh*0.72,c.good+c.bad,{fs:14,b:800,c:c.bad?VZ.rd:VZ.g1}); });
+      h+=`<rect x="${bx}" y="${y0+cats.length*rowH+40}" width="14" height="14" rx="3" fill="${VZ.g2}"/>`+vzT(bx+20,y0+cats.length*rowH+52,'적합',{fs:14,c:VZ.gy})+`<rect x="${bx+80}" y="${y0+cats.length*rowH+40}" width="14" height="14" rx="3" fill="${VZ.rd}"/>`+vzT(bx+100,y0+cats.length*rowH+52,'부적합',{fs:14,c:VZ.gy});
+      // 오른쪽 타일
+      const tx=R-220, tw=220; const tot=V.cg+V.cb; const worst=V.judgedCats.slice().sort((a,b)=>a.good/(a.good+a.bad)-b.good/(b.good+b.bad))[0];
+      const top3=cats.slice(0,3).reduce((s,c)=>s+c.good+c.bad,0);
+      h+=vzKpi(tx,y0-20,tw,150,`${V.judgedCats.length}종 설비 판정`,tot,'건',`적합 ${V.cg} · 부적합 ${V.cb}`,{});
+      h+=vzKpi(tx,y0+142,tw,150,'상위 3개 설비 비중',Math.round(top3/tot*100),'%',vzFit(cats.slice(0,3).map(c=>c.label).join('·'),13.5,tw-34),{icT:'▲',vfs:38});
+      const wp=Math.round(worst.good/(worst.good+worst.bad)*100);
+      h+=vzKpi(tx,y0+304,tw,150,wp<100?'적합률 최저 설비':'전 설비 적합',wp,'%',vzFit(wp<100?worst.label:'모든 설비 100% 적합',13.5,tw-34),{ic:wp<100?VZ.rd:VZ.g2,icT:wp<100?'!':'✓',c:wp<100?VZ.rd:VZ.g1,vfs:38});
+      // 적합률 표
+      const ty=y0+cats.length*rowH+110; const rest=VZ.H-90-ty;
+      if(rest>160){ const list=V.judgedCats.filter(c=>c.bad).slice(0,Math.floor((rest-60)/34));
+        h+=vzBox(L,ty,CW,Math.min(rest,70+Math.max(1,list.length)*34),{f:list.length?VZ.rd5:VZ.g5}) + vzT(L+24,ty+40,list.length?'부적합이 있는 설비':'부적합이 있는 설비 없음',{fs:18,b:800,c:list.length?VZ.rd:VZ.g1});
+        if(!list.length) h+=vzT(L+24,ty+66+4,`판정한 ${V.judgedCats.length}종 설비가 모두 적합입니다.`,{fs:16,c:'#374151'});
+        list.forEach((c,i)=>h+=vzT(L+24,ty+76+i*34,`· ${c.label}`,{fs:16,c:'#374151',max:CW-260})+vzT(R-24,ty+76+i*34,`부적합 ${c.bad}건 / ${c.good+c.bad}건`,{fs:16,b:800,c:VZ.rd,a:'end'})); }
+      pages.push({tag:'설비군별 점검 결과', title:`${V.judgedCats.length}종 설비 ${V.cg+V.cb}건 판정 · 적합률 ${pctS(V.pass)}%`, sub:'설비별 체크리스트 판정 건수 (가로 막대 · 초록=적합, 빨강=부적합)', h});
+    }
+    // ── 3. 주요 측정 항목 실측 및 기준 ──
+    if(names.length){ let h=''; const list=names.slice(0,13);
+      const cols=[['측정 항목',300,'start'],['측정 수',80,'middle'],['평균',120,'end'],['최소~최대',170,'middle'],['사내 참고기준',150,'middle'],['결과',92,'middle']];
+      let x=L; const cx=cols.map(c=>{ const o={x,w:c[1]}; x+=c[1]; return o; });
+      const y0=200, rh=46; h+=`<rect x="${L}" y="${y0}" width="${CW}" height="44" rx="8" fill="${VZ.g1}"/>`;
+      cols.forEach((c,i)=>h+=vzT(c[2]==='start'?cx[i].x+16:c[2]==='end'?cx[i].x+cx[i].w-14:cx[i].x+cx[i].w/2,y0+29,c[0],{fs:15,b:800,c:'#fff',a:c[2]}));
+      list.forEach((n,k)=>{ const a=A[n], st=a.st, u=a.unit, y=y0+44+k*rh; if(k%2) h+=`<rect x="${L}" y="${y}" width="${CW}" height="${rh}" fill="#F9FAFB"/>`; h+=`<line x1="${L}" x2="${R}" y1="${y+rh}" y2="${y+rh}" stroke="${VZ.ln}"/>`;
+        const res=a.bad.length?['부적합 '+a.bad.length,VZ.rd5,VZ.rd]:a.out.length?['범위 밖 '+a.out.length,VZ.or5,VZ.or]:a.rg?['범위 이내',VZ.g5,VZ.g1]:['-',VZ.gy5,VZ.gy];
+        const cells=[mdShort(n),a.vals.length,(st?vzNum(st.avg):'-')+' '+u,st?`${vzNum(st.min)} ~ ${vzNum(st.max)}`:'-',a.rg?mdRangeText(a.rg,u).replace(/\d{5,}/g,m=>(+m).toLocaleString('ko-KR')):'-'];
+        cells.forEach((t,i)=>h+=vzT(cols[i][2]==='start'?cx[i].x+16:cols[i][2]==='end'?cx[i].x+cx[i].w-14:cx[i].x+cx[i].w/2,y+30,t,{fs:i===0?15:14.5,b:i===2?800:0,c:i===0?VZ.tx:'#374151',a:cols[i][2],max:cx[i].w-22}));
+        h+=`<rect x="${cx[5].x+6}" y="${y+10}" width="${cx[5].w-12}" height="26" rx="13" fill="${res[1]}"/>`+vzT(cx[5].x+cx[5].w/2,y+28,res[0],{fs:13,b:800,c:res[2],a:'middle',max:cx[5].w-16}); });
+      // 충족률 가로 막대
+      const jl=names.filter(n=>A[n].judged.length).slice(0,10); const by=y0+44+list.length*rh+40;
+      if(jl.length && VZ.H-110-by>200){ const bh=Math.min(36,(VZ.H-120-by-70)/jl.length); h+=vzT(L,by+10,'항목별 사내 참고범위 이내 비율',{fs:19,b:800}); const lx=L+290, lw2=CW-290-70;
+        jl.forEach((n,i)=>{ const a=A[n], p=(a.judged.length-a.out.length)/a.judged.length*100, y=by+40+i*bh; h+=vzT(lx-12,y+bh*0.62,mdShort(n),{fs:14,c:'#374151',a:'end',max:270}); h+=`<rect x="${lx}" y="${y+bh*0.15}" width="${lw2}" height="${bh*0.62}" rx="5" fill="${VZ.gy5}"/><rect x="${lx}" y="${y+bh*0.15}" width="${Math.max(2,lw2*p/100)}" height="${bh*0.62}" rx="5" fill="${p>=100?VZ.g2:VZ.or}"/>`+vzT(lx+lw2+10,y+bh*0.62,pctS(p)+'%',{fs:14,b:800,c:p>=100?VZ.g1:VZ.or}); }); }
+      pages.push({tag:'핵심 측정 지표', title:`${names.length}개 측정 항목 중 주요 ${list.length}개 지표 실측 및 사내 참고기준`, sub:'평균·최소~최대는 위치별 측정값 기준 · 사내 참고기준은 법정 고시값이 아닌 회사 설정값', h});
+    }
+    // ── 4. 위치별 분포 (접지저항 우선) ──
+    const pick=names.filter(n=>A[n].vals.length>=3).sort((x,y)=>(/접지저항/.test(y)?1:0)-(/접지저항/.test(x)?1:0) || A[y].vals.length-A[x].vals.length);
+    if(pick.length){ let h=''; const n1=pick[0], a=A[n1], u=a.unit; const pts=mdSeries(items[n1]).slice(0,40);
+      const y0=210, ch=430, cw=CW-250, bx=L+60; const thr=a.rg&&!a.rg.ac?(a.rg.max!=null?a.rg.max:a.rg.min):null;
+      const vmax=Math.max(...pts.map(p=>p.v), thr!=null&&thr<=Math.max(...pts.map(p=>p.v))*3?thr:-Infinity), vmin=Math.min(0,...pts.map(p=>p.v)); const nc=vzNice(vmin,vmax*1.1,5);
+      const Y=v=>y0+ch-(v-nc.lo)/(nc.hi-nc.lo)*ch; const bw=(cw-60)/pts.length;
+      h+=vzBox(L-10,y0-30,cw+70,ch+110,{s:VZ.ln});
+      for(let v=nc.lo; v<=nc.hi+1e-9; v+=nc.step){ h+=`<line x1="${bx}" x2="${bx+cw-60}" y1="${Y(v)}" y2="${Y(v)}" stroke="${VZ.ln}"/>`+vzT(bx-8,Y(v)+5,mdTick?mdTick(v):v,{fs:12.5,c:VZ.gy2,a:'end'}); }
+      pts.forEach((p,i)=>{ const x=bx+i*bw+bw*0.18, w=bw*0.64, y=Y(Math.max(p.v,nc.lo)); h+=`<rect x="${x}" y="${Math.min(y,Y(0))}" width="${w}" height="${Math.max(1,Math.abs(Y(0)-y))}" rx="3" fill="${p.over?VZ.or:VZ.g2}"/>`;
+        if(pts.length<=24) h+=vzT(x+w/2,y-6,vzNum(p.v),{fs:11.5,c:p.over?VZ.or:VZ.gy,a:'middle'});
+        if(pts.length<=24 || i%Math.ceil(pts.length/20)===0) h+=`<text x="${x+w/2}" y="${y0+ch+20}" font-size="12" fill="${VZ.gy}" text-anchor="end" transform="rotate(-40 ${x+w/2} ${y0+ch+20})">${escapeHtml(vzFit(p.label,12,80))}</text>`; });
+      if(thr!=null && thr>=nc.lo && thr<=nc.hi){ h+=`<line x1="${bx}" x2="${bx+cw-60}" y1="${Y(thr)}" y2="${Y(thr)}" stroke="${VZ.rd}" stroke-width="2" stroke-dasharray="7 5"/>`+vzT(bx+cw-62,Y(thr)-8,`사내 참고기준 ${vzNum(thr)}${u}`,{fs:13,b:800,c:VZ.rd,a:'end'}); }
+      if(a.st){ h+=`<line x1="${bx}" x2="${bx+cw-60}" y1="${Y(a.st.avg)}" y2="${Y(a.st.avg)}" stroke="${VZ.or}" stroke-width="1.5" stroke-dasharray="3 4"/>`+vzT(bx+4,Y(a.st.avg)-7,`평균 ${vzNum(a.st.avg)}${u}`,{fs:12.5,b:800,c:VZ.or}); }
+      const tx=R-200, tw=200; const st=a.st;
+      h+=vzKpi(tx,y0-30,tw,150,'평균',vzNum(st.avg),u,`${a.vals.length}곳 측정`,{vfs:36});
+      h+=vzKpi(tx,y0+132,tw,150,'최고값',vzNum(st.max),u,vzFit((a.vals.find(r=>r.value===st.max)||{}).loc||'',13,tw-34),{vfs:36,icT:'▲',ic:a.out.some(r=>r.value===st.max)?VZ.or:VZ.g2});
+      h+=vzKpi(tx,y0+294,tw,150,'최저값',vzNum(st.min),u,vzFit((a.vals.find(r=>r.value===st.min)||{}).loc||'',13,tw-34),{vfs:36,icT:'▼'});
+      // 두 번째 그래프: 다른 항목의 위치별 추이(꺾은선)
+      const n2=pick.find(n=>n!==n1 && A[n].rg && !A[n].rg.ac); const y2=y0+ch+130;
+      if(n2 && VZ.H-120-y2>260){ const b=A[n2], u2=b.unit, p2=mdSeries(items[n2]).slice(0,40); const h2=VZ.H-130-y2-70;
+        h+=vzBox(L-10,y2-10,CW+20,h2+110,{s:VZ.ln}) + vzT(L+14,y2+24,`${mdShort(n2)} — 위치별 추이`,{fs:18,b:800,max:CW-260}) + vzT(R-14,y2+24,b.rg?`사내 참고기준 ${mdRangeText(b.rg,u2)}`:'',{fs:14,c:VZ.g2,b:800,a:'end'});
+        const ext=p2.map(p=>p.v).concat([b.rg.min,b.rg.max].filter(v=>v!=null)); const nc2=vzNice(Math.min(...ext),Math.max(...ext),4); const gy0=y2+50, Y2=v=>gy0+h2-(v-nc2.lo)/(nc2.hi-nc2.lo||1)*h2, X2=i=>bx+(p2.length===1?(cw)/2:(CW-100)*i/(p2.length-1));
+        if(b.rg.min!=null||b.rg.max!=null){ const t1=Y2(b.rg.max!=null?Math.min(b.rg.max,nc2.hi):nc2.hi), t2=Y2(b.rg.min!=null?Math.max(b.rg.min,nc2.lo):nc2.lo); h+=`<rect x="${bx}" y="${t1}" width="${CW-100}" height="${Math.max(0,t2-t1)}" fill="${VZ.g5}"/>`; }
+        for(let v=nc2.lo; v<=nc2.hi+1e-9; v+=nc2.step) h+=`<line x1="${bx}" x2="${bx+CW-100}" y1="${Y2(v)}" y2="${Y2(v)}" stroke="${VZ.ln}" stroke-opacity=".7"/>`+vzT(bx-8,Y2(v)+5,mdTick?mdTick(v):v,{fs:12.5,c:VZ.gy2,a:'end'});
+        h+=`<polyline points="${p2.map((p,i)=>`${X2(i)},${Y2(p.v)}`).join(' ')}" fill="none" stroke="${VZ.g2}" stroke-width="3" stroke-linejoin="round"/>`;
+        p2.forEach((p,i)=>{ h+=`<circle cx="${X2(i)}" cy="${Y2(p.v)}" r="${p.over?6:4.5}" fill="${p.over?VZ.or:'#fff'}" stroke="${p.over?'#fff':VZ.g2}" stroke-width="2"/>`; if(p2.length<=16 || i%Math.ceil(p2.length/14)===0) h+=vzT(X2(i),gy0+h2+24,vzFit(p.label,12,70),{fs:12,c:VZ.gy,a:'middle'}); });
+      }
+      pages.push({tag:'위치별 측정 분포', title:`${mdShort(n1)} — ${a.vals.length}곳 평균 ${vzNum(a.st.avg)}${u}${thr!=null?(a.out.length?`, 참고범위 밖 ${a.out.length}곳`:`, 전 위치 사내 참고기준 이내`):''}`, sub:`위치별 측정값 (세로 막대${thr!=null?' · 빨간 점선=사내 참고기준':''} · 주황 점선=평균 · 주황 막대=참고범위 밖)`, h});
+    }
+    // ── 5. 참고범위 밖(환경 편차) 분석 ──
+    if(V.outN){ let h=''; const oi=names.filter(n=>A[n].out.length).sort((x,y)=>A[y].out.length-A[x].out.length);
+      const pal=[VZ.or,VZ.g2,VZ.or2,VZ.g4,'#E3A008','#8FB3A0','#D97757','#B7CFC0'];
+      const segs=oi.slice(0,7).map((n,i)=>({l:mdShort(n),v:A[n].out.length,c:pal[i]})); if(oi.length>7) segs.push({l:'기타',v:oi.slice(7).reduce((s,n)=>s+A[n].out.length,0),c:'#D1D5DB'});
+      const y0=190; h+=vzBox(L,y0,CW,380,{s:VZ.ln}) + vzT(L+24,y0+40,`참고범위 밖 ${V.outN}건 — 항목별 구성`,{fs:19,b:800});
+      h+=vzDonut(L+190,y0+215,120,segs,V.outN+'건','환경 편차',{sw:58,cfs:38});
+      h+=vzLegend(L+380,y0+100+(8-segs.length)*12,segs.map(s=>Object.assign({},s,{vt:s.v+'건'})),{vx:CW-400,max:CW-500,gap:32,fs:15});
+      // 공간 유형별 평균 (가장 많은 항목)
+      const top=oi[0], a=A[top]; const ty={}; a.vals.forEach(r=>{ const t=extractRoomType(r.loc); if(t&&t!==r.loc) (ty[t]=ty[t]||[]).push(r.value); }); const ks=Object.keys(ty).sort((p,q)=>ty[q].length-ty[p].length).slice(0,7);
+      let y1=y0+410;
+      if(ks.length>=2){ const avg=k=>ty[k].reduce((s,v)=>s+v,0)/ty[k].length; const mx=Math.max(...ks.map(avg), a.rg.max!=null?a.rg.max:0, a.rg.min!=null?a.rg.min:0); const nc=vzNice(0,mx*1.1,4);
+        const bh=330; h+=vzBox(L,y1,CW,bh+80,{s:VZ.ln}) + vzT(L+24,y1+40,`${mdShort(top)} — 공간 유형별 평균`,{fs:19,b:800,max:CW-300}) + vzT(R-24,y1+40,`사내 참고기준 ${mdRangeText(a.rg,a.unit)}`,{fs:14,b:800,c:VZ.rd,a:'end'});
+        const gx=L+80, gw=CW-130, gy=y1+70, gh=bh-60, Y=v=>gy+gh-(v/nc.hi)*gh, bw=gw/ks.length;
+        for(let v=0; v<=nc.hi+1e-9; v+=nc.step) h+=`<line x1="${gx}" x2="${gx+gw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${VZ.ln}"/>`+vzT(gx-8,Y(v)+5,mdTick?mdTick(v):v,{fs:12.5,c:VZ.gy2,a:'end'});
+        ks.forEach((k,i)=>{ const v=avg(k), ov=mdIsOver({value:v},a.rg), x=gx+i*bw+bw*0.22, w=bw*0.56; h+=`<rect x="${x}" y="${Y(v)}" width="${w}" height="${gy+gh-Y(v)}" rx="6" fill="${ov?VZ.or:VZ.g2}"/>`+vzT(x+w/2,Y(v)-8,`${vzNum(v)}${a.unit}`,{fs:14,b:800,c:ov?VZ.or:VZ.g1,a:'middle'})+vzT(x+w/2,gy+gh+24,`${k} (${ty[k].length}곳)`,{fs:14,c:'#374151',a:'middle',max:bw-6}); });
+        [a.rg.min,a.rg.max].filter(v=>v!=null&&v<=nc.hi).forEach(v=>h+=`<line x1="${gx}" x2="${gx+gw}" y1="${Y(v)}" y2="${Y(v)}" stroke="${VZ.rd}" stroke-width="2" stroke-dasharray="7 5"/>`);
+        y1+=bh+100; }
+      // 상세 목록
+      const outs=[]; oi.forEach(n=>A[n].out.forEach(r=>outs.push({n,r,a:A[n]}))); const room=VZ.H-110-y1; const maxR=Math.max(0,Math.floor((room-90)/34));
+      if(maxR>0){ h+=vzBox(L,y1,CW,Math.min(room,90+Math.min(maxR,outs.length)*34),{f:VZ.or5}) + vzT(L+24,y1+40,'참고범위 밖 위치 (공간·환경 편차 · 부적합 아님)',{fs:18,b:800,c:VZ.or});
+        outs.slice(0,maxR).forEach((o,i)=>{ const y=y1+78+i*34; h+=vzT(L+24,y,o.r.loc,{fs:15,c:'#374151',max:330})+vzT(L+370,y,mdShort(o.n),{fs:15,c:'#374151',max:320})+vzT(R-160,y,`${vzNum(o.r.value)}${o.a.unit}`,{fs:15,b:900,c:VZ.or,a:'end'})+vzT(R-24,y,mdRangeText(o.a.rg,o.a.unit),{fs:13,c:VZ.gy,a:'end',max:130}); });
+        if(outs.length>maxR) h+=vzT(R-24,y1+60,`외 ${outs.length-maxR}건`,{fs:13,c:VZ.gy,a:'end'}); }
+      pages.push({tag:'환경 편차 분석', title:`참고범위 밖 ${V.outN}건 중 ${mdShort(oi[0])} ${Math.round(A[oi[0]].out.length/V.outN*100)}% 차지`, sub:'사내 참고기준을 벗어났으나 점검 판정은 적합인 값 — 공간(TPS실·방재실 등)·환경 차이에 따른 편차', h});
+    }
+    // ── 6. 영상 품질 검수 ──
+    if(V.vq.length){ let h=''; const recs=V.vq.slice(0,6); const y0=190; const colN=recs.length>3?2:1; const cw=(CW-(colN-1)*20)/colN; const rowsN=Math.ceil(recs.length/colN); const chh=(VZ.H-120-y0-(rowsN-1)*20)/rowsN;
+      let mi=0, mt=0;
+      recs.forEach((rec,i)=>{ const x=L+(i%colN)*(cw+20), y=y0+Math.floor(i/colN)*(chh+20);
+        const rs=vqWithDerived(rec).filter(r=>vqNum(r.raw)!=null&&!/픽셀 비율$/.test(r.name)).map(r=>{ const soft=!r.std||vqIsExample(r); const std=soft?vqSoftStd(r.name):r.std; return {r,std,v:soft?vqVerdict({raw:r.raw,std}):(r.verdict||vqVerdict({raw:r.raw,std}))}; });
+        h+=vzBox(x,y,cw,chh,{s:VZ.ln}) + vzT(x+22,y+38,`${rec.site||'위치'} · ${rec.equip||'영상'}`,{fs:18,b:800,max:cw-44}) + (rec.date?vzT(x+cw-22,y+38,rec.date,{fs:13,c:VZ.gy,a:'end'}):'');
+        const tiles=rs.slice(0,colN===1?8:6); const tc=colN===1?4:3, tw2=(cw-44-(tc-1)*10)/tc, th=Math.min(110,(chh-70-(Math.ceil(tiles.length/tc)-1)*10)/Math.max(1,Math.ceil(tiles.length/tc)));
+        tiles.forEach((t,k)=>{ const tx=x+22+(k%tc)*(tw2+10), ty=y+58+Math.floor(k/tc)*(th+10); const bad=t.v==='미달'; mt++; if(!bad&&t.std) mi++;
+          h+=vzBox(tx,ty,tw2,th,{f:bad?VZ.or5:t.std?VZ.g5:VZ.gy5,r:10}) + vzT(tx+12,ty+24,t.r.name,{fs:12.5,c:VZ.gy,max:tw2-20}) + `<text x="${tx+12}" y="${ty+th*0.62}" font-size="24" font-weight="900" fill="${bad?VZ.or:VZ.g1}">${escapeHtml(vzFit(String(t.r.raw),24,tw2-70))}<tspan font-size="12" fill="${VZ.gy}"> ${escapeHtml(t.r.unit==='0–255'||t.r.unit==='지수'||t.r.unit==='개'?'':t.r.unit||'')}</tspan></text>` + vzT(tx+12,ty+th-12,t.std?`기준 ${t.std}`:'참고값',{fs:11.5,c:bad?VZ.or:VZ.gy,max:tw2-20}); });
+      });
+      pages.push({tag:'영상 품질 검수', title:`영상 품질 검수 ${V.vq.length}건 — 주요 지표 정량 확인`, sub:'영상 품질 검수 프로그램 성적서 값 · 「기준」은 휴대폰 측정을 고려한 완화 기준 포함 · 주황=기준 미달(참고)', h});
+    }
+    // ── 7. 종합 소견 및 예방 관리 제안 ──
+    { let h=''; const y0=200; const outTop=names.filter(n=>A[n].out.length).sort((x,y)=>A[y].out.length-A[x].out.length).slice(0,3);
+      const badItems=[]; (current&&current.categories||[]).forEach(c=>(c.locations||[]).forEach(l=>(l.items||[]).forEach(it=>{ if(it.result==='불량') badItems.push(`${l.name||c.name} — ${it.name}`); })));
+      const steps=[
+        ['1단계 · 즉시', V.cb?'부적합 설비 조치':'부적합 없음 확인', V.cb?`부적합 ${V.cb}건 보수·교체 후 재점검${badItems[0]?` (예: ${badItems[0]})`:''}`:'이번 점검에서 조치가 필요한 부적합 판정은 없습니다.', V.cb?VZ.rd:VZ.g2],
+        ['2단계 · 단기', V.outN?'환경 편차 위치 확인':'참고범위 유지', V.outN?`${outTop.map(n=>`${mdShort(n)} ${A[n].out.length}곳`).join(', ')} — 공간 용도·조명·공조 상태 확인`:'측정값이 모두 사내 참고범위 이내로 현 상태를 유지합니다.', V.outN?VZ.or:VZ.g2],
+        ['3단계 · 정기', '정기 점검 지속', `다음 차수에 같은 위치를 같은 방법으로 다시 측정해 변화를 비교합니다.`, VZ.g3],
+        ['4단계 · 차기', '추세 비교 기준 마련', `이번 측정값 ${V.valN}건을 다음 점검의 비교 기준(Baseline)으로 활용합니다.`, VZ.g1] ];
+      const sw=(CW-30)/4; h+=`<line x1="${L+sw/2}" x2="${R-sw/2}" y1="${y0+40}" y2="${y0+40}" stroke="${VZ.g4}" stroke-width="4"/>`;
+      steps.forEach((s,i)=>{ const x=L+i*(sw+10); h+=`<circle cx="${x+sw/2}" cy="${y0+40}" r="22" fill="${s[3]}"/>`+vzT(x+sw/2,y0+48,i+1,{fs:20,b:900,c:'#fff',a:'middle'});
+        h+=vzBox(x,y0+84,sw,300,{f:VZ.gy5}) + vzT(x+sw/2,y0+120,s[0],{fs:14,b:800,c:s[3],a:'middle'}) + vzTL(x+18,y0+158,s[1],{fs:19,b:900,max:sw-36,lines:2,lh:26}) + vzTL(x+18,y0+226,s[2],{fs:15,c:'#4B5563',max:sw-36,lines:6,lh:23}); });
+      // 핵심 수치 4
+      const ky=y0+420, kw=(CW-36)/4;
+      h+=vzKpi(L,ky,kw,160,'체크리스트 적합률',pctS(V.pass),'%',`부적합 ${V.cb}건`,{ic:V.cb?VZ.rd:VZ.g2,icT:V.cb?'!':'✓',c:V.cb?VZ.rd:VZ.g1,vfs:38});
+      h+=vzKpi(L+kw+12,ky,kw,160,'종합 등급',V.grade,'',gradeTxt,{icT:'★',vfs:38});
+      h+=vzKpi(L+(kw+12)*2,ky,kw,160,'참고범위 밖',V.outN,'건','환경 편차 (부적합 아님)',{ic:V.outN?VZ.or:VZ.g2,icT:'~',c:V.outN?VZ.or:VZ.g1,vfs:38});
+      h+=vzKpi(L+(kw+12)*3,ky,kw,160,'측정값',V.valN,'건',`측정 ${names.length}종 · ${V.locN}곳`,{icT:'#',vfs:38});
+      // 결론 배너
+      const cy=ky+200, chh=VZ.H-110-cy;
+      h+=vzBox(L,cy,CW,chh,{f:VZ.g1,r:18}) + vzT(L+30,cy+56,'종합 소견',{fs:16,b:800,c:VZ.g4,ls:1});
+      const concl=`${V.site?V.site+'의 ':''}정보통신설비는 체크리스트 적합률 ${pctS(V.pass)}%로 종합 ${gradeTxt} 등급입니다. `+(V.cb?`부적합 ${V.cb}건은 조치 후 재점검이 필요합니다. `:'부적합 판정은 없습니다. ')+(V.outN?`사내 참고범위 밖 측정값 ${V.outN}건은 공간·환경 차이에 따른 편차로, 해당 위치의 환경을 확인해 관리합니다. `:'측정값은 모두 사내 참고범위 이내입니다. ')+'정기 점검과 차수별 비교로 설비 상태 변화를 예방적으로 관리할 것을 권고합니다.';
+      h+=vzTL(L+30,cy+104,concl,{fs:21,b:700,c:'#fff',max:CW-60,lh:34,lines:Math.max(2,Math.floor((chh-130)/34))});
+      h+=vzT(L+30,cy+chh-28,'※ 측정값의 기준은 법정 고시값이 아닌 사내 참고기준입니다.',{fs:13.5,c:VZ.g4});
+      pages.push({tag:'종합 소견 · 예방 관리', title:V.cb?`부적합 ${V.cb}건 조치와 4단계 예방 관리 제안`:`전 설비 적합 · ${V.grade} 등급 유지를 위한 4단계 예방 관리`, sub:'점검 결과를 바탕으로 한 단계별 관리 제안', h});
+    }
+    const M={W, site:V.site, dt:V.dt, total:pages.length};
+    return pages.map((p,i)=>vzPage(i+1,p.tag,p.title,p.sub,p.h,M));
+  }
+  async function exportDashboardWord(style){
     if(!mdData) return;
     if(!window.JSZip){ alert('워드 생성 라이브러리를 불러오지 못했습니다. 인터넷 연결 후 새로고침해 주세요.'); return; }
     const btn=document.getElementById('md-word'); const bt=btn?btn.textContent:''; if(btn){ btn.disabled=true; btn.textContent='생성 중…'; }
     try{
-    const D=mdData; const { body, media } = await mdWordBody(D, mdBld, {style: mdView==='items'?'cards':'table', onProgress:m=>{ if(btn) btn.textContent=m.replace(/만드는 중… /,''); }});
+    const D=mdData; const { body, media } = await mdWordBody(D, mdBld, {style: style||(mdView==='items'?'cards':'table'), onProgress:m=>{ if(btn) btn.textContent=m.replace(/만드는 중… /,''); }});
     const site=(current&&current.siteName)||D.title||'', dt=(current&&current.date)||D.date||todayStr();
     // ── 패키지 ──
     const isPf = current && current.inspType==='성능';
@@ -7239,7 +7466,12 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     ov.querySelectorAll('.mdv-body img[data-imgkey]').forEach(async im=>{ try{ const u=await sGet(im.dataset.imgkey,false); if(u){ im.src=u; im.onclick=()=>vqViewImage(u); } }catch(e){} });
     const curBtn=ov.querySelector('#md-cur'); if(curBtn) curBtn.onclick=()=>{ showMeasureDashboard(mdRowsFromInspection(current)); };
     const expBtn=ov.querySelector('#md-export'); if(expBtn) expBtn.onclick=()=>exportDashboardExcel();
-    const wdBtn=ov.querySelector('#md-word'); if(wdBtn) wdBtn.onclick=()=>exportDashboardWord();
+    const wdBtn=ov.querySelector('#md-word'); if(wdBtn) wdBtn.onclick=(ev)=>{ ev.stopPropagation(); let m=ov.querySelector('.md-wmenu'); if(m){ m.remove(); return; }
+      m=document.createElement('div'); m.className='md-wmenu'; const r=wdBtn.getBoundingClientRect(), rr=ov.querySelector('.mdv').getBoundingClientRect();
+      m.style.cssText=`position:absolute;z-index:400;top:${r.bottom-rr.top+6}px;right:${Math.max(8,rr.right-r.right)}px;`;
+      m.innerHTML=[['viz','📈 데이터 시각화','결과서 맨 마지막장용 · 차트·그래프 보고서 페이지'],['table','📊 통합','표·그래프 분석'],['cards','🗂 항목별','항목마다 그래프 카드']].map(([k,t,d])=>`<button data-ws="${k}"><b>${t}</b><span>${d}</span></button>`).join('');
+      ov.querySelector('.mdv').appendChild(m); m.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{ m.remove(); exportDashboardWord(b.dataset.ws); });
+      setTimeout(()=>document.addEventListener('click',function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener('click',h); } }),0); };
     const fi=ov.querySelector('#md-file'); ov.querySelector('#md-xlsx').onclick=()=>fi.click();
     fi.onchange=async ev=>{ const f=ev.target.files[0]; if(!f) return;
       try{ const d=await mdRowsFromExcel(f); showMeasureDashboard(d); showToast(`엑셀에서 측정값 ${d.rows.length}건을 불러왔습니다.`); }
@@ -11655,8 +11887,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
             <div style="font-size:11px;font-weight:400;margin-top:3px;opacity:.85;" id="exp-sel-count">각 설비에서 ✓ 표시한 사진만 포함</div>
           </button>
           <label style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.5;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 12px;cursor:pointer;color:#1E3A8A;">
-            <input type="checkbox" id="exp-dash" style="margin-top:3px;"> <span><b>📊 측정 결과 분석(대시보드) 페이지를 워드 끝에 붙이기</b><br><span style="color:#475569;font-size:11.5px;">요약·항목별 결과·이탈 내역·영상 품질·설비별 결과 표와 그래프 — 결과서 자동병합 때 점검표 뒤에 그대로 들어갑니다.</span>
-            <span style="display:flex;gap:6px;margin-top:6px;align-items:center;">형식 <select id="exp-dash-style" style="flex:1;border:1px solid #93C5FD;border-radius:8px;padding:5px 6px;font-size:12.5px;"><option value="table">📊 통합 (표·그래프)</option><option value="cards">🗂 항목별 (항목마다 그래프 카드)</option></select></span></span>
+            <input type="checkbox" id="exp-dash" style="margin-top:3px;"> <span><b>📈 측정값 데이터 시각화 · 분석 페이지를 결과서 맨 마지막장에 붙이기</b><br><span style="color:#475569;font-size:11.5px;">대시보드 측정값을 종합 진단·설비군별·핵심 지표·위치별 분포·환경 편차·예방 관리 제안 차트로 정리 — 점검표 뒤(맨 마지막장)에 들어갑니다.</span>
+            <span style="display:flex;gap:6px;margin-top:6px;align-items:center;">형식 <select id="exp-dash-style" style="flex:1;border:1px solid #93C5FD;border-radius:8px;padding:5px 6px;font-size:12.5px;"><option value="viz">📈 데이터 시각화 (차트·그래프 보고서 페이지)</option><option value="both">📊+📈 통합 분석 + 데이터 시각화</option><option value="table">📊 통합 (표·그래프)</option><option value="cards">🗂 항목별 (항목마다 그래프 카드)</option></select></span></span>
           </label>
           <button class="primary-btn" id="exp-trend" style="padding:14px;background:#0E8C86;">
             📈 차수별 측정 추이 (겹쳐보기)
@@ -11677,7 +11909,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     document.getElementById("exp-trend").onclick = ()=>{ ov.remove(); showTrendScreen(); };
     { const cb=document.getElementById("exp-dash"); try{ cb.checked = localStorage.getItem("exp-dash")==="1"; }catch(e){}
       cb.onchange=()=>{ try{ localStorage.setItem("exp-dash", cb.checked?"1":"0"); }catch(e){} };
-      const ss=document.getElementById("exp-dash-style"); try{ ss.value = localStorage.getItem("exp-dash-style")||"table"; }catch(e){}
+      const ss=document.getElementById("exp-dash-style"); try{ ss.value = localStorage.getItem("exp-dash-style")||"viz"; }catch(e){}
       ss.onchange=()=>{ try{ localStorage.setItem("exp-dash-style", ss.value); }catch(e){} }; }
 
     // ── HTML 방식 ──
@@ -12915,10 +13147,13 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     if(window.__mdAppend){
       try{
         onProgress("측정 결과 분석 페이지 생성 중…");
-        const dash = await mdWordBody(mdRowsFromInspection(current), '전체', {pageBreak:true, idBase:5000, style:window.__mdStyle||'table', onProgress});
-        body = body.slice(0, __macroAt) + dash.body + body.slice(__macroAt);
-        dash.media.forEach(m=>{ mediaFiles[m.f]=m.bytes; mediaFiles['__r'+m.rid]={rid:m.rid, fname:m.f}; });
-        if(dash.media.length) usedImgExt.png = true;
+        const st=window.__mdStyle||'table'; let add='';
+        for(const [k,sty] of (st==='both'?['table','viz']:[st]).entries()){
+          const dash = await mdWordBody(mdRowsFromInspection(current), '전체', {pageBreak:true, idBase:5000+k*1000, style:sty, onProgress});
+          add += dash.body;
+          dash.media.forEach(m=>{ mediaFiles[m.f]=m.bytes; mediaFiles['__r'+m.rid]={rid:m.rid, fname:m.f}; });
+          if(dash.media.length) usedImgExt.png = true; }
+        body = body.slice(0, __macroAt) + add + body.slice(__macroAt);
       }catch(e){ console.warn('[대시보드 페이지] 생성 실패', e); }
       window.__mdAppend = false;
     }

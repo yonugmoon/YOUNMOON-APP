@@ -170,7 +170,7 @@ main{flex:1;position:relative;overflow:hidden}
       </div>
       <div class="sec-t"><span>저장된 도면 (건물·층별)</span><span id="savedCnt"></span></div>
       <div id="savedList"></div>
-      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">정보통신설비 실위치 v1.8 · 2026-11-18</div>
+      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">정보통신설비 실위치 v1.9 · 2026-11-22</div>
     </section>
 
     <!-- CAMERA -->
@@ -1246,15 +1246,30 @@ function drawMarker(ctx, m, opt = {}) {
     ctx.fillStyle = '#fff'; ctx.fillText(txt, x, by + bh / 2 + u * 0.02);
     m._bb = [Math.min(x - bw / 2, x - u * 0.6), by, Math.max(x + bw / 2, x + u * 0.6), y + u * 0.6];
   } else {
+    // 📌 핀 방식: 핀 끝이 정확한 위치, 이름표는 핀 머리 오른쪽
     const txt = (m.type === 'note' || m.type === 'room') ? (m.label || t.text) : (m.label ? `${t.text} ${m.label}` : t.text);
-    const tw = ctx.measureText(txt).width, bw = tw + u * 0.6, bh = u * 0.85, by = y - u * 0.3 - bh;
-    ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = u * 0.25; ctx.shadowOffsetY = u * 0.06;
-    roundRect(ctx, x - bw / 2, by, bw, bh, u * 0.2); ctx.fillStyle = t.color; ctx.fill();
+    const r = u * 0.36, cy = y - u * 0.95, d = y - cy, phi = Math.acos(Math.min(1, r / d));
+    // 바닥 그림자
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x, y, u * 0.2, u * 0.07, 0, 0, 7); ctx.fill();
+    // 핀 몸체 (물방울 모양)
+    ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = u * 0.2; ctx.shadowOffsetY = u * 0.05;
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.lineTo(x + r * Math.cos(Math.PI / 2 + phi), cy + r * Math.sin(Math.PI / 2 + phi));
+    ctx.arc(x, cy, r, Math.PI / 2 + phi, Math.PI / 2 - phi + Math.PI * 2);
+    ctx.closePath(); ctx.fillStyle = t.color; ctx.fill();
     ctx.shadowColor = 'transparent';
-    ctx.lineWidth = u * 0.08; ctx.strokeStyle = '#fff'; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x - u * 0.18, by + bh); ctx.lineTo(x + u * 0.18, by + bh); ctx.lineTo(x, y); ctx.closePath(); ctx.fillStyle = t.color; ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.fillText(txt, x, by + bh / 2 + u * 0.02);
-    m._bb = [x - bw / 2, by, x + bw / 2, y + u * 0.15];
+    ctx.lineWidth = u * 0.07; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, cy, r * 0.42, 0, 7); ctx.fill();
+    // 이름표
+    ctx.font = `800 ${u * 0.42}px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.textAlign = 'left';
+    const tw = ctx.measureText(txt).width, bh = u * 0.62, bw = tw + u * 0.36;
+    const right = x + r + u * 0.12 + bw <= (opt.W || S.view.width);
+    const bx = right ? x + r + u * 0.12 : x - r - u * 0.12 - bw, by = cy - bh / 2;
+    roundRect(ctx, bx, by, bw, bh, u * 0.14); ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill();
+    ctx.lineWidth = u * 0.06; ctx.strokeStyle = t.color; ctx.stroke();
+    ctx.fillStyle = t.color; ctx.fillText(txt, bx + u * 0.18, cy + u * 0.02);
+    m._bb = [Math.min(x - r, bx), cy - Math.max(r, bh / 2), Math.max(x + r, bx + bw), y + u * 0.1];
   }
   if (opt.sel) { const b = m._bb, p = u * 0.15; ctx.setLineDash([u * 0.2, u * 0.15]); ctx.lineWidth = u * 0.07; ctx.strokeStyle = '#3bd6c6'; ctx.strokeRect(b[0] - p, b[1] - p, b[2] - b[0] + 2 * p, b[3] - b[1] + 2 * p); }
   ctx.restore();
@@ -1416,17 +1431,16 @@ function placeAt(ip) {
     if (old) { old.x = m.x; old.y = m.y; Mark.select(old); showHint('현위치를 옮겼습니다'); return; }
     m.dir = -1;
   }
-  if (S.tool === 'note' || S.tool === 'room') {
-    const t = prompt(S.tool === 'room' ? '실 이름 (예: 중계기실, 국사, CCTV실)' : '메모 내용', ''); if (!t) { S.history.pop(); return; }
-    m.label = t.trim();
-  }
+
   S.markers.push(m); Mark.select(m);
-  showHint(`${m.type === 'note' ? '메모' : roomName(m)} 표시 — 끌어서 옮기고, 아래에서 번호·비고를 입력하세요`); if (navigator.vibrate) navigator.vibrate(20);
+  if (navigator.vibrate) navigator.vibrate(20);
+  if (m.type === 'room' || m.type === 'note') { showHint(m.type === 'room' ? '📌 표시됨 — 아래 칸에 실 이름을 입력하세요' : '📌 표시됨 — 아래 칸에 메모를 입력하세요'); setTimeout(() => $('#selLabel').focus(), 50); }
+  else showHint(`📌 ${roomName(m)} 표시 — 끌어서 옮기고, 필요하면 번호·비고를 입력하세요`);
 }
 
 $('#toolChips').onclick = e => {
   const b = e.target.closest('.chip'); if (!b) return; S.tool = b.dataset.t; Mark.syncTools();
-  const msg = { select: '표시를 탭해 선택·이동하세요. 빈 곳을 끌면 도면이 움직입니다', room: '실 위치를 탭한 뒤 이름을 입력하세요', note: '메모를 붙일 곳을 탭하세요' }[S.tool] || `도면에서 ${TOOL[S.tool].text} 위치를 탭하세요`;
+  const msg = { select: '표시를 탭해 선택·이동하세요. 빈 곳을 끌면 도면이 움직입니다', room: '실 위치를 탭하면 📌가 꽂히고, 아래 칸에 이름을 입력합니다', note: '메모를 붙일 곳을 탭하세요' }[S.tool] || `도면에서 ${TOOL[S.tool].text} 위치를 탭하면 📌가 꽂힙니다`;
   showHint(msg);
 };
 $('#tabSeg').onclick = e => { const b = e.target.closest('button'); if (b) Mark.setTab(b.dataset.tab); };

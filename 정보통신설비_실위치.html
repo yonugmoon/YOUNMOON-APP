@@ -162,6 +162,7 @@ main{flex:1;position:relative;overflow:hidden}
         <button class="btn" id="btnPick">🖼️ 사진 불러오기 / 촬영</button>
         <input type="file" id="fileIn" accept="image/*" class="hidden">
         <input type="file" id="fileCap" accept="image/*" capture="environment" class="hidden">
+        <input type="file" id="fileCap2" accept="image/*" capture="environment" class="hidden">
       </div>
       <div class="feat">
         <div><b>자동 스캔</b>안내도 테두리 자동 검출·원근 보정</div>
@@ -170,7 +171,7 @@ main{flex:1;position:relative;overflow:hidden}
       </div>
       <div class="sec-t"><span>저장된 도면 (건물·층별)</span><span id="savedCnt"></span></div>
       <div id="savedList"></div>
-      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">정보통신설비 실위치 v1.9 · 2026-11-22</div>
+      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">정보통신설비 실위치 v2.0 · 2026-11-22</div>
     </section>
 
     <!-- CAMERA -->
@@ -245,6 +246,10 @@ main{flex:1;position:relative;overflow:hidden}
           <div class="row" style="margin-top:10px">
             <button class="btn sm" id="btnAutoLevel">📐 자동 수평·수직</button>
             <button class="btn sm" id="btnReCrop">✂️ 영역 다시 지정</button>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn sm grow" id="btnDeglare">🪞 반사 제거 (다른 각도로 1장 더)</button>
+            <button class="btn sm hidden" id="btnDeglareOff">합성 해제</button>
           </div>
         </div>
         <div class="row" style="margin-top:10px">
@@ -526,6 +531,15 @@ function solve(A, b) { // 가우스 소거
   for (let i = n - 1; i >= 0; i--) { let s = b[i]; for (let c = i + 1; c < n; c++) s -= A[i][c] * x[c]; x[i] = s / A[i][i]; }
   return x;
 }
+function homographyLS(src, dst) { // 4점 이상 최소자승 (정규방정식)
+  const AtA = Array.from({ length: 8 }, () => new Array(8).fill(0)), Atb = new Array(8).fill(0);
+  const add = (row, b) => { for (let i = 0; i < 8; i++) { Atb[i] += row[i] * b; for (let j = 0; j < 8; j++) AtA[i][j] += row[i] * row[j]; } };
+  for (let i = 0; i < src.length; i++) {
+    const [x, y] = src[i], [u, v] = dst[i];
+    add([x, y, 1, 0, 0, 0, -u * x, -u * y], u); add([0, 0, 0, x, y, 1, -v * x, -v * y], v);
+  }
+  const h = solve(AtA, Atb); return h ? [...h, 1] : null;
+}
 function homography(src, dst) { // src[i] → dst[i]
   const A = [], b = [];
   for (let i = 0; i < 4; i++) {
@@ -646,8 +660,56 @@ function backgroundMap(data, w, h) {
   bg = boxBlur(boxBlur(bg, sw, sh, r * 2), sw, sh, r * 2);
   return { bg, sw, sh, sc };
 }
+// 최소값 필터 (분리형)
+function minFilter(src, w, h, r) {
+  const tmp = new Float32Array(w * h), out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) { const o = y * w; for (let x = 0; x < w; x++) {
+    let m = 255; for (let k = Math.max(0, x - r), e = Math.min(w - 1, x + r); k <= e; k++) { const v = src[o + k]; if (v < m) m = v; }
+    tmp[o + x] = m; } }
+  for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) {
+    let m = 255; for (let k = Math.max(0, y - r), e = Math.min(h - 1, y + r); k <= e; k++) { const v = tmp[k * w + x]; if (v < m) m = v; }
+    out[y * w + x] = m; }
+  return out;
+}
+/* 도면화(CAD 선화) 필터
+ *  - 모폴로지 닫힘(최대→최소)으로 '선이 없는 배경'(반사·눈부심·그림자 포함)을 추정
+ *  - 배경 대비 어두운 가는 선만 남기고 나머지는 흰색 → 반사된 사람 형체·빛 번짐 제거
+ *  - color=true 면 빨강·초록 등 유채색 선은 색을 살림 */
+function cadFilter(canvas, color) {
+  const w = canvas.width, h = canvas.height;
+  const out = mkCanvas(w, h), octx = out.getContext('2d', { willReadFrequently: true });
+  octx.drawImage(canvas, 0, 0);
+  const img = octx.getImageData(0, 0, w, h), d = img.data, n = w * h;
+  // 채널 최소값 기준 밝기 (유채색 선도 어둡게 잡힘)
+  let g = new Float32Array(n);
+  for (let i = 0, j = 0; i < n; i++, j += 4) g[i] = 0.5 * Math.min(d[j], d[j + 1], d[j + 2]) + 0.5 * (0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2]);
+  const P = Object.assign({ c0: 0.12, c1: 0.36, sp: 0.22, gam: 1.0, blur: 0 }, window.CADP || {});
+  if (P.blur) g = boxBlur(g, w, h, P.blur);
+  const R = Math.max(3, Math.round(Math.max(w, h) / 260));       // 선 두께보다 큰 반경
+  const bg = boxBlur(minFilter(maxFilter(g, w, h, R), w, h, R), w, h, R);
+  const lineA = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const b = Math.max(bg[i], 30), c = (b - g[i]) / b;               // 상대 대비 (0~1)
+    lineA[i] = clamp((c - P.c0) / (P.c1 - P.c0), 0, 1);
+  }
+  // 고립된 잡티 제거: 주변 3x3 에 선이 거의 없으면 지움
+  const sm = boxBlur(lineA, w, h, 2);
+  for (let i = 0, j = 0; i < n; i++, j += 4) {
+    let a = lineA[i]; if (sm[i] < P.sp) a *= sm[i] / P.sp;
+    a = Math.pow(a, P.gam);
+    let lr = 55, lg = 55, lb = 60;                                    // 선 색 (진회색)
+    if (color) {
+      const r0 = d[j], g0 = d[j + 1], b0 = d[j + 2], mx = Math.max(r0, g0, b0), mn = Math.min(r0, g0, b0);
+      if (mx - mn > 45) { const k = 0.85; lr = r0 * k; lg = g0 * k; lb = b0 * k; }   // 유채색 선 유지
+    }
+    d[j] = 255 + (lr - 255) * a; d[j + 1] = 255 + (lg - 255) * a; d[j + 2] = 255 + (lb - 255) * a;
+  }
+  octx.putImageData(img, 0, 0);
+  return out;
+}
 function applyFilter(canvas, mode) {
   if (mode === 'none') return canvas;
+  if (mode === 'cad' || mode === 'cadc') return cadFilter(canvas, mode === 'cadc');
   const w = canvas.width, h = canvas.height;
   const out = mkCanvas(w, h), octx = out.getContext('2d', { willReadFrequently: true });
   octx.drawImage(canvas, 0, 0);
@@ -688,7 +750,7 @@ const S = {
   paper: null,          // 검출된 안내도 테두리 (드래그 선택 시 원근 기준)
   mode: 'crop',         // crop | level
   fine: 0,              // 미세 회전(°)
-  filter: 'color',
+  filter: 'cad',
   warped: null,         // 원근 보정 결과
   view: null,           // 필터 적용 결과 (표시/내보내기 기준)
   markers: [],
@@ -724,6 +786,8 @@ const isRoom = m => m.type !== 'note' && TOOL[m.type] && !LEGACY.some(l => l.id 
 const roomName = m => m.type === 'room' ? (m.label || '실') : (TOOL[m.type].text + (m.label ? ' ' + m.label : ''));
 const roomsOf = markers => (markers || []).filter(isRoom).map(roomName);
 const FILTERS = [
+  { id: 'cad', name: '📐 도면화' },
+  { id: 'cadc', name: '📐 도면화(컬러선)' },
   { id: 'color', name: '✨ 선명 컬러' },
   { id: 'none', name: '원본' },
   { id: 'gray', name: '흑백' },
@@ -785,7 +849,7 @@ async function setSource(img, w, h, opts = {}) {
   const s = Math.min(1, MAX_SRC / Math.max(w, h));
   const c = mkCanvas(w * s, h * s);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-  S.src = c; S.mapping = null; S.fine = 0; S.markers = []; S.history = []; S.sel = null; S.savedId = null; S.name = ''; S.sameAs = null; S.floor = '';
+  S.src = c; S.src2 = null; S.paper2 = null; S.mapping = null; S.fine = 0; S.markers = []; S.history = []; S.sel = null; S.savedId = null; S.name = ''; S.sameAs = null; S.floor = '';
   S.mode = 'crop';
   await nextFrame();
   if (opts.quad) { S.quad = opts.quad.map(p => [p[0] * s, p[1] * s]); S.paper = S.quad.map(p => p.slice()); }
@@ -1172,6 +1236,87 @@ function computeMatrix(fine) {
   }
   return { Hd2s, ow, oh };
 }
+/* ---------- 반사 제거: 다른 각도 사진 2장 합성 ----------
+ * 두 사진의 안내도 테두리(호모그래피)로 대략 맞춘 뒤, 기울기(에지) 영상 상관으로
+ * 4개 구역의 미세 이동을 찾아 정밀 정렬 → 픽셀별 '더 어두운 값'을 취한다.
+ * 반사·눈부심은 촬영 각도에 따라 위치가 바뀌고 도면 선은 그대로이므로 제거된다. */
+function edgeMap(canvas, w, h) {
+  const c = mkCanvas(w, h), x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(canvas, 0, 0, w, h);
+  const g = boxBlur(grayOf(x.getImageData(0, 0, w, h).data, w * h), w, h, 1);
+  return sobel(g, w, h).mag;
+}
+function bestShift(A, B, w, h, x0, y0, x1, y1, cx, cy, R) {
+  // A(x) 와 B(x+d) 의 상관이 최대인 d 탐색
+  let best = [cx, cy], bv = -Infinity;
+  for (let dy = cy - R; dy <= cy + R; dy++) for (let dx = cx - R; dx <= cx + R; dx++) {
+    let sum = 0;
+    for (let y = y0; y < y1; y += 2) {
+      const yy = y + dy; if (yy < 0 || yy >= h) continue;
+      for (let x = x0; x < x1; x += 2) { const xx = x + dx; if (xx < 0 || xx >= w) continue; sum += A[y * w + x] * B[yy * w + xx]; }
+    }
+    if (sum > bv) { bv = sum; best = [dx, dy]; }
+  }
+  return best;
+}
+function mergeSecond(Hd2s, ow, oh) {
+  const H1 = homography(S.paper, [[0, 0], [1, 0], [1, 1], [0, 1]]), H2 = homography(S.paper2, [[0, 0], [1, 0], [1, 1], [0, 1]]);
+  if (!H1 || !H2) return;
+  let M = mul3(inv3(H2), mul3(H1, Hd2s));             // 결과좌표 → 두 번째 사진 좌표
+  // 1) 축소 영상에서 전체 이동량
+  const k = Math.min(1, 520 / Math.max(ow, oh)), sw = Math.round(ow * k), sh = Math.round(oh * k);
+  const A = edgeMap(S.warped, sw, sh), B = edgeMap(warp(S.src2, mul3(M, [1 / k, 0, 0, 0, 1 / k, 0, 0, 0, 1]), sw, sh), sw, sh);
+  const g = bestShift(A, B, sw, sh, 8, 8, sw - 8, sh - 8, 0, 0, 14);
+  if (g[0] || g[1]) M = mul3(M, [1, 0, g[0] / k, 0, 1, g[1] / k, 0, 0, 1]);
+  // 2) 더 큰 영상에서 5x5 구역별 미세 이동 → 최소자승 호모그래피 (반복 정밀화)
+  const k2 = Math.min(1, 1100 / Math.max(ow, oh)), mw = Math.round(ow * k2), mh = Math.round(oh * k2), N = 5;
+  const A2 = boxBlur(edgeMap(S.warped, mw, mh), mw, mh, 1);
+  let eMean = 0; for (let t = 0; t < A2.length; t += 7) eMean += A2[t]; eMean /= A2.length / 7;
+  for (const R of [12, 5, 2]) {
+    const B2 = boxBlur(edgeMap(warp(S.src2, mul3(M, [1 / k2, 0, 0, 0, 1 / k2, 0, 0, 0, 1]), mw, mh), mw, mh), mw, mh, 1);
+    const src = [], dst = [];
+    for (let ty = 0; ty < N; ty++) for (let tx = 0; tx < N; tx++) {
+      const x0 = Math.round(mw * tx / N), x1 = Math.round(mw * (tx + 1) / N), y0 = Math.round(mh * ty / N), y1 = Math.round(mh * (ty + 1) / N);
+      let e = 0, cnt = 0; for (let y = y0; y < y1; y += 3) for (let x = x0; x < x1; x += 3) { e += A2[y * mw + x]; cnt++; }
+      if (e / cnt < eMean * 0.5) continue;               // 선이 거의 없는 구역은 제외
+      const d = bestShift(A2, B2, mw, mh, x0, y0, x1, y1, 0, 0, R);
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      src.push([cx / k2, cy / k2]); dst.push([(cx + d[0]) / k2, (cy + d[1]) / k2]);
+    }
+    if (src.length < 4) break;
+    const Hc = homographyLS(src, dst); if (!Hc) break;
+    M = mul3(M, Hc);
+  }
+  const w2 = warp(S.src2, M, ow, oh);
+  const c1 = S.warped.getContext('2d', { willReadFrequently: true }), i1 = c1.getImageData(0, 0, ow, oh), d1 = i1.data;
+  const d2 = w2.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, ow, oh).data;
+  for (let i = 0; i < d1.length; i += 4) {           // 더 어두운 쪽 채택 (반사광 제거)
+    const l1 = d1[i] + d1[i + 1] + d1[i + 2], l2 = d2[i] + d2[i + 1] + d2[i + 2];
+    if (l2 < l1) { d1[i] = d2[i]; d1[i + 1] = d2[i + 1]; d1[i + 2] = d2[i + 2]; }
+  }
+  const out = mkCanvas(ow, oh); out.getContext('2d').putImageData(i1, 0, 0);
+  S.warped = out;
+}
+async function addSecondShot(file) {
+  if (!file || !S.src) return;
+  busy(true);
+  try {
+    let bmp; try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch (e) { bmp = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = URL.createObjectURL(file); }); }
+    const sc = Math.min(1, MAX_SRC / Math.max(bmp.width, bmp.height)), c = mkCanvas(bmp.width * sc, bmp.height * sc);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    if (!S.paper) { const r1 = detectQuad(S.src, S.src.width, S.src.height); if (r1) S.paper = r1.quad; }
+    const r2 = detectQuad(c, c.width, c.height);
+    if (!S.paper || !r2) { busy(false); toast(!S.paper ? '첫 사진에서 안내도 테두리를 찾지 못해 합성할 수 없습니다' : '두 번째 사진에서 안내도 테두리를 찾지 못했습니다 — 안내도 전체가 나오게 다시 찍어주세요', 3500); return; }
+    S.src2 = c; S.paper2 = r2.quad;
+    await nextFrame(); buildWarp(false); syncDeglare();
+    toast('반사 제거 합성 완료 — 두 사진에서 더 깨끗한 부분을 합쳤습니다', 3000);
+  } catch (e) { console.error(e); toast('합성 실패'); }
+  busy(false);
+}
+function syncDeglare() {
+  $('#btnDeglareOff').classList.toggle('hidden', !S.src2);
+  $('#btnDeglare').textContent = S.src2 ? '🪞 반사 제거 합성됨 (다시 찍기)' : '🪞 반사 제거 (다른 각도로 1장 더)';
+}
 function buildWarp(autoLevel) {
   let { Hd2s, ow, oh } = computeMatrix(0);
   S.warped = warp(S.src, Hd2s, ow, oh);
@@ -1181,6 +1326,7 @@ function buildWarp(autoLevel) {
     S.lastSkew = sk;
   }
   if (S.fine) { ({ Hd2s, ow, oh } = computeMatrix(S.fine)); S.warped = warp(S.src, Hd2s, ow, oh); }
+  if (S.src2) mergeSecond(Hd2s, ow, oh);
   // 기존 표시 위치를 새 보정 좌표로 옮김 (영역·모드·각도가 바뀌어도 지도상 같은 지점 유지)
   const prev = S.mapping, next = { Hd2s, ow, oh };
   if (prev && prev.src === S.src && S.markers.length) {
@@ -1314,6 +1460,7 @@ const Mark = {
     $('#btnReCrop').classList.toggle('hidden', !S.src);
     $('#btnAutoLevel').classList.toggle('hidden', !S.src);
     $('#fineAng').disabled = !S.src;
+    $('#btnDeglare').classList.toggle('hidden', !S.src); syncDeglare();
     Mark.syncFilters();
     requestAnimationFrame(() => { Mark.resize(); });
   },
@@ -1479,6 +1626,9 @@ $('#btnAutoLevel').onclick = () => {
   }, 30);
 };
 $('#btnReCrop').onclick = () => go('adj');
+$('#btnDeglare').onclick = () => { toast('처음과 다른 위치(좌·우로 한 걸음)에서 안내도 전체가 나오게 찍어주세요', 3500); $('#fileCap2').click(); };
+$('#fileCap2').onchange = e => { addSecondShot(e.target.files[0]); e.target.value = ''; };
+$('#btnDeglareOff').onclick = () => { S.src2 = null; S.paper2 = null; busy(true); setTimeout(() => { buildWarp(false); syncDeglare(); busy(false); toast('합성을 해제했습니다'); }, 30); };
 
 /* =====================================================================
  *  13. 내보내기 / 공유
@@ -1586,6 +1736,7 @@ async function currentRecord() {
     thumb: thumbOf(composeExport()),
     view: await toBlob(S.view),
     src: S.src ? await toBlob(S.src, 'image/jpeg', 0.92) : null,
+    src2: S.src2 ? await toBlob(S.src2, 'image/jpeg', 0.92) : null, paper2: S.paper2 || null,
     quad: S.quad, paper: S.paper, mode: S.mode, fine: S.fine, filter: S.filter,
     markers: S.markers.map(stripM), sameAs: S.sameAs || null,
   };
@@ -1699,6 +1850,7 @@ async function openRecord(id) {
   const r = await DB.get(id);
   S.src = r.src ? await blobToCanvas(r.src) : null;
   S.quad = r.quad; S.paper = r.paper || null; S.mode = r.mode || 'crop'; S.fine = r.fine || 0; S.filter = r.filter || 'color';
+  S.src2 = r.src2 ? await blobToCanvas(r.src2) : null; S.paper2 = r.paper2 || null;
   S.markers = r.markers || []; S.history = []; S.sel = null; S.savedId = r.id; S.mapping = null; S.savedSnap = null;
   S.building = bldgOf(r); S.floor = r.floor || ''; S.sameAs = r.sameAs || null;
   if (S.src && S.quad) buildWarp(false);

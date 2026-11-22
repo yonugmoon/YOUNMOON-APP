@@ -171,7 +171,7 @@ main{flex:1;position:relative;overflow:hidden}
       </div>
       <div class="sec-t"><span>저장된 도면 (건물·층별)</span><span id="savedCnt"></span></div>
       <div id="savedList"></div>
-      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">정보통신설비 실위치 v2.0 · 2026-11-22</div>
+      <div style="text-align:center;color:var(--ink-faint);font-size:11px;margin-top:18px">정보통신설비 실위치 v2.1 · 2026-11-22</div>
     </section>
 
     <!-- CAMERA -->
@@ -304,6 +304,21 @@ main{flex:1;position:relative;overflow:hidden}
     <div class="row">
       <button class="btn grow" id="doneStay">계속 편집</button>
       <button class="btn primary grow" id="doneHome">🏠 홈으로</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="twinModal">
+  <div class="box">
+    <h3>🔗 ICT Twin(디지털트윈) 내보내기</h3>
+    <div class="info" id="twinSrc" style="margin:0 0 6px"></div>
+    <label>건물코드 (ICT Twin에 이미 있는 건물이면 그 코드를 입력)</label>
+    <input type="text" id="twinBcode" placeholder="예: BD01">
+    <label>실 기본 크기 (m) — 트윈에서 실 사각형 크기</label>
+    <input type="text" id="twinRoom" value="3">
+    <div class="mhelp">ICT Twin 「간이 현행화」의 <b>초안 불러오기</b>용 JSON과 층별 도면 이미지를 ZIP 하나로 만듭니다. 도면 좌표는 ICT Twin 기본 규칙(도면 장변 40m)에 맞춰 넣으므로, 도면을 올리면 실 위치가 그대로 겹칩니다. 이후 「치수로 축척 맞춤」을 하면 실도 함께 보정됩니다.</div>
+    <div class="row" style="margin-top:16px">
+      <button class="btn grow" id="twinCancel">취소</button>
+      <button class="btn primary grow" id="twinOk">ZIP 내보내기</button>
     </div>
   </div>
 </div>
@@ -1839,7 +1854,7 @@ async function renderSaved() {
   const gs = [...groups.entries()].sort((a, b) => Math.max(...b[1].map(r => r.ts)) - Math.max(...a[1].map(r => r.ts)));
   el.innerHTML = gs.map(([b, rs]) => {
     rs.sort((x, y) => floorKey(x.floor) - floorKey(y.floor) || y.ts - x.ts);
-    return `<div class="grp"><div class="grp-t">🏢 ${escapeHtml(b)} <span>${rs.length}개 층</span></div><div class="saved">` +
+    return `<div class="grp"><div class="grp-t">🏢 ${escapeHtml(b)} <span>${rs.length}개 층</span><button class="btn sm" data-twin="${escapeHtml(b)}">🔗 트윈 내보내기</button></div><div class="saved">` +
       rs.map(r => `<div class="card" data-id="${r.id}"><img src="${r.thumb}" alt="">${r.floor ? `<span class="fl">${escapeHtml(r.floor)}</span>` : ''}<button class="cp" data-cp="${r.id}">+동일층</button><button class="del" data-del="${r.id}">✕</button><div class="meta"><b>${escapeHtml(r.floor || r.name)}</b><span>${new Date(r.ts).toLocaleDateString('ko-KR')}</span>${r.sameAs ? ' <span class="same">· 동일층</span>' : ''}${roomsOf(r.markers).length ? `<div class="same" style="margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(roomsOf(r.markers).join(' · '))}</div>` : ' <span class="same" style="color:var(--warn)">· 실 미표시</span>'}</div></div>`).join('') +
       `</div></div>`;
   }).join('');
@@ -1863,6 +1878,8 @@ async function openRecord(id) {
   if (!hasRoom) showHint(`${S.floor || ''} 설비실 위치를 표시하세요`);
 }
 $('#savedList').onclick = async e => {
+  const tw = e.target.closest('[data-twin]');
+  if (tw) { e.stopPropagation(); openTwinModal(tw.dataset.twin); return; }
   const del = e.target.closest('[data-del]');
   if (del) { e.stopPropagation(); if (confirm('이 안내도를 삭제할까요?')) { await DB.del(del.dataset.del); renderSaved(); } return; }
   const cp = e.target.closest('[data-cp]');
@@ -1898,6 +1915,103 @@ $('#floorBar').onclick = async e => {
 };
 
 /* =====================================================================
+ *  14-2. ICT Twin(디지털트윈) 연계 — 간이 현행화 초안(JSON) + 층별 도면 ZIP
+ *  ICT Twin 규칙: 좌표 mm · 좌상단 원점 · Y 아래 방향 · 도면 올리기 시 장변 40m 로 배치
+ * ===================================================================== */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u8 => { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function makeZip(files) { // 무압축(STORE) ZIP, UTF-8 파일명
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  const d = new Date(), dt = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(), tm = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  for (const f of files) {
+    const name = enc.encode(f.name), data = f.data, crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, tm, true); h.setUint16(12, dt, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true);
+    h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    parts.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, tm, true); c.setUint16(14, dt, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+    c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+    central.push(new Uint8Array(c.buffer), name);
+    off += 30 + name.length + data.length;
+  }
+  const csize = central.reduce((a, b) => a + b.length, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csize, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: 'application/zip' });
+}
+const TWIN_KIND = { mdf: 'MDF실', idf: 'IDF실', tps: 'TPS실', eps: 'EPS실', comm: '통신실', server: '서버실', disaster: '방재실', elec: '전기실', mech: '기계실' };
+function twinKindOf(m) {
+  if (TWIN_KIND[m.type]) return TWIN_KIND[m.type];
+  const n = m.label || '';
+  for (const k of ['MDF실', 'IDF실', 'TPS실', 'EPS실', '서버실', '방재실', '관제실', 'UPS실', '전기실', '기계실', '기지국 장비실', '통신실']) if (n.toUpperCase().includes(k.replace('실', '').toUpperCase())) return k;
+  return /중계|국사|통신|CCTV|방송/.test(n) ? '통신실' : '통신실';
+}
+const hashCode = str => { let h = 0; for (const ch of str) h = (h * 31 + ch.codePointAt(0)) >>> 0; return h.toString(36).toUpperCase().slice(-4).padStart(4, '0'); };
+let twinBldg = '';
+function openTwinModal(b) {
+  twinBldg = b;
+  $('#twinSrc').innerHTML = `대상 건물: <b>${escapeHtml(b)}</b>`;
+  let saved = ''; try { saved = localStorage.getItem('twinBcode:' + b) || ''; } catch (e) { }
+  $('#twinBcode').value = saved || ('BD' + hashCode(b));
+  $('#twinModal').classList.add('on');
+}
+$('#twinCancel').onclick = () => $('#twinModal').classList.remove('on');
+$('#twinOk').onclick = async () => {
+  const bcode = $('#twinBcode').value.trim().replace(/[^\w-]/g, '') || ('BD' + hashCode(twinBldg));
+  const roomMM = Math.round(clamp(parseFloat($('#twinRoom').value) || 3, 0.5, 30) * 1000);
+  try { localStorage.setItem('twinBcode:' + twinBldg, bcode); } catch (e) { }
+  $('#twinModal').classList.remove('on'); busy(true);
+  try {
+    const all = ((await DB.all()) || []).filter(r => bldgOf(r) === twinBldg).sort((a, b) => floorKey(a.floor) - floorKey(b.floor));
+    const pad2 = n => String(n).padStart(2, '0'), files = [], floors = [], rooms = [], used = {};
+    let extra = 0, nRoom = 0;
+    for (const r of all) {
+      const n = floorNum(r.floor);
+      const level = n != null && n !== 0 ? n : 90 + (extra++);
+      let code = bcode + '-' + (level < 0 ? 'B' + pad2(-level) : level >= 90 ? 'X' + pad2(level - 89) : 'F' + pad2(level));
+      while (used[code]) code += 'a'; used[code] = 1;
+      const fname = level < 0 ? `지하${-level}층` : level >= 90 ? (r.floor || code) : `${level}층`;
+      const img = await blobToCanvas(r.view);                       // 보정·도면화된 도면 (표시 없이)
+      const W = img.width, H = img.height, s = 40000 / Math.max(W, H);    // ICT Twin 도면 올리기 기본 축척과 동일
+      floors.push({ code, building: twinBldg, bcode, name: fname, level, w: Math.round(W * s), h: Math.round(H * s) });
+      (r.markers || []).filter(isRoom).forEach((m, i) => {
+        const cx = m.x * W * s, cy = m.y * H * s, half = roomMM / 2;
+        rooms.push({ id: `${code}-R${pad2(i + 1)}`, floor: code, name: `${fname} ${roomName(m)}`, kind: twinKindOf(m),
+          x: Math.round(clamp(cx - half, 0, W * s - roomMM)), y: Math.round(clamp(cy - half, 0, H * s - roomMM)), w: roomMM, h: roomMM });
+        nRoom++;
+      });
+      const jpg = new Uint8Array(await (await toBlob(img, 'image/jpeg', 0.92)).arrayBuffer());
+      files.push({ name: `도면/${code}_${fname}.jpg`, data: jpg });
+    }
+    const draft = { _twinxQuick: 1, draft: { active: true, site: twinBldg, buildings: [{ code: bcode, name: twinBldg }], floors, rooms, assets: [], links: [], autoLinks: true, bundleQty: true, source: [], savedAt: new Date().toISOString(), done: null } };
+    const enc = new TextEncoder();
+    files.unshift({ name: `TwinX_간이현행화_초안_${twinBldg}.json`, data: enc.encode(JSON.stringify(draft, null, 1)) });
+    files.push({ name: '가져오기_안내.txt', data: enc.encode([
+      `[ICT Twin 연계 · ${twinBldg} · ${floors.length}개 층 · 실 ${nRoom}개]`, '',
+      '1) ICT Twin → 「간이 현행화 모드」 열기',
+      '   ※ 진행 중인 초안이 있으면 먼저 「초안 백업(JSON)」 (불러오기는 초안을 통째로 바꿉니다)',
+      '2) 패널 아래 「초안 불러오기」 → TwinX_간이현행화_초안_*.json 선택 → 건물·층·실이 생성됨',
+      '3) ② 도면 단계에서 「작업 층」을 고르고 「도면 올리기」 → 도면 폴더의 같은 층코드 이미지 선택',
+      '   (도면 좌상단=원점, 장변 40m 로 배치되어 실 위치와 그대로 겹칩니다. 도면을 90° 회전하지 마세요)',
+      '4) 실제 치수를 아는 구간이 있으면 「실측 거리(mm)」 입력 → 「치수로 축척 맞춤」 (실도 함께 보정)',
+      `5) ③ 실 단계에서 실 크기(기본 ${roomMM / 1000}m×${roomMM / 1000}m)를 실제 크기로 조정`,
+      '6) 「✔ 검증 후 ADMIN에 저장」 → 층 단위 병합',
+      `   ※ 층코드(${bcode}-…)가 같은 ADMIN 층의 기존 실·설비는 초안으로 교체되고, 다른 층 자료는 유지됩니다.`,
+      '', '층 목록:', ...floors.map(f => `  ${f.code}  ${f.name}  (${(f.w / 1000).toFixed(1)}m × ${(f.h / 1000).toFixed(1)}m)`)
+    ].join('\r\n')) });
+    const blob = makeZip(files), fname = `ICT_Twin_연계_${twinBldg.replace(/[\\/:*?"<>|\s]+/g, '_')}.zip`;
+    busy(false);
+    const file = new File([blob], fname, { type: 'application/zip' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: fname }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+    toast(`ICT Twin 연계 파일 저장 (${floors.length}개 층 · 실 ${nRoom}개)`, 3000);
+  } catch (e) { console.error(e); busy(false); toast('내보내기 실패'); }
+};
+
+/* =====================================================================
  *  15. 초기화
  * ===================================================================== */
 window.addEventListener('resize', () => {
@@ -1907,7 +2021,7 @@ window.addEventListener('resize', () => {
 Mark.syncTools(); Mark.syncFilters();
 go('home');
 // 디버그/테스트용 노출
-window.EvacApp = { S, detectQuad, estimateSkew, buildWarp, go, setSource, parseFloors, DB };
+window.EvacApp = { makeZip, S, detectQuad, estimateSkew, buildWarp, go, setSource, parseFloors, DB };
 </script>
 </body>
 </html>

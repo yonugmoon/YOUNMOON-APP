@@ -156,6 +156,12 @@
 
 /* 간이 현행화 모드 */
 .tx-qk { width: 380px; left: auto !important; right: 16px; }
+.tx-qk.tx-qk-min { width: 260px; top: auto !important; bottom: 44px !important; max-height: none !important; }
+.tx-qk.tx-qk-min > *:not(.tx-wb-hd) { display: none !important; }
+.tx-qk.tx-qk-min .tx-wb-hd { border-bottom: 0; }
+.tx-qk-minbtn { margin-left: auto; font-size: 18px; line-height: 1; }
+.tx-qk-check .opt { color: #b45309; }
+.tx-qk-check .opt small { font-size: 10.5px; padding: 0 5px; border-radius: 99px; background: #fef3c7; }
 @media (max-width: 759px) { .tx-qk { left: 12px !important; right: 12px; width: auto; } }
 .tx-qk-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 8px 10px 0; }
 .tx-qk-steps button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px 7px; border: 0; border-bottom: 2px solid transparent; background: none; font: 600 10.5px var(--tx-font, Arial, sans-serif); color: var(--tx-muted, #6b7d93); cursor: pointer; }

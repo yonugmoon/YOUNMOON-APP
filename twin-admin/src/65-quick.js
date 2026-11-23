@@ -385,7 +385,7 @@
   function assetOpts() { return D.assets.map(function (a) { var f = D.floors.find(function (x) { return x.code === a.floor; }) || {}; return '<option value="' + esc(a.id) + '">' + esc((f.building || '') + ' ' + (f.name || '') + ' · ' + a.name) + '</option>'; }).join(''); }
 
   /* ---------------- 패널 ---------------- */
-  var P = null, step = 1, sel = null, cap = null;
+  var P = null, step = (function () { try { return Math.min(5, Math.max(1, +localStorage.getItem('twinx_quick_step') || 1)); } catch (e) { return 1; } })(), sel = null, cap = null, mini = false, autoMini = false;
   var tool = { roomName: '', roomKind: '통신실', placeId: null };
   function curFloor() { var f = TX.state.floor; return D.floors.find(function (x) { return x.code === f; }) ? f : (D.floors[0] && D.floors[0].code); }
   function fl() { return D.floors.find(function (x) { return x.code === curFloor(); }); }
@@ -408,10 +408,12 @@
   var STEPS = ['현행화·사진', '도면 확보', '실 그리기', '설비 배치', '검증·내보내기'];
   function renderPanel() {
     if (!P) return;
+    try { localStorage.setItem('twinx_quick_step', String(step)); } catch (e) { }
+    P.classList.toggle('tx-qk-min', mini);
     if (ed && step !== 3) closeEd(true);
     var f = fl(), code = f && f.code;
     var placed = D.assets.filter(function (a) { return a.room; }).length;
-    var h = '<div class="tx-wb-hd"><div><small>' + (window.TWINX_STANDALONE ? '설비·도면 등록 · 단독 운영판' : '간이 현행화 모드 · 초안 (ADMIN 등록 전)') + '</small><b>' + esc(D.site || '사업장 미정') + '</b><span class="tx-qk-saved" data-r="saved">' + savedText() + '</span></div><button type="button" class="tx-wb-x" data-q="close" aria-label="닫기">✕</button></div>' +
+    var h = '<div class="tx-wb-hd"><div><small>' + (window.TWINX_STANDALONE ? '설비·도면 등록 · 단독 운영판' : '간이 현행화 모드 · 초안 (ADMIN 등록 전)') + '</small><b>' + esc(D.site || '사업장 미정') + '</b><span class="tx-qk-saved" data-r="saved">' + savedText() + '</span></div><button type="button" class="tx-wb-x tx-qk-minbtn" data-q="min" aria-label="' + (mini ? '패널 펼치기' : '패널 접기') + '" title="' + (mini ? '패널 펼치기' : '패널 접기 (도면·3D 넓게 보기)') + '">' + (mini ? '▸' : '–') + '</button><button type="button" class="tx-wb-x" data-q="close" aria-label="닫기">✕</button></div>' +
       '<div class="tx-qk-steps">' + STEPS.map(function (s, i) { var dn = stepDone(i + 1); return '<button type="button" data-q="step" data-k="' + (i + 1) + '" class="' + (step === i + 1 ? 'is-on' : '') + (dn ? ' is-done' : '') + '"><i>' + (dn ? '✔' : i + 1) + '</i>' + s + '</button>'; }).join('') + '</div>' +
       '<div class="tx-qk-sum">건물 ' + D.buildings.length + ' · 층 ' + D.floors.length + ' · 실 ' + D.rooms.length + ' · 설비 ' + placed + '/' + D.assets.length + ' 배치 · 연결 ' + D.links.length + '</div>' +
       (D.floors.length && step > 1 ? '<label class="tx-qk-floor">작업 층<select data-q="floor">' + D.floors.map(function (x) { return '<option value="' + esc(x.code) + '"' + (x.code === code ? ' selected' : '') + '>' + esc(x.building + ' ' + x.name) + ' (' + esc(x.code) + ')</option>'; }).join('') + '</select></label>' : '') +
@@ -467,11 +469,11 @@
         '<h5>연결 <span class="tx-count">' + D.links.length + '</span></h5>' +
         (D.assets.length > 1 ? '<div class="tx-qk-link"><select data-q="lfrom">' + assetOpts() + '</select><span>→</span><select data-q="lto">' + assetOpts() + '</select><select data-q="ltype"><option value="optical">광</option><option value="data">UTP</option><option value="power">전원</option></select><button type="button" class="tx-wb-btn" data-q="ladd">연결 추가</button></div>' : '') +
         (D.links.length ? '<ul class="tx-wb-list">' + D.links.map(function (l) { var a = D.assets.find(function (x) { return x.id === l.from; }), b = D.assets.find(function (x) { return x.id === l.to; }); return '<li><span><b>' + esc(a ? a.name : l.from) + ' → ' + esc(b ? b.name : l.to) + '</b><small>' + ({ optical: '광', data: 'UTP', power: '전원' }[l.type] || '광') + ' · ' + (l.auto ? '기본 규칙' : '수동') + (a && b && a.floor !== b.floor ? ' · 층간(라이저)' : '') + '</small></span><button type="button" class="tx-wb-link tx-wb-danger" data-q="ldel" data-id="' + esc(l.id) + '">삭제</button></li>'; }).join('') + '</ul>' : '<p class="tx-wb-empty">연결 없음 (같은 층에 OFD가 없으면 규칙이 적용되지 않습니다)</p>') +
-        '<div class="tx-qk-check">' + checks().map(function (c) { return '<div class="' + (c[1] ? 'ok' : 'ng') + '">' + (c[1] ? '✔ ' : '✖ ') + esc(c[0]) + '</div>'; }).join('') + '</div>' +
+        '<div class="tx-qk-check">' + checks().map(function (c, i) { var must = i === 0 || i === 2; return '<div class="' + (c[1] ? 'ok' : must ? 'ng' : 'opt') + '">' + (c[1] ? '✔ ' : must ? '✖ ' : '△ ') + esc(c[0]) + (!c[1] && !must ? ' <small>권장</small>' : '') + '</div>'; }).join('') + '</div>' +
         '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn" data-q="diag">라이저도·개통도 자동 작도</button>' + (TX.pipe ? '<button type="button" class="tx-wb-btn" data-q="phzip">현장 사진 ZIP</button>' : '') + '</div>' +
         finishCard() +
         '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn" data-q="export">엑셀만 내보내기</button>' + (TX.pipe ? '<button type="button" class="tx-wb-btn" data-q="report">점검 결과서 변환</button>' : '') + '</div>' +
-        '<p class="tx-wb-help">내보낸 파일 → ADMIN <b>데이터 관리 → 엑셀 등록 → 「전체 교체 적용」</b>. 이후 점검 결과서는 <b>측정 대시보드 → 측정 엑셀 등록</b>으로 올리고 「측정 매칭 확인」에서 연결하세요. 「현행화표_원본」 시트에 설치연도·비고 원문이 보존됩니다.</p>' +
+        (window.TWINX_STANDALONE ? '<p class="tx-wb-help">「검증 후 저장」은 이 PC에 완료 표시와 복원용 백업 파일을 만듭니다. 점검 결과서는 「점검 결과서 변환」으로 올리면 2D·3D·점검결과 대시보드에 바로 반영됩니다.</p>' : '<p class="tx-wb-help">내보낸 파일 → ADMIN <b>데이터 관리 → 엑셀 등록 → 「전체 교체 적용」</b>. 이후 점검 결과서는 <b>측정 대시보드 → 측정 엑셀 등록</b>으로 올리고 「측정 매칭 확인」에서 연결하세요. 「현행화표_원본」 시트에 설치연도·비고 원문이 보존됩니다.</p>') +
         '<div class="tx-wb-acts tx-wb-acts-2"><button type="button" class="tx-wb-link" data-q="jexport">초안 백업(JSON)</button><button type="button" class="tx-wb-link" data-q="jimport">초안 불러오기</button><button type="button" class="tx-wb-link tx-wb-danger" data-q="reset">초안 전체 삭제</button></div>';
     }
     h += '</div><div class="tx-qk-ft"><button type="button" class="tx-wb-btn" data-q="prev"' + (step === 1 ? ' disabled' : '') + '>← 이전</button><button type="button" class="tx-wb-btn tx-wb-pri" data-q="next"' + (step === 5 ? ' disabled' : '') + '>다음 →</button></div>';
@@ -607,6 +609,7 @@
       var b = e.target.closest('[data-q]'); if (!b || b.tagName === 'SELECT' || b.tagName === 'INPUT' || b.tagName === 'TEXTAREA') return;
       var a = b.getAttribute('data-q'), id = b.getAttribute('data-id');
       if (a === 'close') close(false);
+      else if (a === 'min') { mini = !mini; autoMini = false; renderPanel(); }
       else if (a === 'step') { step = +b.getAttribute('data-k'); startTool(); renderPanel(); }
       else if (a === 'prev') { step = Math.max(1, step - 1); startTool(); renderPanel(); }
       else if (a === 'next') { step = Math.min(5, step + 1); startTool(); renderPanel(); }
@@ -1096,6 +1099,7 @@
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-act="wb-menu"]')) setTimeout(injectMenu, 0); });
   TX.on('state', function (p) { var ch = (p && p.changed) || []; if (P && ch.indexOf('floor') >= 0) { stopTool(); renderPanel(); startTool(); } });
   TX.on('state', function (p) { var ch = (p && p.changed) || []; if (P && step === 3 && ch.indexOf('room') >= 0 && TX.state.room && D.rooms.some(function (q) { return q.id === TX.state.room; })) openEd(TX.state.room); });
+  TX.on('state', function (p) { var ch = (p && p.changed) || []; if (!P || ch.indexOf('dash') < 0) return; if (TX.state.dash && !mini) { mini = true; autoMini = true; renderPanel(); } else if (!TX.state.dash && autoMini) { mini = false; autoMini = false; renderPanel(); } });
   TX.on('close', function () { close(true); });
   TX.on('open', function () { if (D.active && D.floors.length) setTimeout(function () { TX.setModel(toModel()); }, 50); });
 

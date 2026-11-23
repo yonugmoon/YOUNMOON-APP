@@ -272,7 +272,9 @@
     D = collect();
     var sy = el.querySelector('.tx-rp-body'), top = sy ? sy.scrollTop : 0;
     el.className = 'tx-rp' + (pref.theme === 'dark' ? ' tx-rp-dark' : '') + (pref.mode === 'engineer' ? ' tx-rp-eng' : '');
+    var mo = el.querySelector('.tx-rp-modal'); /* 열린 상세 창은 다시 그려도 유지 */
     el.innerHTML = header() + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
+    if (mo) el.appendChild(mo);
     var b2 = el.querySelector('.tx-rp-body'); if (b2) b2.scrollTop = top;
     if (view === 3 && TX.pipe && TX.pipe.photos.all) loadThumbs();
   }
@@ -331,13 +333,13 @@
     else if (a === 'f') { st[t.getAttribute('data-k')] = t.value; st.page = 1; render(); }
   }
   var qT = null;
-  function onInput(e) { var t = e.target; if (t.getAttribute('data-rp') !== 'q') return; clearTimeout(qT); qT = setTimeout(function () { st.q = t.value; st.page = 1; var pos = t.selectionStart; render(); var n = el.querySelector('[data-rp="q"]'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) { } } }, 220); }
+  function onInput(e) { var t = e.target; if (t.getAttribute('data-rp') !== 'q' || e.isComposing) return; /* 한글 조합 중에는 다시 그리지 않음 */ clearTimeout(qT); qT = setTimeout(function () { st.q = t.value; st.page = 1; var pos = t.selectionStart; render(); var n = el.querySelector('[data-rp="q"]'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) { } } }, 220); }
   function onKey(e) { if (e.key !== 'Escape' || !el) return; var m = el.querySelector('.tx-rp-modal'); if (m) m.remove(); else close(); e.stopPropagation(); }
 
   function open(v) {
     if (!el) {
       el = U.el('div', 'tx-rp'); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', '점검 결과 대시보드');
-      el.addEventListener('click', onClick); el.addEventListener('change', onChange); el.addEventListener('input', onInput);
+      el.addEventListener('click', onClick); el.addEventListener('change', onChange); el.addEventListener('input', onInput); el.addEventListener('compositionend', onInput);
       document.body.appendChild(el); document.addEventListener('keydown', onKey, true); document.body.classList.add('tx-rp-open');
     }
     if (v) view = v;

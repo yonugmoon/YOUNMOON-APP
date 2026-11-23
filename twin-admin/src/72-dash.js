@@ -27,7 +27,7 @@
     M.rooms.forEach(function (r) { (r.measures || []).forEach(function (m) { add(m, null, r); }); });
     (M.measurements || []).forEach(function (m) { add(m); });
     var g = { RED: 0, ORANGE: 0, YELLOW: 0, GREEN: 0, NONE: 0 }; M.assets.forEach(function (a) { g[a.grade in g ? a.grade : 'NONE']++; });
-    var n = M.assets.length, okRate = n ? Math.round((g.GREEN) / n * 1000) / 10 : null, checked = n - g.NONE;
+    var n = M.assets.length, checked = n - g.NONE, okRate = checked ? Math.round((g.GREEN) / checked * 1000) / 10 : null; // 정상률 = 점검된 설비 중 정상 (미점검은 분모 제외)
     var bad = ms.filter(function (x) { return x.m.judge === 'bad'; }), warn = ms.filter(function (x) { return x.m.warn; });
     var lastD = null; ms.forEach(function (x) { var d = pd(x.m.date); if (d && (!lastD || d > lastD)) lastD = d; });
     // 위험도
@@ -67,7 +67,7 @@
     var r = 34, c = 2 * Math.PI * r, p = pct == null ? 0 : Math.max(0, Math.min(100, pct));
     return '<svg viewBox="0 0 90 90" class="tx-ds-donut"><circle cx="45" cy="45" r="' + r + '" fill="none" stroke="#12304f" stroke-width="9"/>' +
       '<circle cx="45" cy="45" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + (c * p / 100).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 45 45)"/>' +
-      '<text x="45" y="43" text-anchor="middle" class="tx-ds-dn">' + (pct == null ? '—' : fmt(pct)) + '</text><text x="45" y="57" text-anchor="middle" class="tx-ds-du">% 정상</text></svg>';
+      '<text x="45" y="43" text-anchor="middle" class="tx-ds-dn">' + (pct == null ? '—' : fmt(pct)) + '</text><text x="45" y="57" text-anchor="middle" class="tx-ds-du">% 정상(점검)</text></svg>';
   }
   function bars(items, W, H) { // items: [{label, a, b}] a=전체 b=이상
     if (!items.length) return '<p class="tx-ds-empty">자료 없음</p>';
@@ -106,7 +106,7 @@
     col.innerHTML =
       '<header><div><b>관제 대시보드</b><small>' + esc(site) + ' · ' + U.today() + '</small></div><span class="tx-ds-src" title="센서 연동 전: 등록 자료와 점검 결과서 측정값 기준"><i></i>점검 자료 기준 · 실시간 센서 아님</span></header>' +
       '<section class="tx-ds-card tx-ds-top"><div>' + donut(d.okRate, d.g.RED ? '#f43f5e' : d.g.ORANGE || d.g.YELLOW ? '#f59e0b' : '#10b981') + '</div>' +
-        '<dl><div><dt>등록 설비</dt><dd>' + d.n + '<u>대</u></dd></div><div><dt>이상 · 주의</dt><dd class="' + (d.g.RED ? 'bad' : '') + '">' + d.g.RED + ' · ' + (d.g.ORANGE + d.g.YELLOW) + '</dd></div>' +
+        '<dl><div><dt>등록 · 점검</dt><dd>' + d.n + '<u>대</u> · ' + d.checked + '<u>대</u></dd></div><div><dt>이상 · 주의</dt><dd class="' + (d.g.RED ? 'bad' : '') + '">' + d.g.RED + ' · ' + (d.g.ORANGE + d.g.YELLOW) + '</dd></div>' +
         '<div><dt>측정 자료</dt><dd>' + d.ms.length + '<u>건</u></dd></div><div><dt>불량 판정</dt><dd class="' + (d.bad.length ? 'bad' : '') + '">' + d.bad.length + '<u>건</u></dd></div></dl></section>' +
       '<section class="tx-ds-card"><h4>연결 계통 <small>회선 ' + (M.links || []).length + '</small></h4>' +
         (Object.keys(d.lt).length ? hbars(Object.keys(d.lt).map(function (k) { var x = LN[k] || [k, '#94a3b8']; return { name: x[0], v: d.lt[k], max: lmax, color: x[1], note: d.lt[k] + '회선' }; })) : '<p class="tx-ds-empty">등록된 연결 없음 · 계통도에서 「연결 추가」</p>') + '</section>' +

@@ -386,6 +386,11 @@
   .tx-search { width: 180px; }
   .tx-search:focus-within { width: 240px; }
 }
+/* 툴바 기능이 늘어 1366~1760px 에서 넘침 → 보조 기능 라벨 먼저 숨김 (관제·점검결과는 유지) */
+@media (max-width: 1759px) {
+  .tx-groups .tx-tbtn:not(.tx-dash-btn):not(.tx-rp-tbtn) .tx-tbtn-lbl { display: none; }
+  .tx-groups .tx-tbtn { padding: 0 8px; gap: 3px; }
+}
 @media (max-width: 1365px) {
   .tx-title b { font-size: 12.5px; }
   .tx-tbtn-lbl { display: none; }

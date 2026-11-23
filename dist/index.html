@@ -12637,7 +12637,7 @@ nav button.ar i{background:linear-gradient(135deg,var(--brand),var(--brand-2));c
   <div id="arHint">카메라 준비 중…</div>
   <div class="ar-top">
     <button class="btn" onclick="AR.close()" title="닫기">✕</button>
-    <button class="btn hide-g" onclick="AR.pickEquip()">📋 선택</button>
+    <button class="btn" id="btnSel" onclick="AR.toggleSel()">🎯 선택</button>
     <span class="sp"></span>
     <button class="btn" id="btnHere" onclick="ui.openSheet('here')">📍 위치</button>
     <button class="btn" id="btnLive" onclick="AR.toggleLive()">🧠 AI</button>
@@ -12921,6 +12921,18 @@ ${cands.join("\n")}`:"설비대장 후보 없음."}
 JSON만:
 {"found":true,"type":"","name":"설비 명칭(제품명/기자재 명칭)","function":"한글 기능","maker":"제조사","model":"모델명","serial":"시리얼",
  "rating":"정격","mfgDate":"제조년월","texts":["그 밖에 읽힌 중요한 표기"],"status":"LED/표시 상태","match":{"id":"","confidence":0.0},"quality":"좋음|흐림|멀다|반사|어두움","tip":""}`;
+const PROMPT_SELECT = (cands) => `현장 점검자가 카메라 화면에서 한 부분을 선택했습니다.
+사진1 = 선택한 부분 확대, 사진2 = 전체 화면(빨간 상자 = 선택 영역).
+빨간 상자 안의 물체가 무엇인지 식별하세요. 통신·전기 설비 현장 기준으로, 장비 전체일 수도 있고 그 일부(표시창, LED, 포트, 커넥터, 케이블, 차단기, 스위치, 모듈 카드, 명판, 라벨 등)일 수도 있습니다.
+규칙: 보이는 글자만 판독(추측한 모델명 금지). 외형으로 판단한 것은 그렇다고 밝히기. 사진2로 어떤 설비의 일부인지 맥락 파악.
+설비 종류(type) 키: ${Object.entries(TYPES).map(([k,v])=>`${k}(${v.name})`).join(", ")}
+${cands.length?`설비대장 후보(id|종류|명칭|제조사|모델|시리얼|위치) — 선택한 물체가 대장 설비(또는 그 일부)면 match.id:
+${cands.join("\n")}`:""}
+JSON만:
+{"what":"물체 이름(한글, 짧게)","category":"설비|장비 일부|표시창/LED|포트/커넥터|케이블|차단기/스위치|모듈/카드|명판/라벨|비품/기타",
+ "partOf":"어느 설비의 일부인지(해당 시)","type":"","maker":"","model":"","serial":"","function":"용도·역할 한두 문장",
+ "state":"보이는 상태(LED 색, 표시값, 손상·오염 등)","readings":[{"name":"","value":"","unit":""}],
+ "advice":"점검 관점 한마디","match":{"id":"","confidence":0.0},"confidence":0.0}`;
 const norm = v => String(v||"").toUpperCase().replace(/[^0-9A-Z가-힣]/g,"");
 /* 시리얼 비교용: 흔한 오독(O↔0, I/L↔1, S↔5 아님 주의) 보정 */
 const normSN = v => norm(v).replace(/O/g,"0").replace(/[IL]/g,"1");
@@ -13085,6 +13097,7 @@ const VOICE_CMDS = [
   [/갱신|업데이트/,    ()=>AR.applyDiff()],
   [/실장|모듈|슬롯/,   ()=>AR.rackNow()],
   [/현황|조사|판독/,   ()=>AR.survey()],
+  [/이거|뭐야|무엇|무슨|선택/, ()=>AR.selectCenter()],
   [/등록|저장/,        ()=>AR.svSave()],
   [/취소/,             ()=>AR.svCancel()],
   [/읽어|다시/,        ()=>AR.speakStep()],
@@ -13101,6 +13114,7 @@ const AR = {
   live:{on:true, busy:false, lastAt:0, obs:[], fused:null, match:null, sig:null, backoff:0, ver:0, blob:null, status:"", said:""},
   liveDiff:[],
   sv:{busy:false, res:null, eq:null, diff:[], blob:null, status:"", n:{add:0,ok:0,upd:0}},
+  sel:{on:false, drag:null, busy:null, tags:[]},
 
   async open(equipId){
     ui.closeSheet();
@@ -13117,13 +13131,20 @@ const AR = {
     $("#arHint").textContent="";
     if("BarcodeDetector" in window){ try{ this.detector=new BarcodeDetector({formats:["qr_code"]}); }catch(_){ this.detector=null; } }
     this.scanCv=document.createElement("canvas");
-    this.live.on=!!S.settings.liveAI; this.liveReset(); this.sv.res=null; this.hereChip(); $("#btnLive").classList.toggle("on",this.live.on);
+    this.live.on=!!S.settings.liveAI; this.liveReset(); this.sv.res=null; this.hereChip(); this.sel.tags=[]; this.sel.last=null; this.toggleSel(false); $("#btnLive").classList.toggle("on",this.live.on);
     if(equipId) this.setEquip(findEquip(equipId));
     else if(!this.equip) this.say(this.live.on&&S.settings.apiKey? "설비를 비추면 AI가 인식합니다" : "설비 QR 코드를 비춰 주세요");
     if(S.settings.voice && Voice.supported() && !Voice.on) this.toggleVoice(true);
     this.running=true; this.resize(); requestAnimationFrame(()=>this.loop());
     window.addEventListener("resize", this._rs=()=>this.resize());
     this.canvas.onclick=()=>{ if(this.glasses) $("#ar").classList.toggle("showctl"); };
+    this.canvas.onpointerdown=ev=>{ if(!this.sel.on||this.glasses) return; ev.preventDefault(); this.canvas.setPointerCapture(ev.pointerId);
+      const d=this.dpr(); this.sel.drag={x0:ev.clientX*d,y0:ev.clientY*d,x1:ev.clientX*d,y1:ev.clientY*d}; };
+    this.canvas.onpointermove=ev=>{ const g=this.sel.drag; if(!g) return; const d=this.dpr(); g.x1=ev.clientX*d; g.y1=ev.clientY*d; };
+    this.canvas.onpointerup=()=>{ const g=this.sel.drag; if(!g) return; this.sel.drag=null;
+      const W=this.canvas.width,H=this.canvas.height; let x0=Math.min(g.x0,g.x1),x1=Math.max(g.x0,g.x1),y0=Math.min(g.y0,g.y1),y1=Math.max(g.y0,g.y1);
+      if(x1-x0<30||y1-y0<30){ const r=Math.min(W,H)*0.16, cx=g.x0, cy=g.y0; x0=cx-r; x1=cx+r; y0=cy-r; y1=cy+r; }   // 탭 → 주변 영역
+      this.identify(this.screenToVideo(x0,y0), this.screenToVideo(x1,y1)); };
     this.renderExtra();
   },
   close(){
@@ -13136,6 +13157,13 @@ const AR = {
     window.removeEventListener("resize", this._rs);
     $("#ar").classList.remove("on"); render();
   },
+  dpr(){ return this.canvas.width/innerWidth; },
+  /* 화면(캔버스 px) → 영상 좌표 (일반 모드, 화면 가득 cover) */
+  screenToVideo(px,py){
+    const v=this.video, vw=v.videoWidth, vh=v.videoHeight, W=this.canvas.width, H=this.canvas.height, ra=W/H;
+    let sx=0,sy=0,sw=vw,sh=vh; if(vw/vh>ra){ sw=vh*ra; sx=(vw-sw)/2; } else { sh=vw/ra; sy=(vh-sh)/2; }
+    const sc=W/sw; return {x:Math.max(0,Math.min(vw,sx+px/sc)), y:Math.max(0,Math.min(vh,sy+py/sc))};
+  },
   resize(){ const d=Math.min(window.devicePixelRatio||1,2); this.canvas.width=innerWidth*d; this.canvas.height=innerHeight*d; },
   say(t){ Voice.say(t); this.toast(t); },
   toast(t){ this.msg=t; this.msgUntil=Date.now()+3500; },
@@ -13146,7 +13174,7 @@ const AR = {
     const now=performance.now();
     if(now-this.lastScan>220 && this.video.readyState>=2){ this.lastScan=now; this.scan(); }
     const L=this.live;
-    if(L.on && !this.equip && !L.busy && !this.sv.busy && !this.sv.res && S.settings.apiKey && this.video.readyState>=2 && Date.now()>L.backoff
+    if(L.on && !this.equip && !L.busy && !this.sv.busy && !this.sv.res && !this.sel.busy && !this.sel.on && S.settings.apiKey && this.video.readyState>=2 && Date.now()>L.backoff
        && Date.now()-L.lastAt > Math.max(2,+S.settings.liveSec||4)*1000) this.liveTick();
     this.draw();
     requestAnimationFrame(()=>this.loop());
@@ -13272,6 +13300,56 @@ const AR = {
     e.memo=[e.memo,"대장 갱신 "+fmt(Date.now()).slice(0,10)+": "+d.map(x=>`${x.label} ${x.ledger}→${x.field}`).join(", ")].filter(Boolean).join(" / ");
     this.liveDiff=[]; save(); this.say("대장을 현장값으로 갱신했습니다"); this.live.ver++;
   },
+
+  /* ---- 🎯 선택 인식: 화면에서 고른 부분이 무엇인지 ---- */
+  toggleSel(force){
+    this.sel.on = force!=null? force : !this.sel.on; $("#btnSel").classList.toggle("on",this.sel.on);
+    if(this.sel.on){ if(this.glasses) this.selectCenter(); else this.toast("인식할 물체를 탭하거나, 손가락으로 끌어 범위를 그리세요"); }
+    this.live.ver++;
+  },
+  selectCenter(){   // 음성/안경모드: 화면 가운데 영역
+    const v=this.video, vw=v.videoWidth, vh=v.videoHeight, r=Math.min(vw,vh)*0.22;
+    this.identify({x:vw/2-r,y:vh/2-r},{x:vw/2+r,y:vh/2+r});
+  },
+  async identify(a,b){
+    if(this.sel.busy) return;
+    if(!S.settings.apiKey){ this.say("AI 키가 없습니다. 설정에서 등록하세요"); return; }
+    const v=this.video, vw=v.videoWidth, vh=v.videoHeight; if(!vw) return;
+    const box={x0:a.x,y0:a.y,x1:b.x,y1:b.y};
+    this.sel.busy=box; Voice.say("인식 중");
+    try{
+      // 1) 선택 영역 확대(여백 15%)  2) 전체 화면에 빨간 상자 표시
+      const mx=(box.x1-box.x0)*0.15, my=(box.y1-box.y0)*0.15;
+      const cx0=Math.max(0,box.x0-mx), cy0=Math.max(0,box.y0-my), cw=Math.min(vw,box.x1+mx)-cx0, ch=Math.min(vh,box.y1+my)-cy0;
+      const k=Math.min(1,1024/Math.max(cw,ch)), c1=document.createElement("canvas"); c1.width=Math.round(cw*k); c1.height=Math.round(ch*k);
+      c1.getContext("2d").drawImage(v,cx0,cy0,cw,ch,0,0,c1.width,c1.height);
+      const k2=Math.min(1,960/Math.max(vw,vh)), c2=document.createElement("canvas"); c2.width=Math.round(vw*k2); c2.height=Math.round(vh*k2);
+      const x2=c2.getContext("2d"); x2.drawImage(v,0,0,c2.width,c2.height); x2.strokeStyle="#ff2020"; x2.lineWidth=Math.max(3,c2.width/160);
+      x2.strokeRect(box.x0*k2,box.y0*k2,(box.x1-box.x0)*k2,(box.y1-box.y0)*k2);
+      const toBlob=c=>new Promise(r=>c.toBlob(r,"image/jpeg",0.85));
+      const crop=await toBlob(c1), full=await toBlob(c2);
+      const cands=S.equips.slice(0,200).map(e=>[e.id,typeName(e.type),e.name,e.maker,e.model,e.serial,e.location].map(x=>String(x||"").replace(/\|/g,"/")).join("|"));
+      const r=await callGemini(PROMPT_SELECT(cands),[crop,full],{fast:true,timeout:40000,onWait:t=>this.toast(t)});
+      const eq=r.match&&r.match.id&&findEquip(r.match.id);
+      const tag={box, r, eq, at:Date.now(), crop};
+      this.sel.tags.unshift(tag); this.sel.tags=this.sel.tags.slice(0,4); this.sel.last=tag;
+      Voice.say(`${r.what||"알 수 없는 물체"}. ${r.partOf?r.partOf+"의 일부. ":""}${(r.function||"").split(/[.。]/)[0]}`);
+    }catch(e){ this.say("인식 실패"); toast(e.message,"bad"); }
+    this.sel.busy=null; this.live.ver++;
+  },
+  /* 선택한 물체를 현황 조사(대장 등록/대조)로 넘김 */
+  async selToSurvey(){
+    const t=this.sel.last; if(!t) return;
+    const r={...t.r, name:t.r.what, found:true, agree:{}, n:1, votes:{}};
+    ["maker","model","serial"].forEach(k=>{ if(r[k]) r.agree[k]=1; });
+    if(t.eq) r.votes[t.eq.id]=1.8;
+    const m=matchLedger(r), sv=this.sv;
+    sv.res=r; sv.blob=t.crop; sv.eq= t.eq || (m.top && (m.lock||m.top.why.includes("시리얼 일치")) && !m.ambiguous ? m.top.e : null);
+    sv.cands=m.ambiguous? m.list.slice(0,3).map(x=>x.e):[]; sv.diff= sv.eq? ledgerDiff(sv.eq,r):[];
+    this.toggleSel(false); this.live.ver++;
+    Voice.say(sv.eq? `대장 설비 ${sv.eq.name||sv.eq.id}. 확인 또는 갱신이라고 말하세요` : "신규 설비. 등록이라고 말하면 저장합니다");
+  },
+  clearTags(){ this.sel.tags=[]; this.sel.last=null; this.live.ver++; },
 
   /* ---- 📋 현황 등록: 명판/설비를 비추고 한 번에 대장 등록·확인 ---- */
   hereChip(){ const h=S.here||{}; const t=[h.floor,h.room].filter(Boolean).join(" "); const el=$("#btnHere"); if(el) el.textContent="📍 "+(t||"위치"); },
@@ -13408,6 +13486,13 @@ const AR = {
   renderExtra(finishing){
     const el=$("#arExtra"); let h="";
     if(this._unk && !this.equip) h+=`<button class="btn blue" onclick="ui.newEquip('${esc(this._unk).replace(/'/g,"")}')">＋ 이 QR로 설비 등록</button>`;
+    if(this.sel.on || this.sel.tags.length){
+      const t=this.sel.last;
+      if(t && t.eq) h+=`<button class="btn blue" onclick="ui.openSheet('equipView','${esc(t.eq.id)}')">ℹ ${esc((t.eq.name||t.eq.id).slice(0,10))}</button>`;
+      if(t && /설비|장비|모듈|명판/.test(t.r.category||"")) h+=`<button class="btn blue" onclick="AR.selToSurvey()">📋 대장 등록/대조</button>`;
+      if(this.sel.tags.length) h+=`<button class="btn" onclick="AR.clearTags()">🧹 태그 지우기</button>`;
+      if(this.sel.on) h+=`<button class="btn" onclick="AR.pickEquip()">📋 대장에서 고르기</button>`;
+    }
     const sv=this.sv;
     if(sv.res){
       if(sv.eq){ h+=`<button class="btn blue" onclick="AR.svConfirm()">✔ 확인${sv.diff.length?"(불일치)":""}</button>`;
@@ -13440,7 +13525,7 @@ const AR = {
     if(this.glasses){ this.view(x,0,0,W/2,H); this.view(x,W/2,0,W/2,H); x.fillStyle="#000"; x.fillRect(W/2-2,0,4,H); }
     else this.view(x,0,0,W,H);
     // AI 버튼 상태가 바뀌면 하단 버튼 갱신
-    const k=(this.lastAI?this.lastAI.at:0)+":"+(this.session?this.session.items.filter(i=>i.result).length:-1)+":"+(this._unk||"")+":"+(this.equip?this.equip.id:"")+":"+this.live.ver;
+    const k=(this.lastAI?this.lastAI.at:0)+":"+(this.session?this.session.items.filter(i=>i.result).length:-1)+":"+(this._unk||"")+":"+(this.equip?this.equip.id:"")+":"+this.live.ver+":"+this.sel.on+":"+this.sel.tags.length;
     if(k!==this._k){ this._k=k; this.renderExtra(); }
   },
   /* 한쪽 화면(일반모드는 전체, 안경모드는 좌/우 눈) */
@@ -13454,8 +13539,8 @@ const AR = {
 
     // 조준선
     const L=this.live, F=L.fused, liveOn=L.on&&S.settings.apiKey;
-    const showBox = !this.equip && !this.sv.res && F && F.box && F.box.length===4 && F.box[2]>F.box[0] && vw;
-    if(!this.equip && !showBox && !this.sv.res && !this.sv.busy){ x.strokeStyle="rgba(59,214,198,.7)"; x.lineWidth=2*u; const s=70*u, cx=X+W/2, cy=Y+H/2;
+    const showBox = !this.equip && !this.sv.res && !this.sel.tags.length && !this.sel.on && F && F.box && F.box.length===4 && F.box[2]>F.box[0] && vw;
+    if(!this.equip && !showBox && !this.sv.res && !this.sv.busy && !this.sel.on && !this.sel.tags.length){ x.strokeStyle="rgba(59,214,198,.7)"; x.lineWidth=2*u; const s=70*u, cx=X+W/2, cy=Y+H/2;
       [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([a,b])=>{ x.beginPath(); x.moveTo(cx+a*s,cy+b*s-b*18*u); x.lineTo(cx+a*s,cy+b*s); x.lineTo(cx+a*s-a*18*u,cy+b*s); x.stroke(); });
       this.text(x, liveOn?"설비·명판을 비추고 📋 현황 등록":"QR을 비추거나 📋 현황 등록",X+W/2,cy+s+26*u,14*u,"#cfe9e6","center"); }
     // 실시간 AI 인식 결과: 설비 위치 박스 + 프레임 누적 판독값(✓n/m = n개 프레임에서 같은 값)
@@ -13534,6 +13619,27 @@ const AR = {
     }
     const n=sv.n; if(n.add+n.ok+n.upd) this.text(x,`조사: 등록 ${n.add} · 확인 ${n.ok} · 갱신 ${n.upd}`,X+W-12*u,Y+H-(this.glasses?8:180)*u,11*u,"#cfe9e6","right");
     if(this.msg && Date.now()<this.msgUntil){ this.panel(x,X+W/2,msgY,[this.msg],u,"#9fb0cc","bottom",W-40*u); }
+    // 🎯 선택 인식 태그
+    const SEL=this.sel;
+    SEL.tags.slice().reverse().forEach((t,i)=>{
+      const A=map({x:t.box.x0,y:t.box.y0}), B=map({x:t.box.x1,y:t.box.y1}), age=Date.now()-t.at, r=t.r, latest=t===SEL.last;
+      x.save(); x.globalAlpha=latest?1:(age<30000?0.7:0.4); x.strokeStyle="#ffd23f"; x.lineWidth=3*u; x.setLineDash(latest?[]:[8*u,5*u]);
+      x.strokeRect(A.x,A.y,B.x-A.x,B.y-A.y);
+      // 연결선 + 이름표
+      const lines=[`🎯 ${r.what||"알 수 없음"}${r.confidence?` (${Math.round(r.confidence*100)}%)`:""}`, r.category||"", r.partOf?`↳ ${r.partOf}`:"",
+        [r.maker,r.model].filter(Boolean).join(" "), r.serial?`S/N ${r.serial}`:"", latest&&r.function?r.function:"", r.state?`상태: ${r.state}`:"",
+        ...(latest?(r.readings||[]).filter(q=>q.value).slice(0,3).map(q=>`▣ ${q.name} ${q.value}${q.unit||""}`):[]),
+        latest&&r.advice?`💡 ${r.advice}`:"", t.eq?`📋 대장: ${t.eq.name||t.eq.id}`:""];
+      const px=Math.max(X+8*u,Math.min(A.x,X+W-(latest?W*0.7:200*u)-8*u)), py=B.y+8*u > Y+H*0.62 ? Math.max(Y+70*u,A.y-8*u) : B.y+8*u;
+      if(latest) this.panel(x,px,py,lines.slice(0,11),u,"#ffd23f",(B.y+8*u > Y+H*0.62)?"bottomleft":"topleft",W*0.7);
+      else this.panel(x,A.x+4*u,A.y+4*u,[`🎯 ${r.what||"?"}`],u*0.8,"#ffd23f","topleft",Math.max(90*u,B.x-A.x-8*u));
+      x.restore();
+    });
+    if(SEL.busy){ const A=map({x:SEL.busy.x0,y:SEL.busy.y0}), B=map({x:SEL.busy.x1,y:SEL.busy.y1});
+      x.save(); x.strokeStyle="#ffd23f"; x.lineWidth=3*u; x.setLineDash([6*u,6*u]); x.lineDashOffset=-(Date.now()/40%24); x.strokeRect(A.x,A.y,B.x-A.x,B.y-A.y); x.restore();
+      this.text(x,"🎯 인식 중…",(A.x+B.x)/2,A.y-8*u,13*u,"#ffd23f","center"); }
+    if(SEL.drag && !this.glasses){ const g=SEL.drag; x.save(); x.strokeStyle="#ffd23f"; x.lineWidth=2*u; x.setLineDash([6*u,4*u]); x.strokeRect(Math.min(g.x0,g.x1),Math.min(g.y0,g.y1),Math.abs(g.x1-g.x0),Math.abs(g.y1-g.y0)); x.restore(); }
+    if(SEL.on && !SEL.busy && !SEL.drag && !this.glasses && !SEL.tags.length) this.panel(x,X+W/2,Y+H*0.5,["🎯 선택 모드","인식할 물체를 탭하거나 끌어서 범위 지정"],u,"#ffd23f","center");
     // 셔터/판정 플래시
     const f=Date.now()-this.flash; if(f<250){ x.fillStyle=`rgba(255,255,255,${.25*(1-f/250)})`; x.fillRect(X,Y,W,H); }
     x.restore();
@@ -13549,7 +13655,7 @@ const AR = {
     L=L.slice(0,9);
     const w=Math.min(maxW, Math.max(...L.map(l=>x.measureText(l.t).width))+padd*2), h=L.length*lh+padd*2-(lh-fs);
     let X=ax, Y=ay;
-    if(anchor==="topright") X=ax-w; else if(anchor==="bottom"){ X=ax-w/2; Y=ay-h; } else if(anchor==="center"){ X=ax-w/2; Y=ay-h/2; } else if(anchor==="top"){ X=ax-w/2; }
+    if(anchor==="topright") X=ax-w; else if(anchor==="bottom"){ X=ax-w/2; Y=ay-h; } else if(anchor==="center"){ X=ax-w/2; Y=ay-h/2; } else if(anchor==="top"){ X=ax-w/2; } else if(anchor==="bottomleft"){ Y=ay-h; }
     x.fillStyle="rgba(8,14,26,.78)"; this.rr(x,X,Y,w,h,8*u); x.fill();
     x.fillStyle=col; this.rr(x,X,Y,4*u,h,2*u); x.fill();
     x.textAlign="left";
@@ -13707,7 +13813,7 @@ function renderSet(){
   <div class="card"><div class="card-h"><h2>음성 (핸즈프리)</h2></div><div class="card-b">
     <label class="chk"><input type="checkbox" id="sTts" ${st.tts?"checked":""}> 음성 안내(TTS)</label>
     <label class="chk"><input type="checkbox" id="sVoice" ${st.voice?"checked":""}> AR 시작 시 음성명령 자동 켜기</label>
-    <p class="note">명령어: <b>정상 · 주의 · 불량 · 다음 · 이전 · 진단 · 적용 · 촬영 · 현행화 · 갱신 · 인식 · 다시 · 완료</b></p>
+    <p class="note">명령어: <b>이거 뭐야(선택 인식) · 현황 · 등록 · 확인 · 갱신 · 정상 · 주의 · 불량 · 다음 · 이전 · 진단 · 적용 · 촬영 · 실장 · 다시 · 완료</b></p>
   </div></div>
   <div class="row" style="margin-top:14px"><button class="btn pri" onclick="ui.saveSettings()">설정 저장</button></div>
   <div class="card" style="margin-top:14px"><div class="card-h"><h2>점검항목 편집</h2></div><div class="card-b">

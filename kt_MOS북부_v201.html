@@ -9599,6 +9599,24 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const g = CAT_GROUPS.find(g=> g.ids.includes(cat.id)); if(g) return g.key;
     return grpKeyByName(cat.name) || "추가";
   }
+  /* 기본 설비 id 찾기 (직접 추가해 새 id가 붙은 설비도 이름으로) → 아이콘·표준 순서에 사용 */
+  let __stdIdByName = null;
+  function stdIdOfCat(cat){
+    if(!cat) return null;
+    if(CAT_GROUPS.some(g=> g.ids.includes(cat.id))) return cat.id;
+    if(!__stdIdByName){ __stdIdByName = {}; try{ [...tpl(), ...tplMaint()].forEach(t=>{ if(!__stdIdByName[grpNorm(t.name)]) __stdIdByName[grpNorm(t.name)] = t.id; }); }catch(e){} }
+    return __stdIdByName[grpNorm(cat.name)] || null;
+  }
+  const catIcon = cat=> (cat && (EQUIP_ICONS[cat.id] || EQUIP_ICONS[stdIdOfCat(cat)])) || "";
+  const __stdOrder = CAT_GROUPS.flatMap(g=> g.ids);
+  function catStdIdx(cat){ const i = __stdOrder.indexOf(stdIdOfCat(cat)); return i<0 ? 9999 : i; }
+  /* 설비를 표준 순서로 정렬 (목록 → 설비 기본 순서 → 직접 추가 설비는 추가한 순서) — 화면·워드 순서가 같아진다 */
+  function sortCatsStd(cats){
+    const pos = new Map(cats.map((c,i)=>[c,i]));
+    const gIdx = c=>{ const k = catGroupKey(c); const i = CAT_GROUPS.findIndex(g=> g.key===k); return i<0 ? 99 : i; };
+    cats.sort((a,b)=> gIdx(a)-gIdx(b) || catStdIdx(a)-catStdIdx(b) || pos.get(a)-pos.get(b));
+    return cats;
+  }
   const catById = id=> ((typeof current!=="undefined" && current && current.categories)||[]).find(c=> c.id===id);
   function groupOfCat(catId){
     const k = catGroupKey(catById(catId) || {id:catId});
@@ -9658,6 +9676,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       catList.appendChild(hdr);
       catList.appendChild(body);
     };
+    sortCatsStd(cats);   // 나중에 추가한 기본 설비도 표준 순서 자리로 (예: 케이블 설비가 맨 앞)
     // 현재 점검에 실제로 있는 설비만, CAT_GROUPS 순서(통신/방송/정보/기타)로 묶는다
     CAT_GROUPS.forEach(g=>{
       const inThis = cats.filter(c=> catGroupKey(c)===g.key);
@@ -9689,8 +9708,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       (badCount>0?`<span class="ct-badge bad">${badCount}</span>`:"");
     tile.innerHTML =
       (badges?`<div class="cat-tile-badges">${badges}</div>`:"")+
-      (EQUIP_ICONS[cat.id]
-        ? `<img class="cat-tile-ic" src="${EQUIP_ICONS[cat.id]}" alt="">`
+      (catIcon(cat)
+        ? `<img class="cat-tile-ic" src="${catIcon(cat)}" alt="">`
         : `<div class="cat-tile-ic ph">🔧</div>`)+
       `<div class="cat-tile-name">${escapeHtml(cat.name)}</div>`+
       `<div class="cat-tile-sub">${cat.locations.length}개소${cat.locations.filter(l=>l.pending).length?` · <span style="color:var(--accent);font-weight:800;">⏸${cat.locations.filter(l=>l.pending).length} 대기</span>`:""}</div>`+
@@ -9800,7 +9819,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     const hd = document.createElement("div");
     hd.className = "drillin-head";
     hd.innerHTML =
-      (EQUIP_ICONS[cat.id]?`<img class="di-ic" src="${EQUIP_ICONS[cat.id]}" alt="">`:"")+
+      (catIcon(cat)?`<img class="di-ic" src="${catIcon(cat)}" alt="">`:"")+
       `<div class="di-title">${escapeHtml(cat.name)}<span class="di-sub">${cat.locations.length}개소${cat.locations.filter(l=>l.pending).length?` · ⏸${cat.locations.filter(l=>l.pending).length} 대기`:""}</span></div>`+
       `<span class="cat-badge ${progCls}">${cp.done}/${cp.total}</span>`+
       `<button class="cat-move-hdr" title="다른 설비 목록(그룹)으로 이동" aria-label="설비 그룹 이동">📂 이동</button>`+
@@ -9831,7 +9850,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     head.className = "cat-head";
     head.innerHTML = `
       <div class="cat-head-left">
-        <div class="cat-name">${EQUIP_ICONS[cat.id]?`<img class="cat-ic" src="${EQUIP_ICONS[cat.id]}" alt="">`:""}${escapeHtml(cat.name)} <span style="font-size:11px;color:var(--muted);font-weight:600;">${cat.locations.length}개소</span></div>
+        <div class="cat-name">${catIcon(cat)?`<img class="cat-ic" src="${catIcon(cat)}" alt="">`:""}${escapeHtml(cat.name)} <span style="font-size:11px;color:var(--muted);font-weight:600;">${cat.locations.length}개소</span></div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         ${photoCount>0?`<span class="photo-cnt" style="font-size:11px;color:var(--good);font-weight:700;">📷${photoCount}${(()=>{const sc=cat.locations.reduce((a,l)=>a+selCount(l),0);return sc?"·✅"+sc:"";})()}</span>`:""}

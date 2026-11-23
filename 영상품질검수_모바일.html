@@ -74,6 +74,18 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 .timeline span{position:absolute;top:0;bottom:0;min-width:2px;background:#ffa0a0}
 .timeline-axis{display:flex;justify-content:space-between;font-size:.72rem;color:#bfcedf}
 .photo-preview{display:block;max-width:100%;max-height:360px;margin-top:8px;border:1px solid #d4e0e4;border-radius:8px}
+.check-item{padding:12px 0;border-bottom:1px solid #d4e0e4}
+.check-item:last-child{border-bottom:0;padding-bottom:0}
+.check-item h3{font-size:1rem;margin:0 0 4px;letter-spacing:-.02em}
+.check-item .check-criterion{margin:0 0 10px;color:#5b6b78}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #d4e0e4;border-radius:10px;overflow:hidden}
+.seg button{background:#fff;color:#5b6b78;border-radius:0;border-left:1px solid #d4e0e4;font-weight:650}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"].pass{background:#e6f5ee;color:#0b7a4f}
+.seg button[aria-pressed="true"].fail{background:#fdecee;color:#b3303e}
+.seg button[aria-pressed="true"].na{background:#fbf0dc;color:#a8741a}
+.check-hint{margin:8px 0 0;font-size:.82rem;color:#09665e}
+.check-hint:empty{display:none}
 .history-table td:last-child{white-space:nowrap}
 .history-table button{min-height:36px;padding:5px 10px;font-size:.82rem}
 .history-pass{color:#0b7a4f;font-weight:700}
@@ -117,6 +129,7 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 <option value="color">단색 패턴 · 색상 및 화소 이상 후보</option>
 <option value="grid">격자 패턴 · 선 간격 편차</option>
 <option value="quality">CCTV 단일 채널 · 사진 품질</option>
+<option value="text">글자·숫자 화면 · 가독성(명암비)</option>
 </select></label>
 <label id="pattern-field">표출한 단색 패턴<select id="pattern">
 <option value="white">흰색</option><option value="black">검정</option>
@@ -127,6 +140,11 @@ pre{font:inherit;font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 <button id="photo-run" type="button">사진 진단</button>
 <pre id="photo-result" aria-live="polite"></pre>
 <img id="photo-preview" class="photo-preview" alt="분석한 사진 영역과 이상색 후보 표시" hidden>
+</section>
+<section>
+<h2>육안 점검</h2>
+<p>현장에서 직접 보고 판정하는 항목입니다. 같은 버튼을 다시 누르면 선택이 해제되며, 선택하지 않은 항목은 종합 판정에서 제외됩니다.</p>
+<div id="checks"></div>
 </section>
 <section>
 <details class="result-details"><summary>합격 기준 설정</summary>
@@ -282,10 +300,11 @@ async function measurements() {
     const serverRows = (data.rows || []).map(row => row.map(cell => cell == null ? '—' : String(cell)));
     const imageRows = videoImageRows(result);
     const details = data.details + '\n' + videoImageNotes(result);
-    const chartRows = [...imageRows, ...serverRows];
+    const visualRows = checkRows();
+    const chartRows = [...imageRows, ...serverRows, ...visualRows];
     return {...data, rows: serverRows, details, chartRows, photoRows, video: result,
         verdict: overallVerdict(chartRows),
-        allRows: [...overviewRows(serverRows, imageRows, result), ...photoRows]};
+        allRows: [...overviewRows(serverRows, imageRows, result), ...visualRows, ...photoRows]};
 }
 
 // 기준이 입력된 항목만으로 종합 판정을 냅니다. 하나라도 미달이면 불합격, 미측정이 남아 있으면 판정 보류.
@@ -293,14 +312,105 @@ function overallVerdict(rows) {
     const judged = rows.filter(row => row[3] !== '—');
     const failed = judged.filter(row => row[4] === '미달');
     const pending = judged.filter(row => row[4] !== '충족' && row[4] !== '미달');
+    const unchecked = rows.filter(row => row[4] === '미점검').length;
+    const extra = unchecked ? ' · 육안 미점검 ' + unchecked + '건' : '';
     if (failed.length) {
-        return {code: 'fail', label: '불합격', note: '미달 ' + failed.length + '건 · ' + failed.map(row => row[0]).join(', ')};
+        return {code: 'fail', label: '불합격', note: '미달 ' + failed.length + '건 · ' + failed.map(row => row[0]).join(', ') + extra};
     }
-    if (!judged.length) return {code: 'hold', label: '판정 보류', note: '기준값이 입력된 항목이 없습니다.'};
+    if (!judged.length) return {code: 'hold', label: '판정 보류', note: '기준값이 입력된 항목이 없습니다.' + extra};
     if (pending.length) {
-        return {code: 'hold', label: '판정 보류', note: '미측정 ' + pending.length + '건 · ' + pending.map(row => row[0]).join(', ')};
+        return {code: 'hold', label: '판정 보류', note: '미측정 ' + pending.length + '건 · ' + pending.map(row => row[0]).join(', ') + extra};
     }
-    return {code: 'pass', label: '합격', note: '기준 항목 ' + judged.length + '건 모두 충족'};
+    return {code: 'pass', label: '합격', note: '기준 항목 ' + judged.length + '건 모두 충족' + extra};
+}
+
+// ── 육안 점검 항목 ─────────────────────────────────────────────
+const CHECKS = [
+    {id: 'readability', name: '글자(한글, 영문), 숫자 등 정보 가독성 확인', short: '글자·숫자 가독성', criterion: '가독 양호'},
+    {id: 'pixels', name: '디스플레이 테스트를 통한 불량 화소 확인', short: '불량 화소', criterion: '불량 화소 없음'},
+];
+const CHECK_OPTIONS = [['pass', '적합'], ['fail', '부적합'], ['na', '해당없음']];
+let checks = {};
+const checkHints = {};
+
+function renderChecks() {
+    get('checks').replaceChildren(...CHECKS.map(item => {
+        const box = document.createElement('div');
+        box.className = 'check-item';
+        const title = document.createElement('h3');
+        title.textContent = item.name;
+        const criterion = document.createElement('p');
+        criterion.className = 'check-criterion';
+        criterion.textContent = '📌 기준: ' + item.criterion;
+        const group = document.createElement('div');
+        group.className = 'seg';
+        group.setAttribute('role', 'group');
+        group.setAttribute('aria-label', item.name);
+        for (const [value, label] of CHECK_OPTIONS) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = value;
+            button.textContent = label;
+            button.dataset.check = item.id;
+            button.dataset.value = value;
+            button.addEventListener('click', () => {
+                checks[item.id] = checks[item.id] === value ? '' : value;
+                syncChecks();
+                saveDraft();
+                refreshShown();
+            });
+            group.append(button);
+        }
+        const hint = document.createElement('p');
+        hint.className = 'check-hint';
+        hint.id = 'hint-' + item.id;
+        box.append(title, criterion, group, hint);
+        return box;
+    }));
+    syncChecks();
+}
+
+function syncChecks() {
+    for (const button of document.querySelectorAll('[data-check]')) {
+        button.setAttribute('aria-pressed', String(checks[button.dataset.check] === button.dataset.value));
+    }
+    for (const item of CHECKS) get('hint-' + item.id).textContent = checkHints[item.id] || '';
+}
+
+function setChecks(values) {
+    checks = {};
+    for (const item of CHECKS) {
+        if (CHECK_OPTIONS.some(([value]) => value === values?.[item.id])) checks[item.id] = values[item.id];
+    }
+    syncChecks();
+}
+
+function checkRows() {
+    return CHECKS.map(item => {
+        const name = item.short + ' (육안)';
+        switch (checks[item.id]) {
+            case 'pass': return [name, '육안', '적합', item.criterion, '충족'];
+            case 'fail': return [name, '육안', '부적합', item.criterion, '미달'];
+            case 'na': return [name, '육안', '해당없음', '—', '해당 없음'];
+            default: return [name, '육안', '—', '—', '미점검'];
+        }
+    });
+}
+
+function readabilityGrade(ratio) {
+    return ratio >= 4.5 ? '양호 범위(4.5:1 이상)' : ratio >= 3 ? '주의(3:1~4.5:1, 큰 글자만 양호)' : '미흡(3:1 미만)';
+}
+
+// 사진 측정 결과를 육안 점검 항목 아래에 참고로 보여 줍니다. 판정은 점검자가 직접 선택합니다.
+function updateHints() {
+    const find = name => photoRows.find(row => row[0] === name)?.[2];
+    const ratio = find('사진 글자·배경 명암비');
+    const spots = find('사진 이상색 영역 후보');
+    checkHints.readability = ratio && ratio !== '—'
+        ? '사진 측정 참고 · 글자·배경 명암비 ' + Number(ratio).toFixed(2) + ':1 → ' + readabilityGrade(Number(ratio)) : '';
+    checkHints.pixels = spots && spots !== '—'
+        ? '사진 측정 참고 · 이상색 영역 후보 ' + spots + '개' + (Number(spots) ? ' → 원본 화면에서 확인 후 판정하세요' : '') : '';
+    syncChecks();
 }
 
 function referenceRow(name, unit, value, verdict = '참고') {
@@ -451,7 +561,7 @@ get('json').addEventListener('click', () => run('JSON 파일 생성 중…', asy
 
 function inputSnapshot() {
     const values = ids => Object.fromEntries(ids.map(id => [id, get(id).value]));
-    return {fields: values(fields), videoSettings: values(videoSettings), report: values(reportFields)};
+    return {fields: values(fields), videoSettings: values(videoSettings), report: values(reportFields), checks: {...checks}};
 }
 
 // 숫자로만 된 측정값은 엑셀·JSON에서 숫자로 저장해 바로 계산할 수 있게 합니다.
@@ -707,7 +817,10 @@ function writeStore(name, value) {
 }
 
 function saveDraft() {
-    writeStore(DRAFT_KEY, Object.fromEntries([...fields, ...videoSettings, ...reportFields].map(id => [id, get(id).value])));
+    writeStore(DRAFT_KEY, {
+        ...Object.fromEntries([...fields, ...videoSettings, ...reportFields].map(id => [id, get(id).value])),
+        checks
+    });
 }
 
 function loadDraft() {
@@ -716,6 +829,7 @@ function loadDraft() {
     for (const id of [...fields, ...videoSettings, ...reportFields]) {
         if (typeof draft[id] === 'string') get(id).value = draft[id];
     }
+    setChecks(draft.checks);
 }
 
 get('save-history').addEventListener('click', () => hasLocation() && run('점검 이력에 저장하는 중…', async () => {
@@ -849,6 +963,7 @@ get('restore').addEventListener('change', () => run('입력 기록을 불러오�
     for (const id of reportFields) {
         get(id).value = typeof record.report?.[id] === 'string' ? record.report[id] : '';
     }
+    setChecks(record.checks);
     saveDraft();
     result = null;
     clearOutput();
@@ -872,6 +987,7 @@ function clearPhoto() {
     get('photo-result').textContent = '';
     get('photo-preview').hidden = true;
     get('photo-preview').removeAttribute('src');
+    updateHints();
 }
 
 // 결과가 화면에 있을 때만 다시 그립니다. 다른 측정 결과는 지우지 않습니다.
@@ -917,6 +1033,7 @@ get('photo-run').addEventListener('click', () => hasLocation() && run('기기에
     get('photo-preview').src = photoThumb;
     get('photo-preview').hidden = false;
     get('photo-result').textContent = photoEvidence;
+    updateHints();
     await update();
     get('comparison').scrollIntoView({block: 'start', behavior: 'smooth'});
     return '사진 진단 완료';
@@ -1021,6 +1138,17 @@ function photoMetrics({data, width: w, height: h}, mode, pattern, readings = [],
         const candidates = anomalyRegions(data, w, h, readings, points);
         return [...lines, candidates, '사진 속 이상색 영역을 원본 화면에서 확인하세요.'];
     }
+    if (mode === 'text') return readabilityMetrics(data, gray, w, h, readings);
+    const sharpness = laplacianVariance(gray, w, h);
+    readings.push(referenceRow('사진 선명도 (라플라시안 분산)', '지수', sharpness));
+    return ['CCTV 화면 사진 품질 (사진 중앙 90%)',
+        '평균 밝기 (0–255)   ' + mean.toFixed(1),
+        '밝기 표준편차   ' + contrast.toFixed(1),
+        '선명도 지수 (라플라시안 분산)   ' + sharpness.toFixed(1),
+        '같은 장면과 촬영 조건의 사진을 비교하세요.'];
+}
+
+function laplacianVariance(gray, w, h) {
     let lapSum = 0, lapSquares = 0;
     for (let y = 1; y < h-1; y++) {
         for (let x = 1; x < w-1; x++) {
@@ -1031,13 +1159,69 @@ function photoMetrics({data, width: w, height: h}, mode, pattern, readings = [],
         }
     }
     const n = (w-2)*(h-2);
-    const sharpness = Math.max(0,lapSquares/n-(lapSum/n)**2);
-    readings.push(referenceRow('사진 선명도 (라플라시안 분산)', '지수', sharpness));
-    return ['CCTV 화면 사진 품질 (사진 중앙 90%)',
-        '평균 밝기 (0–255)   ' + mean.toFixed(1),
-        '밝기 표준편차   ' + contrast.toFixed(1),
+    return Math.max(0, lapSquares/n-(lapSum/n)**2);
+}
+
+// 글자·숫자 가독성: 오츠(Otsu) 임계값으로 글자와 배경을 나누고 두 영역의 평균 색으로
+// 상대 휘도 명암비((밝은 쪽+0.05)/(어두운 쪽+0.05))를 계산합니다. 면적이 작은 쪽을 글자로 봅니다.
+function readabilityMetrics(data, gray, w, h, readings) {
+    const count = w * h;
+    const hist = new Float64Array(256);
+    for (let p = 0; p < count; p++) hist[Math.min(255, Math.round(gray[p]))]++;
+    let total = 0;
+    for (let i = 0; i < 256; i++) total += i * hist[i];
+    let weightDark = 0, sumDark = 0, best = 0, threshold = 0;
+    for (let t = 0; t < 255; t++) {
+        weightDark += hist[t];
+        if (!weightDark) continue;
+        const weightLight = count - weightDark;
+        if (!weightLight) break;
+        sumDark += t * hist[t];
+        const between = weightDark * weightLight * (sumDark / weightDark - (total - sumDark) / weightLight) ** 2;
+        if (between > best) {
+            best = between;
+            threshold = t;
+        }
+    }
+    const mean = total / count;
+    let variance = 0;
+    for (let i = 0; i < 256; i++) variance += hist[i] * (i - mean) ** 2;
+    // 분리도: 전체 밝기 분산 중 글자/배경 차이로 설명되는 비율(0–1). 글자가 또렷할수록 1에 가깝습니다.
+    const separation = variance ? best / (count * variance) : 0;
+    const classes = [[0, 0, 0, 0], [0, 0, 0, 0]];
+    for (let p = 0, i = 0; p < count; p++, i += 4) {
+        const group = classes[gray[p] > threshold ? 1 : 0];
+        group[0] += data[i];
+        group[1] += data[i + 1];
+        group[2] += data[i + 2];
+        group[3]++;
+    }
+    const [dark, light] = classes;
+    const luminance = group => {
+        const [r, g, b] = group.slice(0, 3).map(sum => {
+            const c = sum / group[3] / 255;
+            return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const textIsDark = dark[3] <= light[3];
+    const textRatio = 100 * Math.min(dark[3], light[3]) / count;
+    const valid = dark[3] > 0 && light[3] > 0 && separation >= 0.5 && textRatio >= 0.5 && textRatio <= 45;
+    const ratio = valid ? (luminance(light) + 0.05) / (luminance(dark) + 0.05) : null;
+    const sharpness = laplacianVariance(gray, w, h);
+    readings.push(
+        referenceRow('사진 글자·배경 명암비', ':1', ratio),
+        referenceRow('사진 글자 영역 비율', '%', textRatio),
+        referenceRow('사진 글자·배경 분리도', '%', 100 * separation),
+        referenceRow('사진 선명도 (라플라시안 분산)', '지수', sharpness));
+    return ['글자·숫자 가독성 (사진 중앙 90%)',
+        ...(valid ? ['글자 형태   ' + (textIsDark ? '밝은 배경의 어두운 글자' : '어두운 배경의 밝은 글자'),
+            '글자·배경 명암비   ' + ratio.toFixed(2) + ':1 · ' + readabilityGrade(ratio)]
+            : ['글자와 배경을 뚜렷하게 구분하지 못해 명암비 측정을 보류했습니다. 글자가 화면을 채우도록 가까이에서 정면으로 다시 촬영하세요.']),
+        '글자 영역 ' + textRatio.toFixed(1) + '% · 글자·배경 분리도 ' + (100 * separation).toFixed(1) + '%',
         '선명도 지수 (라플라시안 분산)   ' + sharpness.toFixed(1),
-        '같은 장면과 촬영 조건의 사진을 비교하세요.'];
+        '명암비 구간은 WCAG 텍스트 명암비(일반 글자 4.5:1, 큰 글자 3:1)를 참고한 값입니다. ' +
+            '사진의 노출·반사 영향을 받으므로 최종 판정은 육안 점검에서 선택하세요.'];
 }
 
 function describeGrid(profile, axis, readings) {
@@ -1392,7 +1576,7 @@ function comparisonMarkup(rows) {
         const marker = limit != null ? '<span class="metric-mark" style="left:' + position(limit) + '%"></span>' : '';
         const track = (axis || limit != null) && (fills || marker)
             ? '<div class="metric-track" aria-hidden="true">' + fills + marker + '</div>' : '';
-        const shown = reading === '—' ? reading : reading + (unit === '0–255' || unit === '지수' ? '' : ' ' + unit);
+        const shown = reading === '—' ? reading : reading + (['0–255', '지수', '육안'].includes(unit) ? '' : unit === ':1' ? ':1' : ' ' + unit);
         const status = criterion === '—' ? verdict : '기준 ' + criterion + ' · ' + verdict;
         return '<div class="metric"><div class="metric-label"><span>' + escape(name) + '</span><strong>' +
             escape(shown) + '</strong></div>' + track + '<small>' + escape(status) + '</small></div>';
@@ -1458,6 +1642,7 @@ function dashboardMarkup({chartRows, photoRows, allRows, verdict, video}, option
         ['브라우저 표시 프레임률', '프레임률'], ['실측 프레임률', '프레임률'],
         ['정지 측정 시점', '정지 측정 시점'],
         ['영상 평균 밝기', '영상 밝기'], ['사진 해상도', '사진 해상도'], ['사진 평균 밝기', '사진 밝기'],
+        ['사진 글자·배경 명암비', '글자 명암비'],
     ];
     const kpis = picks.map(([name, label]) => {
         const row = allRows.find(item => item[0] === name);
@@ -1465,7 +1650,7 @@ function dashboardMarkup({chartRows, photoRows, allRows, verdict, video}, option
         const number = Number(row[2]);
         const value = Number.isFinite(number) ? number.toLocaleString('ko-KR', {maximumFractionDigits: 2}) : row[2];
         return '<div class="dash-kpi"><span>' + label + '</span><strong>' + escape(value) +
-            (['fps', '초'].includes(row[1]) ? ' ' + row[1] : '') + '</strong></div>';
+            (['fps', '초'].includes(row[1]) ? ' ' + row[1] : row[1] === ':1' ? ':1' : '') + '</strong></div>';
     }).join('');
     const visuals = freezeTimeline(video) + colorDistribution(chartRows, '영상') + colorDistribution(photoRows, '사진') +
         brightnessHeatmap(photoRows);
@@ -1481,6 +1666,7 @@ function dashboardMarkup({chartRows, photoRows, allRows, verdict, video}, option
         benchmarks + comparisonMarkup(chartRows.filter(row => row[3] === '—')) + photo + '</details>';
 }
 
+renderChecks();
 loadDraft();
 renderHistory();
 if (local || key) {

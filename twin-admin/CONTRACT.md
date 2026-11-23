@@ -165,3 +165,10 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   우측 차트 패널(정상률 도넛·연결 계통·층별 설비·측정 추이·기술기준 적합률·조치 우선 설비), 3D 위 지표 카드 6개(실제 설비·실로 연결선 = `TwinX.scene3d.project(id)`),
   3D 표현 전환(히트맵 D / 투시 A+ghost / 돌하우스 A / 계통 C), 하단 바로가기. 수치는 등록·점검 자료 기준(실시간 센서 아님 명시).
   T4: `state.dash` 일 때 시안 D 가 실 바닥 기본색 + 위험도 지점 히트맵, 슬래브 어두운 색, 이상·주의 설비만 라벨.
+
+## v2.4 — 점검 결과 대시보드 (73-report)
+- 툴바 「점검결과」 → `TwinX.report2.open(view?)` (1 종합 · 2 측정목록 · 3 현장 증빙·조치), `close()`, `active()`, `data()`.
+- 데이터: `TwinX.model.measurements` + 설비/실 `measures` 를 매번 집계(하드코딩 없음). 판정은 측정의 `judge`(bad/good/na/none)·`warn` 그대로.
+- 측정 행 → 설비·실 연결 시 「2D/3D에서 보기」로 대시보드를 닫고 해당 층·설비 선택.
+- 조치 상태(접수→조치 계획→조치 중→조치 완료→재측정 확인)·메모: localStorage `twinx_action_v1` (키 = `설비ID|측정ID`). 화면 설정: `twinx_rp_pref_v1` {theme, mode}.
+- 증빙 사진 첨부는 `TX.pipe.photos.add(assetId, 'full', [file])` (설비 사진과 같은 저장소).

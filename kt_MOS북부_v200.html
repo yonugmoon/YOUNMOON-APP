@@ -190,6 +190,10 @@
   .cat-del-btn{background:var(--bad-weak);border:2px solid var(--bad);color:var(--bad);border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:800;cursor:pointer;}
   .cat-del-btn:active{background:var(--bad);color:#fff;border-color:var(--bad);}
   /* 설비 삭제 — 헤더 아이콘(사진 영역과 분리) */
+  .cat-move-hdr{flex-shrink:0;background:#fff;border:1.5px solid var(--border);color:var(--ink);font-size:12.5px;font-weight:700;height:36px;padding:0 10px;border-radius:10px;cursor:pointer;white-space:nowrap;margin-right:6px;}
+  .cmv-opt{display:flex;align-items:center;width:100%;margin:0 0 8px;padding:13px 14px;border-radius:12px;border:1.5px solid transparent;border-left:5px solid var(--c);background:var(--b);color:var(--c);font-size:15px;font-weight:800;cursor:pointer;text-align:left;}
+  .cmv-opt.on{border-color:var(--c);} .cmv-opt span{flex:1;} .cmv-opt em{font-style:normal;font-size:11.5px;background:#fff;border-radius:999px;padding:2px 9px;}
+  .cmv-auto{width:100%;background:none;border:1px dashed var(--border);border-radius:10px;padding:10px;font-size:13px;color:var(--muted);cursor:pointer;}
   .cat-del-hdr{background:var(--bad-weak);border:2px solid var(--bad);color:var(--bad);font-size:15px;line-height:1;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;opacity:1;border-radius:50%;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
   .cat-del-hdr:active{background:var(--bad);color:#fff;}
   /* 실행취소 스낵바 */
@@ -9558,7 +9562,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     if(!current) return;
     const T=eqTotals(current);
     const groups=[...CAT_GROUPS.map(g=>({key:g.key,label:g.label,color:g.color,bg:g.bg,list:[]})), {key:'추가',label:'추가 설비',color:'#475569',bg:'#F1F5F9',list:[]}];
-    (current.categories||[]).forEach(c=>{ if(!(c.locations||[]).length) return; const k=groupKeyOfCat(c.id); (groups.find(g=>g.key===k)||groups[groups.length-1]).list.push(c); });
+    (current.categories||[]).forEach(c=>{ if(!(c.locations||[]).length) return; const k=catGroupKey(c); (groups.find(g=>g.key===k)||groups[groups.length-1]).list.push(c); });
     const rowOf=(c,i)=>{ const L=c.locations||[]; const act=eqActLocs(c); let good=0,bad=0,ph=0; act.forEach(l=>{ ph+=(l.photos||[]).length; (l.items||[]).forEach(it=>{ if(it.result==='불량') bad++; else if(it.result==='양호'||it.result==='적합'||it.result==='정상') good++; }); });
       const pend=L.filter(l=>l.pending).length;
       return `<button class="eql-row" data-cat="${c.id}"><span class="eql-no">${i}</span><span class="eql-nm">${escapeHtml(c.name)}<small>${act.map(l=>escapeHtml(l.name||'위치 미입력')).slice(0,4).join(' · ')}${act.length>4?` 외 ${act.length-4}곳`:''}</small></span>
@@ -9582,14 +9586,49 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       groups.filter(g=>g.list.length).forEach(g=>{ lines.push(`[${g.label}]`); g.list.forEach(c=>{ const act=eqActLocs(c); lines.push(`${++n}. ${c.name} (${act.length}개소): ${act.map(l=>l.name||'위치 미입력').join(', ')}`); }); });
       try{ await navigator.clipboard.writeText(lines.join('\n')); showToast('설비 목록을 복사했습니다.'); }catch(e){ prompt('아래 내용을 복사하세요', lines.join(' / ')); } };
   }
+  /* 설비 → 그룹 키: ① 직접 옮긴 그룹(cat.group) ② 기본 설비 id ③ 이름이 기본 설비와 같으면 그 그룹 ④ 없으면 '추가' */
+  const grpNorm = n=> String(n||"").replace(/^\(추가\)\s*/,"").replace(/\s+/g,"");
+  let __grpByName = null;
+  function grpKeyByName(name){
+    if(!__grpByName){ __grpByName = {}; try{ [...tpl(), ...tplMaint()].forEach(t=>{ const g = CAT_GROUPS.find(g=> g.ids.includes(t.id)); if(g) __grpByName[grpNorm(t.name)] = g.key; }); }catch(e){} }
+    return __grpByName[grpNorm(name)] || null;
+  }
+  function catGroupKey(cat){
+    if(!cat) return "추가";
+    if(cat.group && (cat.group==="추가" || CAT_GROUPS.some(g=> g.key===cat.group))) return cat.group;
+    const g = CAT_GROUPS.find(g=> g.ids.includes(cat.id)); if(g) return g.key;
+    return grpKeyByName(cat.name) || "추가";
+  }
+  const catById = id=> ((typeof current!=="undefined" && current && current.categories)||[]).find(c=> c.id===id);
   function groupOfCat(catId){
-    const g = CAT_GROUPS.find(g=> g.ids.includes(catId));
-    return g || CAT_GROUPS[CAT_GROUPS.length-1];
+    const k = catGroupKey(catById(catId) || {id:catId});
+    return CAT_GROUPS.find(g=> g.key===k) || CAT_GROUPS[CAT_GROUPS.length-1];
   }
   // 아코디언 그룹 키 (미분류=사용자 추가 설비는 "추가" 그룹)
   function groupKeyOfCat(catId){
-    const g = CAT_GROUPS.find(g=> g.ids.includes(catId));
-    return g ? g.key : "추가";
+    return catGroupKey(catById(catId) || {id:catId});
+  }
+  /* 📂 설비 그룹 이동 — 통신/방송/정보/기타/추가 중 고르면 설비 목록에서 그 그룹으로 옮긴다 */
+  function openCatMoveSheet(cat){
+    const cur = catGroupKey(cat);
+    const opts = [...CAT_GROUPS.map(g=>({key:g.key,label:g.label,color:g.color,bg:g.bg})), {key:"추가",label:"추가 설비",color:"#4B5563",bg:"#F1F3F6"}];
+    const ov = document.createElement("div"); ov.className = "overlay center";
+    ov.innerHTML = `<div class="sheet" style="max-width:420px;"><div class="sheet-title">📂 설비 그룹 이동</div>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 12px;line-height:1.5;"><b>${escapeHtml(cat.name)}</b>을(를) 어느 목록으로 옮길까요?</p>
+      ${opts.map(o=>`<button class="cmv-opt${o.key===cur?' on':''}" data-k="${o.key}" style="--c:${o.color};--b:${o.bg};"><span>${o.label}</span>${o.key===cur?'<em>현재</em>':''}</button>`).join("")}
+      ${cat.group?`<button class="cmv-auto" data-k="">↺ 자동 분류로 되돌리기</button>`:""}
+      <button class="outline-btn" id="cmv-cancel" style="width:100%;margin-top:10px;">취소</button></div>`;
+    document.body.appendChild(ov);
+    const close = ()=> ov.remove();
+    ov.querySelector("#cmv-cancel").onclick = close; ov.onclick = e=>{ if(e.target===ov) close(); };
+    ov.querySelectorAll("[data-k]").forEach(b=> b.onclick = ()=>{
+      const k = b.dataset.k;
+      if(k) cat.group = k; else delete cat.group;
+      const nk = catGroupKey(cat);
+      openGroupKeys.add(nk); scheduleSave(); close();
+      showToast(`'${cat.name}'을(를) ${(opts.find(o=>o.key===nk)||{}).label||nk}로 옮겼습니다.`);
+      renderDetail();
+    });
   }
   // 설비들을 그룹 헤더와 함께 cat-list 에 붙인다. (평평한 목록 → 접이식 아코디언)
   function appendCatsGrouped(catList, cats){
@@ -9621,7 +9660,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     };
     // 현재 점검에 실제로 있는 설비만, CAT_GROUPS 순서(통신/방송/정보/기타)로 묶는다
     CAT_GROUPS.forEach(g=>{
-      const inThis = cats.filter(c=> g.ids.includes(c.id));
+      const inThis = cats.filter(c=> catGroupKey(c)===g.key);
       if(!inThis.length) return;
       // 그룹 전체 양호(적합) 여부
       const allItems = inThis.reduce((arr,c)=> arr.concat(c.locations.reduce((a,l)=>a.concat(l.items||[]),[])), []);
@@ -9630,7 +9669,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         allGood ? `<span class="cgh-allgood">모두 적합</span>` : "");
     });
     // 그룹에 없는(사용자 추가) 설비는 맨 끝에
-    const extra = cats.filter(c=> !CAT_GROUPS.some(g=> g.ids.includes(c.id)));
+    const extra = cats.filter(c=> catGroupKey(c)==="추가");
     if(extra.length){
       addGroup("추가", "추가 설비", "#4B5563", "#F1F3F6", "#9AA3B5", extra);
     }
@@ -9764,7 +9803,10 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       (EQUIP_ICONS[cat.id]?`<img class="di-ic" src="${EQUIP_ICONS[cat.id]}" alt="">`:"")+
       `<div class="di-title">${escapeHtml(cat.name)}<span class="di-sub">${cat.locations.length}개소${cat.locations.filter(l=>l.pending).length?` · ⏸${cat.locations.filter(l=>l.pending).length} 대기`:""}</span></div>`+
       `<span class="cat-badge ${progCls}">${cp.done}/${cp.total}</span>`+
+      `<button class="cat-move-hdr" title="다른 설비 목록(그룹)으로 이동" aria-label="설비 그룹 이동">📂 이동</button>`+
       `<button class="cat-del-hdr" title="이 설비 삭제" aria-label="이 설비 삭제">🗑</button>`;
+    const hdMv = hd.querySelector(".cat-move-hdr");
+    if(hdMv) hdMv.onclick = (e)=>{ e.stopPropagation(); openCatMoveSheet(cat); };
     const hdDel = hd.querySelector(".cat-del-hdr");
     if(hdDel) hdDel.onclick = (e)=>{ e.stopPropagation(); confirmDeleteCategory(cat); };
     wrap.appendChild(hd);
@@ -11876,6 +11918,12 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         </select>
         <div class="field-label">또는 직접 입력</div>` : ""}
       <input class="text-input" id="nc-name" placeholder="설비 카테고리명">
+      <div class="field-label">넣을 목록</div>
+      <select class="text-input" id="nc-group" style="background:#fff;">
+        <option value="">자동 (기본 설비는 원래 목록, 직접 입력은 추가 설비)</option>
+        ${CAT_GROUPS.map(g=>`<option value="${g.key}">${g.label}</option>`).join("")}
+        <option value="추가">추가 설비</option>
+      </select>
       <div class="mini-form-btns">
         <button id="nc-cancel">취소</button>
         <button class="go" id="nc-add">추가</button>
@@ -11905,6 +11953,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
             })) : []
           }]
         };
+        if(tplCat){ const g = CAT_GROUPS.find(g=> g.ids.includes(tplCat.id)); if(g) newCat.group = g.key; }   // 기본 설비면 원래 그룹으로
+        { const gs = wrap.querySelector("#nc-group"); if(gs && gs.value) newCat.group = gs.value; }       // 직접 고른 목록이 우선
         current.categories.push(newCat);
         addingCategory = false;
         openCategoryIds.add(newCat.id);

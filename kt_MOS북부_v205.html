@@ -5792,6 +5792,71 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     root.querySelectorAll('.evac-pin').forEach(p=>p.onclick=()=>{ const card=p.closest('.evac-card'); const row=card.querySelector(`tr[data-row="${p.dataset.pin}"]`); if(row){ card.querySelectorAll('tr.on').forEach(r=>r.classList.remove('on')); row.classList.add('on'); row.scrollIntoView({behavior:'smooth',block:'nearest'}); } });
   }
 
+  /* ── 엑셀: 피난안내도(도면)·설비실 좌표 — 디지털 트윈(2D/3D 도면·설비 매칭)용 ──
+     도면_목록 / 설비실_좌표 / 층별 도면 그림 시트 + 측정값 데이터에 도면·좌표 열 추가 */
+  async function evacExcelSheets(wb, wd, rows){
+    const maps = evacMapsSorted(); if(!maps.length) return 0;
+    const H = (ws, heads, widths)=>{ heads.forEach((h,i)=>{ const c=ws.getCell(1,i+1); c.value=h; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F766E'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; ws.getColumn(i+1).width=widths[i]||12; }); ws.getRow(1).height=30; ws.views=[{state:'frozen',ySplit:1}]; };
+    const loadImg = src=> new Promise(r=>{ if(!src) return r(null); const im=new Image(); im.onload=()=>r(im); im.onerror=()=>r(null); im.src=src; });
+    const safeName = (s,used)=>{ let n=String(s).replace(/[\[\]:*?\/\\]/g,' ').slice(0,31).trim()||'도면'; let k=2, b=n; while(used.has(n)){ n=(b.slice(0,28)+'_'+k++); } used.add(n); return n; };
+    const used = new Set(wb.worksheets.map(w=>w.name));
+    const locPos = {};   // 위치명 → 도면·좌표 (측정값 데이터 열 추가용)
+    const wl = wb.addWorksheet('도면_목록'); used.add('도면_목록');
+    H(wl, ['도면ID','건물','층','층번호','도면 시트','이미지 폭(px)','이미지 높이(px)','설비실 수','연결된 점검 위치 수','저장 일시'], [16,14,8,8,22,12,12,10,12,18]);
+    const wc = wb.addWorksheet('설비실_좌표'); used.add('설비실_좌표');
+    H(wc, ['도면ID','건물','층','층번호','설비실','실 종류','X(0~1)','Y(0~1)','X(px)','Y(px)','점검 위치','설비','점검 상태','적합','부적합','측정값 요약'], [16,14,8,8,14,10,9,9,9,9,26,24,10,7,7,60]);
+    let lr=2, cr=2;
+    for(const map of maps){
+      const R = evacMatch(map);
+      const src = await sGet(map.img,false).catch(()=>null); const im = await loadImg(src);
+      const W = im?im.naturalWidth:0, Hh = im?im.naturalHeight:0;
+      const sheetName = safeName(`도면_${map.building||''}_${map.floor||''}`, used);
+      const nLoc = new Set(); R.rows.forEach(r=>r.locs.forEach(c=>nLoc.add(c.loc.id)));
+      [map.id, map.building, map.floor, extractFloor(map.floor||''), sheetName, W||'', Hh||'', R.rows.length, nLoc.size, new Date(map.ts||Date.now()).toLocaleString('ko-KR')].forEach((v,i)=>{ wl.getCell(lr,i+1).value=v; }); lr++;
+      // 설비실 좌표 행 (연결된 위치·설비마다 한 줄)
+      R.rows.forEach(r=>{
+        const base=[map.id, map.building, map.floor, extractFloor(map.floor||''), r.m.room, r.m.type, +(+r.m.x).toFixed(4), +(+r.m.y).toFixed(4), W?Math.round(r.m.x*W):'', Hh?Math.round(r.m.y*Hh):''];
+        const put=(extra)=>{ base.concat(extra).forEach((v,i)=>{ const c=wc.getCell(cr,i+1); c.value=v; if(i===15) c.alignment={wrapText:true,vertical:'top'}; }); cr++; };
+        if(!r.locs.length){ put(['(연결된 점검 위치 없음)','','','','','']); return; }
+        r.locs.forEach(c=>{
+          let g=0,b=0; (c.loc.items||[]).forEach(it=>{ if(it.result==='양호') g++; else if(it.result==='불량') b++; });
+          const meas = rows.filter(x=>x.loc===c.loc.name && x.catName===c.cat.name).map(x=>`${x.itemName}=${x.raw}${x.unit||''}`).join(' | ');
+          put([c.loc.name, c.cat.name, c.prog.status, g, b, meas]);
+          if(!locPos[c.loc.name]) locPos[c.loc.name] = { id:map.id, room:r.m.room, x:+(+r.m.x).toFixed(4), y:+(+r.m.y).toFixed(4), floor:extractFloor(map.floor||'') };
+        });
+      });
+      // 층별 도면 그림 (설비실 표시를 그려 넣은 그림 + 원본 좌표 기준 안내)
+      const ws = wb.addWorksheet(sheetName, {views:[{showGridLines:false}]});
+      ws.getColumn(1).width=2;
+      const t=ws.getCell(1,2); t.value=`🧭 ${map.building||''} ${map.floor||''} 피난안내도 · 설비실 위치 (도면ID ${map.id})`; t.font={bold:true,size:14,color:{argb:'FF0F766E'}};
+      ws.getCell(2,2).value='좌표는 「설비실_좌표」 시트의 X·Y(0~1 = 그림 폭·높이 대비 비율, px = 원본 그림 픽셀)입니다. 원본 그림은 아래와 같습니다(표시 핀 포함).';
+      ws.getCell(2,2).font={size:10,color:{argb:'FF64748B'}};
+      if(im){
+        const k=Math.min(1, 1600/Math.max(W,Hh)); const cv=document.createElement('canvas'); cv.width=Math.round(W*k); cv.height=Math.round(Hh*k);
+        const x=cv.getContext('2d'); x.drawImage(im,0,0,cv.width,cv.height);
+        const u=Math.max(cv.width,cv.height)/60;
+        (map.markers||[]).filter(m=>m.room).forEach(m=>{ const px=m.x*cv.width, py=m.y*cv.height; x.fillStyle=m.color||'#be185d'; x.strokeStyle='#fff'; x.lineWidth=u*0.25;
+          x.beginPath(); x.arc(px,py,u*0.55,0,Math.PI*2); x.fill(); x.stroke();
+          x.font=`bold ${Math.round(u*0.9)}px sans-serif`; const tw=x.measureText(m.room).width; x.fillStyle='rgba(255,255,255,.92)'; x.fillRect(px+u*0.8,py-u*0.7,tw+u*0.6,u*1.4); x.fillStyle=m.color||'#be185d'; x.fillText(m.room,px+u*1.1,py+u*0.35); });
+        const id=wb.addImage({base64:cv.toDataURL('image/jpeg',0.88), extension:'jpeg'});
+        const dispW=900, dispH=Math.round(900*cv.height/cv.width);
+        ws.addImage(id,{tl:{col:1,row:3}, ext:{width:dispW,height:dispH}});
+        // 원본 도면(표시 없음) — 2D/3D 도면 작업용
+        const rowsUsed = Math.ceil(dispH/20)+5; const cap=ws.getCell(3+rowsUsed,2); cap.value='▼ 원본 도면 (설비실 표시 없음 · 2D/3D 도면 작업용)'; cap.font={bold:true,size:11,color:{argb:'FF334155'}};
+        const cv2=document.createElement('canvas'); cv2.width=cv.width; cv2.height=cv.height; cv2.getContext('2d').drawImage(im,0,0,cv2.width,cv2.height);
+        const id2=wb.addImage({base64:cv2.toDataURL('image/jpeg',0.9), extension:'jpeg'});
+        ws.addImage(id2,{tl:{col:1,row:3+rowsUsed+1}, ext:{width:dispW,height:dispH}});
+      } else ws.getCell(4,2).value='(도면 그림을 불러오지 못했습니다)';
+    }
+    // 측정값 데이터에 도면·좌표 열 추가 → 측정값을 도면 위 위치와 바로 매칭
+    if(wd){
+      const extra=['도면ID','설비실','X(0~1)','Y(0~1)','층번호'], c0=wd.columnCount+1;
+      extra.forEach((h,i)=>{ const c=wd.getCell(1,c0+i); c.value=h; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F766E'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; wd.getColumn(c0+i).width=i===1?12:10; });
+      rows.forEach((r,ri)=>{ const p=locPos[r.loc]; if(!p) return; [p.id,p.room,p.x,p.y,p.floor].forEach((v,i)=>{ wd.getCell(ri+2,c0+i).value=v; }); });
+    }
+    return maps.length;
+  }
+
   function openSiteStructureModal(){
     if(!current) return;
     renderSiteStructureSheet();
@@ -7865,10 +7930,11 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           c.alignment={horizontal:i===0?'left':'center'}; });
       });
 
+      let nMap=0; try{ nMap = await evacExcelSheets(wb, wd, rows); }catch(e){ console.warn('도면 시트', e); }
       const buf=await wb.xlsx.writeBuffer();
       const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
       await downloadFile(blob, `측정대시보드_${current.siteName}_${current.date||todayStr()}.xlsx`);
-      showToast('대시보드 엑셀이 저장됩니다 (차트 4종 + 데이터)');
+      showToast('대시보드 엑셀이 저장됩니다 (차트 4종 + 데이터'+(nMap?` + 도면 ${nMap}개·설비실 좌표`:'')+')');
     }catch(e){
       alert('대시보드 생성 오류: '+e.message);
     }finally{

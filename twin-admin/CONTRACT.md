@@ -172,3 +172,11 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
 - 측정 행 → 설비·실 연결 시 「2D/3D에서 보기」로 대시보드를 닫고 해당 층·설비 선택.
 - 조치 상태(접수→조치 계획→조치 중→조치 완료→재측정 확인)·메모: localStorage `twinx_action_v1` (키 = `설비ID|측정ID`). 화면 설정: `twinx_rp_pref_v1` {theme, mode}.
 - 증빙 사진 첨부는 `TX.pipe.photos.add(assetId, 'full', [file])` (설비 사진과 같은 저장소).
+
+## v2.5 — ADMIN 측정 대시보드 교체 (74-msdash)
+- `TwinX.report2.create(opts)` — 점검결과 화면 인스턴스. opts: `inline`(내장), `source`('inspection' = ADMIN 측정 시트 행만), `meta()`({site, date} 머리 줄), `onLegacy()`.
+- 74-msdash: ADMIN `section.measurement-workspace`(대시보드 탭)에서 `.ms-filters/.ms-source/.ms-kpis/.ms-charts` 를 숨기고 그 자리에 내장(`.tx-rp-inline`).
+  머리 줄·탭·하단 분석(①② 분석·요약 = `data-fs-sec`)은 ADMIN 그대로. fs-on 격자에서는 행 2~5 차지.
+  `TwinX.msdash = {on, off, active, sync}` · 설정 `localStorage twinx_msx_v1` ('off' 이면 기존 화면, 화면 하단 알약 버튼으로 복귀).
+- 건물·층·위치·설비는 원본 측정 행 값을 우선(ADMIN 묶음과 일치), 트윈 매칭 값은 보조. 행 점검일이 없으면 ADMIN 머리 줄 점검일 사용.
+- 운영 지표 카드: ADMIN v14 와 같은 `localStorage ict_twin_v14_ops` 를 읽고 엔지니어 모드에서 같은 형식으로 추가.

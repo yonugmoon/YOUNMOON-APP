@@ -6835,7 +6835,7 @@ line.tx-rp-grid, polygon.tx-rp-grid { stroke: var(--rp-grid); }
 .tx-rp-def:hover { filter: brightness(1.06); }
 .tx-rp-def i { font-style: normal; font-weight: 900; }
 .tx-rp-def span { min-width: 0; } .tx-rp-def span b { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tx-rp-def span small { display: block; font-size: 10px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-rp-def span small { display: block; font-size: 10px; color: rgba(255, 255, 255, .88) !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tx-rp-def em { font-style: normal; font-size: 10.5px; opacity: .9; }
 .tx-rp-def strong { font-size: 12px; white-space: nowrap; }
 .tx-rp-def u { text-decoration: none; font-size: 10.5px; font-weight: 800; white-space: nowrap; }
@@ -6937,6 +6937,38 @@ td.tx-rp-note { max-width: 320px; }
 .tx-rp-mf { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 14px 14px; flex-wrap: wrap; }
 .tx-rp-mf small { color: var(--rp-text2); }
 .tx-rp-toast { position: fixed; right: 20px; bottom: 20px; z-index: 9800; background: #1e293b; color: #f8fafc; padding: 9px 14px; border-radius: 8px; font-size: 12.5px; box-shadow: 0 8px 24px rgba(0, 0, 0, .3); }
+
+/* 3행 카드 묶음 (운영 지표 포함 시 5칸) */
+.tx-rp-row3 { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 12px; }
+.tx-rp-ops { min-height: 120px; max-height: 150px; }
+.tx-rp-opsv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.tx-rp-opsv > div { border: 1px solid var(--rp-border); border-radius: 7px; padding: 6px 8px; min-width: 0; }
+.tx-rp-opsv small { display: block; font-size: 9.5px; color: var(--rp-text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-rp-opsv b { font-size: 15px; }
+.tx-rp-opsv .is-warn { border-color: var(--rp-amber); background: rgba(217, 119, 6, .08); } .tx-rp-opsv .is-warn b { color: var(--rp-amber); }
+.tx-rp-opsv .is-bad { border-color: var(--rp-crimson); background: var(--rp-crimson-soft); } .tx-rp-opsv .is-bad b { color: var(--rp-crimson); }
+.tx-rp-opsf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 4px; margin-top: 8px; }
+.tx-rp-opsf input { min-width: 0; border: 1px solid var(--rp-border2); background: var(--rp-card); color: var(--rp-text); border-radius: 6px; padding: 4px 6px; font: inherit; font-size: 11px; }
+.tx-rp-opsf .tx-rp-btn { padding: 4px 8px; font-size: 11px; }
+@media (max-width: 1280px) { .tx-rp-row3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .tx-rp-row3 { grid-template-columns: 1fr; } }
+/* ADMIN 측정 대시보드 내장 */
+.tx-rp.tx-rp-inline { position: relative; inset: auto; z-index: auto; display: block; background: transparent; margin: 4px 0 16px; }
+.tx-rp-inline .tx-rp-hd { border: 1px solid var(--rp-border); border-radius: 10px; margin-bottom: 2px; }
+.tx-rp-inline .tx-rp-body { overflow: visible; padding: 10px 0 0; }
+.tx-rp-inline.tx-rp-dark { background: var(--rp-canvas); padding: 10px; border-radius: 12px; }
+.tx-rp-inline .tx-rp-brand i { display: none; }
+section.measurement-workspace.tx-msx-on > .ms-filters, section.measurement-workspace.tx-msx-on > .ms-source, section.measurement-workspace.tx-msx-on > .ms-kpis, section.measurement-workspace.tx-msx-on > .ms-charts { display: none !important; }
+html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { grid-row: 2 / 6; min-height: 0; overflow: auto; margin: 10px 0 0; padding-right: 4px; }
+html.fs-on section.measurement-workspace.tx-msx-on[data-fs-sec^="a"] > .tx-rp-inline, html.fs-on section.measurement-workspace.tx-msx-on[data-fs-sec="more"] > .tx-rp-inline { display: none; }
+.tx-msx-pill { position: fixed; z-index: 80; left: 84px; bottom: 22px; }
+.tx-msx-pill button { border: 1px solid #93c5fd; background: #eff6ff; color: #1d4ed8; border-radius: 999px; padding: 7px 16px; font: 700 12.5px/1.2 Arial, "Noto Sans KR", sans-serif; cursor: pointer; box-shadow: 0 4px 14px rgba(15, 23, 42, .12); }
+@media print {
+  body.tx-rp-pinline * { visibility: hidden !important; }
+  body.tx-rp-pinline .tx-rp-inline, body.tx-rp-pinline .tx-rp-inline * { visibility: visible !important; }
+  body.tx-rp-pinline .tx-rp-inline { position: absolute; left: 0; top: 0; width: 100%; }
+  body.tx-rp-pinline .tx-rp-inline .tx-rp-tools, body.tx-rp-pinline .tx-rp-inline .tx-rp-tabs { display: none !important; }
+}
 /* 반응형 */
 @media (max-width: 1280px) { .tx-rp-c5, .tx-rp-c7 { grid-column: span 12; } .tx-rp-c3, .tx-rp-c25 { grid-column: span 6; } }
 @media (max-width: 900px) { .tx-rp-hd { flex-wrap: wrap; } .tx-rp-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .tx-rp-calwrap { grid-template-columns: 1fr; } }
@@ -16740,6 +16772,10 @@ td.tx-rp-note { max-width: 320px; }
   var STD_ORDER = ['접지', '발열', '전원', '신호', '환경', '기타'];
   var PAL = ['#2f66f5', '#4db8ff', '#f5a3bd', '#b38cf0', '#10b981', '#f59e0b', '#64748b'];
   var ACT_STEPS = ['접수', '조치 계획', '조치 중', '조치 완료', '재측정 확인'];
+  var OPS_KEY = 'ict_twin_v14_ops', OPS_SEED = [{ d: '2026-10-14', l4a: 1280, l4b: 1282, disk: 84, by: '정기점검 보고서' }];
+  /* 화면 인스턴스: 트윈 오버레이(기본) / ADMIN 측정 대시보드 내장(inline, source='inspection') */
+  function createInst(OPTS) {
+  OPTS = OPTS || {};
   var el = null, view = 1, D = null, pref = loadPref(), st = { tab: 0, bldg: 'ALL', q: '', fb: 'ALL', ff: 'ALL', fs: 'ALL', fv: 'ALL', defOnly: false, page: 1, cal: null, sel: null }, urls = [];
 
   function loadPref() { try { return Object.assign({ theme: 'light', mode: 'client' }, JSON.parse(localStorage.getItem(PREF_KEY) || '{}')); } catch (e) { return { theme: 'light', mode: 'client' }; } }
@@ -16761,9 +16797,10 @@ td.tx-rp-note { max-width: 320px; }
     (M.measurements || []).forEach(function (m) { add(m); });
     M.assets.forEach(function (a) { (a.measures || []).forEach(function (m) { add(m, a); }); });
     M.rooms.forEach(function (r) { (r.measures || []).forEach(function (m) { add(m, null, r); }); });
+    if (OPTS.source) list = list.filter(function (x) { return x.m.source === OPTS.source; }); /* ADMIN 측정 시트 행만 (ADMIN 화면과 건수 일치) */
     var ev = TX.analysis && TX.analysis.evaluate ? TX.analysis.evaluate(list.map(function (x) { return x.m; })) : [];
     var evBy = new Map(); ev.forEach(function (e) { evBy.set(e.m, e); });
-    var A = acts(), site = (M.site && M.site.name) || '사업장';
+    var A = acts(), meta = (OPTS.meta && OPTS.meta()) || {}, site = meta.site || (M.site && M.site.name) || '사업장';
     var rows = list.map(function (x, i) {
       var m = x.m, a = x.a, r = x.r || (a && TX.room(a.room)) || null, e = evBy.get(m) || {};
       var fc = (a && a.floor) || (r && r.floor) || null, f = fc && fBy[fc];
@@ -16774,9 +16811,9 @@ td.tx-rp-note { max-width: 320px; }
       var id = m.id || ('M' + (i + 1));
       return {
         id: id, key: (a ? a.id : r ? r.id : '-') + '|' + id, m: m, a: a, r: r, judge: j, warn: !!m.warn || (!!e.near && j !== 'bad'),
-        std: STDN[m.std] || '기타', item: m.item || '측정', value: vs, crit: String(crit || ''), date: pd(m.date), dateS: m.date || '',
-        bldg: (f && f.building) || m.building || raw.건물 || '미지정', floor: (f && f.name) || m.floorText || raw.층 || '', floorCode: fc,
-        loc: (r && r.name) || m.location || raw['점검 위치'] || '', equip: (a && (a.category || a.name)) || m.equip || raw.설비 || (r ? '실 환경' : '설비 미매칭'), eqName: a ? a.name : (m.equip || ''),
+        std: STDN[m.std] || '기타', item: m.item || '측정', value: vs, crit: String(crit || ''), date: pd(m.date || meta.date), dateS: m.date || meta.date || '',
+        bldg: m.building || raw.건물 || (f && f.building) || '미지정', floor: m.floorText || raw.층 || (f && f.name) || '', floorCode: fc, /* 원본 행의 건물·층·설비를 우선 (ADMIN 화면과 같은 묶음) */
+        loc: m.location || raw['점검 위치'] || (r && r.name) || '', equip: m.equip || raw.설비 || (a && (a.category || a.name)) || (r ? '실 환경' : '설비 미매칭'), eqName: a ? a.name : (m.equip || ''),
         note: raw.비고 || raw['현장 소견'] || raw.소견 || raw.내용 || '', src: m.source || '', act: A[(a ? a.id : r ? r.id : '-') + '|' + id] || null
       };
     });
@@ -16787,7 +16824,7 @@ td.tx-rp-note { max-width: 320px; }
     var byEq = grp('equip').sort(function (a, b) { return b.n - a.n; });
     var byStd = grp('std').sort(function (a, b) { return STD_ORDER.indexOf(a.k) - STD_ORDER.indexOf(b.k); });
     var byB = grp('bldg').sort(function (a, b) { return b.n - a.n; });
-    var dates = {}; rows.forEach(function (r) { if (!r.date) return; var k = ymd(r.date); var o = dates[k] = dates[k] || { k: k, d: r.date, n: 0, bad: 0 }; o.n++; if (r.judge === 'bad') o.bad++; });
+    var dates = {}; rows.forEach(function (r) { if (!r.date) return; var k = ymd(r.date); var o = dates[k] = dates[k] || { k: k, d: r.date, n: 0, bad: 0, na: 0 }; o.n++; if (r.judge === 'bad') o.bad++; else if (r.judge === 'na') o.na++; });
     var dlist = Object.keys(dates).sort().map(function (k) { return dates[k]; });
     var assets = M.assets.filter(function (a) { return (a.measures || []).length; });
     var assetOk = assets.filter(function (a) { return !(a.measures || []).some(function (m) { return m.judge === 'bad'; }); }).length;
@@ -16802,7 +16839,7 @@ td.tx-rp-note { max-width: 320px; }
 
   /* ---------------- SVG 차트 ---------------- */
   function lineChart(labels, series, opt) {
-    opt = opt || {}; var W = 900, H = 250, L = 46, R = 16, T = 14, B = 34, n = labels.length; if (!n) return empty();
+    opt = opt || {}; var W = opt.W || 900, H = opt.H || 250, L = 46, R = 16, T = 14, B = 34, n = labels.length; if (!n) return empty();
     var lo = opt.lo != null ? opt.lo : 0, hi = opt.hi != null ? opt.hi : Math.max.apply(null, [1].concat(series.reduce(function (a, s) { return a.concat(s.v.filter(function (x) { return x != null; })); }, []))) * 1.1;
     var X = function (i) { return L + (n === 1 ? (W - L - R) / 2 : (W - L - R) * i / (n - 1)); }, Y = function (v) { return T + (H - T - B) * (1 - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo || 1)); };
     var o = ['<svg viewBox="0 0 ' + W + ' ' + H + '" class="tx-rp-svg">'], every = Math.max(1, Math.ceil(n / 10)), maxc = n > 8 ? 5 : 8;
@@ -16857,11 +16894,11 @@ td.tx-rp-note { max-width: 320px; }
   function card(cls, title, sub, right, body) { return '<section class="tx-rp-card ' + (cls || '') + '"><div class="tx-rp-ch"><div><h4>' + title + '</h4>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>' + (right || '') + '</div>' + body + '</section>'; }
   function header() {
     var d = D, per = d.first ? ymd(d.first) + (d.last && ymd(d.last) !== ymd(d.first) ? ' ~ ' + ymd(d.last) : '') : '점검일 미기재';
-    return '<div class="tx-rp-hd"><div class="tx-rp-brand"><i>ICT</i><div><b>' + esc(d.site) + ' 정보통신설비 성능점검 결과</b><small>점검일 ' + esc(per) + ' · 측정 ' + d.rows.length + '건 (유효 ' + d.eff + '건) · 디지털 트윈 연동</small></div></div>' +
+    return '<div class="tx-rp-hd"><div class="tx-rp-brand"><i>ICT</i><div><b>' + esc(d.site) + ' 정보통신설비 성능점검 결과</b><small>점검일 ' + esc(per) + ' · 측정 ' + d.rows.length + '건 (유효 ' + d.eff + '건) · ' + (OPTS.inline ? 'ADMIN 측정 자료 · 트윈 연동' : '디지털 트윈 연동') + '</small></div></div>' +
       '<nav class="tx-rp-tabs">' + [[1, '종합 대시보드'], [2, '측정목록 (' + d.rows.length + ')'], [3, '현장 증빙 · 조치']].map(function (t) { return '<button type="button" data-rp="view" data-k="' + t[0] + '" class="' + (view === t[0] ? 'is-on' : '') + '">' + t[1] + '</button>'; }).join('') + '</nav>' +
       '<div class="tx-rp-tools"><div class="tx-rp-seg"><button type="button" data-rp="mode" data-k="client" class="' + (pref.mode === 'client' ? 'is-on' : '') + '">발주처 보고</button><button type="button" data-rp="mode" data-k="engineer" class="' + (pref.mode === 'engineer' ? 'is-on' : '') + '">엔지니어 관리</button></div>' +
       '<div class="tx-rp-seg"><button type="button" data-rp="theme" data-k="light" class="' + (pref.theme === 'light' ? 'is-on' : '') + '">화이트</button><button type="button" data-rp="theme" data-k="dark" class="' + (pref.theme === 'dark' ? 'is-on' : '') + '">다크</button></div>' +
-      '<button type="button" class="tx-rp-btn" data-rp="csv" data-k="all">CSV 내보내기</button><button type="button" class="tx-rp-btn tx-rp-pri" data-rp="print">인쇄</button><button type="button" class="tx-rp-x" data-rp="close" aria-label="닫기" title="트윈으로 돌아가기">✕</button></div></div>';
+      '<button type="button" class="tx-rp-btn" data-rp="csv" data-k="all">CSV 내보내기</button><button type="button" class="tx-rp-btn tx-rp-pri" data-rp="print">인쇄</button>' + (OPTS.inline ? '<button type="button" class="tx-rp-btn" data-rp="legacy" title="ADMIN 기존 측정 대시보드로 돌아가기">기존 화면</button>' : '<button type="button" class="tx-rp-x" data-rp="close" aria-label="닫기" title="트윈으로 돌아가기">✕</button>') + '</div></div>';
   }
   function emptyView() {
     return '<div class="tx-rp-body"><section class="tx-rp-card tx-rp-none"><h4>아직 점검 측정 자료가 없습니다</h4><p>점검 결과서(Word·PDF·엑셀)를 등록하면 이 화면이 자동으로 채워집니다. 측정 행은 설비·실에 연결되어 2D·3D 트윈에서도 색으로 표시됩니다.</p>' +
@@ -16877,7 +16914,7 @@ td.tx-rp-note { max-width: 320px; }
       ['일', '월', '화', '수', '목', '금', '토'].map(function (w) { return '<i>' + w + '</i>'; }).join('') + new Array(first + 1).join('<span></span>');
     for (var day = 1; day <= days; day++) { var x = dm[day]; cal += '<span class="' + (x ? (x.bad ? 'is-bad' : 'is-on') : '') + '"' + (x ? ' title="' + esc(x.k + ' · 측정 ' + x.n + '건' + (x.bad ? ' · 불량 ' + x.bad : '')) + '"' : '') + '>' + day + '</span>'; }
     cal += '</div></div>';
-    var evs = d.dates.slice(-3).reverse().map(function (x) { var wd = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][x.d.getDay()]; return '<div class="tx-rp-ev' + (x.bad ? ' is-bad' : '') + '"><div class="tx-rp-evd"><small>' + wd + '</small><b>' + x.d.getDate() + '</b></div><div><b>' + esc(x.k) + ' 점검 ' + x.n + '건</b><small>양호 ' + (x.n - x.bad) + ' · 불량 ' + x.bad + '</small></div></div>'; }).join('') || empty('점검일이 기재된 측정이 없습니다');
+    var evs = d.dates.slice(-3).reverse().map(function (x) { var wd = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][x.d.getDay()]; return '<div class="tx-rp-ev' + (x.bad ? ' is-bad' : '') + '"><div class="tx-rp-evd"><small>' + wd + '</small><b>' + x.d.getDate() + '</b></div><div><b>' + esc(x.k) + ' 점검 ' + x.n + '건</b><small>양호 ' + (x.n - x.bad - (x.na || 0)) + ' · 불량 ' + x.bad + (x.na ? ' · 제외 ' + x.na : '') + '</small></div></div>'; }).join('') || empty('점검일이 기재된 측정이 없습니다');
     var steps = [['측정 등록', d.rows.length > 0], ['설비 매칭', d.linked === d.rows.length && d.rows.length > 0], ['불량 식별', true], ['조치', d.bad.length === 0 || d.done === d.bad.length], ['재측정', d.bad.length === 0 || d.bad.every(function (r) { return r.act && r.act.step >= 4; })]];
     var tl = '<div class="tx-rp-tl">' + steps.map(function (s, i) { return '<div class="' + (s[1] ? 'is-done' : '') + '"><i>' + (s[1] ? '✔' : i + 1) + '</i><span>' + s[0] + '</span></div>'; }).join('') + '</div>' +
       '<div class="tx-rp-note"><b>' + (d.bad.length ? '불량 ' + d.bad.length + '건 식별' : '불량 없음') + '</b> · 설비 연결 ' + d.linked + '/' + d.rows.length + '건 · 조치 완료 ' + d.done + '/' + d.bad.length + '</div>';
@@ -16913,20 +16950,22 @@ td.tx-rp-note { max-width: 320px; }
     // ⑥ 건물별 비중
     var bp = d.byB.slice(0, 6).map(function (b, i) { return { k: b.k, v: b.n, c: PAL[i % PAL.length] }; });
     o.push(card('tx-rp-c3', '건물별 점검 비중', d.byB.length + '개 건물 합계 ' + d.rows.length + '건', '', '<div class="tx-rp-dwrap">' + donutChart(bp, d.rows.length + '건', '양호 ' + d.good.length + ' · 불량 ' + d.bad.length) + '</div><div class="tx-rp-leg tx-rp-legc">' + bp.map(function (p) { return '<span><i style="background:' + p.c + '"></i>' + esc(p.k) + ' ' + p.v + '</span>'; }).join('') + '</div>'));
+    var r3 = [], ops = opsData(); if (ops) r3.push(opsCard(ops));
     // ⑦ 기준 링
-    o.push(card('tx-rp-c25', '기술기준 링', '링에 마우스를 올리면 기준별 적합률', '', '<div class="tx-rp-dwrap">' + rings(d.byStd, d.rate == null ? '—' : f1(d.rate) + '%') + '</div><div class="tx-rp-leg tx-rp-legc">' + d.byStd.slice(0, 6).map(function (g, i) { return '<span><i style="background:' + PAL[i % PAL.length] + '"></i>' + esc(g.k) + ' ' + (g.rate == null ? '—' : f1(g.rate) + '%') + '</span>'; }).join('') + '</div>'));
+    r3.push(card('tx-rp-r3', '기술기준 링', '링에 마우스를 올리면 기준별 적합률', '', '<div class="tx-rp-dwrap">' + rings(d.byStd, d.rate == null ? '—' : f1(d.rate) + '%') + '</div><div class="tx-rp-leg tx-rp-legc">' + d.byStd.slice(0, 6).map(function (g, i) { return '<span><i style="background:' + PAL[i % PAL.length] + '"></i>' + esc(g.k) + ' ' + (g.rate == null ? '—' : f1(g.rate) + '%') + '</span>'; }).join('') + '</div>'));
     // ⑧ 건물별 기준 레이더
     var axes = d.byStd.map(function (g) { return g.k; }), bser = d.byB.slice(0, 4).map(function (b) { return { name: b.k, v: axes.map(function (ax) { var rr = d.rows.filter(function (r) { return r.bldg === b.k && r.std === ax; }), gg = rr.filter(function (r) { return r.judge === 'good' || r.judge === 'none'; }).length, bb = rr.filter(function (r) { return r.judge === 'bad'; }).length; return pct(gg, gg + bb); }) }; });
-    o.push(card('tx-rp-c25', '건물별 기준 레이더', d.byB.slice(0, 4).map(function (b) { return b.k; }).join('·') + ' 오버레이', '', '<div class="tx-rp-dwrap">' + radar(axes, bser) + '</div><div class="tx-rp-leg tx-rp-legc">' + bser.map(function (s, i) { return '<span><i style="background:' + PAL[i % PAL.length] + '"></i>' + esc(s.name) + '</span>'; }).join('') + '</div>'));
+    r3.push(card('tx-rp-r3', '건물별 기준 레이더', d.byB.slice(0, 4).map(function (b) { return b.k; }).join('·') + ' 오버레이', '', '<div class="tx-rp-dwrap">' + radar(axes, bser) + '</div><div class="tx-rp-leg tx-rp-legc">' + bser.map(function (s, i) { return '<span><i style="background:' + PAL[i % PAL.length] + '"></i>' + esc(s.name) + '</span>'; }).join('') + '</div>'));
     // ⑨ 불량 설비 요약
     var be4 = d.badEq.slice(0, 4);
-    o.push(card('tx-rp-c25', '불량 ' + be4.length + '개 설비 요약', '전체 적합률 및 최저 ' + be4.length + '종', '<strong class="tx-rp-big">' + (d.rate == null ? '—' : f1(d.rate) + '%') + '</strong>', '<div class="tx-rp-prog"><u style="width:' + (d.rate || 0) + '%"></u></div>' +
+    r3.push(card('tx-rp-r3', '불량 ' + be4.length + '개 설비 요약', '전체 적합률 및 최저 ' + be4.length + '종', '<strong class="tx-rp-big">' + (d.rate == null ? '—' : f1(d.rate) + '%') + '</strong>', '<div class="tx-rp-prog"><u style="width:' + (d.rate || 0) + '%"></u></div>' +
       (be4.length ? '<div class="tx-rp-m4">' + be4.map(function (g, i) { return '<div>' + miniDonut(g.rate, PAL[i % PAL.length]) + '<span><small>' + (i < 9 ? '0' : '') + (i + 1) + '</small><b>' + esc(g.k) + '</b><em>불량 ' + g.bad + '건</em></span></div>'; }).join('') + '</div>' : '<div class="tx-rp-allok">✔ 불량 설비 없음</div>')));
     // ⑩ 퍼널
     var withPhoto = d.badAssets.filter(function (b) { return b.a && TX.pipe && TX.pipe.photos.count(b.a.id).total; }).length;
     var fn = [['총 점검 대상', d.rows.length + '건', d.rows.length], ['유효 측정 (제외 ' + d.na.length + ')', d.eff + '건', d.eff], ['양호 판정', d.good.length + '건', d.good.length], ['설비·실 연결', d.linked + '건', d.linked], ['불량 조치 완료', d.done + '/' + d.bad.length, d.bad.length ? d.done : 0]];
     var fmx = Math.max(1, d.rows.length);
-    o.push(card('tx-rp-c3', '점검 적합성 · 처리 퍼널', d.rows.length + '건 대상 → 유효 → 양호 → 연결 → 조치', '<span class="tx-rp-chip">5단계</span>', '<div class="tx-rp-fun">' + fn.map(function (f, i) { var w = Math.max(46, 100 * f[2] / fmx); return '<div><span>' + (i === 4 ? (d.bad.length ? f1(pct(d.done, d.bad.length)) + '%' : '—') : f1(pct(f[2], fmx)) + '%') + '</span><b style="width:' + w + '%;background:' + PAL[i % PAL.length] + '">' + esc(f[0]) + ' ' + esc(f[1]) + '</b></div>'; }).join('') + '</div>' + (withPhoto || d.badAssets.length ? '<small class="tx-rp-foot">불량 설비 증빙 사진 ' + withPhoto + '/' + d.badAssets.length + '대</small>' : '')));
+    r3.push(card('tx-rp-r3', '점검 적합성 · 처리 퍼널', d.rows.length + '건 대상 → 유효 → 양호 → 연결 → 조치', '<span class="tx-rp-chip">5단계</span>', '<div class="tx-rp-fun">' + fn.map(function (f, i) { var w = Math.max(46, 100 * f[2] / fmx); return '<div><span>' + (i === 4 ? (d.bad.length ? f1(pct(d.done, d.bad.length)) + '%' : '—') : f1(pct(f[2], fmx)) + '%') + '</span><b style="width:' + w + '%;background:' + PAL[i % PAL.length] + '">' + esc(f[0]) + ' ' + esc(f[1]) + '</b></div>'; }).join('') + '</div>' + (withPhoto || d.badAssets.length ? '<small class="tx-rp-foot">불량 설비 증빙 사진 ' + withPhoto + '/' + d.badAssets.length + '대</small>' : '')));
+    o.push('<div class="tx-rp-row3" style="--n:' + r3.length + '">' + r3.join('') + '</div>');
     return '<div class="tx-rp-body"><div class="tx-rp-bento">' + o.join('') + '</div><p class="tx-rp-src">출처: 트윈에 등록된 점검 측정 자료(점검 결과서·ADMIN 측정) · 실시간 센서 값 아님 · 마지막 집계 ' + ymd(new Date()) + '</p></div>';
   }
   /* 측정목록 */
@@ -16989,13 +17028,26 @@ td.tx-rp-note { max-width: 320px; }
     el.appendChild(m);
   }
 
+
+  /* 운영 지표 스냅샷 (ADMIN v14 '운영 지표 추이'와 같은 저장소: L4 세션 2대 · CCWAS05 디스크) */
+  function opsData() {
+    try { var v = JSON.parse(localStorage.getItem(OPS_KEY) || 'null'); if (v && v.length) return v; } catch (e) { }
+    return window.__ICT_TWIN_V14__ ? OPS_SEED.slice() : null;
+  }
+  function opsCard(ops) {
+    var last = ops[ops.length - 1], lvl = last.disk >= 90 ? 'bad' : last.disk >= 80 ? 'warn' : 'ok';
+    var spark = ops.length > 1 ? lineChart(ops.map(function (o) { return String(o.d).slice(5); }), [{ name: 'L4SWITCH1', v: ops.map(function (o) { return +o.l4a; }), c: 'var(--rp-lav)', area: true }, { name: 'L4SWITCH2', v: ops.map(function (o) { return +o.l4b; }), c: 'var(--rp-cobalt)' }], (function () { var vs = []; ops.forEach(function (o) { vs.push(+o.l4a, +o.l4b); }); var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs), pad = Math.max(5, (hi - lo) * 0.25); return { W: 380, H: 150, lo: Math.floor(lo - pad), hi: Math.ceil(hi + pad) }; })()) : '<p class="tx-rp-empty">스냅샷 1건 · 값을 추가하면 추이선이 그려집니다</p>';
+    var form = pref.mode === 'engineer' ? '<div class="tx-rp-opsf"><input type="number" data-rp="ops" data-k="l4a" placeholder="L4-1 세션"><input type="number" data-rp="ops" data-k="l4b" placeholder="L4-2 세션"><input type="number" step="0.1" data-rp="ops" data-k="disk" placeholder="디스크 %"><button type="button" class="tx-rp-btn tx-rp-pri" data-rp="opsadd">값 입력</button></div>' : '';
+    return card('tx-rp-r3', '운영 지표 스냅샷', esc(last.d) + ' · ' + esc(last.by || '수기 입력') + ' · 자동 수집 아님', '<span class="tx-rp-chip ' + (lvl === 'ok' ? 'is-ok' : lvl === 'warn' ? 'is-warn' : 'is-bad') + '">디스크 ' + last.disk + '%' + (lvl === 'warn' ? ' Warning' : lvl === 'bad' ? ' Critical' : '') + '</span>',
+      '<div class="tx-rp-chart tx-rp-ops">' + spark + '</div><div class="tx-rp-opsv"><div><small title="L4SWITCH1 세션">L4-1 세션</small><b>' + Number(last.l4a).toLocaleString() + '</b></div><div><small title="L4SWITCH2 세션">L4-2 세션</small><b>' + Number(last.l4b).toLocaleString() + '</b></div><div class="' + (lvl === 'ok' ? '' : 'is-' + lvl) + '"><small title="CCWAS05 디스크 · 임계 80%">디스크(80%)</small><b>' + last.disk + '%</b></div></div>' + form + '<small class="tx-rp-foot">스냅샷 ' + ops.length + '건 · ADMIN 운영 지표와 같은 값</small>');
+  }
   /* ---------------- 렌더 · 이벤트 ---------------- */
   function render() {
     if (!el) return;
     urls.forEach(function (u) { URL.revokeObjectURL(u); }); urls = [];
     D = collect();
     var sy = el.querySelector('.tx-rp-body'), top = sy ? sy.scrollTop : 0;
-    el.className = 'tx-rp' + (pref.theme === 'dark' ? ' tx-rp-dark' : '') + (pref.mode === 'engineer' ? ' tx-rp-eng' : '');
+    el.className = 'tx-rp' + (OPTS.inline ? ' tx-rp-inline' : '') + (pref.theme === 'dark' ? ' tx-rp-dark' : '') + (pref.mode === 'engineer' ? ' tx-rp-eng' : '');
     var mo = el.querySelector('.tx-rp-modal'); /* 열린 상세 창은 다시 그려도 유지 */
     el.innerHTML = header() + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
     if (mo) el.appendChild(mo);
@@ -17021,9 +17073,8 @@ td.tx-rp-note { max-width: 320px; }
   }
   function goTwin(key, v) {
     var r = D.rows.find(function (x) { return x.key === key; }); if (!r) return;
-    close();
-    var fl = r.floorCode;
-    TX.setState(Object.assign({ view: v === '3d' ? '3d' : '2d' }, fl ? { floor: fl } : {}));
+    var fl = r.floorCode, ns = Object.assign({ view: v === '3d' ? '3d' : '2d' }, fl ? { floor: fl } : {});
+    if (OPTS.inline) TX.open(ns); else { close(); TX.setState(ns); }
     setTimeout(function () { if (r.a) TX.select(r.a.id); else if (r.r) TX.setState({ room: r.r.id }); }, 120);
   }
   function onClick(e) {
@@ -17038,12 +17089,14 @@ td.tx-rp-note { max-width: 320px; }
     else if (a === 'row') modal(k);
     else if (a === 'go') goTwin(k, b.getAttribute('data-v'));
     else if (a === 'csv') csv(k === 'flt' ? filtered() : D.rows);
-    else if (a === 'print') window.print();
+    else if (a === 'print') { if (OPTS.inline) { document.body.classList.add('tx-rp-pinline'); var off = function () { document.body.classList.remove('tx-rp-pinline'); window.removeEventListener('afterprint', off); }; window.addEventListener('afterprint', off); window.print(); setTimeout(off, 1500); } else window.print(); }
+    else if (a === 'legacy') { if (OPTS.onLegacy) OPTS.onLegacy(); }
+    else if (a === 'opsadd') { var g = function (k2) { var n = el.querySelector('[data-rp="ops"][data-k="' + k2 + '"]'); return n && n.value !== '' ? +n.value : null; }; var v1 = g('l4a'), v2 = g('l4b'), v3 = g('disk'); if (v1 == null || v2 == null || v3 == null) { toast('세 값을 모두 입력하세요'); return; } var arr = opsData() || []; arr.push({ d: ymd(new Date()), l4a: v1, l4b: v2, disk: v3, by: '수기 입력' }); try { localStorage.setItem(OPS_KEY, JSON.stringify(arr)); } catch (er) { } render(); toast('운영 지표를 추가했습니다 (ADMIN 운영 지표에도 반영)'); }
     else if (a === 'defonly') { st.defOnly = !st.defOnly; st.page = 1; view = 2; render(); }
     else if (a === 'freset') { st.q = ''; st.fb = st.ff = st.fs = st.fv = 'ALL'; st.defOnly = false; st.page = 1; render(); }
     else if (a === 'page') { st.page = Math.max(1, +k); render(); }
     else if (a === 'act') { setAct(k, { step: +b.getAttribute('data-s') }); render(); }
-    else if (a === 'import') { close(); TX.pipe.report.open(); }
+    else if (a === 'import') { if (!OPTS.inline) close(); TX.pipe.report.open(); }
     else if (a === 'photo') {
       if (!k || !TX.pipe) return;
       var i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.multiple = true; i.style.display = 'none';
@@ -17070,25 +17123,109 @@ td.tx-rp-note { max-width: 320px; }
     if (TX.pipe && TX.pipe.photos.reindex) TX.pipe.photos.reindex().then(function () { if (el && view === 3) render(); });
     render(); paintBtn();
   }
-  function close() { if (!el) return; urls.forEach(function (u) { URL.revokeObjectURL(u); }); urls = []; el.remove(); el = null; document.removeEventListener('keydown', onKey, true); document.body.classList.remove('tx-rp-open'); paintBtn(); }
+  function mountInline(host) {
+    if (el === host) { render(); return; }
+    el = host; el.addEventListener('click', onClick); el.addEventListener('change', onChange); el.addEventListener('input', onInput); el.addEventListener('compositionend', onInput);
+    render();
+  }
+  function unmount() { if (!el) return; urls.forEach(function (u) { URL.revokeObjectURL(u); }); urls = []; el = null; }
+  function close() { if (OPTS.inline) { unmount(); return; } if (!el) return; urls.forEach(function (u) { URL.revokeObjectURL(u); }); urls = []; el.remove(); el = null; document.removeEventListener('keydown', onKey, true); document.body.classList.remove('tx-rp-open'); paintBtn(); }
+
+  return { open: open, close: close, render: render, mountInline: mountInline, unmount: unmount, active: function () { return !!el; }, host: function () { return el; }, data: collect, csv: function () { return D ? D.rows.length : 0; } };
+  }
+  var OV = createInst({});
 
   /* ---------------- 툴바 버튼 ---------------- */
   function root() { return TX.ui && TX.ui.root; }
-  function paintBtn() { var b = root() && root().querySelector('.tx-rp-tbtn'); if (b) { b.classList.toggle('tx-on', !!el); b.setAttribute('aria-pressed', el ? 'true' : 'false'); } }
+  function paintBtn() { var on = OV && OV.active(), b = root() && root().querySelector('.tx-rp-tbtn'); if (b) { b.classList.toggle('tx-on', !!on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); } }
   function mountBtn() {
     var r = root(); if (!r || r.querySelector('.tx-rp-tbtn')) return;
     var g = r.querySelector('.tx-groups'); if (!g) return;
     var b = U.el('button', 'tx-tbtn tx-rp-tbtn', '<svg class="tx-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l1 2h3v16H5V5h3z"/><path d="M9 12l2 2 4-4"/><path d="M8 18h8"/></svg><span class="tx-tbtn-lbl">점검결과</span>');
     b.type = 'button'; b.title = '점검 결과 대시보드: 적합률·불량·측정목록·현장 증빙 (점검 결과서 기준)'; b.setAttribute('aria-pressed', 'false');
-    b.addEventListener('click', function (e) { e.stopPropagation(); if (el) close(); else open(); });
+    b.addEventListener('click', function (e) { e.stopPropagation(); if (OV.active()) OV.close(); else OV.open(); });
     var ds = g.querySelector('.tx-dash-btn'); g.insertBefore(b, ds ? ds.nextSibling : g.firstChild);
   }
   TX.on('ui-ready', mountBtn); TX.on('open', function () { setTimeout(mountBtn, 0); });
-  TX.on('model', function () { if (el) render(); });
-  TX.on('close', function () { close(); });
+  TX.on('model', function () { if (OV.active()) OV.render(); });
+  TX.on('close', function () { OV.close(); });
   if (root()) setTimeout(mountBtn, 0);
 
-  TX.report2 = { open: open, close: close, active: function () { return !!el; }, data: collect, csv: function () { return D ? D.rows.length : 0; } };
+  TX.report2 = { open: OV.open, close: OV.close, active: OV.active, data: OV.data, csv: OV.csv, create: createInst };
+})();
+
+</script>
+<script id="twinx-74-msdash">
+/* ---- 74-msdash.js ---- */
+/* ============================================================
+   TwinX 74-msdash — ADMIN 「측정 대시보드」 상단을 점검결과 대시보드(73-report) 방식으로 교체
+   · ADMIN 측정 대시보드 탭이 보일 때: 기존 필터·지표 카드·차트(.ms-filters/.ms-source/.ms-kpis/.ms-charts)를 숨기고
+     같은 자리에 점검결과 대시보드를 내장(TX.report2.create({inline, source:'inspection'}))
+   · 수치는 ADMIN 측정 시트 행(source='inspection')만 집계 → ADMIN 화면·측정목록과 건수 일치
+   · 머리 줄(측정 엑셀 등록·목록 내보내기), 대시보드/측정목록 탭, 하단 분석(건물별 접지저항·층별 분포·요약·연동)은 그대로
+   · 「기존 화면」으로 언제든 원래 대시보드로 전환(설정 저장: localStorage twinx_msx_v1)
+   · 풀스크린 관제(fs-on) 격자에서는 개요 영역(행 2~5)을 채우고, 하단 도크의 ①② 분석·요약 섹션(data-fs-sec)에서는 숨김
+   · ADMIN 자료는 읽기 전용(TwinX.data.raw/refresh) — ADMIN IndexedDB 접근 없음
+   ============================================================ */
+(function () {
+  'use strict';
+  var TX = window.TwinX;
+  if (!TX || window.TWINX_STANDALONE || !TX.report2 || !TX.report2.create || TX.msdash) return;
+  var KEY = 'twinx_msx_v1';
+  var on = (function () { try { return localStorage.getItem(KEY) !== 'off'; } catch (e) { return true; } })();
+  /* ADMIN 머리 줄의 사업장명·점검일 (예: <p>안양시청 <span>2026-08-10</span></p>) */
+  function meta() {
+    var p = document.querySelector('section.measurement-workspace .ms-heading p'); if (!p) return {};
+    var sp = p.querySelector('span'), date = sp ? sp.textContent.trim() : ((p.textContent.match(/\d{4}-\d{2}-\d{2}/) || [])[0] || '');
+    var site = p.textContent.replace(date, '').trim();
+    return { site: site || null, date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null };
+  }
+  var inst = TX.report2.create({ inline: true, source: 'inspection', meta: meta, onLegacy: function () { setOn(false); } });
+  var host = null, pill = null, sig = '', timer = null;
+
+  function ws() { return document.querySelector('section.measurement-workspace'); }
+  function isDash(w) { return !!(w && !w.classList.contains('mini-view') && w.querySelector(':scope > .ms-kpis')); }
+  function signature() {
+    try { var r = TX.data && TX.data.raw && TX.data.raw(); if (!r || !r.rows) return ''; var n = 0; r.rows.forEach(function (x) { n += String(x.판정 || '').length + String(x.측정값 || '').length; }); return r.rows.length + ':' + n; } catch (e) { return ''; }
+  }
+  function setOn(v) { on = v; try { localStorage.setItem(KEY, v ? 'on' : 'off'); } catch (e) { } sync(true); }
+  function removeHost() { if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
+  function showPill(show) {
+    if (show && !pill) {
+      pill = document.createElement('div'); pill.className = 'tx-msx-pill';
+      pill.innerHTML = '<button type="button">새 점검결과 대시보드로 보기</button>';
+      pill.querySelector('button').addEventListener('click', function () { setOn(true); });
+      document.body.appendChild(pill);
+    } else if (!show && pill) { pill.remove(); pill = null; }
+  }
+  function sync(force) {
+    var w = ws(), dash = isDash(w);
+    showPill(dash && !on);
+    if (!dash || !on) { removeHost(); return; }
+    w.classList.add('tx-msx-on');
+    var charts = w.querySelector(':scope > .ms-charts') || w.querySelector(':scope > .ms-kpis');
+    if (!host) { host = document.createElement('div'); host.className = 'tx-rp tx-rp-inline'; }
+    if (host.previousElementSibling !== charts) charts.parentNode.insertBefore(host, charts.nextSibling);
+    var s = signature();
+    if (force || s !== sig || !inst.active()) {
+      if (s !== sig && sig && TX.data && TX.data.refresh) { try { TX.data.refresh(true); } catch (e) { } } // ADMIN 자료가 바뀌면 트윈 모델 갱신
+      sig = s; inst.mountInline(host);
+    }
+  }
+  function schedule() { if (timer) return; timer = setTimeout(function () { timer = null; sync(false); }, 250); } // 스로틀: 잦은 DOM 변경에도 주기적으로 실행
+
+  function start() {
+    var root = document.body; // ADMIN 이 #root 를 다시 만들 수 있어 body 전체 관찰
+    new MutationObserver(function (list) {
+      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
+    }).observe(root, { childList: true, subtree: true });
+    new MutationObserver(schedule).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    TX.on('model', function () { if (host && inst.active()) inst.render(); });
+    sync(true);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else setTimeout(start, 0);
+
+  TX.msdash = { on: function () { setOn(true); }, off: function () { setOn(false); }, active: function () { return !!host; }, sync: function () { sync(true); } };
 })();
 
 </script>

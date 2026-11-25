@@ -187,3 +187,8 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   핀마다 실 생성(닫힌 벽 윤곽이면 윤곽, 아니면 표준 3×3m). 같은 유형 실이 핀을 덮고 있으면 건너뜀.
 - `TX.quick.attachPlan(file, floor)` — 사진/PDF/캡처 → 앱 화면 테두리 자르기 → 배경 도면 → 핀 인식. ② 도면 올리기와 「점검 결과서 변환」(이미지 동시 선택, 워드 안의 큰 그림)에서 사용.
 - ③ 실 그리기: 실 유형 칩(MDF·IDF·TPS·EPS·통신·전산), 「◎ 클릭으로 실 인식」(cap mode 'autoroom'), 「📍 실 위치 핀 인식」. ROOM_TYPES 에 '전산실'(server) 추가.
+
+## v2.7 — ADMIN 화면 정리 (74-msdash.css)
+- 상단 표시줄 숨김(표시만, 기능·권한 유지): 「설비별 34종」(E 단축키는 동작), 「시범 자료」, 「사용 안내」 글자 버튼(ⓘ 아이콘은 유지), 「관리」 아바타, 「관리자용 · 전체 권한」.
+- 측정 대시보드 내장판: 「기존 화면」 전환·알약 제거(콘솔 `TwinX.msdash.off()` 만). 별도 머리 줄 제거 → 도구 막대(`.tx-rp-tbar`)를 ADMIN 제목 줄 빈 칸(격자 1행 2열, 「웹뷰 전용 화면」 왼쪽)에 배치.
+  넓이 부족 시 줄임(is-compact: 짧은 글자·CSV 숨김) → 그래도 부족하면 본문 맨 위(is-inbody). 풀스크린 해제 시 기존 머리 줄.

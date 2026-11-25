@@ -142,7 +142,15 @@
       '<nav class="tx-rp-tabs">' + [[1, '종합 대시보드'], [2, '측정목록 (' + d.rows.length + ')'], [3, '현장 증빙 · 조치']].map(function (t) { return '<button type="button" data-rp="view" data-k="' + t[0] + '" class="' + (view === t[0] ? 'is-on' : '') + '">' + t[1] + '</button>'; }).join('') + '</nav>' +
       '<div class="tx-rp-tools"><div class="tx-rp-seg"><button type="button" data-rp="mode" data-k="client" class="' + (pref.mode === 'client' ? 'is-on' : '') + '">발주처 보고</button><button type="button" data-rp="mode" data-k="engineer" class="' + (pref.mode === 'engineer' ? 'is-on' : '') + '">엔지니어 관리</button></div>' +
       '<div class="tx-rp-seg"><button type="button" data-rp="theme" data-k="light" class="' + (pref.theme === 'light' ? 'is-on' : '') + '">화이트</button><button type="button" data-rp="theme" data-k="dark" class="' + (pref.theme === 'dark' ? 'is-on' : '') + '">다크</button></div>' +
-      '<button type="button" class="tx-rp-btn" data-rp="csv" data-k="all">CSV 내보내기</button><button type="button" class="tx-rp-btn tx-rp-pri" data-rp="print">인쇄</button>' + (OPTS.inline ? '<button type="button" class="tx-rp-btn" data-rp="legacy" title="ADMIN 기존 측정 대시보드로 돌아가기">기존 화면</button>' : '<button type="button" class="tx-rp-x" data-rp="close" aria-label="닫기" title="트윈으로 돌아가기">✕</button>') + '</div></div>';
+      '<button type="button" class="tx-rp-btn" data-rp="csv" data-k="all">CSV 내보내기</button><button type="button" class="tx-rp-btn tx-rp-pri" data-rp="print">인쇄</button>' + (OPTS.inline ? '' : '<button type="button" class="tx-rp-x" data-rp="close" aria-label="닫기" title="트윈으로 돌아가기">✕</button>') + '</div></div>';
+  }
+  /* ADMIN 제목 줄에 들어가는 한 줄 도구 막대 (내장 모드) */
+  function barHtml() {
+    var d = D;
+    return [[1, '종합'], [2, '측정목록 ' + d.rows.length], [3, '증빙·조치']].map(function (t) { return '<button type="button" data-rp="view" data-k="' + t[0] + '" class="tx-rp-bt' + (view === t[0] ? ' is-on' : '') + '">' + t[1] + '</button>'; }).join('') +
+      '<span class="tx-rp-bsep"></span><button type="button" data-rp="mode" data-k="' + (pref.mode === 'engineer' ? 'client' : 'engineer') + '" class="tx-rp-bt' + (pref.mode === 'engineer' ? ' is-on' : '') + '" title="발주처 보고 ↔ 엔지니어 관리(조치 단계·운영 지표 입력)"><span class="l-full">' + (pref.mode === 'engineer' ? '엔지니어 관리' : '발주처 보고') + '</span><span class="l-short">' + (pref.mode === 'engineer' ? '관리' : '보고') + '</span></button>' +
+      '<button type="button" data-rp="theme" data-k="' + (pref.theme === 'dark' ? 'light' : 'dark') + '" class="tx-rp-bt" title="화이트/다크 전환">' + (pref.theme === 'dark' ? '☀' : '☾') + '</button>' +
+      '<button type="button" data-rp="csv" data-k="all" class="tx-rp-bt tx-rp-hc" title="측정목록 CSV">CSV</button><button type="button" data-rp="print" class="tx-rp-bt tx-rp-bpri">인쇄</button>';
   }
   function emptyView() {
     return '<div class="tx-rp-body"><section class="tx-rp-card tx-rp-none"><h4>아직 점검 측정 자료가 없습니다</h4><p>점검 결과서(Word·PDF·엑셀)를 등록하면 이 화면이 자동으로 채워집니다. 측정 행은 설비·실에 연결되어 2D·3D 트윈에서도 색으로 표시됩니다.</p>' +
@@ -293,8 +301,11 @@
     var sy = el.querySelector('.tx-rp-body'), top = sy ? sy.scrollTop : 0;
     el.className = 'tx-rp' + (OPTS.inline ? ' tx-rp-inline' : '') + (pref.theme === 'dark' ? ' tx-rp-dark' : '') + (pref.mode === 'engineer' ? ' tx-rp-eng' : '');
     var mo = el.querySelector('.tx-rp-modal'); /* 열린 상세 창은 다시 그려도 유지 */
-    el.innerHTML = header() + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
+    var bar = OPTS.inline && OPTS.bar ? OPTS.bar() : null;
+    if (bar) { if (!bar._rpBound) { bar._rpBound = true; bar.addEventListener('click', onClick); } bar.className = 'tx-rp-tbar' + (pref.theme === 'dark' ? ' tx-rp-tbar-dark' : ''); bar.innerHTML = barHtml(); }
+    el.innerHTML = (bar ? '' : header()) + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
     if (mo) el.appendChild(mo);
+    if (bar && OPTS.barFit) OPTS.barFit(bar, el); /* 본문을 그린 뒤 막대 위치 결정 (좁으면 본문 맨 위) */
     var b2 = el.querySelector('.tx-rp-body'); if (b2) b2.scrollTop = top;
     if (view === 3 && TX.pipe && TX.pipe.photos.all) loadThumbs();
   }

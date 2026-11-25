@@ -1261,6 +1261,36 @@ html.fs-on section.measurement-workspace.tx-msx-on[data-fs-sec^="a"] > .tx-rp-in
   .tx-rp-card { break-inside: avoid; box-shadow: none; }
 }
 
+/* 74-msdash — ADMIN 화면 정리(요청 항목 숨김) · 측정 대시보드 도구 막대 */
+/* 상단 표시줄에서 제거: 「설비별 34종」, 「시범 자료」, 「사용 안내」, 「관리」 아바타, 「관리자용 · 전체 권한」 (기능·권한은 그대로, 표시만 숨김) */
+header .fs-tools > button[title^="정보통신설비 34종"],
+header .header-right > .save-state,
+header .header-right > .help,
+header .header-right > .avatar,
+header > .role-ed { display: none !important; }
+
+/* 제목 줄(1행) 빈 칸의 도구 막대: 대시보드/측정목록 탭 오른쪽 */
+html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-tbar { grid-row: 1; grid-column: 2; justify-self: end; align-self: center; position: relative; z-index: 2; margin: 0 14px; }
+.tx-rp-tbar { display: flex; align-items: center; gap: 3px; padding: 3px; border-radius: 9px; background: #f1f5f9; border: 1px solid #e2e8f0; font: 600 12.5px/1.2 Arial, "Noto Sans KR", "Malgun Gothic", sans-serif; white-space: nowrap; max-width: 100%; overflow: hidden; }
+.tx-rp-tbar .tx-rp-bt { border: 0; background: transparent; color: #475569; padding: 6px 11px; border-radius: 7px; font: inherit; cursor: pointer; }
+.tx-rp-tbar .tx-rp-bt:hover { background: #e2e8f0; }
+.tx-rp-tbar .tx-rp-bt.is-on { background: #2f66f5; color: #fff; }
+.tx-rp-tbar .tx-rp-bpri { background: #fff; border: 1px solid #cbd5e1; color: #1e293b; }
+.tx-rp-tbar .tx-rp-bsep { width: 1px; height: 18px; background: #cbd5e1; margin: 0 4px; }
+.tx-rp-tbar.tx-rp-tbar-dark { background: #161b22; border-color: #26303d; }
+.tx-rp-tbar.tx-rp-tbar-dark .tx-rp-bt { color: #94a3b8; } .tx-rp-tbar.tx-rp-tbar-dark .tx-rp-bt:hover { background: #1f2733; }
+.tx-rp-tbar.tx-rp-tbar-dark .tx-rp-bpri { background: #0d1117; border-color: #374659; color: #e6edf5; }
+/* 도구 막대를 제목 줄에 올렸으므로 내장 대시보드 본문은 바로 시작 */
+html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { margin-top: 6px; }
+@media (max-width: 1500px) { .tx-rp-tbar .tx-rp-bt { padding: 6px 8px; } }
+@media print { .tx-rp-tbar { display: none !important; } }
+.tx-rp-tbar .l-short { display: none; }
+.tx-rp-tbar.is-compact .l-full, .tx-rp-tbar.is-compact .tx-rp-hc { display: none; }
+.tx-rp-tbar.is-compact .l-short { display: inline; }
+.tx-rp-tbar.is-compact .tx-rp-bt { padding: 6px 8px; }
+/* 좁은 화면: 대시보드 본문 맨 위 한 줄 */
+.tx-rp-inline > .tx-rp-tbar.is-inbody { display: inline-flex; margin: 0 0 4px; }
+
 /* 단독 운영판: 앱 전체가 뷰어 */
 html, body { margin: 0; height: 100%; background: #06101f; }
 .tx-root .tx-close-btn { display: none !important; }
@@ -10959,7 +10989,15 @@ html, body { margin: 0; height: 100%; background: #06101f; }
       '<nav class="tx-rp-tabs">' + [[1, '종합 대시보드'], [2, '측정목록 (' + d.rows.length + ')'], [3, '현장 증빙 · 조치']].map(function (t) { return '<button type="button" data-rp="view" data-k="' + t[0] + '" class="' + (view === t[0] ? 'is-on' : '') + '">' + t[1] + '</button>'; }).join('') + '</nav>' +
       '<div class="tx-rp-tools"><div class="tx-rp-seg"><button type="button" data-rp="mode" data-k="client" class="' + (pref.mode === 'client' ? 'is-on' : '') + '">발주처 보고</button><button type="button" data-rp="mode" data-k="engineer" class="' + (pref.mode === 'engineer' ? 'is-on' : '') + '">엔지니어 관리</button></div>' +
       '<div class="tx-rp-seg"><button type="button" data-rp="theme" data-k="light" class="' + (pref.theme === 'light' ? 'is-on' : '') + '">화이트</button><button type="button" data-rp="theme" data-k="dark" class="' + (pref.theme === 'dark' ? 'is-on' : '') + '">다크</button></div>' +
-      '<button type="button" class="tx-rp-btn" data-rp="csv" data-k="all">CSV 내보내기</button><button type="button" class="tx-rp-btn tx-rp-pri" data-rp="print">인쇄</button>' + (OPTS.inline ? '<button type="button" class="tx-rp-btn" data-rp="legacy" title="ADMIN 기존 측정 대시보드로 돌아가기">기존 화면</button>' : '<button type="button" class="tx-rp-x" data-rp="close" aria-label="닫기" title="트윈으로 돌아가기">✕</button>') + '</div></div>';
+      '<button type="button" class="tx-rp-btn" data-rp="csv" data-k="all">CSV 내보내기</button><button type="button" class="tx-rp-btn tx-rp-pri" data-rp="print">인쇄</button>' + (OPTS.inline ? '' : '<button type="button" class="tx-rp-x" data-rp="close" aria-label="닫기" title="트윈으로 돌아가기">✕</button>') + '</div></div>';
+  }
+  /* ADMIN 제목 줄에 들어가는 한 줄 도구 막대 (내장 모드) */
+  function barHtml() {
+    var d = D;
+    return [[1, '종합'], [2, '측정목록 ' + d.rows.length], [3, '증빙·조치']].map(function (t) { return '<button type="button" data-rp="view" data-k="' + t[0] + '" class="tx-rp-bt' + (view === t[0] ? ' is-on' : '') + '">' + t[1] + '</button>'; }).join('') +
+      '<span class="tx-rp-bsep"></span><button type="button" data-rp="mode" data-k="' + (pref.mode === 'engineer' ? 'client' : 'engineer') + '" class="tx-rp-bt' + (pref.mode === 'engineer' ? ' is-on' : '') + '" title="발주처 보고 ↔ 엔지니어 관리(조치 단계·운영 지표 입력)"><span class="l-full">' + (pref.mode === 'engineer' ? '엔지니어 관리' : '발주처 보고') + '</span><span class="l-short">' + (pref.mode === 'engineer' ? '관리' : '보고') + '</span></button>' +
+      '<button type="button" data-rp="theme" data-k="' + (pref.theme === 'dark' ? 'light' : 'dark') + '" class="tx-rp-bt" title="화이트/다크 전환">' + (pref.theme === 'dark' ? '☀' : '☾') + '</button>' +
+      '<button type="button" data-rp="csv" data-k="all" class="tx-rp-bt tx-rp-hc" title="측정목록 CSV">CSV</button><button type="button" data-rp="print" class="tx-rp-bt tx-rp-bpri">인쇄</button>';
   }
   function emptyView() {
     return '<div class="tx-rp-body"><section class="tx-rp-card tx-rp-none"><h4>아직 점검 측정 자료가 없습니다</h4><p>점검 결과서(Word·PDF·엑셀)를 등록하면 이 화면이 자동으로 채워집니다. 측정 행은 설비·실에 연결되어 2D·3D 트윈에서도 색으로 표시됩니다.</p>' +
@@ -11110,8 +11148,11 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     var sy = el.querySelector('.tx-rp-body'), top = sy ? sy.scrollTop : 0;
     el.className = 'tx-rp' + (OPTS.inline ? ' tx-rp-inline' : '') + (pref.theme === 'dark' ? ' tx-rp-dark' : '') + (pref.mode === 'engineer' ? ' tx-rp-eng' : '');
     var mo = el.querySelector('.tx-rp-modal'); /* 열린 상세 창은 다시 그려도 유지 */
-    el.innerHTML = header() + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
+    var bar = OPTS.inline && OPTS.bar ? OPTS.bar() : null;
+    if (bar) { if (!bar._rpBound) { bar._rpBound = true; bar.addEventListener('click', onClick); } bar.className = 'tx-rp-tbar' + (pref.theme === 'dark' ? ' tx-rp-tbar-dark' : ''); bar.innerHTML = barHtml(); }
+    el.innerHTML = (bar ? '' : header()) + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
     if (mo) el.appendChild(mo);
+    if (bar && OPTS.barFit) OPTS.barFit(bar, el); /* 본문을 그린 뒤 막대 위치 결정 (좁으면 본문 맨 위) */
     var b2 = el.querySelector('.tx-rp-body'); if (b2) b2.scrollTop = top;
     if (view === 3 && TX.pipe && TX.pipe.photos.all) loadThumbs();
   }
@@ -11233,7 +11274,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   var TX = window.TwinX;
   if (!TX || window.TWINX_STANDALONE || !TX.report2 || !TX.report2.create || TX.msdash) return;
   var KEY = 'twinx_msx_v1';
-  var on = (function () { try { return localStorage.getItem(KEY) !== 'off'; } catch (e) { return true; } })();
+  var on = true; // 「기존 화면」 전환 제거 (요청) — 콘솔 TwinX.msdash.off() 로만 임시 해제
   /* ADMIN 머리 줄의 사업장명·점검일 (예: <p>안양시청 <span>2026-08-10</span></p>) */
   function meta() {
     var p = document.querySelector('section.measurement-workspace .ms-heading p'); if (!p) return {};
@@ -11241,16 +11282,36 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     var site = p.textContent.replace(date, '').trim();
     return { site: site || null, date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null };
   }
-  var inst = TX.report2.create({ inline: true, source: 'inspection', meta: meta, onLegacy: function () { setOn(false); } });
-  var host = null, pill = null, sig = '', timer = null;
+  var host = null, bar = null, pill = null, sig = '', timer = null, lastFs = null;
+  /* 풀스크린 관제(fs-on) 격자: 제목 줄(1행) 가운데 빈 칸에 도구 막대 배치 → 별도 머리 줄 없이 공간 절약 */
+  function barEl() {
+    var w = ws(); if (!w || !document.documentElement.classList.contains('fs-on')) { if (bar) { bar.remove(); bar = null; } return null; }
+    if (!bar) bar = document.createElement('div');
+    if (bar.parentNode !== w && !bar.classList.contains('is-inbody')) w.appendChild(bar);
+    var em = w.querySelector(':scope > .ms-tabs .ms-embed'); bar.style.marginRight = (em ? em.offsetWidth + 22 : 14) + 'px'; // 「웹뷰 전용 화면」 링크를 가리지 않게
+    return bar;
+  }
+  /* 제목 줄 빈 칸에 맞추기: 그대로 → 줄임(짧은 글자·CSV 숨김) → 그래도 넘치면 대시보드 본문 맨 위로 */
+  function barFit(b, hostEl) {
+    var w = ws(); if (!w || !b) return;
+    b.classList.remove('is-compact', 'is-inbody');
+    if (b.parentNode !== w) w.appendChild(b);
+    var btns = Array.prototype.filter.call(w.querySelectorAll(':scope > .ms-tabs button'), function (x) { return x.offsetWidth > 0 && !x.closest('.tx-rp-tbar'); }), last = btns[btns.length - 1], em = w.querySelector(':scope > .ms-tabs .ms-embed');
+    if (!last) return;
+    var avail = (em ? em.getBoundingClientRect().left : w.getBoundingClientRect().right) - last.getBoundingClientRect().right - 40;
+    if (b.scrollWidth <= avail) return;
+    b.classList.add('is-compact'); if (b.scrollWidth <= avail) return;
+    b.classList.remove('is-compact'); b.classList.add('is-inbody'); b.style.marginRight = ''; hostEl.insertBefore(b, hostEl.firstChild);
+  }
+  var inst = TX.report2.create({ inline: true, source: 'inspection', meta: meta, bar: barEl, barFit: barFit });
 
   function ws() { return document.querySelector('section.measurement-workspace'); }
   function isDash(w) { return !!(w && !w.classList.contains('mini-view') && w.querySelector(':scope > .ms-kpis')); }
   function signature() {
     try { var r = TX.data && TX.data.raw && TX.data.raw(); if (!r || !r.rows) return ''; var n = 0; r.rows.forEach(function (x) { n += String(x.판정 || '').length + String(x.측정값 || '').length; }); return r.rows.length + ':' + n; } catch (e) { return ''; }
   }
-  function setOn(v) { on = v; try { localStorage.setItem(KEY, v ? 'on' : 'off'); } catch (e) { } sync(true); }
-  function removeHost() { if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
+  function setOn(v) { on = v; sync(true); }
+  function removeHost() { if (bar) { bar.remove(); bar = null; } if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
   function showPill(show) {
     if (show && !pill) {
       pill = document.createElement('div'); pill.className = 'tx-msx-pill';
@@ -11260,8 +11321,9 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     } else if (!show && pill) { pill.remove(); pill = null; }
   }
   function sync(force) {
-    var w = ws(), dash = isDash(w);
-    showPill(dash && !on);
+    var w = ws(), dash = isDash(w), fsNow = document.documentElement.classList.contains('fs-on');
+    if (fsNow !== lastFs) { lastFs = fsNow; force = true; } // 풀스크린 ↔ 기본 보기 전환 시 도구 막대 위치 다시 계산
+    showPill(false);
     if (!dash || !on) { removeHost(); return; }
     w.classList.add('tx-msx-on');
     var charts = w.querySelector(':scope > .ms-charts') || w.querySelector(':scope > .ms-kpis');
@@ -11278,7 +11340,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   function start() {
     var root = document.body; // ADMIN 이 #root 를 다시 만들 수 있어 body 전체 관찰
     new MutationObserver(function (list) {
-      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
+      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
     }).observe(root, { childList: true, subtree: true });
     new MutationObserver(schedule).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     TX.on('model', function () { if (host && inst.active()) inst.render(); });

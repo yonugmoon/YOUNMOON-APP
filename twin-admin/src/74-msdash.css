@@ -1,0 +1,29 @@
+/* 74-msdash — ADMIN 화면 정리(요청 항목 숨김) · 측정 대시보드 도구 막대 */
+/* 상단 표시줄에서 제거: 「설비별 34종」, 「시범 자료」, 「사용 안내」, 「관리」 아바타, 「관리자용 · 전체 권한」 (기능·권한은 그대로, 표시만 숨김) */
+header .fs-tools > button[title^="정보통신설비 34종"],
+header .header-right > .save-state,
+header .header-right > .help,
+header .header-right > .avatar,
+header > .role-ed { display: none !important; }
+
+/* 제목 줄(1행) 빈 칸의 도구 막대: 대시보드/측정목록 탭 오른쪽 */
+html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-tbar { grid-row: 1; grid-column: 2; justify-self: end; align-self: center; position: relative; z-index: 2; margin: 0 14px; }
+.tx-rp-tbar { display: flex; align-items: center; gap: 3px; padding: 3px; border-radius: 9px; background: #f1f5f9; border: 1px solid #e2e8f0; font: 600 12.5px/1.2 Arial, "Noto Sans KR", "Malgun Gothic", sans-serif; white-space: nowrap; max-width: 100%; overflow: hidden; }
+.tx-rp-tbar .tx-rp-bt { border: 0; background: transparent; color: #475569; padding: 6px 11px; border-radius: 7px; font: inherit; cursor: pointer; }
+.tx-rp-tbar .tx-rp-bt:hover { background: #e2e8f0; }
+.tx-rp-tbar .tx-rp-bt.is-on { background: #2f66f5; color: #fff; }
+.tx-rp-tbar .tx-rp-bpri { background: #fff; border: 1px solid #cbd5e1; color: #1e293b; }
+.tx-rp-tbar .tx-rp-bsep { width: 1px; height: 18px; background: #cbd5e1; margin: 0 4px; }
+.tx-rp-tbar.tx-rp-tbar-dark { background: #161b22; border-color: #26303d; }
+.tx-rp-tbar.tx-rp-tbar-dark .tx-rp-bt { color: #94a3b8; } .tx-rp-tbar.tx-rp-tbar-dark .tx-rp-bt:hover { background: #1f2733; }
+.tx-rp-tbar.tx-rp-tbar-dark .tx-rp-bpri { background: #0d1117; border-color: #374659; color: #e6edf5; }
+/* 도구 막대를 제목 줄에 올렸으므로 내장 대시보드 본문은 바로 시작 */
+html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { margin-top: 6px; }
+@media (max-width: 1500px) { .tx-rp-tbar .tx-rp-bt { padding: 6px 8px; } }
+@media print { .tx-rp-tbar { display: none !important; } }
+.tx-rp-tbar .l-short { display: none; }
+.tx-rp-tbar.is-compact .l-full, .tx-rp-tbar.is-compact .tx-rp-hc { display: none; }
+.tx-rp-tbar.is-compact .l-short { display: inline; }
+.tx-rp-tbar.is-compact .tx-rp-bt { padding: 6px 8px; }
+/* 좁은 화면: 대시보드 본문 맨 위 한 줄 */
+.tx-rp-inline > .tx-rp-tbar.is-inbody { display: inline-flex; margin: 0 0 4px; }

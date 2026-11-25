@@ -13,7 +13,7 @@
   var TX = window.TwinX;
   if (!TX || window.TWINX_STANDALONE || !TX.report2 || !TX.report2.create || TX.msdash) return;
   var KEY = 'twinx_msx_v1';
-  var on = (function () { try { return localStorage.getItem(KEY) !== 'off'; } catch (e) { return true; } })();
+  var on = true; // 「기존 화면」 전환 제거 (요청) — 콘솔 TwinX.msdash.off() 로만 임시 해제
   /* ADMIN 머리 줄의 사업장명·점검일 (예: <p>안양시청 <span>2026-08-10</span></p>) */
   function meta() {
     var p = document.querySelector('section.measurement-workspace .ms-heading p'); if (!p) return {};
@@ -21,16 +21,36 @@
     var site = p.textContent.replace(date, '').trim();
     return { site: site || null, date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null };
   }
-  var inst = TX.report2.create({ inline: true, source: 'inspection', meta: meta, onLegacy: function () { setOn(false); } });
-  var host = null, pill = null, sig = '', timer = null;
+  var host = null, bar = null, pill = null, sig = '', timer = null, lastFs = null;
+  /* 풀스크린 관제(fs-on) 격자: 제목 줄(1행) 가운데 빈 칸에 도구 막대 배치 → 별도 머리 줄 없이 공간 절약 */
+  function barEl() {
+    var w = ws(); if (!w || !document.documentElement.classList.contains('fs-on')) { if (bar) { bar.remove(); bar = null; } return null; }
+    if (!bar) bar = document.createElement('div');
+    if (bar.parentNode !== w && !bar.classList.contains('is-inbody')) w.appendChild(bar);
+    var em = w.querySelector(':scope > .ms-tabs .ms-embed'); bar.style.marginRight = (em ? em.offsetWidth + 22 : 14) + 'px'; // 「웹뷰 전용 화면」 링크를 가리지 않게
+    return bar;
+  }
+  /* 제목 줄 빈 칸에 맞추기: 그대로 → 줄임(짧은 글자·CSV 숨김) → 그래도 넘치면 대시보드 본문 맨 위로 */
+  function barFit(b, hostEl) {
+    var w = ws(); if (!w || !b) return;
+    b.classList.remove('is-compact', 'is-inbody');
+    if (b.parentNode !== w) w.appendChild(b);
+    var btns = Array.prototype.filter.call(w.querySelectorAll(':scope > .ms-tabs button'), function (x) { return x.offsetWidth > 0 && !x.closest('.tx-rp-tbar'); }), last = btns[btns.length - 1], em = w.querySelector(':scope > .ms-tabs .ms-embed');
+    if (!last) return;
+    var avail = (em ? em.getBoundingClientRect().left : w.getBoundingClientRect().right) - last.getBoundingClientRect().right - 40;
+    if (b.scrollWidth <= avail) return;
+    b.classList.add('is-compact'); if (b.scrollWidth <= avail) return;
+    b.classList.remove('is-compact'); b.classList.add('is-inbody'); b.style.marginRight = ''; hostEl.insertBefore(b, hostEl.firstChild);
+  }
+  var inst = TX.report2.create({ inline: true, source: 'inspection', meta: meta, bar: barEl, barFit: barFit });
 
   function ws() { return document.querySelector('section.measurement-workspace'); }
   function isDash(w) { return !!(w && !w.classList.contains('mini-view') && w.querySelector(':scope > .ms-kpis')); }
   function signature() {
     try { var r = TX.data && TX.data.raw && TX.data.raw(); if (!r || !r.rows) return ''; var n = 0; r.rows.forEach(function (x) { n += String(x.판정 || '').length + String(x.측정값 || '').length; }); return r.rows.length + ':' + n; } catch (e) { return ''; }
   }
-  function setOn(v) { on = v; try { localStorage.setItem(KEY, v ? 'on' : 'off'); } catch (e) { } sync(true); }
-  function removeHost() { if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
+  function setOn(v) { on = v; sync(true); }
+  function removeHost() { if (bar) { bar.remove(); bar = null; } if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
   function showPill(show) {
     if (show && !pill) {
       pill = document.createElement('div'); pill.className = 'tx-msx-pill';
@@ -40,8 +60,9 @@
     } else if (!show && pill) { pill.remove(); pill = null; }
   }
   function sync(force) {
-    var w = ws(), dash = isDash(w);
-    showPill(dash && !on);
+    var w = ws(), dash = isDash(w), fsNow = document.documentElement.classList.contains('fs-on');
+    if (fsNow !== lastFs) { lastFs = fsNow; force = true; } // 풀스크린 ↔ 기본 보기 전환 시 도구 막대 위치 다시 계산
+    showPill(false);
     if (!dash || !on) { removeHost(); return; }
     w.classList.add('tx-msx-on');
     var charts = w.querySelector(':scope > .ms-charts') || w.querySelector(':scope > .ms-kpis');
@@ -58,7 +79,7 @@
   function start() {
     var root = document.body; // ADMIN 이 #root 를 다시 만들 수 있어 body 전체 관찰
     new MutationObserver(function (list) {
-      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
+      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
     }).observe(root, { childList: true, subtree: true });
     new MutationObserver(schedule).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     TX.on('model', function () { if (host && inst.active()) inst.render(); });

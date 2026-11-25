@@ -708,6 +708,12 @@
 .tx-qk-ft .tx-wb-btn { margin: 0; }
 .tx-qk-ft .tx-wb-btn:disabled { opacity: .4; cursor: default; }
 
+/* 실 유형 칩 (현장수집 앱 「실 위치」와 같은 색) */
+.tx-qk-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 2px; }
+.tx-qk-chips button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--tx-border, #e1e7ee); background: #fff; border-radius: 999px; padding: 4px 10px; font: 600 12px/1.2 var(--tx-font, Arial, sans-serif); color: #22374d; cursor: pointer; }
+.tx-qk-chips button i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.tx-qk-chips button.is-on { border-color: #3e63db; background: #eef2ff; color: #1e3a8a; }
+
 /* 66-pipeline: 현장 사진 · 라이저도/개통도 · 점검 결과서 변환 */
 .tx-qk-ph { white-space: nowrap; color: #64748b !important; }
 .tx-qk-ph.is-part { color: #b45309 !important; }
@@ -7724,7 +7730,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   function paintSaved() { var el = P && P.querySelector('[data-r="saved"]'); if (el) el.textContent = savedText(); }
   function savedText() { if (!D.savedAt) return ''; var d = new Date(D.savedAt), p = function (n) { return (n < 10 ? '0' : '') + n; }; return '✔ 자동 저장 ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); }
 
-  var ROOM_TYPES = [['통신실', 'telecom'], ['EPS실', 'telecom'], ['TPS실', 'telecom'], ['MDF실', 'telecom'], ['IDF실', 'telecom'], ['기지국 장비실', 'telecom'], ['서버실', 'server'], ['방재실', 'control'], ['관제실', 'control'], ['UPS실', 'power'], ['전기실', 'elec'], ['기계실', 'mech'], ['복도', 'corr'], ['계단실', 'stair'], ['로비', 'lobby'], ['사무실', 'office'], ['창고', 'store'], ['화장실', 'wc'], ['주차장', 'park'], ['옥상', 'office']];
+  var ROOM_TYPES = [['통신실', 'telecom'], ['EPS실', 'telecom'], ['TPS실', 'telecom'], ['MDF실', 'telecom'], ['IDF실', 'telecom'], ['기지국 장비실', 'telecom'], ['서버실', 'server'], ['전산실', 'server'], ['방재실', 'control'], ['관제실', 'control'], ['UPS실', 'power'], ['전기실', 'elec'], ['기계실', 'mech'], ['복도', 'corr'], ['계단실', 'stair'], ['로비', 'lobby'], ['사무실', 'office'], ['창고', 'store'], ['화장실', 'wc'], ['주차장', 'park'], ['옥상', 'office']];
   var TYPE_OF = {}; ROOM_TYPES.forEach(function (t) { TYPE_OF[t[0]] = t[1]; });
   function kindOf(a) {
     var s = (a.name || '') + ' ' + (a.model || '');
@@ -8151,7 +8157,9 @@ html, body { margin: 0; height: 100%; background: #06101f; }
       h += '<p class="tx-wb-guide">도면 위에서 <b>실의 한 모서리에서 대각선 모서리까지 끌어서</b> 사각형을 그립니다(100mm 단위 정렬). 그리기 전에 실 이름·유형을 정하세요. 도면 이동은 「그리기 중지」 후 드래그. <b>그린 실을 클릭</b>하면 형틀 크기·위치와 출입문을 고칠 수 있습니다.</p>' +
         '<div class="tx-wb-row2"><label>실 이름<input type="text" data-q="rname" value="' + esc(tool.roomName) + '" placeholder="예: 7층 EPS실"></label>' +
         '<label>유형<select data-q="rkind">' + ROOM_TYPES.map(function (t) { return '<option' + (t[0] === tool.roomKind ? ' selected' : '') + '>' + t[0] + '</option>'; }).join('') + '</select></label></div>' +
-        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn ' + (cap && cap.mode === 'room' ? 'tx-wb-pri' : '') + '" data-q="rtool">' + (cap && cap.mode === 'room' ? '■ 그리기 중지' : '✎ 실 그리기 시작') + '</button></div>' +
+        '<div class="tx-qk-chips">' + (TX.autoplan ? TX.autoplan.PINS : []).map(function (pc) { return '<button type="button" data-q="rchip" data-k="' + pc[0] + '" class="' + (tool.roomKind === pc[0] ? 'is-on' : '') + '"><i style="background:rgb(' + pc[1].join(',') + ')"></i>' + pc[0] + '</button>'; }).join('') + '</div>' +
+        '<div class="tx-wb-acts"><button type="button" class="tx-wb-btn ' + (cap && cap.mode === 'room' ? 'tx-wb-pri' : '') + '" data-q="rtool">' + (cap && cap.mode === 'room' ? '■ 그리기 중지' : '✎ 실 그리기 시작') + '</button>' +
+        (TX.autoplan && TX.underlay && TX.underlay.get(code) ? '<button type="button" class="tx-wb-btn ' + (cap && cap.mode === 'autoroom' ? 'tx-wb-pri' : '') + '" data-q="autoroom" title="깨끗한 CAD·PDF 도면에서 실 안을 한 번 클릭하면 벽으로 닫힌 영역을 실로 만듭니다">' + (cap && cap.mode === 'autoroom' ? '■ 인식 중지' : '◎ 클릭으로 실 인식') + '</button><button type="button" class="tx-wb-btn" data-q="pins" title="현장수집 앱 「실 위치」 핀(색 = 실 유형)을 찾아 실을 만듭니다">📍 실 위치 핀 인식</button>' : '') + '</div>' +
         edPanel() + (ed ? '' : tiltRow()) +
         '<h5>이 층의 실 <span class="tx-count">' + rs.length + '</span></h5>' +
         (rs.length ? '<ul class="tx-wb-list">' + rs.map(function (r) { return '<li><span><input type="text" class="tx-qk-rin" data-q="rren" data-id="' + esc(r.id) + '" value="' + esc(r.name) + '"><small>' + esc(r.kind) + ' · ' + (r.w / 1000).toFixed(1) + '×' + (r.h / 1000).toFixed(1) + 'm · ' + esc(r.id) + '</small></span><button type="button" class="tx-wb-link' + (ed && ed.id === r.id ? ' is-on' : '') + '" data-q="red" data-id="' + esc(r.id) + '">' + (ed && ed.id === r.id ? '편집 중' : '형틀·문 편집') + '</button><button type="button" class="tx-wb-link tx-wb-danger" data-q="rdel" data-id="' + esc(r.id) + '">삭제</button></li>'; }).join('') + '</ul>' : '<p class="tx-wb-empty">아직 없음 · 통신실·EPS·복도·계단 위주로 그리면 충분합니다</p>');
@@ -8353,6 +8361,9 @@ html, body { margin: 0; height: 100%; background: #06101f; }
       else if (a === 'rot') { var c = curFloor(); if (TX.workbench && TX.underlay.get(c)) { var r = TX.underlay.get(c); TX.underlay.update(c, { tf: { rot: r.tf.rot + Math.PI / 2 } }); } renderPanel(); }
       else if (a === 'rtool') { if (cap && cap.mode === 'room') stopTool(); else startTool('room'); renderPanel(); }
       else if (a === 'red') openEd(id);
+      else if (a === 'rchip') { tool.roomKind = b.getAttribute('data-k'); tool.roomName = b.getAttribute('data-k'); renderPanel(); var rn = P.querySelector('[data-q="rname"]'); if (rn) rn.value = tool.roomName; }
+      else if (a === 'autoroom') { if (cap && cap.mode === 'autoroom') stopTool(); else { closeEd(true); startTool('autoroom'); } renderPanel(); }
+      else if (a === 'pins') { var nP = runPins(curFloor()); if (!nP) toast('실 위치 핀을 찾지 못했습니다 · 현장수집 앱 「실 위치」에서 공유한 이미지인지 확인하세요 (핀 색: MDF 파랑·IDF 청록·TPS 보라·EPS 주황·통신 초록·전산 짙은 청록)', 'warn'); }
       else if (a === 'straight') { closeEd(true); startTool('straight'); renderPanel(); }
       else if (a === 'tilt') { rotUnderlay(parseFloat(b.getAttribute('data-k')) * Math.PI / 180); renderPanel(); }
       else if (a === 'ed-close') { closeEd(); toast('실 편집을 마쳤습니다 (자동 저장됨)', 'success'); }
@@ -8411,18 +8422,44 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   function pickFile(accept, cb) { var i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.style.display = 'none'; i.onchange = function () { var f = i.files && i.files[0]; i.remove(); if (f) cb(f); }; document.body.appendChild(i); i.click(); }
   function pickImage() {
     var code = curFloor(); if (!code) { toast('먼저 ① 현행화표로 층을 만들거나 층을 추가하세요', 'warn'); return; }
-    pickFile('image/*,application/pdf,.pdf', function (file0) {
-      var pr = /\.pdf$/i.test(file0.name) || file0.type === 'application/pdf' ? (TX.pipe ? TX.pipe.pdfToImage(file0) : Promise.reject(new Error('PDF 모듈 없음'))) : Promise.resolve(file0);
-      pr.then(function (file) { return file && TX.underlay.load(code, file); }).catch(function (err) { toast('도면을 읽지 못했습니다: ' + err.message, 'error'); return false; }).then(function (ok) {
-        if (!ok) return;
-        var r = TX.underlay.get(code); var f = fl();
+    pickFile('image/*,application/pdf,.pdf', function (file0) { attachPlan(file0, code); });
+  }
+  /** 도면(사진·PDF·현장수집 앱 「실 위치」 이미지) 등록 → 화면 캡처 테두리 자르기 → 배경 도면 → 실 위치 핀이 있으면 실 자동 생성 */
+  function attachPlan(file0, code) {
+    code = code || curFloor(); if (!code) { toast('먼저 층을 만드세요 (① 현행화표 또는 층 직접 추가)', 'warn'); return Promise.resolve(false); }
+    var pr = /\.pdf$/i.test(file0.name) || file0.type === 'application/pdf' ? (TX.pipe ? TX.pipe.pdfToImage(file0) : Promise.reject(new Error('PDF 모듈 없음'))) : Promise.resolve(file0);
+    var cropped = false;
+    return pr.then(function (file) { return file && TX.autoplan ? TX.autoplan.autoCrop(file) : { file: file, cropped: false }; })
+      .then(function (o) { cropped = o.cropped; return o.file && TX.underlay.load(code, o.file); })
+      .catch(function (err) { toast('도면을 읽지 못했습니다: ' + err.message, 'error'); return false; }).then(function (ok) {
+        if (!ok) return false;
+        if (TX.state.floor !== code) TX.setState({ floor: code });
+        var r = TX.underlay.get(code), f = D.floors.find(function (x) { return x.code === code; });
         // 기본: 이미지 좌상단 = 원점, 장변 40m 가정 (치수 맞춤 전 임시)
         var s = 40000 / Math.max(r.w, r.h);
         TX.underlay.update(code, { tf: { s: s, rot: 0, tx: 0, ty: 0 }, opacity: 0.85, invert: true });
-        f.w = Math.round(r.w * s); f.h = Math.round(r.h * s); save(); apply();
-        toast('도면을 올렸습니다 · 「치수로 축척 맞춤」을 진행하세요', 'success');
+        if (f) { f.w = Math.max(f.w || 0, Math.round(r.w * s)); f.h = Math.max(f.h || 0, Math.round(r.h * s)); }
+        save(); apply();
+        return new Promise(function (res) { var n = 0; (function wait() { var u = TX.underlay.get(code); if ((u && u.img) || n++ > 40) res(); else setTimeout(wait, 100); })(); }).then(function () { // 도면 이미지 디코딩 완료 후 핀 인식
+          var nP = runPins(code);
+          toast('도면을 올렸습니다' + (cropped ? ' · 앱 화면 테두리를 잘라냈습니다' : '') + (nP ? ' · 실 위치 핀 ' + nP + '개 → 실 자동 생성' : '') + ' · 「치수로 축척 맞춤」을 진행하세요', 'success');
+          return true;
+        });
       });
+  }
+  /** 실 위치 핀 → 실 생성 (같은 이름의 실이 이미 그 자리를 덮고 있으면 건너뜀). 만든 개수 반환 */
+  function runPins(code) {
+    if (!TX.autoplan) return 0;
+    var cands = TX.autoplan.pinRooms(code), made = [], keepN = tool.roomName, keepK = tool.roomKind;
+    cands.forEach(function (c) {
+      var dup = D.rooms.some(function (q) { return q.floor === code && q.kind === c.type && c.at.x >= q.x && c.at.x <= q.x + q.w && c.at.y >= q.y && c.at.y <= q.y + q.h; });
+      if (dup) return;
+      tool.roomKind = c.type; tool.roomName = c.type;
+      made.push(addRoom(c.box.x, c.box.y, c.box.w, c.box.h, { quiet: true, mode: step === 3 ? 'room' : null }));
     });
+    tool.roomName = keepN; tool.roomKind = keepK;
+    if (made.length) { step = 3; stopTool(); openEd(made[0]); renderPanel(); toast('실 위치 핀 ' + made.length + '개를 인식해 실을 만들었습니다 (' + cands.filter(function (c) { return true; }).map(function (c) { return c.type + (c.how === 'outline' ? ' 윤곽' : ' 표준 3×3m'); }).join(', ') + ') · 흰 손잡이로 도면에 맞추세요', 'success'); }
+    return made.length;
   }
 
   /* ---------------- 도면 클릭/드래그 캡처 (축척 · 실 그리기 · 배치) ---------------- */
@@ -8461,6 +8498,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
       if (cap.d0 && Math.abs(e.clientX - cap.d0.x) + Math.abs(e.clientY - cap.d0.y) > 5) return;
       var mm = TX.cad2d.screenToMm(e.clientX, e.clientY); if (!mm) return;
       if (cap.mode === 'room') { var hit = D.rooms.filter(function (q) { return q.floor === curFloor() && mm.x >= q.x && mm.x <= q.x + q.w && mm.y >= q.y && mm.y <= q.y + q.h; }).sort(function (p, q) { return p.w * p.h - q.w * q.h; })[0]; if (hit) openEd(hit.id); return; }
+      if (cap.mode === 'autoroom') { var bx = TX.autoplan && TX.autoplan.roomAtWorld(curFloor(), mm); if (!bx) { toast('벽으로 닫힌 실을 찾지 못했습니다 · 문이 열린 실·사진 도면은 「실 그리기」로 끌어서 그려 주세요', 'warn'); return; } if (D.rooms.some(function (q) { return q.floor === curFloor() && Math.abs(q.x - bx.x) < 300 && Math.abs(q.y - bx.y) < 300 && Math.abs(q.w - bx.w) < 400 && Math.abs(q.h - bx.h) < 400; })) { toast('이미 같은 자리에 실이 있습니다', 'info'); return; } addRoom(bx.x, bx.y, bx.w, bx.h, { mode: 'autoroom' }); return; }
       if (cap.mode === 'straight') { cap.pts.push(mm); mark(e.clientX, e.clientY, cap.pts.length); if (cap.pts.length === 2) finishStraight(); else updateBar(); return; }
       if (cap.mode === 'scale') {
         cap.pts.push(mm); mark(e.clientX, e.clientY, cap.pts.length);
@@ -8486,6 +8524,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   function updateBar() {
     if (!cap) return;
     var t = cap.mode === 'align' ? ['A: 현재 그려진 실(데이터)의 기준점(예: 외곽 실 모서리)을 클릭', "A': 그 점이 도면 사진에서 있어야 할 위치를 클릭", 'B: 멀리 떨어진 두 번째 데이터 기준점을 클릭', "B': 그 점의 도면상 위치를 클릭"][cap.pts.length]
+      : cap.mode === 'autoroom' ? '실 인식: 실 안쪽을 한 번 클릭 · 「' + (tool.roomName || tool.roomKind) + '」 (' + tool.roomKind + ')'
       : cap.mode === 'straight' ? (cap.pts.length ? '② 같은 벽의 다른 끝을 클릭하세요' : '① 기울어진 벽(직선)의 한쪽 끝을 클릭하세요')
       : cap.mode === 'scale' ? (cap.pts.length ? '② 같은 치수의 다른 끝점을 클릭하세요' : '① 길이를 아는 구간의 한쪽 끝을 클릭하세요')
       : cap.mode === 'room' ? '실 그리기: 모서리에서 대각선으로 끌기 · 「' + (tool.roomName || '이름 미정') + '」 (' + tool.roomKind + ')'
@@ -8580,7 +8619,8 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     var t = ul.tf, x1 = t.tx + ul.w * t.s, y1 = t.ty + ul.h * t.s;
     return D.rooms.filter(function (r) { return r.floor === code && (r.x < t.tx - 100 || r.y < t.ty - 100 || r.x + r.w > x1 + 100 || r.y + r.h > y1 + 100); }).length;
   }
-  function addRoom(x, y, w, h) {
+  function addRoom(x, y, w, h, opt) {
+    opt = opt || {};
     var code = curFloor(), n = 1;
     while (D.rooms.some(function (r) { return r.id === code + '-R' + pad(n, 2); })) n++;
     var id = code + '-R' + pad(n, 2), f = fl();
@@ -8589,7 +8629,8 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     D.rooms.push({ id: id, floor: code, name: name, kind: tool.roomKind, x: x, y: y, w: w, h: h });
     tool.roomName = '';
     var placedN = autoPlaceRoom(D.rooms[D.rooms.length - 1]);
-    save(); apply(); startTool('room'); openEd(id);
+    save(); apply(); startTool(opt.mode || 'room'); openEd(id);
+    if (opt.quiet) return id;
     toast('「' + name + '」 실을 추가했습니다 (' + (w / 1000).toFixed(1) + '×' + (h / 1000).toFixed(1) + 'm) · 흰 손잡이로 도면에 맞추고 주황 「문」으로 출입문 위치 조정' + (placedN ? ' · 위치가 「' + name + '」인 설비 ' + placedN + '대 자동 배치' : ''), 'success');
   }
   /* ---------- 실 형틀·출입문 편집: 모서리/변 끌어 크기, 안쪽 끌어 이동, 주황 문 손잡이를 벽 따라 끌기 ---------- */
@@ -8802,7 +8843,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   TX.on('close', function () { close(true); });
   TX.on('open', function () { if (D.active && D.floors.length) setTimeout(function () { TX.setModel(toModel()); }, 50); });
 
-  TX.quick = { active: function () { return !!D.active; }, open: open, close: close, draft: function () { return D; }, parseTable: parseTable, parseLoc: parseLoc, buildXlsx: buildXlsx, model: toModel, autoDraw: autoDraw, startFloors: startFloors, loadFromAdmin: loadFromAdmin,
+  TX.quick = { active: function () { return !!D.active; }, open: open, close: close, attachPlan: attachPlan, runPins: runPins, draft: function () { return D; }, parseTable: parseTable, parseLoc: parseLoc, buildXlsx: buildXlsx, model: toModel, autoDraw: autoDraw, startFloors: startFloors, loadFromAdmin: loadFromAdmin,
     // 66-pipeline 확장용 내부 접근점
     setMeasurements: function (list, mode) { D.measurements = mode === 'append' ? (D.measurements || []).concat(list) : list; save(); apply(); return D.measurements.length; },
     _: { save: function () { save(); }, apply: apply, refresh: renderPanel, zip: zip, pad: pad, xlsx: function (sheets) { return buildXlsx(sheets); } } };
@@ -9410,8 +9451,26 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     rp.innerHTML = h;
   }
   function colLetter(i) { var s = ''; i++; while (i) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+  function isImage(f) { return /^image\//.test(f.type || '') || /\.(png|jpe?g|webp|bmp)$/i.test(f.name || ''); }
+  /** 결과서와 함께 올린 도면 이미지 → 현재 작업 층의 배경 도면 + 실 위치 핀 인식 */
+  function planFromImage(f) {
+    if (!(TX.quick && TX.quick.attachPlan && TX.quick.active && TX.quick.active())) { toast('도면 이미지는 「설비·도면 등록」(간이 현행화)을 연 상태에서 현재 층 도면으로 등록됩니다', 'warn'); return; }
+    var fc = TX.state.floor, fl = TX.floor && TX.floor(fc);
+    if (!confirm('「' + (f.name || '이미지') + '」를 ' + (fl ? (fl.building ? fl.building + ' ' : '') + fl.name : '현재 층') + ' 도면으로 등록할까요?\n(현장수집 앱 「실 위치」 핀이 있으면 실을 자동으로 만듭니다)')) return;
+    TX.quick.attachPlan(f, fc);
+  }
+  /** 워드 결과서 안의 그림 중 도면으로 보이는 큰 그림 찾기 */
+  function docxPlans(file) {
+    if (!/\.docx$/i.test(file.name || '')) return;
+    file.arrayBuffer().then(function (buf) { return unzip(buf, function (n) { return /^word\/media\/.+\.(png|jpe?g)$/i.test(n); }); }).then(function (m) {
+      var names = Object.keys(m || {}).filter(function (n) { return m[n].length > 60000; }).sort(function (a, b) { return m[b].length - m[a].length; });
+      if (!names.length) return;
+      var n0 = names[0], f = new File([m[n0]], file.name.replace(/\.docx$/i, '') + '_도면' + n0.slice(n0.lastIndexOf('.')), { type: /png$/i.test(n0) ? 'image/png' : 'image/jpeg' });
+      setTimeout(function () { planFromImage(f); }, 400);
+    }).catch(function () { });
+  }
   function loadReport(file) {
-    toast('결과서를 읽는 중…');
+    toast('결과서를 읽는 중…'); docxPlans(file);
     readAny(file).then(function (tables) {
       tables = tables.filter(function (t) { return t.rows.length > 1; });
       if (!tables.length) throw new Error('표 형태의 내용을 찾지 못했습니다');
@@ -9429,7 +9488,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
       var b = e.target.closest('[data-r]'); if (!b || b.tagName === 'SELECT' || b.tagName === 'INPUT') return;
       var a = b.getAttribute('data-r');
       if (a === 'close') closeReport();
-      else if (a === 'file') pickFile('.xlsx,.xlsm,.csv,.tsv,.docx,.pdf,.xls,.hwp,.doc', loadReport);
+      else if (a === 'file') pickFile('.xlsx,.xlsm,.csv,.tsv,.docx,.pdf,.xls,.hwp,.doc,image/*', function (fs) { fs.forEach(function (f) { if (isImage(f)) planFromImage(f); else loadReport(f); }); }, { multiple: true, many: true });
       else if (a === 'xlsx') U.download(Q() ? Q().xlsx(measureSheets()) : null, 'ICT_Twin_Measure_' + stamp() + '.xlsx');
       else if (a === 'admin') sendToAdmin();
       else if (a === 'twin') applyToTwin();
@@ -11228,6 +11287,135 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else setTimeout(start, 0);
 
   TX.msdash = { on: function () { setOn(true); }, off: function () { setOn(false); }, active: function () { return !!host; }, sync: function () { sync(true); } };
+})();
+
+</script>
+<script id="twinx-75-autoplan">
+/* ---- 75-autoplan.js ---- */
+/* ============================================================
+   TwinX 75-autoplan — 도면 사진 자동 인식 (실 위치 핀 → 실 생성, 클릭 한 번으로 실 인식)
+   · 현장수집 앱(RepiQ) 「실 위치」 이미지: 핀 색 = 실 유형 (MDF 파랑 · IDF 청록 · TPS 보라 · EPS 주황 · 통신 초록 · 전산 짙은 청록)
+     → 핀마다 그 자리에 실을 만들고(벽이 닫힌 실이면 윤곽, 아니면 표준 3×3m) 점검내역 위치명과 같은 이름으로 연동
+   · 휴대폰 화면 캡처면 앱 화면 테두리를 잘라 도면만 사용(autoCrop)
+   · 깨끗한 CAD·PDF 도면: 실 안을 한 번 클릭하면 벽으로 닫힌 영역을 찾아 실 사각형 생성(roomAt)
+   · 모두 브라우저 안에서 픽셀 분석(외부 전송 없음). 사진 도면은 정확한 벽 인식이 어려워 결과를 손잡이로 다듬는 전제
+   ============================================================ */
+(function () {
+  'use strict';
+  var TX = window.TwinX;
+  if (!TX || TX.autoplan) return;
+  var PINS = [['MDF실', [37, 99, 235]], ['IDF실', [8, 145, 178]], ['TPS실', [124, 58, 237]], ['EPS실', [234, 88, 12]], ['통신실', [22, 163, 74]], ['전산실', [15, 118, 110]]];
+
+  function loadImg(src) { return new Promise(function (res, rej) { var im = new Image(); im.onload = function () { res(im); }; im.onerror = function () { rej(new Error('이미지를 읽지 못했습니다')); }; im.src = src; }); }
+  function pixels(img, w, h, max) {
+    var k = Math.min(1, (max || 1400) / Math.max(w, h)), W = Math.max(1, Math.round(w * k)), H = Math.max(1, Math.round(h * k));
+    var c = document.createElement('canvas'); c.width = W; c.height = H; var g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, W, H);
+    return { d: g.getImageData(0, 0, W, H).data, W: W, H: H, k: k };
+  }
+
+  /* ---------- 1) 화면 캡처 테두리 자르기: 밝은 종이 영역의 가장 긴 연속 행·열 ---------- */
+  function cropBox(P) {
+    var W = P.W, H = P.H, d = P.d, rowF = new Float32Array(H), colF = new Float32Array(W);
+    var bright = function (i) { return (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000 > 70; }; // 앱 화면(어두운 남색) 이 아닌 곳 = 종이 도면 (도면 선은 가늘어 비율에 영향 적음)
+    for (var y = 0; y < H; y++) { var n = 0; for (var x = 0; x < W; x++) if (bright((y * W + x) * 4)) n++; rowF[y] = n / W; }
+    var run = function (arr, th) { var bs = 0, be = -1, s = -1; for (var i = 0; i <= arr.length; i++) { if (i < arr.length && arr[i] >= th) { if (s < 0) s = i; } else if (s >= 0) { if (i - s > be - bs) { bs = s; be = i; } s = -1; } } return [bs, be]; };
+    var ry = run(rowF, 0.7); if (ry[1] - ry[0] < H * 0.25) return null;
+    for (var x2 = 0; x2 < W; x2++) { var m = 0; for (var y2 = ry[0]; y2 < ry[1]; y2++) if (bright((y2 * W + x2) * 4)) m++; colF[x2] = m / (ry[1] - ry[0]); }
+    var rx = run(colF, 0.7); if (rx[1] - rx[0] < W * 0.25) return null;
+    var area = (rx[1] - rx[0]) * (ry[1] - ry[0]) / (W * H);
+    if (area > 0.92) return null; // 이미 도면만 있음
+    return { x: rx[0] / P.k, y: ry[0] / P.k, w: (rx[1] - rx[0]) / P.k, h: (ry[1] - ry[0]) / P.k };
+  }
+  function autoCrop(file) {
+    if (!file || !/^image\//.test(file.type || '') && !/\.(png|jpe?g|webp|bmp)$/i.test(file.name || '')) return Promise.resolve({ file: file, cropped: false });
+    var u = URL.createObjectURL(file);
+    return loadImg(u).then(function (img) {
+      var b = cropBox(pixels(img, img.naturalWidth, img.naturalHeight, 900));
+      if (!b) { URL.revokeObjectURL(u); return { file: file, cropped: false }; }
+      var c = document.createElement('canvas'); c.width = Math.round(b.w); c.height = Math.round(b.h);
+      c.getContext('2d').drawImage(img, b.x, b.y, b.w, b.h, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+      return new Promise(function (res) { c.toBlob(function (bl) { res({ file: new File([bl], (file.name || '도면').replace(/\.[^.]+$/, '') + '_도면.png', { type: 'image/png' }), cropped: true }); }, 'image/png'); });
+    }).catch(function () { URL.revokeObjectURL(u); return { file: file, cropped: false }; });
+  }
+
+  /* ---------- 2) 실 위치 핀 찾기 (핀 색 = 실 유형) ---------- */
+  function detectPins(rec) {
+    if (!rec || !rec.img) return [];
+    var P = pixels(rec.img, rec.w, rec.h, 1600), W = P.W, H = P.H, d = P.d, out = [];
+    PINS.forEach(function (pc) {
+      var c = pc[1], seen = new Uint8Array(W * H), ok = function (i) { var j = i * 4, a = d[j] - c[0], b = d[j + 1] - c[1], e = d[j + 2] - c[2]; return a * a + b * b + e * e < 2025; };
+      for (var i = 0; i < W * H; i++) {
+        if (seen[i] || !ok(i)) continue;
+        var q = [i], n = 0, x0 = W, y0 = H, x1 = 0, y1 = 0; seen[i] = 1;
+        while (q.length) { var p = q.pop(), x = p % W, y = (p / W) | 0; n++; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+          [p - 1, p + 1, p - W, p + W].forEach(function (nb) { if (nb >= 0 && nb < W * H && !seen[nb] && Math.abs((nb % W) - x) <= 1 && ok(nb)) { seen[nb] = 1; q.push(nb); } }); }
+        var bw = x1 - x0 + 1, bh = y1 - y0 + 1, fillR = n / (bw * bh), sz = Math.max(W, H);
+        // 핀 모양: 세로로 긴 물방울(가로:세로 ≈ 1:1.2~2.4), 채움 35~85%, 크기 도면 장변의 0.8~6%
+        // 핀 머리 가운데의 흰 구멍(앱 핀 모양) 확인 → 비상구 표지·소화기 같은 색 아이콘 제외
+        var hx = Math.round(x0 + bw / 2), hy = Math.round(y0 + bh * 0.33), hj = (hy * W + hx) * 4, hole = (d[hj] * 299 + d[hj + 1] * 587 + d[hj + 2] * 114) / 1000 > 190 && Math.max(d[hj], d[hj + 1], d[hj + 2]) - Math.min(d[hj], d[hj + 1], d[hj + 2]) < 50;
+        if (hole && bh / bw >= 1.15 && bh / bw <= 2.6 && fillR >= 0.33 && fillR <= 0.88 && bh >= sz * 0.008 && bh <= sz * 0.06 && n >= 40)
+          out.push({ type: pc[0], x: (x0 + bw / 2) / P.k, y: (y1 + 1) / P.k, h: bh / P.k });
+      }
+    });
+    return out;
+  }
+
+  /* ---------- 3) 클릭 지점의 닫힌 실 영역 (벽 = 어둡고 무채색, 문틈은 벽 두께를 키워 막음) ---------- */
+  function roomAt(rec, ix, iy) {
+    if (!rec || !rec.img) return null;
+    var P = pixels(rec.img, rec.w, rec.h, 1400), W = P.W, H = P.H, d = P.d, N = W * H, sx = Math.round(ix * P.k), sy = Math.round(iy * P.k);
+    if (sx < 1 || sy < 1 || sx >= W - 1 || sy >= H - 1) return null;
+    var hist = new Array(256).fill(0), gray = new Uint8Array(N), sat = new Uint8Array(N);
+    for (var i = 0; i < N; i++) { var j = i * 4, r = d[j], g = d[j + 1], b = d[j + 2]; gray[i] = (r * 299 + g * 587 + b * 114) / 1000; sat[i] = Math.max(r, g, b) - Math.min(r, g, b); hist[gray[i]]++; }
+    var sum = 0; for (var t = 0; t < 256; t++) sum += t * hist[t];
+    var wB = 0, sB = 0, best = 0, th = 128; for (t = 0; t < 256; t++) { wB += hist[t]; if (!wB) continue; var wF = N - wB; if (!wF) break; sB += t * hist[t]; var mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) * (mB - mF); if (v > best) { best = v; th = t; } }
+    th = Math.min(th, 160);
+    var wall = new Uint8Array(N); for (i = 0; i < N; i++) wall[i] = gray[i] < th && sat[i] < 60 ? 1 : 0;
+    var dilate = function (m, rr) { // 가로·세로 분리 팽창
+      var a = new Uint8Array(N), o = new Uint8Array(N), x, y, k;
+      for (y = 0; y < H; y++) for (x = 0; x < W; x++) { if (!m[y * W + x]) continue; for (k = -rr; k <= rr; k++) { var xx = x + k; if (xx >= 0 && xx < W) a[y * W + xx] = 1; } }
+      for (y = 0; y < H; y++) for (x = 0; x < W; x++) { if (!a[y * W + x]) continue; for (k = -rr; k <= rr; k++) { var yy = y + k; if (yy >= 0 && yy < H) o[yy * W + x] = 1; } }
+      return o;
+    };
+    var maxD = Math.max(2, Math.round(Math.max(W, H) / 220));
+    for (var rr = 1; rr <= maxD; rr++) {
+      var m = dilate(wall, rr), s0 = sy * W + sx; if (m[s0]) continue;
+      var seen = new Uint8Array(N), q = [s0], n = 0, x0 = W, y0 = H, x1 = 0, y1 = 0, edge = false; seen[s0] = 1;
+      while (q.length) { var p = q.pop(), x = p % W, y = (p / W) | 0; n++; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; if (x === 0 || y === 0 || x === W - 1 || y === H - 1) edge = true;
+        if (n > N * 0.12) break;
+        if (x > 0 && !seen[p - 1] && !m[p - 1]) { seen[p - 1] = 1; q.push(p - 1); } if (x < W - 1 && !seen[p + 1] && !m[p + 1]) { seen[p + 1] = 1; q.push(p + 1); }
+        if (y > 0 && !seen[p - W] && !m[p - W]) { seen[p - W] = 1; q.push(p - W); } if (y < H - 1 && !seen[p + W] && !m[p + W]) { seen[p + W] = 1; q.push(p + W); } }
+      var bw = x1 - x0 + 1, bh = y1 - y0 + 1, frac = n / N, fillR = n / (bw * bh);
+      if (edge || frac > 0.1 || q.length) continue;            // 바깥으로 새어 나감 → 벽을 더 두껍게
+      if (frac < 0.0004 || bw < 6 || bh < 6 || bw / bh > 8 || bh / bw > 8 || fillR < 0.45) return null; // 너무 작거나 실 모양이 아님
+      return { x: (x0 - rr) / P.k, y: (y0 - rr) / P.k, w: (bw + 2 * rr) / P.k, h: (bh + 2 * rr) / P.k, how: 'outline' };
+    }
+    return null;
+  }
+
+  /* ---------- 좌표 변환 (도면 이미지 px ↔ 층 mm) ---------- */
+  function toWorld(rec, x, y) { var t = rec.tf, c = Math.cos(t.rot || 0), s = Math.sin(t.rot || 0); return { x: t.tx + t.s * (c * x - s * y), y: t.ty + t.s * (s * x + c * y) }; }
+  function toImg(rec, mx, my) { var t = rec.tf, dx = mx - t.tx, dy = my - t.ty, c = Math.cos(-(t.rot || 0)), s = Math.sin(-(t.rot || 0)); return { x: (c * dx - s * dy) / t.s, y: (s * dx + c * dy) / t.s }; }
+  function boxWorld(rec, b) {
+    var ps = [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.h], [b.x + b.w, b.y + b.h]].map(function (p) { return toWorld(rec, p[0], p[1]); });
+    var xs = ps.map(function (p) { return p.x; }), ys = ps.map(function (p) { return p.y; });
+    var x0 = Math.round(Math.min.apply(null, xs) / 100) * 100, y0 = Math.round(Math.min.apply(null, ys) / 100) * 100;
+    return { x: Math.max(0, x0), y: Math.max(0, y0), w: Math.max(600, Math.round((Math.max.apply(null, xs) - x0) / 100) * 100), h: Math.max(600, Math.round((Math.max.apply(null, ys) - y0) / 100) * 100) };
+  }
+  /** 층 mm 좌표를 클릭 → 닫힌 실 영역(mm) 또는 null */
+  function roomAtWorld(code, mm) { var rec = TX.underlay && TX.underlay.get(code); if (!rec) return null; var p = toImg(rec, mm.x, mm.y); if (p.x < 0 || p.y < 0 || p.x > rec.w || p.y > rec.h) return null; var b = roomAt(rec, p.x, p.y); return b ? boxWorld(rec, b) : null; }
+  /** 핀 → 실 후보 [{type, box(mm), how, at(mm)}] */
+  function pinRooms(code) {
+    var rec = TX.underlay && TX.underlay.get(code); if (!rec) return [];
+    return detectPins(rec).map(function (p) {
+      var tip = toWorld(rec, p.x, p.y), b = roomAt(rec, p.x, p.y - p.h * 0.05);
+      var box = b && b.w > p.h * 1.6 && b.h > p.h * 1.2 ? boxWorld(rec, b) : null; // 핀 자체 주변만 잡힌 작은 영역은 무시
+      if (!box) box = { x: Math.max(0, Math.round((tip.x - 1500) / 100) * 100), y: Math.max(0, Math.round((tip.y - 1500) / 100) * 100), w: 3000, h: 3000 };
+      return { type: p.type, box: box, how: b && box.w !== 3000 ? 'outline' : 'standard', at: tip };
+    });
+  }
+
+  TX.autoplan = { autoCrop: autoCrop, detectPins: detectPins, roomAt: roomAt, roomAtWorld: roomAtWorld, pinRooms: pinRooms, PINS: PINS };
 })();
 
 </script>

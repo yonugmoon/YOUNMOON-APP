@@ -180,3 +180,10 @@ TwinX.ui = { root, toolbar, viewport, view2d, view3d, floorRail, inspector, stat
   `TwinX.msdash = {on, off, active, sync}` · 설정 `localStorage twinx_msx_v1` ('off' 이면 기존 화면, 화면 하단 알약 버튼으로 복귀).
 - 건물·층·위치·설비는 원본 측정 행 값을 우선(ADMIN 묶음과 일치), 트윈 매칭 값은 보조. 행 점검일이 없으면 ADMIN 머리 줄 점검일 사용.
 - 운영 지표 카드: ADMIN v14 와 같은 `localStorage ict_twin_v14_ops` 를 읽고 엔지니어 모드에서 같은 형식으로 추가.
+
+## v2.6 — 도면 사진 자동 인식 (75-autoplan)
+- `TwinX.autoplan = {autoCrop(file), detectPins(rec), roomAt(rec, ix, iy), roomAtWorld(floor, mm), pinRooms(floor), PINS}` — 브라우저 픽셀 분석(외부 전송 없음).
+- 현장수집 앱 「실 위치」 핀: 색 = 실 유형 (MDF #2563EB · IDF #0891B2 · TPS #7C3AED · EPS #EA580C · 통신 #16A34A · 전산 #0F766E), 세로 물방울 + 머리 흰 구멍 조건.
+  핀마다 실 생성(닫힌 벽 윤곽이면 윤곽, 아니면 표준 3×3m). 같은 유형 실이 핀을 덮고 있으면 건너뜀.
+- `TX.quick.attachPlan(file, floor)` — 사진/PDF/캡처 → 앱 화면 테두리 자르기 → 배경 도면 → 핀 인식. ② 도면 올리기와 「점검 결과서 변환」(이미지 동시 선택, 워드 안의 큰 그림)에서 사용.
+- ③ 실 그리기: 실 유형 칩(MDF·IDF·TPS·EPS·통신·전산), 「◎ 클릭으로 실 인식」(cap mode 'autoroom'), 「📍 실 위치 핀 인식」. ROOM_TYPES 에 '전산실'(server) 추가.

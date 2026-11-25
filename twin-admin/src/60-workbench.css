@@ -184,3 +184,9 @@
 .tx-qk-ft { display: flex; justify-content: space-between; padding: 10px 14px 14px; border-top: 1px solid var(--tx-border, #e1e7ee); }
 .tx-qk-ft .tx-wb-btn { margin: 0; }
 .tx-qk-ft .tx-wb-btn:disabled { opacity: .4; cursor: default; }
+
+/* 실 유형 칩 (현장수집 앱 「실 위치」와 같은 색) */
+.tx-qk-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 2px; }
+.tx-qk-chips button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--tx-border, #e1e7ee); background: #fff; border-radius: 999px; padding: 4px 10px; font: 600 12px/1.2 var(--tx-font, Arial, sans-serif); color: #22374d; cursor: pointer; }
+.tx-qk-chips button i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.tx-qk-chips button.is-on { border-color: #3e63db; background: #eef2ff; color: #1e3a8a; }

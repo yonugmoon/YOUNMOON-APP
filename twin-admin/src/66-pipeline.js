@@ -597,8 +597,26 @@
     rp.innerHTML = h;
   }
   function colLetter(i) { var s = ''; i++; while (i) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+  function isImage(f) { return /^image\//.test(f.type || '') || /\.(png|jpe?g|webp|bmp)$/i.test(f.name || ''); }
+  /** 결과서와 함께 올린 도면 이미지 → 현재 작업 층의 배경 도면 + 실 위치 핀 인식 */
+  function planFromImage(f) {
+    if (!(TX.quick && TX.quick.attachPlan && TX.quick.active && TX.quick.active())) { toast('도면 이미지는 「설비·도면 등록」(간이 현행화)을 연 상태에서 현재 층 도면으로 등록됩니다', 'warn'); return; }
+    var fc = TX.state.floor, fl = TX.floor && TX.floor(fc);
+    if (!confirm('「' + (f.name || '이미지') + '」를 ' + (fl ? (fl.building ? fl.building + ' ' : '') + fl.name : '현재 층') + ' 도면으로 등록할까요?\n(현장수집 앱 「실 위치」 핀이 있으면 실을 자동으로 만듭니다)')) return;
+    TX.quick.attachPlan(f, fc);
+  }
+  /** 워드 결과서 안의 그림 중 도면으로 보이는 큰 그림 찾기 */
+  function docxPlans(file) {
+    if (!/\.docx$/i.test(file.name || '')) return;
+    file.arrayBuffer().then(function (buf) { return unzip(buf, function (n) { return /^word\/media\/.+\.(png|jpe?g)$/i.test(n); }); }).then(function (m) {
+      var names = Object.keys(m || {}).filter(function (n) { return m[n].length > 60000; }).sort(function (a, b) { return m[b].length - m[a].length; });
+      if (!names.length) return;
+      var n0 = names[0], f = new File([m[n0]], file.name.replace(/\.docx$/i, '') + '_도면' + n0.slice(n0.lastIndexOf('.')), { type: /png$/i.test(n0) ? 'image/png' : 'image/jpeg' });
+      setTimeout(function () { planFromImage(f); }, 400);
+    }).catch(function () { });
+  }
   function loadReport(file) {
-    toast('결과서를 읽는 중…');
+    toast('결과서를 읽는 중…'); docxPlans(file);
     readAny(file).then(function (tables) {
       tables = tables.filter(function (t) { return t.rows.length > 1; });
       if (!tables.length) throw new Error('표 형태의 내용을 찾지 못했습니다');
@@ -616,7 +634,7 @@
       var b = e.target.closest('[data-r]'); if (!b || b.tagName === 'SELECT' || b.tagName === 'INPUT') return;
       var a = b.getAttribute('data-r');
       if (a === 'close') closeReport();
-      else if (a === 'file') pickFile('.xlsx,.xlsm,.csv,.tsv,.docx,.pdf,.xls,.hwp,.doc', loadReport);
+      else if (a === 'file') pickFile('.xlsx,.xlsm,.csv,.tsv,.docx,.pdf,.xls,.hwp,.doc,image/*', function (fs) { fs.forEach(function (f) { if (isImage(f)) planFromImage(f); else loadReport(f); }); }, { multiple: true, many: true });
       else if (a === 'xlsx') U.download(Q() ? Q().xlsx(measureSheets()) : null, 'ICT_Twin_Measure_' + stamp() + '.xlsx');
       else if (a === 'admin') sendToAdmin();
       else if (a === 'twin') applyToTwin();

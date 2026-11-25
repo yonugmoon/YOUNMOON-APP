@@ -20,7 +20,7 @@
   /* 화면 인스턴스: 트윈 오버레이(기본) / ADMIN 측정 대시보드 내장(inline, source='inspection') */
   function createInst(OPTS) {
   OPTS = OPTS || {};
-  var el = null, view = 1, D = null, pref = loadPref(), st = { tab: 0, bldg: 'ALL', q: '', fb: 'ALL', ff: 'ALL', fs: 'ALL', fv: 'ALL', defOnly: false, page: 1, cal: null, sel: null }, urls = [];
+  var el = null, view = 1, D = null, pref = Object.assign(loadPref(), OPTS.pref || {}), st = { tab: 0, bldg: 'ALL', q: '', fb: 'ALL', ff: 'ALL', fs: 'ALL', fv: 'ALL', defOnly: false, page: 1, cal: null, sel: null }, urls = [];
 
   function loadPref() { try { return Object.assign({ theme: 'light', mode: 'client' }, JSON.parse(localStorage.getItem(PREF_KEY) || '{}')); } catch (e) { return { theme: 'light', mode: 'client' }; } }
   function savePref() { try { localStorage.setItem(PREF_KEY, JSON.stringify(pref)); } catch (e) { } }
@@ -303,7 +303,7 @@
     var mo = el.querySelector('.tx-rp-modal'); /* 열린 상세 창은 다시 그려도 유지 */
     var bar = OPTS.inline && OPTS.bar ? OPTS.bar() : null;
     if (bar) { if (!bar._rpBound) { bar._rpBound = true; bar.addEventListener('click', onClick); } bar.className = 'tx-rp-tbar' + (pref.theme === 'dark' ? ' tx-rp-tbar-dark' : ''); bar.innerHTML = barHtml(); }
-    el.innerHTML = (bar ? '' : header()) + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
+    el.innerHTML = (bar || OPTS.noHeader ? '' : header()) + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
     if (mo) el.appendChild(mo);
     if (bar && OPTS.barFit) OPTS.barFit(bar, el); /* 본문을 그린 뒤 막대 위치 결정 (좁으면 본문 맨 위) */
     var b2 = el.querySelector('.tx-rp-body'); if (b2) b2.scrollTop = top;

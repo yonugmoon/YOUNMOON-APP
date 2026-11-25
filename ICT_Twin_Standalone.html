@@ -1291,6 +1291,15 @@ html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { margin-top:
 /* 좁은 화면: 대시보드 본문 맨 위 한 줄 */
 .tx-rp-inline > .tx-rp-tbar.is-inbody { display: inline-flex; margin: 0 0 4px; }
 
+/* 측정 대시보드 화면: 상단은 「측정 엑셀 등록」·「풀스크린 관제」만 남김 (요청) — 다른 화면은 그대로 */
+html.tx-msx-page header .fs-tools > button:not([title^="풀스크린 관제"]),
+html.tx-msx-page header .fs-tools > .fs-sep,
+html.tx-msx-page header > .role-lgbtn,
+html.tx-msx-page header > .role-monbtn,
+html.tx-msx-page .main > .role-bar,
+html.tx-msx-page section.measurement-workspace.tx-msx-on > .ms-tabs,
+html.tx-msx-page section.measurement-workspace.tx-msx-on .ms-heading .ms-actions > :not(.primary) { display: none !important; }
+
 /* 단독 운영판: 앱 전체가 뷰어 */
 html, body { margin: 0; height: 100%; background: #06101f; }
 .tx-root .tx-close-btn { display: none !important; }
@@ -10867,7 +10876,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   /* 화면 인스턴스: 트윈 오버레이(기본) / ADMIN 측정 대시보드 내장(inline, source='inspection') */
   function createInst(OPTS) {
   OPTS = OPTS || {};
-  var el = null, view = 1, D = null, pref = loadPref(), st = { tab: 0, bldg: 'ALL', q: '', fb: 'ALL', ff: 'ALL', fs: 'ALL', fv: 'ALL', defOnly: false, page: 1, cal: null, sel: null }, urls = [];
+  var el = null, view = 1, D = null, pref = Object.assign(loadPref(), OPTS.pref || {}), st = { tab: 0, bldg: 'ALL', q: '', fb: 'ALL', ff: 'ALL', fs: 'ALL', fv: 'ALL', defOnly: false, page: 1, cal: null, sel: null }, urls = [];
 
   function loadPref() { try { return Object.assign({ theme: 'light', mode: 'client' }, JSON.parse(localStorage.getItem(PREF_KEY) || '{}')); } catch (e) { return { theme: 'light', mode: 'client' }; } }
   function savePref() { try { localStorage.setItem(PREF_KEY, JSON.stringify(pref)); } catch (e) { } }
@@ -11150,7 +11159,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     var mo = el.querySelector('.tx-rp-modal'); /* 열린 상세 창은 다시 그려도 유지 */
     var bar = OPTS.inline && OPTS.bar ? OPTS.bar() : null;
     if (bar) { if (!bar._rpBound) { bar._rpBound = true; bar.addEventListener('click', onClick); } bar.className = 'tx-rp-tbar' + (pref.theme === 'dark' ? ' tx-rp-tbar-dark' : ''); bar.innerHTML = barHtml(); }
-    el.innerHTML = (bar ? '' : header()) + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
+    el.innerHTML = (bar || OPTS.noHeader ? '' : header()) + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
     if (mo) el.appendChild(mo);
     if (bar && OPTS.barFit) OPTS.barFit(bar, el); /* 본문을 그린 뒤 막대 위치 결정 (좁으면 본문 맨 위) */
     var b2 = el.querySelector('.tx-rp-body'); if (b2) b2.scrollTop = top;
@@ -11303,7 +11312,8 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     b.classList.add('is-compact'); if (b.scrollWidth <= avail) return;
     b.classList.remove('is-compact'); b.classList.add('is-inbody'); b.style.marginRight = ''; hostEl.insertBefore(b, hostEl.firstChild);
   }
-  var inst = TX.report2.create({ inline: true, source: 'inspection', meta: meta, bar: barEl, barFit: barFit });
+  /* 요청: 이 화면 상단은 「측정 엑셀 등록」·「풀스크린 관제」만 → 도구 막대·머리 줄 없이, 깔끔한 발주처 보고 모드로 고정 */
+  var inst = TX.report2.create({ inline: true, source: 'inspection', meta: meta, noHeader: true, pref: { mode: 'client', theme: 'light' } });
 
   function ws() { return document.querySelector('section.measurement-workspace'); }
   function isDash(w) { return !!(w && !w.classList.contains('mini-view') && w.querySelector(':scope > .ms-kpis')); }
@@ -11311,7 +11321,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     try { var r = TX.data && TX.data.raw && TX.data.raw(); if (!r || !r.rows) return ''; var n = 0; r.rows.forEach(function (x) { n += String(x.판정 || '').length + String(x.측정값 || '').length; }); return r.rows.length + ':' + n; } catch (e) { return ''; }
   }
   function setOn(v) { on = v; sync(true); }
-  function removeHost() { if (bar) { bar.remove(); bar = null; } if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
+  function removeHost() { document.documentElement.classList.remove('tx-msx-page'); if (bar) { bar.remove(); bar = null; } if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
   function showPill(show) {
     if (show && !pill) {
       pill = document.createElement('div'); pill.className = 'tx-msx-pill';
@@ -11325,7 +11335,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
     if (fsNow !== lastFs) { lastFs = fsNow; force = true; } // 풀스크린 ↔ 기본 보기 전환 시 도구 막대 위치 다시 계산
     showPill(false);
     if (!dash || !on) { removeHost(); return; }
-    w.classList.add('tx-msx-on');
+    w.classList.add('tx-msx-on'); document.documentElement.classList.add('tx-msx-page'); if (bar) { bar.remove(); bar = null; }
     var charts = w.querySelector(':scope > .ms-charts') || w.querySelector(':scope > .ms-kpis');
     if (!host) { host = document.createElement('div'); host.className = 'tx-rp tx-rp-inline'; }
     if (host.previousElementSibling !== charts) charts.parentNode.insertBefore(host, charts.nextSibling);

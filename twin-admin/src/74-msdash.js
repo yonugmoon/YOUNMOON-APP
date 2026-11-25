@@ -42,7 +42,8 @@
     b.classList.add('is-compact'); if (b.scrollWidth <= avail) return;
     b.classList.remove('is-compact'); b.classList.add('is-inbody'); b.style.marginRight = ''; hostEl.insertBefore(b, hostEl.firstChild);
   }
-  var inst = TX.report2.create({ inline: true, source: 'inspection', meta: meta, bar: barEl, barFit: barFit });
+  /* 요청: 이 화면 상단은 「측정 엑셀 등록」·「풀스크린 관제」만 → 도구 막대·머리 줄 없이, 깔끔한 발주처 보고 모드로 고정 */
+  var inst = TX.report2.create({ inline: true, source: 'inspection', meta: meta, noHeader: true, pref: { mode: 'client', theme: 'light' } });
 
   function ws() { return document.querySelector('section.measurement-workspace'); }
   function isDash(w) { return !!(w && !w.classList.contains('mini-view') && w.querySelector(':scope > .ms-kpis')); }
@@ -50,7 +51,7 @@
     try { var r = TX.data && TX.data.raw && TX.data.raw(); if (!r || !r.rows) return ''; var n = 0; r.rows.forEach(function (x) { n += String(x.판정 || '').length + String(x.측정값 || '').length; }); return r.rows.length + ':' + n; } catch (e) { return ''; }
   }
   function setOn(v) { on = v; sync(true); }
-  function removeHost() { if (bar) { bar.remove(); bar = null; } if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
+  function removeHost() { document.documentElement.classList.remove('tx-msx-page'); if (bar) { bar.remove(); bar = null; } if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
   function showPill(show) {
     if (show && !pill) {
       pill = document.createElement('div'); pill.className = 'tx-msx-pill';
@@ -64,7 +65,7 @@
     if (fsNow !== lastFs) { lastFs = fsNow; force = true; } // 풀스크린 ↔ 기본 보기 전환 시 도구 막대 위치 다시 계산
     showPill(false);
     if (!dash || !on) { removeHost(); return; }
-    w.classList.add('tx-msx-on');
+    w.classList.add('tx-msx-on'); document.documentElement.classList.add('tx-msx-page'); if (bar) { bar.remove(); bar = null; }
     var charts = w.querySelector(':scope > .ms-charts') || w.querySelector(':scope > .ms-kpis');
     if (!host) { host = document.createElement('div'); host.className = 'tx-rp tx-rp-inline'; }
     if (host.previousElementSibling !== charts) charts.parentNode.insertBefore(host, charts.nextSibling);

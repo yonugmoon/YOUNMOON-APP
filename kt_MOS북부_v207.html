@@ -11013,8 +11013,9 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         if(loc.selectedPhotos) loc.selectedPhotos = loc.selectedPhotos.filter(k=>k!==key);
         if(loc.badPhotos) loc.badPhotos = loc.badPhotos.filter(k=>k!==key);
         if(loc.photoMeta && loc.photoMeta[key]){
-          const origKey = loc.photoMeta[key].origKey;
+          const origKey = loc.photoMeta[key].origKey, cleanKey = loc.photoMeta[key].cleanKey;
           if(origKey){ try{ await sDelete(origKey); }catch(e){} }
+          if(cleanKey){ try{ await sDelete(cleanKey); }catch(e){} }
           delete loc.photoMeta[key];
         }
         scheduleSave();
@@ -11268,6 +11269,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
             fi++;
             // 부적합: 불량 위치 동그라미 표시 (원본에 그려 두어 동산보드 재합성 때도 유지)
             const marked = markOn ? await markDefectFromFile(file, files.length>1?`${fi}/${files.length}`:"") : null;
+            const mk = marked ? lastMark : null;
             try{
               if(board){
                 try{ origData = marked || await compressImage(file, 900, 0.82); }catch(e){ origData = null; }
@@ -11303,6 +11305,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
                 loc.photoMeta[key] = { origKey, board: {...board} };
               }
             }
+            await saveMarkMeta(loc, key, mk);
             savedCount++;
           }
           scheduleSave();
@@ -11345,6 +11348,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       fi++;
       // 부적합: 촬영 직후 불량 위치 동그라미 표시
       const marked = mark ? await markDefectFromFile(file, files.length>1?`${fi}/${files.length}`:"") : null;
+      const mk = marked ? lastMark : null;
       try{
         // 재합성을 위해 원본(정보표 없는 버전)을 먼저 확보
         if(board){
@@ -11391,6 +11395,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
           loc.photoMeta[key] = { origKey, board: {...board} };
         }
       }
+      await saveMarkMeta(loc, key, mk);
       savedCount++;
     }
 
@@ -11830,6 +11835,11 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     ctx.restore();
   }
 
+  async function saveMarkMeta(loc, key, mk){
+    if(!mk || !mk.clean) return;
+    const ck = "photoClean:"+key.replace(/^photo:/,"")+":"+uid();
+    try{ if(await sSet(ck, mk.clean)){ if(!loc.photoMeta) loc.photoMeta = {}; loc.photoMeta[key] = Object.assign(loc.photoMeta[key]||{}, { cleanKey: ck, marks: mk.shapes }); } }catch(e){}
+  }
   /* ── 불량 위치 동그라미 표시 ──
      사진 위를 손가락으로 끌면 그 범위를 감싸는 빨간 원(타원), 짧게 탭하면 그 자리에 원.
      결과: 표시가 들어간 사진(dataURL) · 표시 없이 닫으면 null */
@@ -11838,7 +11848,15 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     try{ base = await compressImage(file, 900, 0.85); }catch(e){ try{ base = await readAsDataURL(file); }catch(e2){ return null; } }
     return await openDefectMarker(base, label);
   }
-  function openDefectMarker(srcUrl, label){
+  /* 원(표시)은 원본 사진과 따로 보관한다 → 다시 열면 원본 위에 기존 원을 되살려 지우거나 고칠 수 있다 */
+  let lastMark = null;   // 마지막 표시 결과 {clean, shapes} — 촬영 직후 저장할 때 원본·원 목록을 함께 보관
+  async function openDefectMarker(srcUrl, label){
+    const r = await openDefectMarkerEx(srcUrl, label, []);
+    if(!r || !r.shapes.length){ lastMark = null; return null; }
+    lastMark = { clean: srcUrl, shapes: r.shapes };
+    return r.url;
+  }
+  function openDefectMarkerEx(srcUrl, label, initShapes){
     return new Promise((resolve)=>{
       const img = new Image();
       img.onerror = ()=> resolve(null);
@@ -11867,7 +11885,8 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         document.body.appendChild(ov);
         const cv = ov.querySelector("#dm-cv"); cv.width = W; cv.height = H;
         const g = cv.getContext("2d");
-        const shapes = []; let drag = null;
+        const shapes = (initShapes||[]).map(s=>({x1:s.x1*W, y1:s.y1*H, x2:s.x2*W, y2:s.y2*H})); let drag = null;
+        const hadInit = shapes.length>0;
         const lw = Math.max(4, Math.round(Math.min(W,H)*0.012));
         const ell = (s)=>{ const rx=Math.max(Math.abs(s.x2-s.x1)/2, lw*2), ry=Math.max(Math.abs(s.y2-s.y1)/2, lw*2);
           const cx=(s.x1+s.x2)/2, cy=(s.y1+s.y2)/2;
@@ -11894,11 +11913,14 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         ov.querySelector("#dm-undo").onclick = ()=>{ shapes.pop(); draw(); };
         ov.querySelector("#dm-clear").onclick = ()=>{ shapes.length = 0; draw(); };
         ov.querySelector("#dm-skip").onclick = ()=> done(null);
+        const norm = ()=> shapes.map(s=>({x1:s.x1/W, y1:s.y1/H, x2:s.x2/W, y2:s.y2/H}));
         ov.querySelector("#dm-ok").onclick = ()=>{
-          if(!shapes.length){ if(confirm("표시한 원이 없습니다. 표시 없이 저장할까요?")) done(null); return; }
+          if(!shapes.length){
+            if(hadInit){ done({url:null, shapes:[]}); return; }   // 기존 원을 모두 지움 → 원 없는 사진으로
+            if(confirm("표시한 원이 없습니다. 표시 없이 저장할까요?")) done(null); return; }
           drag = null; draw();
           let out = null; try{ out = cv.toDataURL("image/jpeg", 0.85); }catch(e){ out = null; }
-          done(out);
+          done(out ? {url:out, shapes:norm()} : null);
         };
       };
       img.src = srcUrl;
@@ -11948,24 +11970,30 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     if(mb){
       mb.onclick = async (e)=>{
         e.stopPropagation();
-        const meta = loc.photoMeta && loc.photoMeta[key];
-        let base = null;
-        if(meta && meta.origKey){ try{ base = await sGet(meta.origKey); }catch(_){ base = null; } }
-        const marked = await openDefectMarker(base || dataUrl, "");
-        if(!marked) return;
+        if(!loc.photoMeta) loc.photoMeta = {};
+        const meta = loc.photoMeta[key] || (loc.photoMeta[key] = {});
+        let base = null, clean = null;
+        if(meta.origKey){ try{ base = await sGet(meta.origKey); }catch(_){ base = null; } }
+        if(meta.cleanKey){ try{ clean = await sGet(meta.cleanKey); }catch(_){ clean = null; } }
+        // 원 없는 원본이 있으면 그 위에 기존 원을 되살려 연다 (지우기·되돌리기로 기존 원도 지울 수 있음)
+        const src = clean || base || dataUrl;
+        const r = await openDefectMarkerEx(src, "", clean ? (meta.marks||[]) : []);
+        if(!r) return;
+        if(!clean){ const ck = "photoClean:"+key.replace(/^photo:/,"")+":"+uid(); try{ if(await sSet(ck, src)) meta.cleanKey = ck; }catch(_){} }
+        const img = r.shapes.length ? r.url : src;
         try{
-          if(base && meta.board){
-            await sSet(meta.origKey, marked);
-            await sSet(key, await composeBoardFromDataUrl(marked, meta.board, 900));
+          if(meta.origKey && meta.board){
+            await sSet(meta.origKey, img);
+            await sSet(key, await composeBoardFromDataUrl(img, meta.board, 900));
           } else {
-            await sSet(key, marked);
+            await sSet(key, img);
           }
         }catch(err){ showToast("표시를 저장하지 못했습니다."); return; }
-        if(!loc.badPhotos) loc.badPhotos = [];
-        if(!loc.badPhotos.includes(key)) loc.badPhotos.push(key);
+        meta.marks = r.shapes;
+        if(r.shapes.length){ if(!loc.badPhotos) loc.badPhotos = []; if(!loc.badPhotos.includes(key)) loc.badPhotos.push(key); }
         scheduleSave();
         ov.remove();
-        showToast("불량 위치를 표시했습니다.");
+        showToast(r.shapes.length ? `불량 위치 ${r.shapes.length}개를 표시했습니다.` : "동그라미를 모두 지웠습니다.");
         if(typeof onChange==="function") onChange();
       };
     }

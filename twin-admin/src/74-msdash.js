@@ -63,7 +63,17 @@
     }
     if (upBtn.parentNode !== tools || upBtn.nextElementSibling !== fsb) tools.insertBefore(upBtn, fsb || null);
   }
-  function removeUpload() { if (upBtn) { upBtn.remove(); upBtn = null; } }
+  function removeUpload() { if (upBtn) { upBtn.remove(); upBtn = null; } if (info) { info.remove(); info = null; } }
+  /* 제목 줄(측정 대시보드 · 파일명 · 점검일)을 상단 줄 이동 경로 옆으로 올리고 본문 제목 줄은 숨김 */
+  var info = null;
+  function placeInfo() {
+    var crumb = document.querySelector('.main > header > .crumb'); if (!crumb) return;
+    var m = meta(), txt = [m.site, m.date].filter(Boolean);
+    if (!info) { info = document.createElement('span'); info.className = 'tx-msx-info'; }
+    var html = txt.map(function (t, i) { return '<span class="' + (i ? 'd' : 'f') + '">' + t.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }) + '</span>'; }).join('');
+    if (info.innerHTML !== html) info.innerHTML = html;
+    if (info.previousElementSibling !== crumb) crumb.parentNode.insertBefore(info, crumb.nextSibling);
+  }
   function removeHost() { removeUpload(); document.documentElement.classList.remove('tx-msx-page'); if (bar) { bar.remove(); bar = null; } if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
   function showPill(show) {
     if (show && !pill) {
@@ -78,7 +88,7 @@
     if (fsNow !== lastFs) { lastFs = fsNow; force = true; } // 풀스크린 ↔ 기본 보기 전환 시 도구 막대 위치 다시 계산
     showPill(false);
     if (!dash || !on) { removeHost(); return; }
-    w.classList.add('tx-msx-on'); document.documentElement.classList.add('tx-msx-page'); placeUpload(); if (bar) { bar.remove(); bar = null; }
+    w.classList.add('tx-msx-on'); document.documentElement.classList.add('tx-msx-page'); placeUpload(); placeInfo(); if (bar) { bar.remove(); bar = null; }
     var charts = w.querySelector(':scope > .ms-charts') || w.querySelector(':scope > .ms-kpis');
     if (!host) { host = document.createElement('div'); host.className = 'tx-rp tx-rp-inline'; }
     if (host.previousElementSibling !== charts) charts.parentNode.insertBefore(host, charts.nextSibling);
@@ -93,7 +103,7 @@
   function start() {
     var root = document.body; // ADMIN 이 #root 를 다시 만들 수 있어 body 전체 관찰
     new MutationObserver(function (list) {
-      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (upBtn && (upBtn === t || upBtn.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
+      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (upBtn && (upBtn === t || upBtn.contains(t))) continue; if (info && (info === t || info.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
     }).observe(root, { childList: true, subtree: true });
     new MutationObserver(schedule).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     TX.on('model', function () { if (host && inst.active()) inst.render(); });

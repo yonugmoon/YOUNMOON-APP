@@ -4835,7 +4835,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
         <li><b>위치 추가 → 항목 점검</b> — 설비마다 위치를 만들고 적합/부적합·측정값을 입력합니다. 입력은 자동 저장됩니다.</li>
         <li><b>📸 사진</b> — 촬영·갤러리로 현황사진을 넣습니다. 부적합이면 <b>⭕ 불량 위치</b>를 동그라미로 표시할 수 있습니다.</li>
         <li><b>📥 내보내기</b> — 점검이 끝나면 워드(체크리스트 1쪽 · 사진 1쪽)로 내보냅니다.</li>
-        <li><b>결과서</b> — 결과서 자동생성기로 앞장을 만들고, <b>결과서 자동병합</b>으로 점검앱 워드를 합칩니다.</li>
+        <li><b>결과서</b> — 결과서 자동생성기에 사업장을 입력해 두면, 내보내기에서 사업장을 골라 결과서 앞장과 점검표·사진을 한 파일로 저장합니다.</li>
       </ol>
       <button class="g-btn" type="button" id="hx-tour">▶ 점검 화면 사용법 따라하기</button>
     </aside>`;
@@ -4946,14 +4946,6 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
                 <span class="txt"><h3 style="color:#243B6B;">결과서 자동생성기</h3>
                   <p>정보통신설비 유지관리 결과서(Word) 자동 생성 · SafeICT 연계 지원</p></span>
                 <span class="hx-open" style="background:#243B6B;">열기 →</span>
-              </button>
-              <button type="button" class="hx-doc" id="hx-merge" style="background:linear-gradient(135deg,#EFFAF7 0%,#FFFFFF 60%);">
-                <span class="bar" style="background:#0B7B74;"></span>
-                <span class="ghost">🔗</span>
-                <span class="ico" style="background:#D3F0E9;">🔗</span>
-                <span class="txt"><h3 style="color:#0B7B74;">결과서 자동병합</h3>
-                  <p>결과서 + 점검앱 워드(설비별 점검표·사진)를 자동 합쳐 완성본 생성</p></span>
-                <span class="hx-open" style="background:#0B7B74;">열기 →</span>
               </button>
             </div>
           </section>
@@ -7555,7 +7547,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     media.forEach(m=>zip.file('word/media/'+m.f,m.bytes));
     const blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',compression:'DEFLATE'});
     await downloadFile(blob, `측정결과분석_${site||'점검'}_${dt}.docx`);
-    showToast('측정 결과 분석 워드가 저장됩니다. 결과서 자동병합에서 점검앱 워드 대신 넣거나 뒤에 붙여 쓰세요.');
+    showToast('측정 결과 분석 워드가 저장됩니다.');
     }catch(e){ console.error(e); alert('워드 생성 오류: '+e.message); }
     finally{ if(btn){ btn.disabled=false; btn.textContent=bt; } }
   }

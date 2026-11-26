@@ -29,10 +29,13 @@ html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { margin-top:
 .tx-rp-inline > .tx-rp-tbar.is-inbody { display: inline-flex; margin: 0 0 4px; }
 
 /* 측정 대시보드 화면: 상단은 「측정 엑셀 등록」·「풀스크린 관제」만 남김 (요청) — 다른 화면은 그대로 */
-html.tx-msx-page header .fs-tools > button:not([title^="풀스크린 관제"]),
+html.tx-msx-page header .fs-tools > button:not([title^="풀스크린 관제"]):not(.tx-msx-up),
 html.tx-msx-page header .fs-tools > .fs-sep,
 html.tx-msx-page header > .role-lgbtn,
 html.tx-msx-page header > .role-monbtn,
 html.tx-msx-page .main > .role-bar,
 html.tx-msx-page section.measurement-workspace.tx-msx-on > .ms-tabs,
-html.tx-msx-page section.measurement-workspace.tx-msx-on .ms-heading .ms-actions > :not(.primary) { display: none !important; }
+html.tx-msx-page section.measurement-workspace.tx-msx-on .ms-heading .ms-actions { display: none !important; } /* 「측정 엑셀 등록」은 상단 줄로 이동 */
+.tx-msx-up { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; margin-right: 8px; border: 0; border-radius: 8px; background: #3e63db; color: #fff; font: 700 13px/1 Arial, "Noto Sans KR", "Malgun Gothic", sans-serif; cursor: pointer; white-space: nowrap; }
+.tx-msx-up:hover { background: #2f52c4; }
+html:not(.tx-msx-page) .tx-msx-up { display: none; }

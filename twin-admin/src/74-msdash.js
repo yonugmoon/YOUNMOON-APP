@@ -51,7 +51,20 @@
     try { var r = TX.data && TX.data.raw && TX.data.raw(); if (!r || !r.rows) return ''; var n = 0; r.rows.forEach(function (x) { n += String(x.판정 || '').length + String(x.측정값 || '').length; }); return r.rows.length + ':' + n; } catch (e) { return ''; }
   }
   function setOn(v) { on = v; sync(true); }
-  function removeHost() { document.documentElement.classList.remove('tx-msx-page'); if (bar) { bar.remove(); bar = null; } if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
+  /* 「측정 엑셀 등록」을 상단 줄(「풀스크린 관제」 옆)으로: 대리 버튼이 ADMIN 원래 버튼(숨김)을 그대로 눌러 같은 동작 */
+  var upBtn = null;
+  function placeUpload() {
+    var tools = document.querySelector('header .fs-tools'), fsb = tools && tools.querySelector(':scope > button[title^="풀스크린 관제"]');
+    if (!tools) return;
+    if (!upBtn) {
+      upBtn = document.createElement('button'); upBtn.type = 'button'; upBtn.className = 'tx-msx-up'; upBtn.title = '측정 엑셀 등록 (점검 결과 엑셀 파일 올리기)';
+      upBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span>측정 엑셀 등록</span>';
+      upBtn.addEventListener('click', function () { var o = document.querySelector('section.measurement-workspace .ms-heading .ms-actions .ms-btn.primary'); if (o) o.click(); });
+    }
+    if (upBtn.parentNode !== tools || upBtn.nextElementSibling !== fsb) tools.insertBefore(upBtn, fsb || null);
+  }
+  function removeUpload() { if (upBtn) { upBtn.remove(); upBtn = null; } }
+  function removeHost() { removeUpload(); document.documentElement.classList.remove('tx-msx-page'); if (bar) { bar.remove(); bar = null; } if (host) { inst.unmount(); host.remove(); host = null; } var w = ws(); if (w) w.classList.remove('tx-msx-on'); }
   function showPill(show) {
     if (show && !pill) {
       pill = document.createElement('div'); pill.className = 'tx-msx-pill';
@@ -65,7 +78,7 @@
     if (fsNow !== lastFs) { lastFs = fsNow; force = true; } // 풀스크린 ↔ 기본 보기 전환 시 도구 막대 위치 다시 계산
     showPill(false);
     if (!dash || !on) { removeHost(); return; }
-    w.classList.add('tx-msx-on'); document.documentElement.classList.add('tx-msx-page'); if (bar) { bar.remove(); bar = null; }
+    w.classList.add('tx-msx-on'); document.documentElement.classList.add('tx-msx-page'); placeUpload(); if (bar) { bar.remove(); bar = null; }
     var charts = w.querySelector(':scope > .ms-charts') || w.querySelector(':scope > .ms-kpis');
     if (!host) { host = document.createElement('div'); host.className = 'tx-rp tx-rp-inline'; }
     if (host.previousElementSibling !== charts) charts.parentNode.insertBefore(host, charts.nextSibling);
@@ -80,7 +93,7 @@
   function start() {
     var root = document.body; // ADMIN 이 #root 를 다시 만들 수 있어 body 전체 관찰
     new MutationObserver(function (list) {
-      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
+      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (upBtn && (upBtn === t || upBtn.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
     }).observe(root, { childList: true, subtree: true });
     new MutationObserver(schedule).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     TX.on('model', function () { if (host && inst.active()) inst.render(); });

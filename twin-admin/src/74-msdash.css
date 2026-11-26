@@ -44,3 +44,4 @@ html:not(.tx-msx-page) .tx-msx-up { display: none; }
 .tx-msx-info .d { padding-left: 10px; border-left: 1px solid #cbd5e1; color: #334155; }
 html:not(.tx-msx-page) .tx-msx-info { display: none; }
 html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { margin-top: 0; }
+html.tx-msx-page .fs-dock { display: none !important; } /* ADMIN 개요·①·②·요약 도크 → 통합·항목별 */

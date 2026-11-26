@@ -63,7 +63,19 @@
     }
     if (upBtn.parentNode !== tools || upBtn.nextElementSibling !== fsb) tools.insertBefore(upBtn, fsb || null);
   }
-  function removeUpload() { if (upBtn) { upBtn.remove(); upBtn = null; } if (info) { info.remove(); info = null; } }
+  /* 하단 도크: ADMIN 「개요·①·②·요약」 대신 「📊 통합 · 🗂 항목별」 (점검앱 측정 대시보드 방식) */
+  var dock = null;
+  function placeDock() {
+    if (!dock) {
+      dock = document.createElement('div'); dock.className = 'tx-msx-dock'; dock.setAttribute('role', 'tablist');
+      dock.innerHTML = '<button type="button" data-v="1">📊 통합</button><button type="button" data-v="4">🗂 항목별</button>';
+      dock.addEventListener('click', function (e) { var b = e.target.closest('button[data-v]'); if (!b) return; inst.setView(+b.getAttribute('data-v')); paintDock(); var h = host; if (h) { h.scrollTop = 0; if (h.parentNode) h.parentNode.scrollTop = 0; } });
+      document.body.appendChild(dock);
+    }
+    paintDock();
+  }
+  function paintDock() { if (!dock) return; var v = inst.view ? inst.view() : 1; Array.prototype.forEach.call(dock.querySelectorAll('button'), function (b) { var on = +b.getAttribute('data-v') === (v === 4 ? 4 : 1); b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }); }
+  function removeUpload() { if (dock) { dock.remove(); dock = null; } if (upBtn) { upBtn.remove(); upBtn = null; } if (info) { info.remove(); info = null; } }
   /* 제목 줄(측정 대시보드 · 파일명 · 점검일)을 상단 줄 이동 경로 옆으로 올리고 본문 제목 줄은 숨김 */
   var info = null;
   function placeInfo() {
@@ -88,7 +100,7 @@
     if (fsNow !== lastFs) { lastFs = fsNow; force = true; } // 풀스크린 ↔ 기본 보기 전환 시 도구 막대 위치 다시 계산
     showPill(false);
     if (!dash || !on) { removeHost(); return; }
-    w.classList.add('tx-msx-on'); document.documentElement.classList.add('tx-msx-page'); placeUpload(); placeInfo(); if (bar) { bar.remove(); bar = null; }
+    w.classList.add('tx-msx-on'); document.documentElement.classList.add('tx-msx-page'); placeUpload(); placeInfo(); placeDock(); if (bar) { bar.remove(); bar = null; }
     var charts = w.querySelector(':scope > .ms-charts') || w.querySelector(':scope > .ms-kpis');
     if (!host) { host = document.createElement('div'); host.className = 'tx-rp tx-rp-inline'; }
     if (host.previousElementSibling !== charts) charts.parentNode.insertBefore(host, charts.nextSibling);
@@ -103,7 +115,7 @@
   function start() {
     var root = document.body; // ADMIN 이 #root 를 다시 만들 수 있어 body 전체 관찰
     new MutationObserver(function (list) {
-      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (upBtn && (upBtn === t || upBtn.contains(t))) continue; if (info && (info === t || info.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
+      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (upBtn && (upBtn === t || upBtn.contains(t))) continue; if (info && (info === t || info.contains(t))) continue; if (dock && (dock === t || dock.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
     }).observe(root, { childList: true, subtree: true });
     new MutationObserver(schedule).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     TX.on('model', function () { if (host && inst.active()) inst.render(); });

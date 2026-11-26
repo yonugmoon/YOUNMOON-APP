@@ -54,6 +54,7 @@
       var j = m.judge === 'bad' ? 'bad' : m.judge === 'na' ? 'na' : m.judge === 'good' ? 'good' : 'none';
       var id = m.id || ('M' + (i + 1));
       return {
+        num: typeof e.value === 'number' && isFinite(e.value) ? e.value : (typeof m.value === 'number' ? m.value : null), lim: e.limit || null, iUnit: e.unit || m.unit || '', iName: e.item || m.item || '',
         id: id, key: (a ? a.id : r ? r.id : '-') + '|' + id, m: m, a: a, r: r, judge: j, warn: !!m.warn || (!!e.near && j !== 'bad'),
         std: STDN[m.std] || '기타', item: m.item || '측정', value: vs, crit: String(crit || ''), date: pd(m.date || meta.date), dateS: m.date || meta.date || '',
         bldg: m.building || raw.건물 || (f && f.building) || '미지정', floor: m.floorText || raw.층 || (f && f.name) || '', floorCode: fc, /* 원본 행의 건물·층·설비를 우선 (ADMIN 화면과 같은 묶음) */
@@ -76,7 +77,8 @@
     var badAssets = {}; bad.forEach(function (r) { var k = r.a ? r.a.id : r.equip; var o = badAssets[k] = badAssets[k] || { k: k, a: r.a, name: r.a ? r.a.name : r.equip, n: 0, rows: [] }; o.n++; o.rows.push(r); });
     var badEq = byEq.filter(function (g) { return g.bad; }).sort(function (a, b) { return (a.rate == null ? 101 : a.rate) - (b.rate == null ? 101 : b.rate); });
     var done = bad.filter(function (r) { return r.act && r.act.step >= 3; }).length;
-    return { M: M, site: site, rows: rows, bad: bad, good: good, na: na, eff: eff, rate: pct(good.length, eff), byEq: byEq, byStd: byStd, byB: byB, dates: dlist,
+    var items = groupItems(rows);
+    return { items: items, M: M, site: site, rows: rows, bad: bad, good: good, na: na, eff: eff, rate: pct(good.length, eff), byEq: byEq, byStd: byStd, byB: byB, dates: dlist,
       first: dlist[0] && dlist[0].d, last: dlist.length ? dlist[dlist.length - 1].d : null, assets: assets.length, assetOk: assetOk, linked: linked,
       badAssets: Object.keys(badAssets).map(function (k) { return badAssets[k]; }).sort(function (a, b) { return b.n - a.n; }), badEq: badEq, done: done };
   }
@@ -139,7 +141,7 @@
   function header() {
     var d = D, per = d.first ? ymd(d.first) + (d.last && ymd(d.last) !== ymd(d.first) ? ' ~ ' + ymd(d.last) : '') : '점검일 미기재';
     return '<div class="tx-rp-hd"><div class="tx-rp-brand"><i>ICT</i><div><b>' + esc(d.site) + ' 정보통신설비 성능점검 결과</b><small>점검일 ' + esc(per) + ' · 측정 ' + d.rows.length + '건 (유효 ' + d.eff + '건) · ' + (OPTS.inline ? 'ADMIN 측정 자료 · 트윈 연동' : '디지털 트윈 연동') + '</small></div></div>' +
-      '<nav class="tx-rp-tabs">' + [[1, '종합 대시보드'], [2, '측정목록 (' + d.rows.length + ')'], [3, '현장 증빙 · 조치']].map(function (t) { return '<button type="button" data-rp="view" data-k="' + t[0] + '" class="' + (view === t[0] ? 'is-on' : '') + '">' + t[1] + '</button>'; }).join('') + '</nav>' +
+      '<nav class="tx-rp-tabs">' + [[1, '📊 통합'], [4, '🗂 항목별'], [2, '측정목록 (' + d.rows.length + ')'], [3, '현장 증빙 · 조치']].map(function (t) { return '<button type="button" data-rp="view" data-k="' + t[0] + '" class="' + (view === t[0] ? 'is-on' : '') + '">' + t[1] + '</button>'; }).join('') + '</nav>' +
       '<div class="tx-rp-tools"><div class="tx-rp-seg"><button type="button" data-rp="mode" data-k="client" class="' + (pref.mode === 'client' ? 'is-on' : '') + '">발주처 보고</button><button type="button" data-rp="mode" data-k="engineer" class="' + (pref.mode === 'engineer' ? 'is-on' : '') + '">엔지니어 관리</button></div>' +
       '<div class="tx-rp-seg"><button type="button" data-rp="theme" data-k="light" class="' + (pref.theme === 'light' ? 'is-on' : '') + '">화이트</button><button type="button" data-rp="theme" data-k="dark" class="' + (pref.theme === 'dark' ? 'is-on' : '') + '">다크</button></div>' +
       '<button type="button" class="tx-rp-btn" data-rp="csv" data-k="all">CSV 내보내기</button><button type="button" class="tx-rp-btn tx-rp-pri" data-rp="print">인쇄</button>' + (OPTS.inline ? '' : '<button type="button" class="tx-rp-x" data-rp="close" aria-label="닫기" title="트윈으로 돌아가기">✕</button>') + '</div></div>';
@@ -147,7 +149,7 @@
   /* ADMIN 제목 줄에 들어가는 한 줄 도구 막대 (내장 모드) */
   function barHtml() {
     var d = D;
-    return [[1, '종합'], [2, '측정목록 ' + d.rows.length], [3, '증빙·조치']].map(function (t) { return '<button type="button" data-rp="view" data-k="' + t[0] + '" class="tx-rp-bt' + (view === t[0] ? ' is-on' : '') + '">' + t[1] + '</button>'; }).join('') +
+    return [[1, '통합'], [4, '항목별'], [2, '측정목록 ' + d.rows.length], [3, '증빙·조치']].map(function (t) { return '<button type="button" data-rp="view" data-k="' + t[0] + '" class="tx-rp-bt' + (view === t[0] ? ' is-on' : '') + '">' + t[1] + '</button>'; }).join('') +
       '<span class="tx-rp-bsep"></span><button type="button" data-rp="mode" data-k="' + (pref.mode === 'engineer' ? 'client' : 'engineer') + '" class="tx-rp-bt' + (pref.mode === 'engineer' ? ' is-on' : '') + '" title="발주처 보고 ↔ 엔지니어 관리(조치 단계·운영 지표 입력)"><span class="l-full">' + (pref.mode === 'engineer' ? '엔지니어 관리' : '발주처 보고') + '</span><span class="l-short">' + (pref.mode === 'engineer' ? '관리' : '보고') + '</span></button>' +
       '<button type="button" data-rp="theme" data-k="' + (pref.theme === 'dark' ? 'light' : 'dark') + '" class="tx-rp-bt" title="화이트/다크 전환">' + (pref.theme === 'dark' ? '☀' : '☾') + '</button>' +
       '<button type="button" data-rp="csv" data-k="all" class="tx-rp-bt tx-rp-hc" title="측정목록 CSV">CSV</button><button type="button" data-rp="print" class="tx-rp-bt tx-rp-bpri">인쇄</button>';
@@ -217,8 +219,127 @@
     var fn = [['총 점검 대상', d.rows.length + '건', d.rows.length], ['유효 측정 (제외 ' + d.na.length + ')', d.eff + '건', d.eff], ['양호 판정', d.good.length + '건', d.good.length], ['설비·실 연결', d.linked + '건', d.linked], ['불량 조치 완료', d.done + '/' + d.bad.length, d.bad.length ? d.done : 0]];
     var fmx = Math.max(1, d.rows.length);
     r3.push(card('tx-rp-r3', '점검 적합성 · 처리 퍼널', d.rows.length + '건 대상 → 유효 → 양호 → 연결 → 조치', '<span class="tx-rp-chip">5단계</span>', '<div class="tx-rp-fun">' + fn.map(function (f, i) { var w = Math.max(46, 100 * f[2] / fmx); return '<div><span>' + (i === 4 ? (d.bad.length ? f1(pct(d.done, d.bad.length)) + '%' : '—') : f1(pct(f[2], fmx)) + '%') + '</span><b style="width:' + w + '%;background:' + PAL[i % PAL.length] + '">' + esc(f[0]) + ' ' + esc(f[1]) + '</b></div>'; }).join('') + '</div>' + (withPhoto || d.badAssets.length ? '<small class="tx-rp-foot">불량 설비 증빙 사진 ' + withPhoto + '/' + d.badAssets.length + '대</small>' : '')));
+    if (d.items.length) o.push(itemTableCard(d.items));
     o.push('<div class="tx-rp-row3" style="--n:' + r3.length + '">' + r3.join('') + '</div>');
     return '<div class="tx-rp-body"><div class="tx-rp-bento">' + o.join('') + '</div><p class="tx-rp-src">출처: 트윈에 등록된 점검 측정 자료(점검 결과서·ADMIN 측정) · 실시간 센서 값 아님 · 마지막 집계 ' + ymd(new Date()) + '</p></div>';
+  }
+
+  /* ================= 측정 항목별 (점검앱 대시보드 방식: 통합 표 · 항목별 카드) ================= */
+  function itemLabel(r) {
+    var m = r.m, u = r.iUnit || '', st = m.std, n = String(r.iName || m.item || '').replace(/^\(추가\)\s*/, '');
+    if (/ΔT/.test(n)) return '열화상 ΔT';
+    if (st === 'gnd' || /Ω/.test(u)) return '접지저항';
+    if (/lx/i.test(u)) return '조도';
+    if (/RH/i.test(u) || (st === 'env' && /%/.test(u))) return '습도';
+    if (st === 'env' && /℃|°C/.test(u)) return '온도';
+    if (/dB\(A\)/i.test(u)) return '이상 소음';
+    if (st === 'pwr' || /^V$/.test(u)) return r.num != null && r.num < 150 && /AC/i.test(r.crit + ((r.lim && r.lim.text) || '')) ? '입력 전원 (DC)' : '입력 전원'; /* AC 220V 기준을 DC 48V 등에 적용하지 않음 */
+    if (st === 'heat') return '열화상 최고온도';
+    var t = n.split(/\s[—–-]\s/).pop().replace(/\([^)]*\)/g, '').replace(/\s*(측정|확인|상태)\s*$/g, '').trim();
+    return t.length > 16 ? t.slice(0, 16) + '…' : t || '측정';
+  }
+  function groupItems(rows) {
+    var g = {}, order = [];
+    rows.forEach(function (r) {
+      if (r.num == null || r.judge === 'na') return;
+      var lab = itemLabel(r), k = lab + '|' + (r.iUnit || '');
+      if (!g[k]) { g[k] = { key: k, name: lab, unit: r.iUnit || '', rows: [], lim: null }; order.push(k); }
+      g[k].rows.push(r); if (!g[k].lim && !/\(DC\)$/.test(lab) && r.lim && (r.lim.lo != null || r.lim.hi != null)) g[k].lim = r.lim;
+    });
+    return order.map(function (k) {
+      var it = g[k], vs = it.rows.map(function (r) { return r.num; }), lim = it.lim, lo = lim && lim.lo != null ? lim.lo : null, hi = lim && lim.hi != null ? lim.hi : null;
+      var sum = vs.reduce(function (a, b) { return a + b; }, 0), avg = sum / vs.length, mn = Math.min.apply(null, vs), mx = Math.max.apply(null, vs);
+      var out = it.rows.filter(function (r) { return (hi != null && r.num > hi) || (lo != null && r.num < lo); });
+      if (!lim) out = [];
+      var bad = it.rows.filter(function (r) { return r.judge === 'bad'; });
+      var kind = lo != null && hi != null ? 'range' : hi != null ? 'gauge' : lo != null ? 'low' : 'line';
+      var rep = kind === 'gauge' ? mx : kind === 'low' ? mn : avg, repLab = kind === 'gauge' ? '최고값' : kind === 'low' ? '최저값' : '평균';
+      it.rows.sort(function (a, b) { return (a.bldg + a.floor + a.loc).localeCompare(b.bldg + b.floor + b.loc, 'ko'); });
+      return Object.assign(it, { n: vs.length, avg: avg, min: mn, max: mx, lo: lo, hi: hi, kind: kind, rep: rep, repLab: repLab, out: out, bad: bad, critText: lim ? lim.text : '' ,
+        status: bad.length ? 'bad' : !lim ? 'none' : out.length ? 'dev' : 'ok' });
+    }).sort(function (a, b) { var o = { bad: 0, dev: 1, ok: 2, none: 3 }; return (o[a.status] - o[b.status]) || (b.n - a.n); });
+  }
+  function nf(v) { if (v == null || !isFinite(v)) return '—'; var a = Math.abs(v); return (a >= 100 ? Math.round(v) : a >= 10 ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100).toLocaleString('en-US'); }
+  function scaleOf(it, padK) { var ext = [it.min, it.max].concat([it.lo, it.hi].filter(function (x) { return x != null; })); var lo = Math.min.apply(null, ext), hi = Math.max.apply(null, ext), pad = (hi - lo || Math.abs(hi) || 1) * (padK || 0.25); var a = lo - pad; if (lo >= 0 && a < 0) a = 0; return { lo: a, hi: hi + pad }; } /* 음수가 될 수 없는 값은 0 아래로 내리지 않음 */
+  var ST_IC = { bad: ['!', 'var(--rp-crimson)'], dev: ['~', 'var(--rp-amber)'], ok: ['✓', 'var(--rp-emerald)'], none: ['–', 'var(--rp-muted)'] };
+  function gaugeSVG(it) {
+    var top = Math.max(it.hi * 1.5, it.max * 1.1, 1), cx = 150, cy = 124, R = 86, A = function (v) { var t = Math.PI * (1 - Math.max(0, Math.min(1, v / top))); return [cx + R * Math.cos(t), cy - R * Math.sin(t)]; };
+    var arc = function (v0, v1) { var p0 = A(v0), p1 = A(v1), large = (v1 - v0) / top > 0.5 ? 1 : 0; return 'M' + p0[0].toFixed(1) + ' ' + p0[1].toFixed(1) + 'A' + R + ' ' + R + ' 0 ' + large + ' 1 ' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1); };
+    var over = it.rep > it.hi, col = over ? 'var(--rp-crimson)' : it.rep > it.hi * 0.8 ? 'var(--rp-amber)' : 'var(--rp-emerald)', o = ['<svg viewBox="0 0 300 160" class="tx-rp-gauge">'];
+    o.push('<path d="' + arc(0, top) + '" fill="none" class="tx-rp-trackc" stroke-width="16" stroke-linecap="round"/>');
+    o.push('<path d="' + arc(0, Math.min(it.hi, top)) + '" fill="none" stroke="var(--rp-emerald-soft)" stroke-width="16"/>');
+    o.push('<path d="' + arc(0, Math.max(0.0001, Math.min(it.rep, top))) + '" fill="none" stroke="' + col + '" stroke-width="16" stroke-linecap="round"/>');
+    for (var i = 0; i <= 4; i++) { var v = top * i / 4, p = A(v), q = [cx + (R + 24) * (p[0] - cx) / R, cy + (R + 24) * (p[1] - cy) / R]; o.push('<text x="' + q[0].toFixed(1) + '" y="' + (q[1] + 4).toFixed(1) + '" text-anchor="middle" class="tx-rp-ax">' + nf(v) + '</text>'); }
+    var lp = A(it.hi), li = [cx + (R - 12) * (lp[0] - cx) / R, cy + (R - 12) * (lp[1] - cy) / R], lo2 = [cx + (R + 10) * (lp[0] - cx) / R, cy + (R + 10) * (lp[1] - cy) / R];
+    o.push('<line x1="' + li[0].toFixed(1) + '" y1="' + li[1].toFixed(1) + '" x2="' + lo2[0].toFixed(1) + '" y2="' + lo2[1].toFixed(1) + '" stroke="var(--rp-crimson)" stroke-width="3"><title>기준 ' + nf(it.hi) + it.unit + '</title></line>');
+    var np = A(Math.min(it.rep, top)), nn = [cx + (R - 26) * (np[0] - cx) / R, cy + (R - 26) * (np[1] - cy) / R];
+    o.push('<line x1="' + cx + '" y1="' + cy + '" x2="' + nn[0].toFixed(1) + '" y2="' + nn[1].toFixed(1) + '" stroke="var(--rp-text)" stroke-width="3.5" stroke-linecap="round"/><circle cx="' + cx + '" cy="' + cy + '" r="8" fill="var(--rp-card)" stroke="var(--rp-text)" stroke-width="3.5"/>');
+    o.push('<rect x="' + (cx - 58) + '" y="' + (cy + 18) + '" width="116" height="22" rx="7" fill="' + (over ? 'var(--rp-crimson-soft)' : 'var(--rp-emerald-soft)') + '"/><text x="' + cx + '" y="' + (cy + 34) + '" text-anchor="middle" font-size="13" font-weight="900" fill="' + col + '">' + nf(it.rep) + esc(it.unit) + ' ' + it.repLab + '</text>');
+    return o.join('') + '</svg>';
+  }
+  function rangeSVG(it) {
+    var sc = scaleOf(it), W = 360, L = 14, Rr = W - 14, X = function (v) { return L + (v - sc.lo) / (sc.hi - sc.lo || 1) * (Rr - L); }, y = 40, a = it.lo != null ? it.lo : sc.lo, b = it.hi != null ? it.hi : sc.hi, o = ['<svg viewBox="0 0 ' + W + ' 92" class="tx-rp-svg">'];
+    o.push('<text x="' + ((X(a) + X(b)) / 2).toFixed(1) + '" y="14" text-anchor="middle" font-size="11" font-weight="800" fill="var(--rp-emerald)">참고기준 ' + esc(it.critText || '') + '</text><line x1="' + X(a).toFixed(1) + '" x2="' + X(b).toFixed(1) + '" y1="20" y2="20" stroke="var(--rp-emerald)" stroke-dasharray="4 3"/>');
+    o.push('<rect x="' + L + '" y="' + (y - 7) + '" width="' + (Rr - L) + '" height="14" rx="7" class="tx-rp-track"/><rect x="' + X(a).toFixed(1) + '" y="' + (y - 7) + '" width="' + Math.max(2, X(b) - X(a)).toFixed(1) + '" height="14" rx="7" fill="var(--rp-emerald-soft)"/>');
+    it.rows.forEach(function (r) { var ov = (it.hi != null && r.num > it.hi) || (it.lo != null && r.num < it.lo); o.push('<circle cx="' + X(r.num).toFixed(1) + '" cy="' + y + '" r="' + (ov ? 4.5 : 3.5) + '" fill="' + (ov ? 'var(--rp-crimson)' : 'var(--rp-muted)') + '"><title>' + esc(r.loc + ' ' + nf(r.num) + it.unit) + '</title></circle>'); });
+    o.push('<circle cx="' + X(it.avg).toFixed(1) + '" cy="' + y + '" r="9" fill="var(--rp-card)" stroke="var(--rp-cobalt)" stroke-width="4"/><rect x="' + (X(it.avg) - 34).toFixed(1) + '" y="' + (y + 12) + '" width="68" height="18" rx="6" fill="var(--rp-cobalt-soft)"/><text x="' + X(it.avg).toFixed(1) + '" y="' + (y + 25) + '" text-anchor="middle" font-size="11" font-weight="900" fill="var(--rp-cobalt)">' + nf(it.avg) + esc(it.unit) + '</text>');
+    for (var i = 0; i <= 4; i++) { var v = sc.lo + (sc.hi - sc.lo) * i / 4; o.push('<text x="' + X(v).toFixed(1) + '" y="' + (y + 48) + '" text-anchor="middle" class="tx-rp-ax">' + nf(v) + '</text>'); }
+    return o.join('') + '</svg>';
+  }
+  function trendSVG(it, H, W) {
+    H = H || 120; W = W || 360; var L = 34, Rr = W - 8, T = 10, B = 22, n = it.rows.length, sc = scaleOf(it, 0.15);
+    var X = function (i) { return n === 1 ? (L + Rr) / 2 : L + (Rr - L) * i / (n - 1); }, Y = function (v) { return T + (H - T - B) * (1 - (v - sc.lo) / (sc.hi - sc.lo || 1)); }, o = ['<svg viewBox="0 0 ' + W + ' ' + H + '" class="tx-rp-svg">'];
+    for (var t = 0; t <= 3; t++) { var v = sc.lo + (sc.hi - sc.lo) * t / 3, yy = Y(v); o.push('<line x1="' + L + '" x2="' + Rr + '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '" class="tx-rp-grid"/><text x="' + (L - 4) + '" y="' + (yy + 3).toFixed(1) + '" text-anchor="end" class="tx-rp-ax">' + nf(v) + '</text>'); }
+    if (it.lo != null && it.hi != null) o.push('<rect x="' + L + '" y="' + Y(it.hi).toFixed(1) + '" width="' + (Rr - L) + '" height="' + Math.max(1, Y(it.lo) - Y(it.hi)).toFixed(1) + '" fill="var(--rp-emerald-soft)"/>');
+    [it.lo, it.hi].forEach(function (v) { if (v != null) o.push('<line x1="' + L + '" x2="' + Rr + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" stroke="var(--rp-emerald)" stroke-dasharray="5 4"/>'); });
+    var d = it.rows.map(function (r, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(r.num).toFixed(1); }).join('');
+    o.push('<path d="' + d + 'L' + X(n - 1).toFixed(1) + ' ' + (H - B) + 'L' + X(0).toFixed(1) + ' ' + (H - B) + 'Z" fill="var(--rp-cobalt-soft)"/><path d="' + d + '" fill="none" stroke="var(--rp-cobalt)" stroke-width="2"/>');
+    var every = Math.max(1, Math.ceil(n / 7));
+    it.rows.forEach(function (r, i) { var ov = (it.hi != null && r.num > it.hi) || (it.lo != null && r.num < it.lo); o.push('<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(r.num).toFixed(1) + '" r="' + (ov ? 4 : 2.8) + '" fill="' + (ov ? 'var(--rp-crimson)' : 'var(--rp-card)') + '" stroke="' + (ov ? 'var(--rp-card)' : 'var(--rp-cobalt)') + '" stroke-width="1.6"><title>' + esc(r.loc + ' · ' + nf(r.num) + it.unit) + '</title></circle>');
+      if (i % every === 0) o.push('<text x="' + X(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" class="tx-rp-ax" font-size="9">' + esc(String(r.floor || r.loc).slice(0, 6)) + '</text>'); });
+    return o.join('') + '</svg>';
+  }
+  function spark(it) {
+    var W = 150, H = 30, n = it.rows.length, sc = scaleOf(it, 0.1), X = function (i) { return n === 1 ? W / 2 : 3 + (W - 6) * i / (n - 1); }, Y = function (v) { return 3 + (H - 6) * (1 - (v - sc.lo) / (sc.hi - sc.lo || 1)); };
+    var band = it.lo != null || it.hi != null ? '<rect x="0" y="' + Y(it.hi != null ? it.hi : sc.hi).toFixed(1) + '" width="' + W + '" height="' + Math.max(1, Y(it.lo != null ? it.lo : sc.lo) - Y(it.hi != null ? it.hi : sc.hi)).toFixed(1) + '" fill="var(--rp-emerald-soft)"/>' : '';
+    var d = it.rows.map(function (r, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(r.num).toFixed(1); }).join('');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="tx-rp-spark">' + band + '<path d="' + d + '" fill="none" stroke="var(--rp-cobalt)" stroke-width="1.6"/>' + it.rows.map(function (r, i) { var ov = (it.hi != null && r.num > it.hi) || (it.lo != null && r.num < it.lo); return ov ? '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(r.num).toFixed(1) + '" r="2.6" fill="var(--rp-crimson)"/>' : ''; }).join('') + '</svg>';
+  }
+  function distBar(it) {
+    var sc = scaleOf(it, 0.12), P = function (v) { return Math.max(0, Math.min(100, (v - sc.lo) / (sc.hi - sc.lo || 1) * 100)); };
+    var a = it.lo != null ? P(it.lo) : 0, b = it.hi != null ? P(it.hi) : 100;
+    return '<span class="tx-rp-dist"><i style="left:' + a + '%;width:' + Math.max(1, b - a) + '%"></i><u style="left:' + P(it.min) + '%;width:' + Math.max(1, P(it.max) - P(it.min)) + '%"></u><b style="left:' + P(it.avg) + '%"></b></span>';
+  }
+  function statusChip(it) { return it.status === 'bad' ? '<span class="tx-rp-chip is-bad">부적합 ' + it.bad.length + '</span>' : it.status === 'dev' ? '<span class="tx-rp-chip is-warn">범위 밖 ' + it.out.length + '</span>' : it.status === 'ok' ? '<span class="tx-rp-chip is-ok">범위 이내</span>' : '<span class="tx-rp-chip is-na">기준 없음</span>'; }
+  function itemTableCard(items) {
+    return '<section class="tx-rp-card tx-rp-full12"><div class="tx-rp-ch"><div><h4>측정 항목 한눈에 보기</h4><small>' + items.length + '개 항목 · 줄을 누르면 위치별 값 · 「🗂 항목별」에서 항목마다 그래프</small></div></div><div class="tx-rp-tablewrap"><table class="tx-rp-table tx-rp-itab"><thead><tr><th></th><th>측정 항목</th><th>위치별 추이</th><th class="r">' + '대표값</th><th class="r">최소~최대</th><th>기준 대비 분포</th><th>참고기준</th><th>상태</th></tr></thead><tbody>' +
+      items.map(function (it) { var ic = ST_IC[it.status]; return '<tr data-rp="item" data-k="' + esc(it.key) + '"><td><i class="tx-rp-dot" style="background:' + ic[1] + '"></i></td><td><b>' + esc(it.name) + '</b><small>' + it.n + '곳 · ' + it.repLab + ' ' + nf(it.rep) + esc(it.unit) + '</small></td><td>' + spark(it) + '</td><td class="tx-rp-val">' + nf(it.rep) + '<small class="u">' + esc(it.unit) + '</small></td><td class="r tx-rp-mut">' + nf(it.min) + '~' + nf(it.max) + '</td><td>' + distBar(it) + '</td><td class="tx-rp-mut">' + esc(it.critText || '—') + '</td><td>' + statusChip(it) + '</td></tr>'; }).join('') +
+      '</tbody></table></div><div class="tx-rp-leg" style="margin-top:8px"><span><i style="background:var(--rp-emerald-soft);border-radius:2px"></i>참고범위</span><span><i style="background:var(--rp-text);border-radius:2px;height:3px"></i>최소~최대</span><span><i style="background:var(--rp-cobalt)"></i>대표값</span><span><i style="background:var(--rp-crimson)"></i>이탈 위치</span></div></section>';
+  }
+  /* 🗂 항목별: 측정 항목마다 게이지·범위·추이 카드 */
+  function view4() {
+    var d = D, its = d.items;
+    if (!its.length) return '<div class="tx-rp-body">' + empty('숫자로 된 측정값이 없습니다 (접지저항·전압·온습도·조도 등 측정값이 있으면 항목별 그래프가 나타납니다)') + '</div>';
+    var nb = its.filter(function (x) { return x.status === 'bad'; }), nd = its.filter(function (x) { return x.status === 'dev'; });
+    var alerts = (nb.length ? '<div class="tx-rp-alert is-bad">⚠ 부적합 판정 ' + nb.reduce(function (s, x) { return s + x.bad.length; }, 0) + '건 · ' + nb.map(function (x) { return esc(x.name); }).join(' · ') + '</div>' : '') + (nd.length ? '<div class="tx-rp-alert is-warn">ℹ 참고범위 밖 ' + nd.reduce(function (s, x) { return s + x.out.length; }, 0) + '건 (환경 편차·부적합 아님) · ' + nd.map(function (x) { return esc(x.name); }).join(' · ') + '</div>' : '');
+    var cards = its.map(function (it, i) {
+      var ic = ST_IC[it.status], chart = it.kind === 'gauge' ? gaugeSVG(it) : it.kind === 'range' || it.kind === 'low' ? rangeSVG(it) + (it.n >= 3 ? '<div class="tx-rp-mini">' + trendSVG(it, 96) + '</div>' : '') : trendSVG(it, 150);
+      var foot = it.status === 'bad' ? '<span class="is-bad">부적합 ' + it.bad.length + '곳</span>' : it.status === 'dev' ? '<span class="is-warn">참고범위 밖 ' + it.out.length + '곳</span>' : it.status === 'ok' ? '<span class="is-ok">범위 이내 ' + it.n + '/' + it.n + '</span>' : '<span class="tx-rp-mut">참고기준 없음 · ' + it.n + '곳</span>';
+      return '<button type="button" class="tx-rp-icard is-' + it.status + '" data-rp="item" data-k="' + esc(it.key) + '" style="animation-delay:' + (i * 0.04).toFixed(2) + 's"><div class="tx-rp-ich"><i style="background:' + ic[1] + '">' + ic[0] + '</i><b title="' + esc(it.name) + '">' + esc(it.name) + '</b><strong class="is-' + it.status + '">' + nf(it.rep) + '<small>' + esc(it.unit) + '</small></strong></div>' +
+        '<div class="tx-rp-ics"><span>' + it.repLab + ' · ' + it.n + '곳</span><span>' + (it.critText ? '참고기준 ' + esc(it.critText) : '참고기준 없음') + '</span></div><div class="tx-rp-icc">' + chart + '</div><div class="tx-rp-icf">' + foot + '<span class="tx-rp-mut">자세히 ›</span></div></button>';
+    }).join('');
+    return '<div class="tx-rp-body"><div class="tx-rp-alerts">' + alerts + '</div><div class="tx-rp-igrid">' + cards + '</div><p class="tx-rp-src">항목별: 같은 측정 항목을 위치마다 모아 기준과 비교 · 대표값 = 상한 기준은 최고값, 하한 기준은 최저값, 범위 기준은 평균</p></div>';
+  }
+  function itemModal(key) {
+    var it = D.items.find(function (x) { return x.key === key; }); if (!it) return;
+    var m = U.el('div', 'tx-rp-modal');
+    var rows = it.rows.slice().sort(function (a, b) { var ov = function (r) { return (it.hi != null && r.num > it.hi) || (it.lo != null && r.num < it.lo) ? 1 : 0; }; return (b.judge === 'bad') - (a.judge === 'bad') || ov(b) - ov(a) || b.num - a.num; });
+    m.innerHTML = '<div class="tx-rp-mbox tx-rp-mwide"><div class="tx-rp-mh">' + statusChip(it) + '<h3>' + esc(it.name) + ' · ' + it.n + '곳</h3><button type="button" class="tx-rp-x" data-rp="mclose">✕</button></div><div class="tx-rp-mbd">' +
+      '<div class="tx-rp-mstat"><div><small>' + it.repLab + '</small><b>' + nf(it.rep) + esc(it.unit) + '</b></div><div><small>평균</small><b>' + nf(it.avg) + esc(it.unit) + '</b></div><div><small>최소~최대</small><b>' + nf(it.min) + '~' + nf(it.max) + '</b></div><div><small>참고기준</small><b>' + esc(it.critText || '없음') + '</b></div></div>' +
+      '<div class="tx-rp-mchart">' + trendSVG(it, 200, 820) + '</div><div class="tx-rp-tablewrap"><table class="tx-rp-table"><thead><tr><th>판정</th><th>건물·위치</th><th>설비</th><th class="r">실측값</th><th>점검일</th></tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr data-rp="row" data-k="' + esc(r.key) + '" class="' + (r.judge === 'bad' ? 'is-bad' : '') + '"><td>' + chip(r.judge, r.warn) + '</td><td>' + esc([r.bldg, r.floor, r.loc].filter(Boolean).join(' ')) + '</td><td>' + esc(r.equip) + '</td><td class="tx-rp-val ' + (r.judge === 'bad' ? 'is-bad' : '') + '">' + nf(r.num) + ' ' + esc(it.unit) + '</td><td class="tx-rp-mut">' + esc(r.dateS) + '</td></tr>'; }).join('') + '</tbody></table></div></div></div>';
+    m.addEventListener('click', function (e) { if (e.target === m || e.target.closest('[data-rp="mclose"]')) { m.remove(); return; } var tr = e.target.closest('[data-rp="row"]'); if (tr) { e.stopPropagation(); m.remove(); modal(tr.getAttribute('data-k')); } });
+    el.appendChild(m);
   }
   /* 측정목록 */
   function filtered() {
@@ -303,7 +424,7 @@
     var mo = el.querySelector('.tx-rp-modal'); /* 열린 상세 창은 다시 그려도 유지 */
     var bar = OPTS.inline && OPTS.bar ? OPTS.bar() : null;
     if (bar) { if (!bar._rpBound) { bar._rpBound = true; bar.addEventListener('click', onClick); } bar.className = 'tx-rp-tbar' + (pref.theme === 'dark' ? ' tx-rp-tbar-dark' : ''); bar.innerHTML = barHtml(); }
-    el.innerHTML = (bar || OPTS.noHeader ? '' : header()) + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view1());
+    el.innerHTML = (bar || OPTS.noHeader ? '' : header()) + (!D.rows.length ? emptyView() : view === 2 ? view2() : view === 3 ? view3() : view === 4 ? view4() : view1());
     if (mo) el.appendChild(mo);
     if (bar && OPTS.barFit) OPTS.barFit(bar, el); /* 본문을 그린 뒤 막대 위치 결정 (좁으면 본문 맨 위) */
     var b2 = el.querySelector('.tx-rp-body'); if (b2) b2.scrollTop = top;
@@ -342,6 +463,7 @@
     else if (a === 'tab') { st.tab = +k; render(); }
     else if (a === 'cal') { var c = st.cal || D.last || new Date(); st.cal = new Date(c.getFullYear(), c.getMonth() + (+k), 1); render(); }
     else if (a === 'row') modal(k);
+    else if (a === 'item') itemModal(k);
     else if (a === 'go') goTwin(k, b.getAttribute('data-v'));
     else if (a === 'csv') csv(k === 'flt' ? filtered() : D.rows);
     else if (a === 'print') { if (OPTS.inline) { document.body.classList.add('tx-rp-pinline'); var off = function () { document.body.classList.remove('tx-rp-pinline'); window.removeEventListener('afterprint', off); }; window.addEventListener('afterprint', off); window.print(); setTimeout(off, 1500); } else window.print(); }
@@ -386,7 +508,7 @@
   function unmount() { if (!el) return; urls.forEach(function (u) { URL.revokeObjectURL(u); }); urls = []; el = null; }
   function close() { if (OPTS.inline) { unmount(); return; } if (!el) return; urls.forEach(function (u) { URL.revokeObjectURL(u); }); urls = []; el.remove(); el = null; document.removeEventListener('keydown', onKey, true); document.body.classList.remove('tx-rp-open'); paintBtn(); }
 
-  return { open: open, close: close, render: render, mountInline: mountInline, unmount: unmount, active: function () { return !!el; }, host: function () { return el; }, data: collect, csv: function () { return D ? D.rows.length : 0; } };
+  return { setView: function (v) { view = v; render(); var bd = el && el.querySelector('.tx-rp-body'); if (bd) bd.scrollTop = 0; if (el && el.scrollIntoView && OPTS.inline) el.scrollTop = 0; }, view: function () { return view; }, open: open, close: close, render: render, mountInline: mountInline, unmount: unmount, active: function () { return !!el; }, host: function () { return el; }, data: collect, csv: function () { return D ? D.rows.length : 0; } };
   }
   var OV = createInst({});
 

@@ -113,6 +113,7 @@
   function schedule() { if (timer) return; timer = setTimeout(function () { timer = null; sync(false); }, 250); } // 스로틀: 잦은 DOM 변경에도 주기적으로 실행
 
   function start() {
+    document.documentElement.classList.add('tx-adm-clean'); // 모든 ADMIN 화면 상단 정리 (74-msdash.css)
     var root = document.body; // ADMIN 이 #root 를 다시 만들 수 있어 body 전체 관찰
     new MutationObserver(function (list) {
       for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (upBtn && (upBtn === t || upBtn.contains(t))) continue; if (info && (info === t || info.contains(t))) continue; if (dock && (dock === t || dock.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시

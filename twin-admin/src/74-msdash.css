@@ -45,3 +45,46 @@ html:not(.tx-msx-page) .tx-msx-up { display: none; }
 html:not(.tx-msx-page) .tx-msx-info { display: none; }
 html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { margin-top: 0; }
 html.tx-msx-page .fs-dock { display: none !important; } /* ADMIN 개요·①·②·요약 도크 → 통합·항목별 */
+
+/* ===== 측정 대시보드: 상단 빈 공간 제거 · 전체 크기 축소 (요청) ===== */
+html.tx-msx-page .main > main { padding: 4px 8px 0 !important; }
+html.tx-msx-page section.measurement-workspace.tx-msx-on { padding: 4px 6px 58px !important; }
+html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { margin-top: 0 !important; }
+.tx-rp.tx-rp-inline { font-size: 12px; margin: 0; }
+.tx-rp-inline .tx-rp-body { padding: 0 !important; }
+.tx-rp-inline .tx-rp-bento, .tx-rp-inline .tx-rp-src, .tx-rp-inline .tx-rp-alerts, .tx-rp-inline .tx-rp-igrid, .tx-rp-inline .tx-rp-full { max-width: none; }
+.tx-rp-inline .tx-rp-bento, .tx-rp-inline .tx-rp-row3, .tx-rp-inline .tx-rp-igrid { gap: 8px; }
+.tx-rp-inline .tx-rp-card { padding: 10px 12px; border-radius: 9px; }
+.tx-rp-inline .tx-rp-ch { margin-bottom: 6px; }
+.tx-rp-inline .tx-rp-card h4 { font-size: 12.5px; }
+.tx-rp-inline .tx-rp-ch small { font-size: 10.5px; margin-top: 1px; }
+.tx-rp-inline .tx-rp-main { padding: 0; }
+.tx-rp-inline .tx-rp-kpi { padding: 8px 10px 6px; }
+.tx-rp-inline .tx-rp-kpi b { font-size: 18px; margin-top: 1px; }
+.tx-rp-inline .tx-rp-main .tx-rp-chart { min-height: 170px; max-height: 210px; padding: 8px 10px 2px; }
+.tx-rp-inline .tx-rp-main .tx-rp-cf { padding: 4px 10px 8px; }
+.tx-rp-inline .tx-rp-chart { min-height: 160px; }
+.tx-rp-inline .tx-rp-short { min-height: 120px; max-height: 150px; }
+.tx-rp-inline .tx-rp-dwrap { min-height: 130px; }
+.tx-rp-inline .tx-rp-donut { max-width: 160px; }
+.tx-rp-inline .tx-rp-calwrap { gap: 10px; }
+.tx-rp-inline .tx-rp-calg { gap: 1px; font-size: 11px; }
+.tx-rp-inline .tx-rp-calg span { padding: 2px 0; }
+.tx-rp-inline .tx-rp-calhd { margin-bottom: 3px; } .tx-rp-inline .tx-rp-calhd b { font-size: 13px; }
+.tx-rp-inline .tx-rp-tl { margin: 10px 4px 6px; }
+.tx-rp-inline .tx-rp-note { padding: 6px 9px; font-size: 11px; }
+.tx-rp-inline .tx-rp-def { padding: 6px 9px; }
+.tx-rp-inline .tx-rp-defs { gap: 4px; }
+.tx-rp-inline .tx-rp-hbars { gap: 6px; }
+.tx-rp-inline .tx-rp-itab td { padding: 5px 8px; }
+.tx-rp-inline .tx-rp-icard { padding: 10px 12px 9px; border-radius: 11px; }
+.tx-rp-inline .tx-rp-ich strong { font-size: 21px; }
+.tx-rp-inline .tx-rp-ich b { font-size: 13.5px; }
+.tx-rp-inline .tx-rp-icc { min-height: 120px; margin: 4px 0 0; }
+.tx-rp-inline .tx-rp-gauge { max-width: 240px; }
+.tx-rp-inline .tx-rp-igrid { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
+.tx-rp-inline .tx-rp-alerts { margin-bottom: 8px; gap: 8px; }
+.tx-rp-inline .tx-rp-alert { padding: 7px 12px; font-size: 12px; }
+.tx-rp-inline .tx-rp-src { margin-top: 8px; }
+.tx-msx-dock { bottom: 12px; padding: 4px; }
+.tx-msx-dock button { padding: 7px 16px; font-size: 13px; }

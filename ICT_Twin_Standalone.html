@@ -1359,6 +1359,49 @@ html:not(.tx-msx-page) .tx-msx-info { display: none; }
 html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { margin-top: 0; }
 html.tx-msx-page .fs-dock { display: none !important; } /* ADMIN 개요·①·②·요약 도크 → 통합·항목별 */
 
+/* ===== 측정 대시보드: 상단 빈 공간 제거 · 전체 크기 축소 (요청) ===== */
+html.tx-msx-page .main > main { padding: 4px 8px 0 !important; }
+html.tx-msx-page section.measurement-workspace.tx-msx-on { padding: 4px 6px 58px !important; }
+html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { margin-top: 0 !important; }
+.tx-rp.tx-rp-inline { font-size: 12px; margin: 0; }
+.tx-rp-inline .tx-rp-body { padding: 0 !important; }
+.tx-rp-inline .tx-rp-bento, .tx-rp-inline .tx-rp-src, .tx-rp-inline .tx-rp-alerts, .tx-rp-inline .tx-rp-igrid, .tx-rp-inline .tx-rp-full { max-width: none; }
+.tx-rp-inline .tx-rp-bento, .tx-rp-inline .tx-rp-row3, .tx-rp-inline .tx-rp-igrid { gap: 8px; }
+.tx-rp-inline .tx-rp-card { padding: 10px 12px; border-radius: 9px; }
+.tx-rp-inline .tx-rp-ch { margin-bottom: 6px; }
+.tx-rp-inline .tx-rp-card h4 { font-size: 12.5px; }
+.tx-rp-inline .tx-rp-ch small { font-size: 10.5px; margin-top: 1px; }
+.tx-rp-inline .tx-rp-main { padding: 0; }
+.tx-rp-inline .tx-rp-kpi { padding: 8px 10px 6px; }
+.tx-rp-inline .tx-rp-kpi b { font-size: 18px; margin-top: 1px; }
+.tx-rp-inline .tx-rp-main .tx-rp-chart { min-height: 170px; max-height: 210px; padding: 8px 10px 2px; }
+.tx-rp-inline .tx-rp-main .tx-rp-cf { padding: 4px 10px 8px; }
+.tx-rp-inline .tx-rp-chart { min-height: 160px; }
+.tx-rp-inline .tx-rp-short { min-height: 120px; max-height: 150px; }
+.tx-rp-inline .tx-rp-dwrap { min-height: 130px; }
+.tx-rp-inline .tx-rp-donut { max-width: 160px; }
+.tx-rp-inline .tx-rp-calwrap { gap: 10px; }
+.tx-rp-inline .tx-rp-calg { gap: 1px; font-size: 11px; }
+.tx-rp-inline .tx-rp-calg span { padding: 2px 0; }
+.tx-rp-inline .tx-rp-calhd { margin-bottom: 3px; } .tx-rp-inline .tx-rp-calhd b { font-size: 13px; }
+.tx-rp-inline .tx-rp-tl { margin: 10px 4px 6px; }
+.tx-rp-inline .tx-rp-note { padding: 6px 9px; font-size: 11px; }
+.tx-rp-inline .tx-rp-def { padding: 6px 9px; }
+.tx-rp-inline .tx-rp-defs { gap: 4px; }
+.tx-rp-inline .tx-rp-hbars { gap: 6px; }
+.tx-rp-inline .tx-rp-itab td { padding: 5px 8px; }
+.tx-rp-inline .tx-rp-icard { padding: 10px 12px 9px; border-radius: 11px; }
+.tx-rp-inline .tx-rp-ich strong { font-size: 21px; }
+.tx-rp-inline .tx-rp-ich b { font-size: 13.5px; }
+.tx-rp-inline .tx-rp-icc { min-height: 120px; margin: 4px 0 0; }
+.tx-rp-inline .tx-rp-gauge { max-width: 240px; }
+.tx-rp-inline .tx-rp-igrid { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
+.tx-rp-inline .tx-rp-alerts { margin-bottom: 8px; gap: 8px; }
+.tx-rp-inline .tx-rp-alert { padding: 7px 12px; font-size: 12px; }
+.tx-rp-inline .tx-rp-src { margin-top: 8px; }
+.tx-msx-dock { bottom: 12px; padding: 4px; }
+.tx-msx-dock button { padding: 7px 16px; font-size: 13px; }
+
 /* 단독 운영판: 앱 전체가 뷰어 */
 html, body { margin: 0; height: 100%; background: #06101f; }
 .tx-root .tx-close-btn { display: none !important; }
@@ -11179,7 +11222,7 @@ html, body { margin: 0; height: 100%; background: #06101f; }
   var ST_IC = { bad: ['!', 'var(--rp-crimson)'], dev: ['~', 'var(--rp-amber)'], ok: ['✓', 'var(--rp-emerald)'], none: ['–', 'var(--rp-muted)'] };
   function gaugeSVG(it) {
     var top = Math.max(it.hi * 1.5, it.max * 1.1, 1), cx = 150, cy = 124, R = 86, A = function (v) { var t = Math.PI * (1 - Math.max(0, Math.min(1, v / top))); return [cx + R * Math.cos(t), cy - R * Math.sin(t)]; };
-    var arc = function (v0, v1) { var p0 = A(v0), p1 = A(v1), large = (v1 - v0) / top > 0.5 ? 1 : 0; return 'M' + p0[0].toFixed(1) + ' ' + p0[1].toFixed(1) + 'A' + R + ' ' + R + ' 0 ' + large + ' 1 ' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1); };
+    var arc = function (v0, v1) { var p0 = A(v0), p1 = A(v1), large = 0; /* 반원 게이지: 항상 짧은 호 */ return 'M' + p0[0].toFixed(1) + ' ' + p0[1].toFixed(1) + 'A' + R + ' ' + R + ' 0 ' + large + ' 1 ' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1); };
     var over = it.rep > it.hi, col = over ? 'var(--rp-crimson)' : it.rep > it.hi * 0.8 ? 'var(--rp-amber)' : 'var(--rp-emerald)', o = ['<svg viewBox="0 0 300 160" class="tx-rp-gauge">'];
     o.push('<path d="' + arc(0, top) + '" fill="none" class="tx-rp-trackc" stroke-width="16" stroke-linecap="round"/>');
     o.push('<path d="' + arc(0, Math.min(it.hi, top)) + '" fill="none" stroke="var(--rp-emerald-soft)" stroke-width="16"/>');

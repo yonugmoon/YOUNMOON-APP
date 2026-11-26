@@ -264,7 +264,7 @@
   var ST_IC = { bad: ['!', 'var(--rp-crimson)'], dev: ['~', 'var(--rp-amber)'], ok: ['✓', 'var(--rp-emerald)'], none: ['–', 'var(--rp-muted)'] };
   function gaugeSVG(it) {
     var top = Math.max(it.hi * 1.5, it.max * 1.1, 1), cx = 150, cy = 124, R = 86, A = function (v) { var t = Math.PI * (1 - Math.max(0, Math.min(1, v / top))); return [cx + R * Math.cos(t), cy - R * Math.sin(t)]; };
-    var arc = function (v0, v1) { var p0 = A(v0), p1 = A(v1), large = (v1 - v0) / top > 0.5 ? 1 : 0; return 'M' + p0[0].toFixed(1) + ' ' + p0[1].toFixed(1) + 'A' + R + ' ' + R + ' 0 ' + large + ' 1 ' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1); };
+    var arc = function (v0, v1) { var p0 = A(v0), p1 = A(v1), large = 0; /* 반원 게이지: 항상 짧은 호 */ return 'M' + p0[0].toFixed(1) + ' ' + p0[1].toFixed(1) + 'A' + R + ' ' + R + ' 0 ' + large + ' 1 ' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1); };
     var over = it.rep > it.hi, col = over ? 'var(--rp-crimson)' : it.rep > it.hi * 0.8 ? 'var(--rp-amber)' : 'var(--rp-emerald)', o = ['<svg viewBox="0 0 300 160" class="tx-rp-gauge">'];
     o.push('<path d="' + arc(0, top) + '" fill="none" class="tx-rp-trackc" stroke-width="16" stroke-linecap="round"/>');
     o.push('<path d="' + arc(0, Math.min(it.hi, top)) + '" fill="none" stroke="var(--rp-emerald-soft)" stroke-width="16"/>');

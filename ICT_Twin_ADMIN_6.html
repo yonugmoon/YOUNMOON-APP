@@ -7084,11 +7084,11 @@ html.tx-msx-page section.measurement-workspace.tx-msx-on > .ms-tabs,
 html.tx-msx-page section.measurement-workspace.tx-msx-on > .ms-heading { display: none !important; } /* 제목 줄 → 상단 줄로, 「측정 엑셀 등록」 → 상단 줄 버튼 */ /* 「측정 엑셀 등록」은 상단 줄로 이동 */
 .tx-msx-up { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; margin-right: 8px; border: 0; border-radius: 8px; background: #3e63db; color: #fff; font: 700 13px/1 Arial, "Noto Sans KR", "Malgun Gothic", sans-serif; cursor: pointer; white-space: nowrap; }
 .tx-msx-up:hover { background: #2f52c4; }
-html:not(.tx-msx-page) .tx-msx-up { display: none; }
+html:not(.tx-msx-page):not(.tx-msl-page) .tx-msx-up { display: none; }
 .tx-msx-info { display: inline-flex; align-items: center; gap: 10px; margin-left: 14px; min-width: 0; overflow: hidden; font: 13px/1.2 Arial, "Noto Sans KR", "Malgun Gothic", sans-serif; color: #64748b; white-space: nowrap; }
 .tx-msx-info .f { overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
 .tx-msx-info .d { padding-left: 10px; border-left: 1px solid #cbd5e1; color: #334155; }
-html:not(.tx-msx-page) .tx-msx-info { display: none; }
+html:not(.tx-msx-page):not(.tx-msl-page) .tx-msx-info { display: none; }
 html.fs-on section.measurement-workspace.tx-msx-on > .tx-rp-inline { margin-top: 0; }
 html.tx-msx-page .fs-dock { display: none !important; } /* ADMIN 개요·①·②·요약 도크 → 통합·항목별 */
 
@@ -7150,6 +7150,15 @@ html.tx-adm-clean section.measurement-workspace .ms-heading .ms-actions > .ms-bt
 html.tx-adm-clean section.measurement-workspace .ms-embed { display: none !important; }
 html.tx-adm-clean .main > main { padding-top: 4px !important; }
 html.tx-adm-clean.fs-on section.measurement-workspace:not(.mini-view):not(.tx-msx-on) { padding-top: 6px; }
+
+/* ===== 측정목록: 한 줄 방식 — 제목·파일명·점검일·건수·「측정 엑셀 등록·목록 내보내기」를 상단 줄로, 본문은 필터 줄부터 ===== */
+html.tx-msl-page section.measurement-workspace > .ms-heading,
+html.tx-msl-page section.measurement-workspace > .ms-source,
+html.tx-msl-page section.measurement-workspace > .ms-panel > .ms-panel-title { display: none !important; }
+html.tx-msl-page section.measurement-workspace > .ms-filters { margin-top: 0 !important; padding-top: 0 !important; border-top: 0 !important; }
+html.tx-msl-page.fs-on section.measurement-workspace:not(.mini-view) { padding-top: 6px !important; }
+html.tx-msl-page header > .role-lgbtn { display: none !important; }
+.tx-msx-exp, .tx-msx-add { background: #fff; color: #1e293b; border: 1px solid #cbd5e1; }
 
 </style>
 <script id="twinx-three">if(!window.THREE){
@@ -17584,12 +17593,37 @@ html.tx-adm-clean.fs-on section.measurement-workspace:not(.mini-view):not(.tx-ms
     paintDock();
   }
   function paintDock() { if (!dock) return; var v = inst.view ? inst.view() : 1; Array.prototype.forEach.call(dock.querySelectorAll('button'), function (b) { var on = +b.getAttribute('data-v') === (v === 4 ? 4 : 1); b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }); }
-  function removeUpload() { if (dock) { dock.remove(); dock = null; } if (upBtn) { upBtn.remove(); upBtn = null; } if (info) { info.remove(); info = null; } }
+  /* 측정목록: 「목록 내보내기」도 상단 줄로 (원래 버튼을 대신 누름) */
+  var expBtn = null;
+  function placeExport() {
+    var tools = document.querySelector('header .fs-tools'), fsb = tools && tools.querySelector(':scope > button[title^="풀스크린 관제"]'); if (!tools) return;
+    if (!expBtn) {
+      expBtn = document.createElement('button'); expBtn.type = 'button'; expBtn.className = 'tx-msx-up tx-msx-exp'; expBtn.title = '목록 내보내기 (현재 필터의 측정목록 엑셀)';
+      expBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span>목록 내보내기</span>';
+      expBtn.addEventListener('click', function () { var o = Array.prototype.find.call(document.querySelectorAll('section.measurement-workspace .ms-heading .ms-actions .ms-btn'), function (x) { return /목록\s*내보내기/.test(x.textContent); }); if (o) o.click(); });
+    }
+    if (expBtn.parentNode !== tools || expBtn.nextElementSibling !== fsb) tools.insertBefore(expBtn, fsb || null);
+  }
+  /* 측정목록 표 머리(「측정값 데이터 n건 · ＋ 측정 추가」) → 「＋ 측정 추가」만 상단 줄로 */
+  var addBtn = null;
+  function placeAdd() {
+    var tools = document.querySelector('header .fs-tools'), first = upBtn || expBtn || (tools && tools.querySelector(':scope > button[title^="풀스크린 관제"]')); if (!tools) return;
+    var orig = Array.prototype.find.call(document.querySelectorAll('section.measurement-workspace .ms-panel-title button'), function (x) { return /측정\s*추가/.test(x.textContent); });
+    if (!orig) { if (addBtn) { addBtn.remove(); addBtn = null; } return; } // 권한상 버튼이 없는 화면이면 만들지 않음
+    if (!addBtn) {
+      addBtn = document.createElement('button'); addBtn.type = 'button'; addBtn.className = 'tx-msx-up tx-msx-add'; addBtn.title = '측정 추가 (한 건 직접 입력)';
+      addBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span>측정 추가</span>';
+      addBtn.addEventListener('click', function () { var o = Array.prototype.find.call(document.querySelectorAll('section.measurement-workspace .ms-panel-title button'), function (x) { return /측정\s*추가/.test(x.textContent); }); if (o) o.click(); });
+    }
+    if (addBtn.parentNode !== tools || addBtn.nextElementSibling !== first) tools.insertBefore(addBtn, first || null);
+  }
+  function removeTop() { if (addBtn) { addBtn.remove(); addBtn = null; } if (upBtn) { upBtn.remove(); upBtn = null; } if (expBtn) { expBtn.remove(); expBtn = null; } if (info) { info.remove(); info = null; } }
+  function removeUpload() { if (dock) { dock.remove(); dock = null; } }
   /* 제목 줄(측정 대시보드 · 파일명 · 점검일)을 상단 줄 이동 경로 옆으로 올리고 본문 제목 줄은 숨김 */
   var info = null;
-  function placeInfo() {
+  function placeInfo(extra) {
     var crumb = document.querySelector('.main > header > .crumb'); if (!crumb) return;
-    var m = meta(), txt = [m.site, m.date].filter(Boolean);
+    var m = meta(), txt = [m.site, m.date, extra].filter(Boolean);
     if (!info) { info = document.createElement('span'); info.className = 'tx-msx-info'; }
     var html = txt.map(function (t, i) { return '<span class="' + (i ? 'd' : 'f') + '">' + t.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }) + '</span>'; }).join('');
     if (info.innerHTML !== html) info.innerHTML = html;
@@ -17608,7 +17642,15 @@ html.tx-adm-clean.fs-on section.measurement-workspace:not(.mini-view):not(.tx-ms
     var w = ws(), dash = isDash(w), fsNow = document.documentElement.classList.contains('fs-on');
     if (fsNow !== lastFs) { lastFs = fsNow; force = true; } // 풀스크린 ↔ 기본 보기 전환 시 도구 막대 위치 다시 계산
     showPill(false);
-    if (!dash || !on) { removeHost(); return; }
+    var listMode = !!(w && !dash && !w.classList.contains('mini-view') && w.querySelector(':scope > .ms-filters'));
+    if (document.documentElement.classList.contains('tx-msl-page') !== listMode) document.documentElement.classList.toggle('tx-msl-page', listMode);
+    if (listMode) { // 측정목록: 제목 줄·건수 줄 → 상단 한 줄
+      removeHost(); placeUpload(); placeExport(); placeAdd();
+      var src = w.querySelector(':scope > .ms-source'), cnt = src ? ((src.textContent.match(/원본\s*[\d,]+건\s*\/\s*현재\s*[\d,]+건/) || [])[0] || '') : '';
+      placeInfo(cnt); return;
+    }
+    if (!dash || !on) { removeHost(); removeTop(); return; }
+    if (expBtn) { expBtn.remove(); expBtn = null; } if (addBtn) { addBtn.remove(); addBtn = null; }
     w.classList.add('tx-msx-on'); document.documentElement.classList.add('tx-msx-page'); placeUpload(); placeInfo(); placeDock(); if (bar) { bar.remove(); bar = null; }
     var charts = w.querySelector(':scope > .ms-charts') || w.querySelector(':scope > .ms-kpis');
     if (!host) { host = document.createElement('div'); host.className = 'tx-rp tx-rp-inline'; }
@@ -17625,7 +17667,7 @@ html.tx-adm-clean.fs-on section.measurement-workspace:not(.mini-view):not(.tx-ms
     document.documentElement.classList.add('tx-adm-clean'); // 모든 ADMIN 화면 상단 정리 (74-msdash.css)
     var root = document.body; // ADMIN 이 #root 를 다시 만들 수 있어 body 전체 관찰
     new MutationObserver(function (list) {
-      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (upBtn && (upBtn === t || upBtn.contains(t))) continue; if (info && (info === t || info.contains(t))) continue; if (dock && (dock === t || dock.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
+      for (var i = 0; i < list.length; i++) { var t = list[i].target; if (host && (host === t || host.contains(t))) continue; if (bar && (bar === t || bar.contains(t))) continue; if (upBtn && (upBtn === t || upBtn.contains(t))) continue; if (expBtn && (expBtn === t || expBtn.contains(t))) continue; if (addBtn && (addBtn === t || addBtn.contains(t))) continue; if (info && (info === t || info.contains(t))) continue; if (dock && (dock === t || dock.contains(t))) continue; if (pill && pill.contains(t)) continue; schedule(); return; } // 내 화면 변경은 무시
     }).observe(root, { childList: true, subtree: true });
     new MutationObserver(schedule).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     TX.on('model', function () { if (host && inst.active()) inst.render(); });

@@ -7705,7 +7705,7 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
     ov.querySelectorAll('.mdv-body img[data-imgkey]').forEach(async im=>{ try{ const u=await sGet(im.dataset.imgkey,false); if(u){ im.src=u; im.onclick=()=>vqViewImage(u); } }catch(e){} });
     const curBtn=ov.querySelector('#md-cur'); if(curBtn) curBtn.onclick=()=>{ showMeasureDashboard(mdRowsFromInspection(current)); };
     const expBtn=ov.querySelector('#md-export'); if(expBtn) expBtn.onclick=()=>exportDashboardExcel();
-    const evBtn=ov.querySelector('#md-eval'); if(evBtn) evBtn.onclick=()=>evalOpenReport(D);
+    const evBtn=ov.querySelector('#md-eval'); if(evBtn) evBtn.onclick=()=>{ if(current) evalFinalOpen(D); else evalOpenReport(D); };
     const wdBtn=ov.querySelector('#md-word'); if(wdBtn) wdBtn.onclick=(ev)=>{ ev.stopPropagation(); let m=ov.querySelector('.md-wmenu'); if(m){ m.remove(); return; }
       m=document.createElement('div'); m.className='md-wmenu'; const r=wdBtn.getBoundingClientRect(), rr=ov.querySelector('.mdv').getBoundingClientRect();
       m.style.cssText=`position:absolute;z-index:400;top:${r.bottom-rr.top+6}px;right:${Math.max(8,rr.right-r.right)}px;`;
@@ -7819,6 +7819,308 @@ html.rg-open,html.rg-open body{overflow:hidden!important;}
       else if(d.type==='kt-eval-close') close(); };
     window.addEventListener('message',onMsg);
     fr.src=url;
+  }
+
+
+
+
+  /* ============================================================
+     📑 정보통신설비 성능점검 종합평가보고서 (최종 양식) — A4 세로 · 녹색 테마
+        표지 · 목차 · 01 개요 · 02 종합요약(부적합 상세·현장 사진) · 03 설비군별 · 04 위치별
+        · 05 성능점검 측정(접지·전압·열화상·소음·조도·온습도·광레벨·자기장·신호레벨) · 06 전망 · 07 개선 · 08 부록(교정성적서)
+  ============================================================ */
+  const EF_GROUP={'케이블 설비':'선로','배관 설비':'선로','국선인입 설비':'선로','단자함 설비':'선로','이동통신 구내선로 설비':'선로','전화 설비':'통신','네트워크 설비':'네트워크','통신용 전원 설비':'전원','통신 접지 설비':'전원',
+    '종합유선방송 구내 전송선로 설비':'방송·정보','방송 공동수신 안테나 시설':'방송·정보','방송 음향 설비':'방송·정보','디지털 사이니지':'방송·정보','빌딩 안내 시스템(BIS)':'방송·정보','건물 에너지관리 시스템':'방송·정보','전기시계 시스템':'방송·정보','통합 SI 시스템':'방송·정보','시설관리 시스템':'방송·정보',
+    '전자출입(통제) 시스템':'보안','영상정보처리기기 시스템':'보안','비상벨 설비':'보안','지능형 경계 감시 시스템':'보안','지능형 인원계수 시스템':'보안','스마트 도난방지 시스템':'보안',
+    '원격검침 시스템':'부대','주차관제 시스템':'부대','주차유도 시스템':'부대','무인택배 시스템':'부대','홈네트워크 설비':'부대'};
+  const EF_GROUPS=['선로','통신','네트워크','전원','방송·정보','보안','부대'];
+  const efNorm=s=>String(s||'').replace(/\s+/g,'');
+  const EF_GN={}; Object.keys(EF_GROUP).forEach(k=>EF_GN[efNorm(k)]=EF_GROUP[k]);
+  const efGroup=n=>EF_GN[efNorm(n)]||'부대';
+  const efShort=n=>String(n||'').replace(/\s*(설비|시스템|시설)$/,'').replace(/\(.*?\)/g,'').trim();
+  const efGrade=r=>r==null?'-':r>=0.95?'S':r>=0.85?'A':'B';
+  const efGradeL=g=>({S:'우수',A:'양호',B:'보통'})[g]||'-';
+  const efPct=(a,b,d)=>b?(a/b*100).toFixed(d==null?1:d)+'%':'-';
+  const efNum=v=>{ const n=parseFloat(String(v==null?'':v).replace(/,/g,'').replace(/[^0-9.\-]/g,'')); return isFinite(n)?n:null; };
+  const efFmt=(v,d)=>v==null?'-':(+v).toFixed(d==null?1:d).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1');
+  const efDot=d=>{ const m=String(d||'').match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/); return m?`${m[1]}.${m[2].padStart(2,'0')}.${m[3].padStart(2,'0')}`:String(d||''); };
+  const efEsc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  function efLocShort(name){ return String(name||'').replace(/\s+/g,' ').trim(); }
+
+  /* 측정 종류 분류 (항목명·단위) */
+  function efKind(r){
+    const n=String(r.itemName||''), u=String(r.unit||'');
+    if(/접지저항/.test(n)) return 'ground';
+    if(/dB\(A\)/.test(u) || /소음/.test(n) && !/발열/.test(n)) return 'noise';
+    if(/전원/.test(n) && /V/.test(u)) return 'volt';
+    if(/열화상|발열/.test(n) && /최고온도/.test(n)) return 'thermal';
+    if(/열화상|발열/.test(n)) return /주위온도/.test(n)?null:'thermal';
+    if(/소음/.test(n)) return 'noise';
+    if(/lx|lux/i.test(u) || /조명|조도/.test(n)) return 'lux';
+    if(/— 온도$/.test(n) && /설치 환경|온도|습도/.test(n)) return 'temp';
+    if(/— 습도$/.test(n)) return 'humi';
+    if(/광 송수신/.test(n)) return 'optic';
+    if(/자기장/.test(n)) return 'rfmag';
+    if(/인식거리/.test(n)) return 'rfdist';
+    if(/dB[µμ]V/.test(u) || /신호 레벨|레벨값/.test(n)) return 'catv';
+    return 'etc';
+  }
+
+  async function efBuildModel(insp, D){
+    const site=insp.siteName||D.title||'';
+    // 결과서 자동생성기의 같은 사업장(점검기간·로고·점검자)
+    let gen=null; try{ const db=JSON.parse(localStorage.getItem('ktdata_gen')||'null'); const n=efNorm(site); gen=(db&&db.sites||[]).find(s=>efNorm(s.name)===n) || (db&&db.sites||[]).find(s=>n&&efNorm(s.name).includes(n)) || null; }catch(e){}
+    let logo=null; if(gen&&gen.id){ try{ logo=await new Promise(res=>{ const r=indexedDB.open('safeict_img'); r.onsuccess=()=>{ try{ const q=r.result.transaction('img').objectStore('img').get('site:'+gen.id); q.onsuccess=()=>res(q.result&&q.result.logo||null); q.onerror=()=>res(null); }catch(e){ res(null); } }; r.onerror=()=>res(null); }); }catch(e){} }
+    const ds=(gen&&gen.ds)||insp.date||'', de=(gen&&gen.de)||insp.date||'';
+    const period=ds&&de&&ds!==de?`${efDot(ds)} ~ ${efDot(de)}`:efDot(de||ds);
+    const people=[...new Set(String(insp.inspector||'').split(/[,·\/]/).map(s=>s.trim()).filter(Boolean))];
+    // 점검 항목 판정
+    const items=[]; const cats={};
+    (insp.categories||[]).forEach(cat=>(cat.locations||[]).forEach(loc=>{ if(loc.pending) return;
+      (loc.items||[]).forEach(it=>{ const r=String(it.result||'').trim(); const j=mdGoodRes(r)?'good':(r==='불량'||r==='부적합')?'bad':(r==='해당없음'?'na':(r?'na':'none'));
+        items.push({cat,loc,it,j}); const c=cats[cat.name]=cats[cat.name]||{name:cat.name,good:0,bad:0,none:0,na:0,locs:new Set()}; c[j]++; c.locs.add(loc.name); }); }));
+    const good=items.filter(x=>x.j==='good').length, bad=items.filter(x=>x.j==='bad').length, none=items.filter(x=>x.j==='none').length;
+    const tot=good+bad+none, rate=(good+bad)?good/(good+bad):null, grade=efGrade(rate);
+    // 설비군
+    const groups=EF_GROUPS.map(g=>{ const cs=Object.values(cats).filter(c=>efGroup(c.name)===g); const gd=cs.reduce((a,c)=>a+c.good,0), bd=cs.reduce((a,c)=>a+c.bad,0);
+      return {g, cats:cs.map(c=>c.name), tot:gd+bd, good:gd, bad:bd, rate:(gd+bd)?gd/(gd+bd):null}; }).filter(x=>x.cats.length);
+    const catList=Object.values(cats).filter(c=>c.good+c.bad>0).map(c=>({name:c.name,good:c.good,bad:c.bad,rate:c.bad/(c.good+c.bad)})).sort((a,b)=>b.rate-a.rate);
+    // 측정값
+    const rows=(D.rows||[]).filter(r=>r.value!=null||efNum(r.raw)!=null).map(r=>Object.assign({},r,{v:r.value!=null?r.value:efNum(r.raw),kind:efKind(r),bad:(r.result==='불량'||r.result==='부적합')}));
+    const mGood=rows.filter(r=>mdGoodRes(r.result)).length, mBad=rows.filter(r=>r.bad).length;
+    // 부적합 상세 + 사진
+    const defects=items.filter(x=>x.j==='bad').map(x=>{ const it=x.it; const v=(it.value!=null&&String(it.value).trim()!=='')?`${it.value}${it.unit||''}`:'';
+      const nm=String(it.name||'').replace(/^\(추가\)\s*/,'');
+      const what=[v?`${nm.replace(/\s*(측정|확인)$/,'')} ${v}`:nm, it.std?`(기준 ${it.std})`:''].filter(Boolean).join('\n');
+      const act=/접지/.test(nm)?'접지 보강공사 후 재측정':/조명|조도/.test(nm)?'조명설비 점검·교체 후 재측정':/고정|체결/.test(nm)?'고정 브라켓·볼트 재체결':/저장|용량/.test(nm)?'저장공간 정리·증설 · 보관주기 재설정':'보수·조치 후 재점검';
+      return {loc:x.loc.name, cat:x.cat.name, what, note:it.note||'', act:it.action||act, keys:(x.loc.badPhotos||[])}; });
+    const photos=[]; const seen=new Set();
+    defects.forEach(d=>{ for(const k of d.keys){ if(photos.length>=6) break; if(seen.has(k)) continue; seen.add(k); photos.push({key:k, loc:d.loc, cat:d.cat, what:d.what.split('\n')[0], note:d.note}); break; } });
+    for(const p of photos){ try{ p.src=await sGet(p.key,false); }catch(e){ p.src=''; } }
+    // 위치별
+    const fl={}; rows.forEach(r=>{ const k=r.floorLabel||'-'; const o=fl[k]=fl[k]||{f:k,ord:r.floor==null?-999:r.floor,n:0,good:0,bad:0}; o.n++; if(r.bad) o.bad++; else o.good++; });
+    const floors=Object.values(fl).sort((a,b)=>b.n-a.n).slice(0,7).sort((a,b)=>b.ord-a.ord);
+    const bl={}; rows.forEach(r=>{ const k=r.bld||'(건물 미지정)'; bl[k]=(bl[k]||0)+1; });
+    const blds=Object.entries(bl).sort((a,b)=>b[1]-a[1]);
+    const KN={ground:'접지',volt:'전원',thermal:'발열',noise:'소음',lux:'조도',temp:'온도',humi:'습도',optic:'광레벨',rfmag:'자기장',rfdist:'인식거리',catv:'신호',etc:'측정'};
+    const badLocs=rows.filter(r=>r.bad).map(r=>`${r.floorLabel||'-'} ${KN[r.kind]||'측정'}불량 1건`);
+    const byKind={}; rows.forEach(r=>{ if(r.kind) (byKind[r.kind]=byKind[r.kind]||[]).push(r); });
+    return {insp, site, gen, logo, period, reportDate:efDot(new Date().toISOString().slice(0,10)), people, items, tot, good, bad, none, rate, grade, groups, catList, rows, mGood, mBad, defects, photos, floors, blds, badLocs, byKind, eqN:Object.keys(cats).length};
+  }
+
+  /* ── SVG 도우미 ── */
+  function efHBar(list, o){ // list: [{label,v,color}]
+    o=o||{}; const W=o.w||640, lw=o.lw||120, rh=o.rh||24, top=26, H=top+list.length*rh+8;
+    const max=o.max||Math.max(1,...list.map(x=>x.v||0), o.th||0)*1.04; const step=o.step||(max/5);
+    const x0=lw, pw=W-lw-46; const X=v=>x0+pw*Math.max(0,v)/max;
+    let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">`;
+    for(let t=0;t<=max+1e-9;t+=step){ const xx=X(t); s+=`<line x1="${xx}" y1="${top-4}" x2="${xx}" y2="${H-4}" stroke="#E8EBEE"/><text x="${xx}" y="14" font-size="9.5" fill="#8A9099" text-anchor="middle">${efFmt(t,step<1?1:(Math.abs(t-Math.round(t))<1e-9?0:1))}</text>`; }
+    if(o.th!=null){ const tx=X(o.th); s+=`<line x1="${tx}" y1="${top-6}" x2="${tx}" y2="${H}" stroke="#C8332B" stroke-width="1.6" stroke-dasharray="5 4"/><text x="${tx}" y="14" font-size="10" font-weight="700" fill="#C8332B" text-anchor="middle">${efFmt(o.th,0)}</text>`; }
+    list.forEach((it,i)=>{ const y=top+i*rh; const bw=Math.max(1.5,X(it.v||0)-x0);
+      s+=`<text x="${lw-8}" y="${y+rh*0.62}" font-size="10" fill="#333" text-anchor="end">${efEsc(it.label)}</text><rect x="${x0}" y="${y+rh*0.18}" width="${bw}" height="${rh*0.64}" fill="${it.color||'#1F7A5A'}"/><text x="${x0+bw+6}" y="${y+rh*0.62}" font-size="9.5" fill="#8A9099">${efFmt(it.v,2)}</text>`; });
+    return s+'</svg>';
+  }
+  function efDonut(parts, center, sub){ const R=70, r=46; let a=-Math.PI/2; const tot=parts.reduce((x,p)=>x+p.v,0)||1; let s=`<svg viewBox="0 0 180 180" width="190" height="190">`;
+    parts.forEach(p=>{ if(!p.v) return; const b=a+2*Math.PI*p.v/tot; const big=(b-a)>Math.PI?1:0; const P=(ang,rr)=>`${90+rr*Math.cos(ang)},${90+rr*Math.sin(ang)}`;
+      s+= (p.v>=tot)? `<circle cx="90" cy="90" r="${(R+r)/2}" fill="none" stroke="${p.c}" stroke-width="${R-r}"/>` : `<path d="M${P(a,R)} A${R},${R} 0 ${big} 1 ${P(b,R)} L${P(b,r)} A${r},${r} 0 ${big} 0 ${P(a,r)} Z" fill="${p.c}" stroke="#fff" stroke-width="1.5"/>`; a=b; });
+    return s+`<text x="90" y="80" font-size="11" fill="#8A9099" text-anchor="middle">${efEsc(sub)}</text><text x="90" y="108" font-size="30" font-weight="800" fill="#222" text-anchor="middle">${efEsc(center)}</text></svg>`; }
+  function efWave(){ let s=`<svg viewBox="0 0 800 300" width="100%" preserveAspectRatio="none" style="display:block"><defs><filter id="gl" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g filter="url(#gl)" fill="none">`;
+    let seed=7; const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
+    for(let i=0;i<46;i++){ const amp=30+rnd()*70, ph=rnd()*Math.PI*2, fr=1.6+rnd()*1.4, op=i<6?0.85:0.08+rnd()*0.22, w=i<6?2.2:0.8;
+      let d=''; for(let x=0;x<=800;x+=8){ const y=150+amp*Math.sin(x/800*Math.PI*2*fr+ph)*Math.sin(Math.PI*x/800*0.9+0.15); d+=(x?'L':'M')+x+','+y.toFixed(1); }
+      s+=`<path d="${d}" stroke="#2BE3B4" stroke-opacity="${op.toFixed(2)}" stroke-width="${w}"/>`; }
+    return s+'</g></svg>'; }
+  function efBuilding(p){ const h=150, fill=Math.round(h*Math.max(0,Math.min(1,p))); let win=''; for(let r=0;r<6;r++) for(let c=0;c<3;c++) win+=`<rect x="${34+c*22}" y="${44+r*22}" width="9" height="13" fill="#111"/>`;
+    return `<svg viewBox="0 0 130 200" width="100"><rect x="40" y="10" width="50" height="14" fill="#fff" stroke="#111" stroke-width="5"/><rect x="22" y="24" width="86" height="160" fill="#fff" stroke="#111" stroke-width="5"/><rect x="25" y="${181-fill}" width="80" height="${fill}" fill="#12705E"/>${win}<rect x="58" y="160" width="14" height="24" fill="#111"/><line x1="4" y1="186" x2="126" y2="186" stroke="#111" stroke-width="5"/></svg>`; }
+
+  function efHTML(M, calib){
+    const P=[]; // {sec, title, body}
+    const head=(no,t)=>`<div class="hd"><div class="no">${no}</div><div class="tt">${efEsc(t)}</div></div>`;
+    const sub=t=>`<div class="sub">${efEsc(t)}</div>`;
+    const box=(t,html,cls)=>`<div class="box ${cls||''}"><div class="bt">${efEsc(t)}</div><div class="bb">${html}</div></div>`;
+    const page=(sec,title,body,toc)=>P.push({sec,title,body,toc});
+    const rate1=M.rate==null?'-':(M.rate*100).toFixed(1)+'%';
+    const gL=efGradeL(M.grade);
+    const kinds=M.byKind; const mN=M.rows.length;
+    // 01 개요
+    page('01','보고서 개요', box('배경/목적',`<p>과기정통부 고시 제2025-48호에 따라, ${efEsc(M.site)}에 설치/운용 중인 정보통신설비를 대상으로 시행한 성능점검 결과를 종합하였으며 사업장의 정보통신설비 성능 유지 및 노후도 측정 서비스형 진단으로 현재의 성능 상태를 정밀 분석하고 미래 성능 저하 요인을 선제적으로 대비하는 차원에서 설비군별 적합률, 위치별 측정 분포, 접지·전원·RF·환경 측정값을 첨부하여 개선 우선순위 판단의 참고자료로 활용할 수 있도록 함에 목적이 있습니다.</p>`,'shadow')
+      +`<h3>평가범위</h3><table class="kv"><tr><td>평가 대상</td><td>${efEsc(M.site)}</td></tr><tr><td>설비 범위</td><td>${M.eqN}종 · ${M.groups.length}개 설비군</td></tr><tr><td>점검 항목</td><td>${M.tot}개 (적합 ${M.good} · 부적합 ${M.bad})</td></tr><tr><td>성능 측정</td><td>${mN}건 (적합 ${mN-M.mBad} · 부적합 ${M.mBad})</td></tr></table>`
+      +`<h3>평가 방법 및 절차</h3><table class="steps">${[['① 사전 준비','대상 설비 목록화 · 계획 수립 · 계측기 교정 확인'],['② 현장 점검','설비별 육안·기능 점검 및 체크리스트 기록'],['③ 성능 측정','접지저항 · AC/DC 전원 · 신호 · RF · 온습도 계측'],['④ 판정·집계','기준 대비 적합/부적합 · 위치·설비군별 통계 산출'],['⑤ 종합 평가','위험요인 확인 · 데이터 정합성 검토 · 개선과제 도출']].map((r,i)=>`<tr class="${i===4?'red':''}"><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>`,
+      '개요 · 배경/목적 · 평가범위 · 방법/절차');
+    // 02 종합요약
+    const topCats=M.catList.filter(c=>c.bad>0).slice(0,6); const maxR=Math.max(0.0001,...topCats.map(c=>c.rate));
+    const badKinds=[...new Set(M.defects.map(d=>efShort(d.cat)))].slice(0,3).join(', ');
+    page('02','종합요약', box('종합의견',`<p>전체 점검항목 ${M.tot}건 중 ${M.good}건(${efPct(M.good,M.tot)})이 적합 판정을 받아 전반적인 인프라 성능은 ${gL}(${M.grade}등급)로 평가되었습니다.${M.bad?` 다만 ${badKinds} 등을 중심으로 ${M.bad}건(${efPct(M.bad,M.tot)})의 부적합 사항이 확인되어, 통신 가용성과 무중단 서비스 연속성 확보를 위해 현장 실무 관점에서 사전 보완이 필요합니다.`:' 부적합 사항은 확인되지 않았습니다.'}</p>`)
+      +`<div class="card dist"><div class="ct">점검항목 ${M.tot}개 기준 상태 분포 및 부적합률</div><div class="dg">${efDonut([{v:M.good,c:'#12705E'},{v:M.bad,c:'#CC3B33'},{v:M.none,c:'#B8BEC6'}],String(M.tot),'점검항목')}
+        <div class="dl"><div><b class="g">적합</b><span class="g">${efPct(M.good,M.tot)}</span><em class="g">${M.good} 건</em></div><div><b class="r">부적합</b><span class="r">${efPct(M.bad,M.tot)}</span><em class="r">${M.bad} 건</em></div><div><b>판정불가</b><span class="m">${efPct(M.none,M.tot)}</span><em>${M.none} 건</em></div></div></div></div>`
+      +sub(`설비별 부적합률 상위 (최대 ${topCats.length?(maxR*100).toFixed(0):0}%)`)
+      +(topCats.length?`<div class="rbars">${topCats.map((c,i)=>`<div class="rb"><span>${efEsc(efShort(c.name))}</span><i><u style="width:${(c.rate/maxR*98).toFixed(1)}%;background:${i===0?'#CC3B33':'#E0A030'}"></u></i><b>${(c.rate*100).toFixed(1)}%</b></div>`).join('')}</div>`:'<p class="muted">부적합 설비가 없습니다.</p>'),
+      '요약 · 현황 총괄 · 상태분포 · 부적합 상세 · 사진');
+    if(M.defects.length){
+      const cnt={}; M.defects.forEach(d=>{ const k=d.what.split('\n')[0].replace(/\s*[-\d.]+\s*\S*$/,'').trim(); cnt[k]=(cnt[k]||0)+1; });
+      const per=11; for(let i=0;i<M.defects.length;i+=per){ const part=M.defects.slice(i,i+per);
+        page('02','종합요약(부적합 사항 상세)', (i===0?box('부적합 요약',`<p class="b">${Object.entries(cnt).map(([k,n])=>`${efEsc(k)} ${n}건`).join(' · ')}</p><p>확인된 부적합 사항은 설비의 손상 및 장애로 이어질 수 있으므로 우선순위에 따라 보수·보강 후 재측정하여 적합 여부를 확인해야 합니다.</p>`):'')
+          +sub(`부적합 사항 상세 (${M.defects.length}건)`)+`<table class="tb def"><tr><th>No</th><th>위치</th><th>설비</th><th>부적합 내용</th><th>조치사항</th></tr>${part.map((d,j)=>`<tr><td>${i+j+1}</td><td class="b">${efEsc(d.loc)}</td><td>${efEsc(d.cat)}</td><td class="r">${efEsc(d.what).replace(/\n/g,'<br>')}${d.note?`<br><span class="nt">${efEsc(d.note)}</span>`:''}</td><td>${efEsc(d.act)}</td></tr>`).join('')}</table>`); }
+    }
+    for(let i=0;i<M.photos.length;i+=3){ page('02','종합요약(현장 확인 사진)', sub('주요 부적합 현장 대표사진')+M.photos.slice(i,i+3).map(p=>`<div class="ph"><div class="pi">${p.src?`<img src="${p.src}">`:''}</div><div class="pc"><div><em>위치</em>${efEsc(p.loc)}</div><div><em>설비</em>${efEsc(p.cat)}</div><div><em>내용</em>${efEsc(p.what)}</div><p>${efEsc(p.note||'현장 확인 후 보수·조치가 필요합니다.')}</p></div></div>`).join('')); }
+    // 03 설비군별
+    const low=M.groups.filter(g=>g.tot).slice().sort((a,b)=>(a.rate??1)-(b.rate??1))[0];
+    page('03','설비군별 평가', `<div class="gr2"><div class="gbox"><div>종합등급</div><b>${M.grade}</b></div>${box('평가 의견',`<p>${M.groups.length}개 설비군의 점검결과입니다.<br>${low&&low.bad?`${low.g}군이 ${(low.rate*100).toFixed(1)}%로 가장 낮고 부적합 ${low.bad}건이 있습니다.<br>부적합 집중 설비는 보수이력과 재점검 결과를 함께 관리해야 합니다.`:'모든 설비군이 적합 판정을 받았습니다.'}</p>`,'shadow')}</div>`
+      +sub('설비군별 점검 결과 및 적합률')+`<table class="tb grp"><tr><th>설비군</th><th>점검계</th><th>적합</th><th>부적합</th><th>적합률</th><th>등급</th></tr>${M.groups.map(g=>`<tr><td>${g.g}</td><td>${g.tot}</td><td>${g.good}</td><td>${g.bad}</td><td>${g.rate==null?'-':(g.rate*100).toFixed(1)+'%'}</td><td class="g">${efGrade(g.rate)}</td></tr>`).join('')}<tr class="sum"><td>합계</td><td>${M.good+M.bad}</td><td>${M.good}</td><td>${M.bad}</td><td>${rate1}</td><td class="g">${M.grade}</td></tr></table>
+      <p class="crit">판정기준: S(우수) 적합률 95% 이상 / A(양호) 적합률 85~95% / B(보통) 적합률 85% 미만</p>`
+      +sub('설비군별')+`<table class="tb sm"><tr><th>설비군</th><th>설비별</th></tr>${M.groups.map(g=>`<tr><td>${g.g}</td><td>${g.cats.map(efEsc).join(', ')}</td></tr>`).join('')}</table>`,
+      '총괄 + 선로 · 통신 · 네트워크 · 전원 · 방송·정보 · 보안 · 부대');
+    // 04 위치별
+    const topB=M.blds[0]; const maxF=Math.max(1,...M.floors.map(f=>f.n));
+    const bList=[['전체',mN],...M.blds.slice(0,4)];
+    page('04','위치별 분석', box('분석 의견',`<p>성능 측정 ${mN}건${topB?` 중 ${efEsc(topB[0])}이 ${topB[1]}건(${efPct(topB[1],mN)})으로 가장 많습니다.`:'입니다.'}<br>${M.mBad?`성능점검 측정 불량 건은 ${M.floors.filter(f=>f.bad).map(f=>`${f.f}_(${f.bad})`).join(', ')||M.mBad+'건'} 입니다.`:'성능점검 측정 불량 건은 없습니다.'}</p>`,'shadow')
+      +sub(`층별 측정 비중 분포(상위 ${M.floors.length}개 층)`)+`<div class="fl"><div class="flb"><div class="th">분포도</div>${M.floors.map(f=>`<div class="fr"><i style="width:${(f.n/maxF*100).toFixed(1)}%"><u style="width:${(f.good/f.n*100).toFixed(1)}%"></u><s style="width:${(f.bad/f.n*100).toFixed(1)}%"></s></i></div>`).join('')}</div>
+        <table class="tb flt"><tr><th>층</th><th>측정</th><th>양호</th><th>불량</th></tr>${M.floors.map(f=>`<tr><td>${efEsc(f.f)}</td><td>${f.n}</td><td>${f.good}</td><td class="${f.bad?'r':''}">${f.bad}</td></tr>`).join('')}</table></div>`
+      +sub('건물별 점검 건 수')+`<div class="blds">${bList.map(([b,n])=>`<div><p>${efEsc(b)} ${n} 건</p>${efBuilding(mN?n/mN:0)}</div>`).join('')}</div>`
+      +sub('성능불량 위치 요약')+(M.badLocs.length?`<div class="bl">${M.badLocs.slice(0,8).map(t=>`<span>${efEsc(t)}</span>`).join('')}</div>`:'<p class="muted" style="margin-left:14mm">성능 측정 불량 위치가 없습니다.</p>'),
+      '건물 층별 측정 분포 · 점검수 · 성능점검 위치 요약');
+    // 05 성능점검 측정
+    const meas=[]; const lab=r=>`${r.bld&&r.bld!=='(건물 미지정)'?r.bld+' ':''}${r.floorLabel&&r.floorLabel!=='-'?r.floorLabel+' ':''}${efEsc(String(r.loc||'').replace(r.bld||'','').replace(/(지하\s*\d+\s*층|B\s*\d+\s*층|\d+\s*층)/,'').trim())}`.replace(/\s+/g,' ').trim();
+    const stat=a=>{ const v=a.map(r=>r.v).filter(x=>x!=null); return v.length?{n:v.length,min:Math.min(...v),max:Math.max(...v),avg:v.reduce((x,y)=>x+y,0)/v.length}:{n:0}; };
+    const sumBox=(lines,red)=>box('측정 요약',lines.map(l=>`<p>${l}</p>`).join('')+(red?`<p class="r">${red}</p>`:''),'shadow foot');
+    const hbarPage=(kind,title,unit,th,colorFn,redFn,topN)=>{ const a=(kinds[kind]||[]).slice().sort((x,y)=>y.v-x.v); if(!a.length) return; const s=stat(a); const top=a.slice(0,topN||20);
+      const over=th!=null?(kind==='lux'?a.filter(r=>r.v<th).length:a.filter(r=>r.v>th).length):a.filter(r=>r.bad).length;
+      page('05',`성능점검 측정(${title})`, sub(`${title} 측정(상위 ${top.length}개소)`)+`<div class="chart">${efHBar(top.map((r,i)=>({label:kind==='ground'?`${lab(r).slice(0,14)} -${i+1}`:lab(r).slice(0,16),v:r.v,color:colorFn?colorFn(r):'#1F7A5A'})),{th, max:th!=null?Math.max(th,s.max)*1.05:undefined, rh:Math.min(30,(kind==='ground'?560:520)/top.length)})}</div>`
+        +sumBox([`${title} 측정: ${s.n}건`,`측정값: (최대) ${efFmt(s.max)} ${unit} / (최소) ${efFmt(s.min)} ${unit} / (평균) ${efFmt(s.avg)} ${unit}`].concat(th!=null?[`기준치(${th}${unit}) ${kind==='lux'?'미달':'초과'} ${over}건`]:[]), redFn?redFn(a,over):''),
+        '');
+      meas.push(title); };
+    hbarPage('ground','접지저항','Ω',10,r=>r.v>10?'#CC3B33':'#1F7A5A',(a,o)=>o?'접지 보강 후 재측정이 필요합니다.':'',25);
+    { const v=(kinds.volt||[]); const ac=v.filter(r=>r.v>=150), dc=v.filter(r=>r.v<150); if(v.length){
+      const W=640,H=330,x0=40,y0=300,ph=270,lo=195,hi=245; const Y=x=>y0-ph*(Math.max(lo,Math.min(hi,x))-lo)/(hi-lo); const bw=Math.max(3,(W-x0-60)/Math.max(1,ac.length)*0.6);
+      let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%">`; for(let t=lo;t<=hi;t+=5) svg+=`<line x1="${x0}" x2="${W-60}" y1="${Y(t)}" y2="${Y(t)}" stroke="#EEF0F2"/><text x="${x0-6}" y="${Y(t)+3}" font-size="9" fill="#8A9099" text-anchor="end">${t}</text>`;
+      ac.forEach((r,i)=>{ const x=x0+8+i*(W-x0-70)/Math.max(1,ac.length); svg+=`<rect x="${x}" y="${Y(r.v)}" width="${bw}" height="${y0-Y(r.v)}" fill="${r.v>242||r.v<198?'#CC3B33':'#2E7CB8'}"/>`; });
+      [[242,'#2E9E5B','242V\n(허용상한)'],[220,'#CC3B33','220V 정격'],[198,'#2E9E5B','198V\n(허용하한)']].forEach(([t,c,l])=>{ svg+=`<line x1="${x0}" x2="${W-60}" y1="${Y(t)}" y2="${Y(t)}" stroke="${c}" stroke-width="1.6"/>`+l.split('\n').map((ln,k)=>`<text x="${W-30}" y="${Y(t)+3+k*11}" font-size="9" font-weight="700" fill="${c}" text-anchor="middle">${ln}</text>`).join(''); });
+      svg+='</svg>'; const sd=stat(dc);
+      page('05','성능점검 측정(전압)', sub(`AC 입력전원 측정(${ac.length}건)`)+(ac.length?`<div class="chart">${svg}</div>`:'<p class="muted">AC 측정값 없음</p>')+sub(`DC 입력전원 측정(${dc.length}건)`)
+        +`<div class="card dc">${dc.length?`<p>DC 측정 ${dc.length} 건</p>${dc.slice(0,8).map(r=>`<p>${lab(r)} &nbsp; ${efFmt(r.v)}V</p>`).join('')}<p class="muted">평균 ${efFmt(sd.avg)}V · 장비별 정격값 확인 필요</p>`:'<p class="muted">DC 측정값 없음</p>'}</div>`,''); meas.push('전압'); } }
+    hbarPage('thermal','열화상','℃',null,null,null,20);
+    hbarPage('noise','소음','dB',null,r=>r.v>65?'#E0A030':'#1F7A5A',null,20);
+    hbarPage('lux','조도','lx',100,r=>r.v<100?'#E8251E':r.v<300?'#E0A030':'#1F7A5A',(a,o)=>o?`조도 기준(100 lx) 미달 ${o}건 — 조명설비 점검·교체 필요`:'',20);
+    { const t=(kinds.temp||[]).slice().sort((a,b)=>b.v-a.v), h=(kinds.humi||[]).slice().sort((a,b)=>b.v-a.v); if(t.length||h.length){
+      const st=stat(t), sh=stat(h); const inT=r=>r.v>=18&&r.v<=35, inH=r=>r.v>=40&&r.v<=60; const ok=t.every(inT)&&h.every(inH);
+      const tbl=(a,u,f)=>a.slice(0,10).map(r=>`<tr><td>${lab(r)}</td><td>${efEsc(efShort(r.catName))}</td><td>${efFmt(r.v)}${u}</td><td class="${f(r)?'g':'r'}">${f(r)?'기준내':'기준외'}</td></tr>`).join('');
+      const tv=st.n?st.avg:0, hv=sh.n?sh.avg:0; const th=Math.round(200*Math.max(0,Math.min(1,tv/50)));
+      const ang=Math.PI*Math.max(0,Math.min(1,hv/100)); const gx=110-80*Math.cos(ang), gy=100-80*Math.sin(ang);
+      page('05','성능점검 측정(온습도)', sub('실내 온도/습도 측정(고온 순)')+`<div class="th2"><div><table class="tb th3"><tr class="cap"><td colspan="4">온도 ( 기준 18~35℃ )</td></tr><tr><th>점검위치</th><th>설비</th><th>측정값</th><th>판정</th></tr>${tbl(t,'°C',inT)}<tr class="cap"><td colspan="4">습도 ( 기준 40~60%RH )</td></tr><tr><th>점검위치</th><th>설비</th><th>측정값</th><th>판정</th></tr>${tbl(h,'%RH',inH)}</table></div>
+        <div class="gs"><div class="card ok">${ok?'양호':'확인필요'}</div><div class="card gg"><svg viewBox="0 0 220 420" width="100%"><rect x="70" y="20" width="16" height="200" fill="#E6E9EC"/><rect x="70" y="${220-th}" width="16" height="${th}" fill="#CC3B33"/>${[0,10,20,30,40,50].map(v=>`<text x="104" y="${224-v*4}" font-size="11" fill="#8A9099">${v}</text>`).join('')}<text x="110" y="262" font-size="22" font-weight="800" fill="#CC3B33" text-anchor="middle">${st.n?efFmt(tv)+'°C':'-'}</text><text x="110" y="284" font-size="13" text-anchor="middle">온도</text>
+          <g transform="translate(0,300)"><path d="M30,100 A80,80 0 0 1 190,100" fill="none" stroke="#E6E9EC" stroke-width="14"/>${sh.n?`<path d="M30,100 A80,80 0 0 1 ${gx.toFixed(1)},${gy.toFixed(1)}" fill="none" stroke="#2E9E5B" stroke-width="14"/>`:''}<text x="110" y="92" font-size="20" font-weight="800" fill="#2E9E5B" text-anchor="middle">${sh.n?efFmt(hv)+'%':'-'}</text><text x="110" y="114" font-size="13" text-anchor="middle">습도</text></g></svg></div></div></div>`
+        +sumBox([`온습도 측정: ${Math.max(st.n||0,sh.n||0)}건`,`측정값: (평균) ${st.n?efFmt(tv)+'℃':'-'} / ${sh.n?efFmt(hv,0)+'%RH':'-'}`]),''); meas.push('온습도'); } }
+    { const a=kinds.optic||[]; if(a.length){ const s=stat(a);
+      page('05','성능점검 측정(광레벨)', sub('광레벨 측정 요약')+`<table class="tb st"><tr><th>측정 항목</th><th>단위</th><th>건수</th><th>최소</th><th>평균</th><th>최대</th></tr><tr><td>광 송수신 레벨</td><td>dBm</td><td>${s.n}</td><td>${efFmt(s.min)}</td><td>${efFmt(s.avg)}</td><td>${efFmt(s.max)}</td></tr></table>`
+        +sub('기준 및 판정')+`<p class="li">· 광 송수신 레벨 — 기준 수신 -10~-3dBm · 기준 이탈 ${a.filter(r=>r.v<-10||r.v>-3).length}건</p>`
+        +sumBox(['[선택] 해당 설비 보유 현장에서 선택 측정하는 항목입니다.','원본 단위 기준값을 제조사 사양과 함께 관리하십시오.']),''); meas.push('광레벨'); } }
+    { const m=kinds.rfmag||[], d=kinds.rfdist||[]; if(m.length||d.length){ const mn=a=>a.slice().sort((x,y)=>x.v-y.v)[0], mx=a=>a.slice().sort((x,y)=>y.v-x.v)[0];
+      const card=(t,r,u)=>`<div class="card kc"><span>${t}</span><b>${r?efFmt(r.v)+(u?' '+u:''):'-'}</b><em>${r?lab(r):''}</em></div>`;
+      page('05','성능점검 측정(자기장)', sub('RF카드 자기장 세기 및 인식거리 요약')+`<div class="k4">${card('자기장 최소',m.length?mn(m):null,'')}${card('자기장 최대',m.length?mx(m):null,'')}${card('인식거리 최소',d.length?mn(d):null,'cm')}${card('인식거리 최대',d.length?mx(d):null,'cm')}</div>`
+        +sumBox([`자기장 ${m.length}건 · 인식거리 ${d.length}건 측정, 부적합 ${m.concat(d).filter(r=>r.bad).length}건입니다.`,'측정결과는 설비 제조사별 기준치가 상이하여 제조사 설계값과 비교하여 관리가 필요합니다.']),''); meas.push('자기장'); } }
+    { const a=(kinds.catv||[]).slice(); if(a.length){ const s=stat(a); const lo=37, hi=80; const inn=r=>r.v>=lo&&r.v<=hi;
+      page('05','성능점검 측정(CATV 신호레벨)', sub('원자료 판정과 일반 참고 기준의 정합성 검토')+`<table class="tb st"><tr><th>구분</th><th>단위</th><th>전체</th><th>기준미달</th><th>기준내</th><th>비고</th></tr><tr><td>CATV 출력 측정값</td><td>dBµV</td><td>${s.n}</td><td>${a.filter(r=>!inn(r)).length}</td><td>${a.filter(inn).length}</td><td>${efFmt(s.min)}~${efFmt(s.max)}</td></tr></table>`
+        +sub('신호레벨 측정 요약')+`<table class="tb st"><tr><th>측정 항목</th><th>단위</th><th>건수</th><th>최소</th><th>평균</th><th>최대</th></tr><tr><td>기기 입·출력 신호레벨</td><td>dBµV</td><td>${s.n}</td><td>${efFmt(s.min)}</td><td>${efFmt(s.avg)}</td><td>${efFmt(s.max)}</td></tr></table>`
+        +sub('일반 참고 기준과 원자료 판정의 차이')+`<p class="li">· 기재 기준 ${lo}~${hi}dBµV 대비 ${a.filter(inn).length}/${s.n}개소가 양호합니다.</p><table class="tb cv"><tr><th>측정 위치</th><th>값(dBµV)</th><th>관리 구분</th></tr>${a.slice(0,9).map(r=>`<tr><td>${lab(r)}</td><td>${efFmt(r.v)}</td><td class="${inn(r)?'g':'r'}">${inn(r)?'기준 내':'기준 외'}</td></tr>`).join('')}</table>`
+        +box('판정 원칙','<p>기재 기준과 값의 차이만으로 일괄 부적합 처리하지 않습니다.<br>동일 단자, 동일 채널, 동일 부하조건으로 재측정하고, 제조사 설계 기준을 확정한 뒤 관리등급을 부여합니다.</p>','shadow foot'),''); meas.push('CATV'); } }
+    { const a=kinds.etc||[]; if(a.length){ const g={}; a.forEach(r=>{ const k=r.itemName+'|'+(r.unit||''); (g[k]=g[k]||[]).push(r); });
+      page('05','성능점검 측정(기타)', sub('기타 측정 항목 요약')+`<table class="tb st"><tr><th>측정 항목</th><th>단위</th><th>건수</th><th>최소</th><th>평균</th><th>최대</th></tr>${Object.entries(g).slice(0,14).map(([k,arr])=>{ const s=stat(arr); const [nm,u]=k.split('|'); return `<tr><td>${efEsc(nm.replace(/^\(추가\)\s*/,''))}</td><td>${efEsc(u)}</td><td>${s.n}</td><td>${efFmt(s.min)}</td><td>${efFmt(s.avg)}</td><td>${efFmt(s.max)}</td></tr>`; }).join('')}</table>`,''); meas.push('기타'); } }
+    if(!meas.length) page('05','성능점검 측정', '<p class="muted" style="margin:10mm 14mm">측정값이 입력된 항목이 없습니다.</p>','');
+    P.filter(p=>p.sec==='05')[0].toc=meas.join(' · ')||'측정 항목';
+    // 06 전망
+    const wx=[230,520], wy={n:58,w:150,a:240};
+    page('06','성능전망(현재 및 미래)', sub('성능 기반 노후도 해석 프레임')+`<div class="card fut"><p>금회 점검은 차년도 비교를 위한 기준시점(Baseline)을 확립합니다.</p><table class="ft"><tr><td>현재 성능</td><td>|</td><td>체크리스트 ${rate1} · 측정 자료 ${mN-M.mBad}/${mN} 양호</td></tr><tr><td>열화 징후</td><td>|</td><td>${M.mBad||M.bad?'부적합·기준 근접 국소의 관리항목 확인':'특이 열화 징후 없음'}</td></tr><tr><td>미래 전망</td><td>|</td><td>동일 지점·동일 조건 반복측정으로 변화율 판단</td></tr></table>
+      <svg viewBox="0 0 600 270" width="100%"><rect x="10" y="6" width="580" height="258" rx="12" fill="#fff" stroke="#9AD8B4" stroke-width="2"/><rect x="10" y="6" width="580" height="34" rx="12" fill="#0E9F4F"/><rect x="10" y="26" width="580" height="14" fill="#0E9F4F"/><text x="30" y="29" font-size="15" font-weight="800" fill="#fff">성능 기반 열화 추세 전망</text>
+        <rect x="30" y="${wy.n}" width="90" height="70" fill="#C9EBD3"/><rect x="120" y="${wy.n}" width="450" height="70" fill="#D5F0DD"/><rect x="30" y="${wy.n+70}" width="90" height="70" fill="#FBEFA8"/><rect x="120" y="${wy.n+70}" width="450" height="70" fill="#FCF4BF"/><rect x="30" y="${wy.n+140}" width="90" height="56" fill="#F7B9B6"/><rect x="120" y="${wy.n+140}" width="450" height="56" fill="#FAD0CE"/>
+        <text x="75" y="${wy.n+40}" font-size="11" font-weight="700" text-anchor="middle">안정 구간</text><text x="75" y="${wy.n+110}" font-size="11" font-weight="700" text-anchor="middle">집중관리 구간</text><text x="75" y="${wy.n+172}" font-size="11" font-weight="700" text-anchor="middle">기술검토 구간</text>
+        <line x1="120" y1="${wy.n}" x2="120" y2="${wy.n+196}" stroke="#333"/><line x1="120" y1="${wy.n+196}" x2="575" y2="${wy.n+196}" stroke="#333"/>
+        <polyline points="${wx[0]},${wy.n+20} 420,${wy.n+28} ${wx[1]},${wy.n+32}" fill="none" stroke="#2E9E5B" stroke-width="2.5"/><polyline points="${wx[0]},${wy.n+30} 420,${wy.n+82} ${wx[1]},${wy.n+150}" fill="none" stroke="#CC3B33" stroke-width="2.5" stroke-dasharray="7 5"/>
+        ${[[wx[0],wy.n+20,'#2E9E5B'],[420,wy.n+28,'#2E9E5B'],[wx[1],wy.n+32,'#2E9E5B'],[wx[0],wy.n+30,'#CC3B33'],[420,wy.n+82,'#CC3B33'],[wx[1],wy.n+150,'#CC3B33']].map(([x,y,c])=>`<circle cx="${x}" cy="${y}" r="5" fill="${c}"/>`).join('')}
+        <text x="${wx[0]}" y="${wy.n+212}" font-size="10" text-anchor="middle">${(new Date().getFullYear())} (기준)</text><text x="${wx[1]}" y="${wy.n+212}" font-size="10" text-anchor="middle">${(new Date().getFullYear()+1)} (차년도)</text>
+        <line x1="420" y1="50" x2="445" y2="50" stroke="#2E9E5B" stroke-width="2.5"/><text x="450" y="54" font-size="10">정상 설비</text><line x1="505" y1="50" x2="530" y2="50" stroke="#CC3B33" stroke-width="2.5" stroke-dasharray="5 3"/><text x="535" y="54" font-size="10">고위험 설비</text></svg>
+      <table class="ft"><tr><td>안정 구간</td><td>|</td><td>기준 충족과 반복 편차 없음</td></tr><tr><td>집중관리 구간</td><td>|</td><td>부적합, 상한 접근, 반복 편차</td></tr><tr><td>기술검토 구간</td><td>|</td><td>기준 정의 불명확 또는 급격한 변화</td></tr></table></div>`
+      +box('전망 해석의 전제','<p>설치연도, 장애이력, 동일조건 과거 측정값이 없어 이번 보고서는 기준선 구축 단계입니다.<br>기준선 구축 이후 차기 점검부터 추세 기반 열화도를 산정합니다.</p>','shadow foot'),'성능기반 노후도 해석 · 징후 예상');
+    // 07 개선계획
+    page('07','개선계획', box('개선 방향',`<p>종합등급은 ${M.grade}(${gL})${M.bad||M.mBad?`이나 결과서 부적합 ${M.bad}건${M.mBad?`, 성능 측정 부적합 ${M.mBad}건`:''}의 조치 및 재점검이 필요합니다.`:'으로 현 상태 유지를 위한 정기 점검이 필요합니다.'}<br>차년도 점검과의 정확한 데이터 비교를 위해 노후도 이력, 측정 단위 표기, 판정 기준을 정비하여 결과의 신뢰성과 정합성을 확보하겠습니다.</p>`,'shadow')
+      +sub('4대 개선 방향')+`<div class="pyr">${[['자산 교체 로드맵','제조사 단종·내용연수·장애위험 기반으로 설비 교체 우선순위와 예산을 수립합니다.'],['업무 연속성계획 · 이중화 강화','통신 집중구역의 단일 장애점을 제거하고 우회경로·핵심노드 이중화를 검토합니다.'],['그린 IT 전환','고발열·저효율 장비와 유휴 장비를 정비하여 전력·냉방 효율을 높입니다.'],['체감 품질 개선','이동통신·영상·방송 품질을 재측정하고 사용자 체감 지표를 관리합니다.']].map((r,i)=>`<div class="py"><b style="margin-left:${(3-i)*7}mm;width:${100-(3-i)*14}mm">${r[0]}</b><span>${r[1]}</span></div>`).join('')}</div>`
+      +sub('기대효과')+`<div class="k4 sm">${[['안정성 향상','설비 장애 및 다운타임 최소화'],['운영 효율성','설비 상태 가시화로 운영 효율 증대'],['유지관리 비용절감','예방 관리로 유지보수 비용 절감'],['보안/안전 강화','보안 취약 감소 및 안전 기준 충족']].map(r=>`<div class="card ef"><em>${r[0]}</em><p>${r[1]}</p></div>`).join('')}</div>`,'과제도출 · 로드맵');
+    // 08 부록
+    const cal=(calib||[]);
+    page('08','부록', sub('데이터 품질 검증 요약')+`<div class="k6">${[['성능 측정',`${mN} 건`,`양호 ${mN-M.mBad} · 부적합 ${M.mBad}`],['설비군',`${M.eqN} 종`,`${M.groups.length}개 설비군 집계`],['적합률',rate1,'적합·부적합 기준'],['종합등급',`${M.grade} (${gL})`,'설비군 평균 기준'],['점검자',`${M.people.length||1} 명`,M.people.join(' · ')],['계측기 교정',cal.length?`${cal.length} 종`:'-',cal.length?(cal[0].name||'교정성적서')+(cal.length>1?` 외 ${cal.length-1}종`:''):'교정성적서 미첨부']].map(r=>`<div class="card kc"><span class="g">${r[0]}</span><b>${efEsc(r[1])}</b><em>${efEsc(r[2])}</em></div>`).join('')}</div>`,'데이터 품질 · 검증요약 · 보유장비 교정 성적서');
+    for(let i=0;i<cal.length;i+=2){ page('08','부록(교정성적서)', sub('측정장비 교정 성적서')+`<div class="cal">${cal.slice(i,i+2).map(c=>`<div class="card"><img src="${c.src}"></div>`).join('')}</div>`,''); }
+
+    // ── 조립: 표지 + 목차 + 본문 (쪽번호) ──
+    const pages=[]; const tocMap={};
+    P.forEach((p,i)=>{ const no=i+3; if(!tocMap[p.sec]) tocMap[p.sec]={no, toc:p.toc}; pages.push(`<section class="pg">${head(p.sec,p.title)}<div class="body">${p.body}</div><div class="pf"><span>정보통신설비 종합평가보고서</span><span>${String(no).padStart(2,'0')}</span></div></section>`); });
+    const T={'01':'보고서 개요','02':'종합 요약','03':'설비군별 평가','04':'위치별 분석','05':'성능점검 측정','06':'현재 · 미래 성능 전망','07':'개선 계획','08':'부록'};
+    const toc=`<section class="pg toc"><div class="frame"><p class="en">CONTENTS</p><h1>목차</h1>${Object.keys(T).filter(k=>tocMap[k]).map(k=>`<div class="ti"><b>${k}</b><div><h2>${T[k]}</h2><p>${efEsc(tocMap[k].toc||'')}</p></div><span>P.${tocMap[k].no}</span></div>`).join('')}</div></section>`;
+    const cover=`<section class="pg cover"><div class="frame"><p class="en">ICT Facility Comprehensive Evaluation Report</p><div class="wave">${efWave()}</div><h1>정보통신설비 성능점검<br>종합평가보고서</h1>
+      <table class="ci"><tr><td>사업장</td><td>${efEsc(M.site)}</td></tr><tr><td>점검기간</td><td>${efEsc(M.period)}</td></tr><tr><td>보고일자</td><td>${efEsc(M.reportDate)}</td></tr><tr><td>점검기관</td><td>kt MOS 북부</td></tr><tr><td>점검자</td><td>${efEsc(M.people.join(', '))}</td></tr></table>
+      <div class="cl"><svg viewBox="0 0 170 40" width="150"><text x="0" y="30" font-size="30" font-weight="900" fill="#fff" font-family="Arial,sans-serif" letter-spacing="-1">kt</text><text x="40" y="30" font-size="22" font-weight="700" fill="#fff" font-family="Arial,sans-serif">MOS</text><text x="100" y="30" font-size="13" fill="#fff">북부</text></svg>${M.logo?`<div class="clogo"><img src="${M.logo}"></div>`:''}</div></div></section>`;
+    return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>종합평가보고서 · ${efEsc(M.site)}</title><style>${EF_CSS}</style></head><body>${cover}${toc}${pages.join('')}<script>(function(){function fit(){var w=innerWidth;document.documentElement.style.zoom=w<820?((w-6)/810).toFixed(3):'';}fit();addEventListener('resize',fit);addEventListener('beforeprint',function(){document.documentElement.style.zoom='';});addEventListener('afterprint',fit);})();<\/script></body></html>`;
+  }
+  const EF_CSS=`@page{size:A4;margin:0}*{box-sizing:border-box}html,body{margin:0;background:#E9ECEF;font-family:'Pretendard','Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;color:#262A2E;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pg{width:210mm;height:297mm;margin:8mm auto;background:#fff;position:relative;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.15);page-break-after:always;break-after:page}
+  @media print{html,body{background:#fff}.pg{margin:0;box-shadow:none}}
+  .hd{position:absolute;top:9mm;left:0;right:0;height:22mm;display:flex;gap:3.3mm}.hd .no{width:38mm;background:#12705E;color:#fff;font-size:30pt;font-weight:800;display:flex;align-items:center;justify-content:center;border-radius:0 2mm 2mm 0}.hd .tt{flex:1;background:#12705E;color:#fff;font-size:25pt;font-weight:800;display:flex;align-items:center;padding-left:3.5mm;border-radius:2mm 0 0 2mm;letter-spacing:-.5pt}
+  .body{position:absolute;top:36mm;left:13mm;right:13mm;bottom:16mm}.pf{position:absolute;left:16mm;right:16mm;bottom:8mm;display:flex;justify-content:space-between;font-size:9pt;color:#8A9099}
+  .sub{font-size:14pt;font-weight:700;border-left:1.6mm solid #1F7A5A;padding-left:3.5mm;margin:6mm 0 4mm;line-height:1.25}
+  .box{background:#F2F4F6;border-radius:3mm;padding:5mm 7mm;margin-bottom:5mm}.box.shadow{box-shadow:1mm 1mm 1.5mm rgba(0,0,0,.18)}.box .bt{color:#12705E;font-size:14pt;font-weight:800;margin-bottom:3mm}.box p{margin:0 0 1.5mm;font-size:11pt;line-height:1.75;padding-left:3mm}.box .r,.r{color:#D0281E}.box p.b{font-weight:600}.box.foot{position:absolute;left:0;right:0;bottom:2mm;margin:0}
+  h3{font-size:14pt;margin:9mm 0 3mm 7mm}table.kv{margin-left:12mm;font-size:12pt;border-collapse:collapse}table.kv td{padding:1.2mm 0}table.kv td:first-child{color:#8A9099;width:52mm}
+  table.steps{margin:4mm 0 0 14mm;font-size:12pt;border-collapse:collapse}table.steps td{padding:5.4mm 0}table.steps td:first-child{color:#12705E;font-weight:700;width:56mm}table.steps tr.red td{color:#D0281E}
+  .card{border:.3mm solid #E2E6EA;border-radius:2.5mm;background:#fff;box-shadow:0 .6mm 1.2mm rgba(0,0,0,.08)}.card.dist{padding:5mm 8mm;margin:6mm 0}.ct{font-size:13pt;font-weight:700;margin-bottom:3mm}.dg{display:flex;align-items:center;gap:14mm}.dl{flex:1}.dl div{display:grid;grid-template-columns:1fr auto;margin:3mm 0}.dl b{font-size:12pt}.dl span{grid-row:span 2;align-self:center;font-size:12pt}.dl em{font-style:normal;font-size:17pt;font-weight:800}.g{color:#12705E}.dl .r,.dl b.r{color:#D0281E}.m,.muted{color:#8A9099}
+  .rbars .rb{display:grid;grid-template-columns:42mm 1fr 18mm;align-items:center;margin:2.6mm 0;font-size:11.5pt}.rb i{height:7mm;background:#ECEEF0;display:block}.rb u{display:block;height:100%}.rb b{text-align:right}
+  table.tb{width:100%;border-collapse:collapse;font-size:10.5pt}.tb th{background:#F0F2F4;text-align:left;padding:3mm 2.5mm;font-weight:700}.tb td{padding:2.6mm 2.5mm;border-bottom:.3mm solid #E4E7EA;vertical-align:middle}.tb.def td{font-size:9.8pt}.tb td.b{font-weight:700}.tb .nt{color:#666;font-size:8.8pt}.tb.def tr:nth-child(odd) td{background:#F7F8FA}
+  .tb.grp th,.tb.grp td{text-align:center;font-size:12pt;padding:3.4mm}.tb.grp td:first-child,.tb.grp th:first-child{text-align:left;padding-left:8mm}.tb.grp tr.sum td{background:#F3F5F7;font-weight:600}.tb.sm td,.tb.sm th{font-size:9.5pt;padding:2mm 8mm}.crit{color:#12705E;font-size:11pt;margin:3mm 6mm}
+  .gr2{display:flex;gap:7mm}.gbox{width:58mm;background:#F2F4F6;border-radius:2.5mm;box-shadow:1mm 1mm 1.5mm rgba(0,0,0,.18);text-align:center;padding:4mm;font-size:14pt;font-weight:700}.gbox b{display:block;font-size:64pt;color:#12705E;line-height:1.05}.gr2 .box{flex:1}
+  .fl{display:grid;grid-template-columns:1fr 1.25fr;gap:6mm}.flb .th{background:#F0F2F4;text-align:center;padding:3mm;font-weight:700;margin-bottom:3mm}.fr{height:11.2mm;display:flex;align-items:center}.fr i{display:flex;height:7mm;border-bottom:1.2mm solid #D9DDE1}.fr u{background:#1F7A5A}.fr s{background:#CC3B33}.tb.flt th,.tb.flt td{text-align:center;padding:2.75mm}
+  .blds{display:flex;justify-content:space-around;text-align:center;font-size:11.5pt}.blds p{margin:0 0 2mm}.bl{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:2mm 8mm;color:#CC3B33;font-size:11.5pt}
+  .chart{margin:0 2mm}.card.dc{padding:7mm 18mm;font-size:12pt}.card.dc p{margin:3mm 0}
+  .ph{display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin:0 1mm 5.5mm}.pi{height:66mm;border-radius:2.5mm;overflow:hidden;background:#EEF0F2;box-shadow:.6mm .6mm 1.5mm rgba(0,0,0,.25)}.pi img{width:100%;height:100%;object-fit:cover}.pc{border-radius:2.5mm;box-shadow:.6mm .6mm 1.5mm rgba(0,0,0,.2);padding:5mm 6mm;font-size:12pt}.pc div{display:flex;align-items:center;gap:4mm;margin-bottom:3mm}.pc em{font-style:normal;background:#12705E;color:#fff;border-radius:5mm;padding:1.3mm 0;width:27mm;text-align:center;flex:none}.pc p{margin:3mm 3mm 0;line-height:1.5}
+  .th2{display:grid;grid-template-columns:1.85fr 1fr;gap:6mm}.tb.th3 td,.tb.th3 th{font-size:9.5pt;padding:2mm}.tb.th3 tr.cap td{background:#EEF4F1;color:#12705E;font-size:11pt;padding:2.5mm 6mm}.tb .g,.g{color:#12705E}.tb td.r{color:#D0281E}.gs .card{margin-bottom:5mm}.card.ok{text-align:center;font-size:26pt;font-weight:800;color:#12705E;padding:9mm}.card.gg{padding:5mm}
+  .tb.st th,.tb.st td{text-align:center}.tb.st td:first-child,.tb.st th:first-child{text-align:left;padding-left:8mm}.li{font-size:11pt;margin:2mm 8mm}.tb.cv{border:.5mm solid #222;margin-top:2mm}.tb.cv th{background:#1F7A5A;color:#fff;text-align:center}.tb.cv td{text-align:center;border:.4mm solid #222}.tb.cv td.g{background:#EAF3EE;font-weight:700}
+  .k4{display:grid;grid-template-columns:1fr 1fr;gap:8mm 10mm}.kc{height:68mm;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm}.kc span{color:#8A9099;font-size:12pt}.kc span.g{color:#12705E}.kc b{font-size:28pt}.kc em{font-style:normal;font-size:11pt;text-align:center;color:#555}
+  .k6{display:grid;grid-template-columns:1fr 1fr;gap:9mm 9mm}.k6 .kc{height:60mm}
+  .k4.sm{gap:4mm 4mm}.card.ef{height:34mm;padding:4mm;text-align:center}.card.ef em{display:block;font-style:normal;background:#12705E;color:#fff;border-radius:5mm;padding:1.5mm;width:48mm;margin-bottom:6mm}.card.ef p{margin:0;font-size:12pt}
+  .pyr .py{display:grid;grid-template-columns:106mm 1fr;align-items:center;gap:8mm;margin-bottom:3mm}.py b{display:block;background:#12705E;color:#fff;text-align:center;padding:5mm 0;font-size:13pt;letter-spacing:1pt}.py span{font-size:10.5pt;line-height:1.45}
+  .card.fut{padding:6mm 10mm;font-size:12pt}.card.fut p{margin:0 0 4mm}.ft{border-collapse:collapse;font-weight:700;font-size:12.5pt;margin:2mm 0 4mm}.ft td{padding:1.2mm 3mm 1.2mm 0}
+  .cal{display:grid;grid-template-columns:1fr 1fr;gap:5mm}.cal .card{padding:3mm;height:210mm;display:flex;align-items:flex-start;justify-content:center}.cal img{max-width:100%;max-height:100%}
+  .cover{background:#0B1A17;color:#fff}.cover .frame{position:absolute;inset:8mm;border:.3mm solid #1F3A34}.cover .en{color:#3DE0B0;letter-spacing:1.2pt;font-weight:700;font-size:11pt;margin:18mm 0 0 18mm}.cover .wave{margin:10mm -6mm 0;height:62mm}.cover .wave svg{height:62mm}.cover h1{font-size:38pt;line-height:1.32;margin:14mm 0 0 18mm;letter-spacing:-1pt}
+  .ci{position:absolute;left:18mm;right:15mm;bottom:38mm;border-collapse:collapse;font-size:14pt;width:calc(100% - 33mm)}.ci td{border-top:.3mm solid #2A3D38;padding:3.3mm 0}.ci tr:last-child td{border-bottom:.3mm solid #2A3D38}.ci td:first-child{color:#97A3A0;width:52mm;font-size:12pt}
+  .cl{position:absolute;left:18mm;right:13mm;bottom:12mm;display:flex;align-items:center;justify-content:space-between}.clogo{background:#fff;border-radius:2mm;padding:3mm 6mm;height:20mm;width:62mm;display:flex;align-items:center;justify-content:center}.clogo img{max-width:100%;max-height:100%}
+  .toc .frame{position:absolute;inset:6mm;border:.5mm solid #1F7A5A;padding:15mm 13mm}.toc .en{color:#1F7A5A;letter-spacing:3pt;font-weight:700;margin:0 0 0 4mm}.toc h1{font-size:44pt;margin:0 0 15mm 4mm}.ti{display:grid;grid-template-columns:30mm 1fr 20mm;border-top:.3mm solid #E2E5E8;padding:5mm 0 4mm}.ti b{color:#1F7A5A;font-size:22pt;padding-left:3mm}.ti h2{margin:0 0 3mm;font-size:19pt}.ti p{margin:0;color:#8A9099;font-size:11pt}.ti span{color:#8A9099;font-size:12pt;text-align:right;padding-top:2mm}`;
+
+  /* 보고서 보기 (인쇄·PDF / 교정성적서 / 원본 생성기) */
+  async function evalFinalOpen(D){
+    D=D||mdData; if(!current){ alert('현재 점검을 연 상태에서 만들 수 있습니다.'); return; }
+    if(!D || D.source!=='현재 점검') D=mdRowsFromInspection(current);
+    showToast('📑 종합평가보고서를 만드는 중…');
+    let calib=[]; try{ calib=JSON.parse(await sGet('evalCalib',false)||'[]')||[]; }catch(e){ calib=[]; }
+    let html; try{ html=efHTML(await efBuildModel(current,D), calib); }catch(e){ console.error(e); alert('보고서 생성 오류: '+(e.message||e)); return; }
+    let ov=document.getElementById('evalf-modal'); if(ov) ov.remove();
+    ov=document.createElement('div'); ov.id='evalf-modal'; ov.className='overlay top-layer'; ov.style.cssText='display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:0;background:#E9ECEF;z-index:10060;';
+    ov.innerHTML=`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 10px;background:#0F2E28;color:#fff;align-self:stretch;width:100%;box-sizing:border-box;"><b style="flex:1;min-width:150px;font-size:14px;">📑 종합평가보고서 <small style="font-weight:500;color:#A7C9BF;">최종 양식 · A4</small></b>
+      <button data-a="print" style="background:#12705E;color:#fff;border:none;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer;">🖨 인쇄 · PDF</button>
+      <button data-a="html" style="background:#fff;color:#0F2E28;border:none;border-radius:9px;padding:8px 12px;font-weight:700;cursor:pointer;">⤓ 파일 저장</button>
+      <button data-a="cal" style="background:#fff;color:#0F2E28;border:none;border-radius:9px;padding:8px 12px;font-weight:700;cursor:pointer;">📎 교정성적서 ${calib.length?calib.length+'장':'추가'}</button>
+      <button data-a="old" style="background:#334155;color:#fff;border:none;border-radius:9px;padding:8px 12px;font-weight:700;cursor:pointer;" title="예전 8-PART 화면 · 엑셀 · PPT">엑셀·PPT</button>
+      <button data-a="x" style="background:#E11D48;color:#fff;border:none;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer;">✕ 닫기</button></div>
+      <iframe title="종합평가보고서" style="flex:1;border:0;width:100%;align-self:stretch;background:#E9ECEF;"></iframe><input type="file" accept="image/*" multiple style="display:none">`;
+    document.body.appendChild(ov);
+    const fr=ov.querySelector('iframe'); fr.srcdoc=html;
+    const fi=ov.querySelector('input[type=file]');
+    ov.querySelector('[data-a=x]').onclick=()=>ov.remove();
+    ov.querySelector('[data-a=print]').onclick=()=>{ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){ alert('인쇄 오류: '+e.message); } };
+    ov.querySelector('[data-a=html]').onclick=()=>downloadFile(new Blob([html],{type:'text/html'}), `종합평가보고서_${(current.siteName||'사업장').replace(/[\\/:*?"<>|]/g,'_')}_${current.date||todayStr()}.html`).then(()=>showToast('파일을 저장했습니다 — 브라우저로 열어 인쇄 → PDF로 저장할 수 있습니다.')).catch(e=>alert(e.message));
+    ov.querySelector('[data-a=old]').onclick=()=>evalOpenReport(D);
+    ov.querySelector('[data-a=cal]').onclick=()=>{
+      if(calib.length && confirm(`등록된 교정성적서 ${calib.length}장이 있습니다.\n[확인] 이미지를 더 추가합니다\n[취소] 모두 지우기 여부를 묻습니다`)===false){ if(confirm('등록된 교정성적서를 모두 지울까요?')){ sSet('evalCalib','[]').then(()=>{ ov.remove(); evalFinalOpen(D); }); } return; }
+      fi.click(); };
+    fi.onchange=async()=>{ const add=[]; for(const f of fi.files){ try{ const u=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); });
+        const im=await new Promise(res=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=u; }); let src=u;
+        if(im){ const k=Math.min(1,1600/Math.max(im.width,im.height)); const c=document.createElement('canvas'); c.width=Math.round(im.width*k); c.height=Math.round(im.height*k); const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(im,0,0,c.width,c.height); src=c.toDataURL('image/jpeg',0.85); }
+        add.push({name:f.name.replace(/\.[^.]+$/,''), src}); }catch(e){} }
+      if(!add.length) return; await sSet('evalCalib', JSON.stringify(calib.concat(add))); ov.remove(); evalFinalOpen(D); };
   }
 
   async function exportDashboardExcel(){
